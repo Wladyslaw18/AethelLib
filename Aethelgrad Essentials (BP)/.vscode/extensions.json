@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "blockception.minecraft-bedrock-development",
+    "ms-vscode.vscode-json"
+  ]
+}
