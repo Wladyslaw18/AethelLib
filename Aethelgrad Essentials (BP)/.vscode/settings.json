@@ -1,0 +1,32 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["javascript"],
+  "eslint.run": "onType",
+  "eslint.packageManager": "npm",
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.git": true,
+    "**/DS_Store": true,
+    "**/Thumbs.db": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true
+  },
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  },
+  "roocode.apiProvider": "google",
+  "roocode.googleApiKey": "${env:GOOGLE_API_KEY}",
+  "roocode.model": "gemini-pro",
+  "roocode.temperature": 0.7,
+  "roocode.maxTokens": 2048,
+  "roocode.autoSuggest": true,
+  "roocode.contextWindow": 8192,
+  "roocode.enableChat": true,
+  "roocode.enableRefactoring": true
+}
