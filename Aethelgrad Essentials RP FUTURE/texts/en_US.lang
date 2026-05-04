@@ -1,0 +1,353 @@
+## English US
+## By Paoeni
+
+## Load
+mce.load.successfully.player=§aMinecraft Essentials have been loaded successfully in §e%sms
+
+## Log
+mce.log.commandused=[Command] %1 used %2 command.
+
+## Combat
+mce.combat.leaveincombat=§a%1 leave game while pvp with you, You got §e%2
+mce.combat.incombat=§cYou're in combat! Leave will count as death.
+mce.combat.gotkilled=§aYou just got killed and lost §e%s
+
+## Player
+mce.player.muted=§cYou are muted!
+mce.player.chat.cooldown=§cSlow down, you are typing too fast!
+mce.player.command.oncooldown=§cPlease wait, command in cooldown §e%ss
+mce.player.command.oncooldown.specific=§cYou just use %1 command! In cooldown for §e%2s.
+mce.player.killing=§aYou got §e%s
+mce.player.justdied=§eYou died. use §a%sback§e to teleport to your death location.
+mce.player.inventory.full=§cYou must have at least 1 empty slot!
+mce.chest.inventory.full=§cChest is full.
+mce.player.incombat=§cYou are in combat!
+mce.player.money.maxed=§cYour money is maxed!
+mce.player.gotrequest.tpa=§e%s has requested to teleport to you.
+mce.player.gotrequest.tpa.noui=§e%1 has requested to teleport to you. Use %2tpaccept to accept!
+mce.player.gotrequest.tpahere=§e%s has requested to teleport to them.
+mce.player.gotrequest.tpahere.noui=§e%1 has requested to teleport to them. Use %2tpaccept to accept!
+mce.player.gotpaid=§a%1 has paid you §e%2
+mce.player.auction.gotsold=§aYour item on auction has been sold!
+
+## Teleport
+mce.teleport.waitfor.chat=§eDo not move for %s second to teleport!
+mce.teleport.waitfor.actionbar=§eDo not move for §c%ss
+mce.teleport.teleporting=§eTeleporting...
+mce.teleport.teleported=§aSuccessfully Teleported.
+mce.teleport.insufficientfunds=§cInsufficient funds. §ePrice: %s
+
+## Basic command
+mce.command.unknown=§cUnknown command: %s. Please check that the command exists and that you have permission to use it.
+mce.command.target.unknown=§cNo targets matched selector
+mce.command.inputplayer=§cInput a player name.
+mce.command.inputnumber=§cInput a number.
+mce.command.insufficientfunds=§cInsufficient funds.
+mce.command.canceled=§cCanceled!
+
+## Basic UI
+mce.ui.closechat=§eClose Chat to Show UI!
+mce.ui.purchaseconfirmation.title=§l§ePURCHASE CONFIRMATION
+mce.ui.purchaseconfirmation.description=Purchase %1 for §e%2§r?
+mce.ui.purchaseconfirmation_withamount.description=Purchase §e%3x §r%1 for §e%2§r?
+mce.ui.purchaseconfirmation.accept=§l§aACCEPT
+mce.ui.purchaseconfirmation.cancel=§l§cCANCEL
+
+## Command Description
+mce.command.adminpanel.description=Open admin panel
+mce.command.ban.description=Bans a player
+mce.command.broadcast.description=Broadcasts a message to a world
+mce.command.delwarp.description=Removes a warp
+mce.command.economy.description=Manages the server economy
+mce.command.inventorysee.description=See the inventory of other players
+mce.command.kick.description=Kick a specified player with a reason
+mce.command.log.description=Open Logs
+mce.command.mute.description=Mutes a player
+mce.command.resetdata.description=Reset all or specific data
+mce.command.sellsetting.description=Setting items in sell
+mce.command.setting.description=Set a configuration
+mce.command.setwarp.description=Create a new warp
+mce.command.shopsetting.description=Set groups/items in shop
+mce.command.tempban.description=Temporary ban a user
+mce.command.unban.description=Unbans the specified player
+mce.command.unmute.description=Unmutes a muted player
+mce.command.back.description=Teleport to last died location
+mce.command.help.description=Provides help/list of commands
+mce.command.info.description=Shows information set by the server owner
+mce.command.credit.description=Credits of addons
+mce.command.message.description=Send private message to Player
+mce.command.reply.description=Reply private message to another player
+mce.command.playerlist.description=List of Online Player
+mce.command.rtp.description=Random Teleport
+mce.command.tps.description=World Tick per Second
+mce.command.report.description=Create/View report
+mce.command.calculate.description=Calculate basic math Add(+), Subtract(-), Multiply(*), Division(/), Remainder(%), and Exponent(**)
+mce.command.delhome.description=Removes a home
+mce.command.home.description=Teleport to your selected home
+mce.command.listhome.description=Provides list of your homes
+mce.command.sethome.description=Create a new home in your current location
+mce.command.auctionhouse.description=Open the auction house
+mce.command.money.description=States the current balance of a player
+mce.command.pay.description=Pays another player from your balance
+mce.command.sell.description=Sell items
+mce.command.shop.description=Open the main shop
+mce.command.topmoney.description=List players by top balances
+mce.command.withdraw.description=Withdraw your money into banknote
+mce.command.tpa.description=Request to teleport to the specified player
+mce.command.tpacancel.description=Cancel all or specify outstanding teleport requests
+mce.command.tpaccept.description=Accept a tpa request from player
+mce.command.tpahere.description=Request that the specified player teleport to you
+mce.command.tpasetting.description=Set your tpa setting
+mce.command.listwarp.description=Provides list of available warp
+mce.command.warp.description=Teleport to selected warp
+
+## General Command
+mce.command.back.unknown=§cYou do not have died location!
+mce.command.rtp.loadingchunks=§eLoading chunks...
+mce.command.rtp.safelocation=§eLooking for safe location...
+mce.command.rtp.inprogress=§eRTP in progress... if this takes too long, try rejoining
+mce.command.rtp.teleported=§aTeleported.
+mce.command.tps.tps=§aTPS: §e%s
+mce.command.playerlist.header=§a[PLAYER LIST] :
+mce.command.playerlist.onlinefor.header=§e - %s |§a Online for
+mce.command.playerlist.onlinefor.days=§e%s §adays
+mce.command.playerlist.onlinefor.hours=§e%s §ahours
+mce.command.playerlist.onlinefor.minutes=§e%s §aminutes
+mce.command.playerlist.onlinefor.seconds=§e%s §aseconds
+mce.command.message.inputmessages=§cInput messages.
+mce.command.message.target.self=§cYou may not message yourself.
+mce.command.message.send.target=§8[§a%1 §3-> §eYou§8]§r %2
+mce.command.message.send.self=§8[§eYou §3-> §a%1§8]§r %2
+mce.command.reply.unknown=§cYou do not have message to reply.
+mce.command.help.commandlist.header=§eHelp Message ("?" Its means optional or not must be filled)
+mce.command.help.commandlist.category=§a%s Command :
+mce.command.help.commandlist.command=§e - §a%1 §e| %2 (%3)
+mce.command.help.command.name=§a%s Command :
+mce.command.help.command.usage=§a Usage : §e%s
+mce.command.help.command.description=§a Description : §e%s
+mce.command.help.command.aliases=§a Aliases : §e%s
+mce.command.calculate.wrongoperations=§cPlease provide a valid mathematical expression. Example: 1+6
+mce.command.calculate.result=§aResult: §e%s
+
+## TPA Command
+mce.command.tpa.disabled.byadmin=§cYour TPA was disabled.
+mce.command.tpa.disabled=§cTPA disabled. Re-enable with §e%stpasetting on
+mce.command.tpa.target.self=§cYou may not send a TPA request to yourself.
+mce.command.tpa.target.disabled=§c%s is not accepting TPA requests.
+mce.command.tpa.request.send=§aRequest sent, wait for %s to accept!
+mce.command.tpa.request.accepted=§a%s accepted your request!
+mce.command.tpa.request.declined=§c%s declined your request!
+mce.command.tpa.request.canceled=§cTPA request is canceled!
+mce.command.tpacancel.request.unknown=§cYou have no tpa request from them.
+mce.command.tpacancel.cancel.successfully=§aSuccessfully cancel outstanding teleport requests from them.
+mce.command.tpacancel.cancelall.successfully=§aSuccessfully cancel all outstanding teleport requests.
+mce.command.tpaccept.request.norequest=§cYou have no tpa request.
+mce.command.tpaccept.request.unknown=§cYou have no tpa request from them.
+mce.command.tpaccept.request.accepted=§aRequest accepted.
+mce.command.tpasetting.current.enabled=§eTPA currently enabled.
+mce.command.tpasetting.current.disabled=§eTPA currently disabled.
+mce.command.tpasetting.input.unknown=§cYou may only input on/off.
+mce.command.tpasetting.changed=§aSuccessfully updated your setting to §e%s
+
+## Warp Command
+mce.command.warp.inputname=§cInput a warp name.
+mce.command.warp.unknown=§cInvalid warp.
+mce.command.delwarp.successfully=§aSuccessfully remove warp place with name %s!
+mce.command.setwarp.alreadyexists=§cDuplicate warp name, no warp was created.
+mce.command.setwarp.successfully=§aSuccessfully add warp place with name %s!
+mce.command.listwarp.header=§eWarps list :
+mce.command.listwarp.nowarp=§cNo warps have been set.
+
+## Home Command
+mce.command.home.inputname=§cInput a home name.
+mce.command.home.unknown=§cInvalid home.
+mce.command.delhome.successfully=§aSuccessfully remove home with name %s!
+mce.command.sethome.maxhome=§cYou already have max home!
+mce.command.sethome.alreadyexists=§cDuplicate home name, no home was created.
+mce.command.sethome.successfully=§aSuccessfully add home with name %s!
+mce.command.listhome.header=§eHomes list :
+mce.command.listhome.nohome=§cNo homes.
+
+## Money Command
+mce.command.money.self=§aYour money : §e%s
+mce.command.money.target=§a%1's money : §e%2
+mce.command.pay.inputammount=§cInput an amount.
+mce.command.pay.target.self=§cYou may not pay yourself.
+mce.command.pay.inputmorethanone=§cInput the money amount greater than 1!
+mce.command.pay.target.maxmoney=§c%s's money is already max!
+mce.command.pay.successfully=§aSuccessfully paid to %1 for §e%2
+mce.command.withdraw.inputammount=§cInput an amount.
+mce.command.withdraw.converted=§aSuccessfully withdrew §e%s §ainto banknote.
+mce.command.withdraw.claimed=§aClaimed §e%s §afrom banknote.
+mce.command.topmoney.header=§a[TOP MONEY LEADERBOARD] :
+
+## Auction
+mce.command.auctionhouse.item.unknown=§cItem not found!
+mce.command.auctionhouse.seller.self=§cThis is your auction.
+mce.command.auctionhouse.purchased=§ePurchased §ax%1 %2§e for §a%3!
+mce.command.auctionhouse.item.removed=§aSuccessfully remove the item from auction!
+mce.command.auctionhouse.full=§cAuction item is full!
+mce.command.auctionhouse.holditem=§cHold the item you wish to add.
+mce.ui.auctionhouse.title=Create Auction
+mce.ui.auctionhouse.price=Item Price (Required):
+mce.ui.auctionhouse.price.placeholder=Example : 1000
+mce.ui.auctionhouse.displayname=Item Display Name (Optional):
+mce.ui.auctionhouse.displayname.placeholder=Example : Raw Iron
+mce.ui.auctionhouse.inputform=§cYou must complete the form!
+mce.command.auctionhouse.add.price.inputnumber=§cYou must input number in price!
+mce.command.auctionhouse.add.price.inputmorethanone=§cInput the price greater than 1!
+mce.command.auctionhouse.item.added=§aSuccessfully create auction!
+
+## Shop & Sell
+mce.command.shop.noitems=§cNo items can be purchased
+mce.command.shop.item.unknown=§cItem not found!
+mce.command.shop.purchase.canceled=§cPurchase canceled.
+mce.command.shop.purchase.successfully=§ePurchased §ax%1 %2§e for §a%3!
+mce.command.sell.noitems=§cNo items sellable.
+mce.command.sell.holditem=§cHold the item you wish to sell.
+mce.command.sell.item.nosellable=§cThis item not sellable.
+mce.command.sell.item.unknown=§cItem not found!
+mce.command.sell.insufficientitems=§cInsufficient item!
+mce.command.sell.successfully=§eSuccessfully sell §ax%1 %2§e for §a%3!
+mce.command.sellall.noitems=§cYou don't have sellable items.
+mce.command.sellall.successfully=§eSuccessfully sell §ax%1 Items§e for §a%2!
+
+## Admin Command
+mce.command.ban.target.self=§cYou may not ban yourself.
+mce.command.ban.successfully=§aSuccessfully banned %1
+mce.command.broadcast=Broadcast
+mce.command.broadcast.inputmessages=§cInput messages.
+mce.command.broadcast.sent=§aBroadcast sent!
+mce.command.economy.operations=§cInput an operation. (give/take/set/reset)
+mce.command.economy.wrongoperations=§cWrong an operation. (give/take/set/reset)
+mce.command.economy.inputammount=§cInput an amount.
+mce.command.economy.give=§aSuccessfully give §e%1 §ato %2.
+mce.command.economy.take=§aSuccessfully take §e%1 §afrom %2.
+mce.command.economy.set=§aSuccessfully set %2's money to §e%1
+mce.command.economy.reset=§aSuccessfully reset %s's money.
+mce.command.inventorysee.item.unknown=§cItem not found!
+mce.command.inventorysee.remove=§aSuccessfully remove the item
+mce.command.kick.target.self=§cYou may not kick yourself.
+mce.command.kick.successfully=§aSuccessfully kicked %1
+mce.ui.logs.title=Logs
+mce.ui.logs.clear=§l§8Clear
+mce.ui.logs.close=§l§cClose
+mce.command.logs.clear=§aSuccessfully clear logs
+mce.command.mute.target.self=§cYou may not mute yourself.
+mce.command.mute.target.muted=§cPlayer already muted!
+mce.command.mute.successfully=§aSuccessfully muted %1
+mce.command.unmute.target.notmuted=§cPlayer was not muted!
+mce.command.unmute.successfully=§aSuccessfully unmuted %1
+mce.command.resetdata.canceled=§cReset data canceled.
+mce.command.resetdata.unknown=§cData not found!
+mce.command.resetdata.successfully=§aReset Successfully!
+mce.command.tempban.inputduration=§cInput the duration. §eExample: 30d1h.
+mce.command.unban.successfully=§aSuccessfully unbanned %1
+
+## Setting Command
+mce.command.setting.list=§cYou must input the setting name! Use §e%1setting list §cto get setting list.
+mce.command.setting.list.header=§aSetting List :
+mce.command.setting.inputvalue=§cYou must input the value!
+mce.command.setting.inputboolean=§cYou only can input true/false!
+mce.command.setting.inputnumber=§cYou must input number!
+mce.command.setting.number.inputmorethanone=§cYou must input number greater than 0!
+mce.command.setting.number.infinity=§cYou can't put Infinity!
+mce.command.setting.commandPrefix.slash=§cYou can't use slash for command prefix!
+mce.command.setting.value.unknown=§c[ERROR] The setting has no value type!
+mce.command.setting.set.successfully=§aSuccessfully set!
+
+## Setting Description
+mce.command.setting.moneySystem.description=If set to false, anyone can't use money system/command
+mce.command.setting.homeSystem.description=If set to false, anyone can't use home system/command
+mce.command.setting.tpaSystem.description=If set to false, anyone can't use tpa system/command
+mce.command.setting.warpSystem.description=If set to false, anyone can't use warp system/command
+mce.command.setting.backSystem.description=If set to false, anyone can't use back command
+mce.command.setting.rtpSystem.description=If set to false, anyone can't use rtp command
+mce.command.setting.shopSystem.description=If set to false, anyone can't use shop system/command
+mce.command.setting.sellSystem.description=If set to false, anyone can't use sell system/command
+mce.command.setting.auctionSystem.description=If set to false, anyone can't use auction system/command
+mce.command.setting.withdrawSystem.description=If set to false, anyone can't use withdraw system/command
+mce.command.setting.messageSystem.description=If set to false, anyone can't use message/reply command
+mce.command.setting.landSystem.description=If set to false, anyone can't use land command
+mce.command.setting.combatSystem.description=If set to true, player not able to teleport while in pvp/combat. If they leave it will count as a death
+mce.command.setting.starterMoney.description=Set Player Starter Money
+mce.command.setting.maxMoney.description=Set Max Money
+mce.command.setting.homeLimit.description=Set Limit Home for Players
+mce.command.setting.backCooldown.description=Cooldown for Back command, Set 0 for no cooldown
+mce.command.setting.tpaCooldown.description=Cooldown for TPA command, Set 0 for no cooldown
+mce.command.setting.homeCooldown.description=Cooldown for Home command, Set 0 for no cooldown
+mce.command.setting.warpCooldown.description=Cooldown for Warp command, Set 0 for no cooldown
+mce.command.setting.rtpCooldown.description=Cooldown for RTP command, Set 0 for no cooldown
+mce.command.setting.chatCooldown.description=Cooldown for Chat / Anti Spam, Set 0 for disable anti spam
+mce.command.setting.commandPrefix.description=Prefix for Command
+mce.command.setting.currencyPrefix.description=Currency Prefix
+mce.command.setting.earnMoneyfromMobs.description=If set to false, anyone can't earn money from killing mobs
+mce.command.setting.backCountdown.description=If setted, player will wait for countdown to teleport
+mce.command.setting.tpaCountdown.description=If setted, player will wait for countdown to teleport
+mce.command.setting.homeCountdown.description=If setted, player will wait for countdown to teleport
+mce.command.setting.warpCountdown.description=If setted, player will wait for countdown to teleport
+mce.command.setting.rtpCountdown.description=If setted, player will wait for countdown to teleport
+mce.command.setting.commandCooldown.description=Cooldown for command, Set 0 for no cooldown
+mce.command.setting.RTPRange.description=Random Teleport Range
+mce.command.setting.tpaSystemWithUI.description=UI for accept or decline tpa requests, set it false will using tpaccept command to accept request
+mce.command.setting.backCost.description=Cost for Back command, Set 0 for no cost
+mce.command.setting.tpaCost.description=Cost for TPA command, Set 0 for no cost
+mce.command.setting.homeCost.description=Cost for Home command, Set 0 for no cost
+mce.command.setting.warpCost.description=Cost for Warp command, Set 0 for no cost
+mce.command.setting.rtpCost.description=Cost for RTP command, Set 0 for no cost
+mce.command.setting.serverInfo.description=Text that will be show in info command. "(NEWLINE) = New Line"
+mce.command.setting.joinMessage.description=Text that will when player join
+mce.command.setting.showRankOnMessage.description=If true, ranks will show in message
+mce.command.setting.showRankOnNameTag.description=If true, ranks will show in name tag
+mce.command.setting.notifyEarnMoneyInChat.description=If true, the notification of the money you get from mobs will appear in the chat instead of actionbar.
+
+## ShopSetting Command
+mce.command.shopsetting.groupmaxed=§cUnable to add more groups. The maximum limit has been reached.
+mce.command.shopsetting.formincomplete=§cYou must complete the form!
+mce.command.shopsetting.groupexists=§cThis group name already exists!
+mce.command.shopsetting.groupadded=§aSuccessfully added a group with the name §e%s
+mce.command.shopsetting.nogroups=§cNo groups have been created
+mce.command.shopsetting.groupnotfound=§cGroup not found!
+mce.command.shopsetting.groupremoved=§aSuccessfully removed group with name §e%s
+mce.command.shopsetting.groupedited=§aSuccessfully edited group with name §e%s
+mce.command.shopsetting.group.inputoperation=§cInput an operation. (add/edit/remove)
+mce.command.shopsetting.shopfull=§cShop item is full!
+mce.command.shopsetting.holditem=§cHold the item you wish to add.
+mce.command.shopsetting.priceinvalid=§cYou must input a number in price!
+mce.command.shopsetting.pricelessthanone=§cInput the price greater than 1!
+mce.command.shopsetting.itemadded=§aSuccessfully added item to the shop!
+mce.command.shopsetting.erroraddingitem=§cError when adding item to the shop!
+mce.command.shopsetting.creategroupfirst=§cCreate a group first!
+mce.command.shopsetting.itemnotfound=§cItem not found!
+mce.command.shopsetting.itemedited=§aSuccessfully edited the item!
+mce.command.shopsetting.itemremoved=§aSuccessfully removed the item!
+mce.command.shopsetting.item.inputoperation=§cInput an operation. (add/edit/remove)
+mce.command.shopsetting.preset.starting=§eStarting...
+mce.command.shopsetting.databasefull=§cDatabase is full!
+mce.command.shopsetting.erroraddinggroup=§cError when adding %1 group. Add it manually! Error: %2
+mce.command.shopsetting.creatingshop=§eCreating %s shop...
+mce.command.shopsetting.preset.erroraddingitem=§cError when adding item with id "%1". %2
+mce.command.shopsetting.successfulpreset=§aSuccessfully applied shop preset.
+mce.command.shopsetting.inputoperation=§cInput a group/item. Or use §e%sshopsetting preset §cto use shop preset!
+
+## SellSetting Command
+mce.command.sellsetting.holditem=§cHold the item you wish to add.
+mce.command.sellsetting.formincomplete=§cYou must complete the form!
+mce.command.sellsetting.itemexists=§cThis item name already exists!
+mce.command.sellsetting.priceinvalid=§cYou must input a number in price!
+mce.command.sellsetting.itemadded=§aSuccessfully added item to the sell!
+mce.command.sellsetting.noitems=§cNo groups have been created
+mce.command.sellsetting.itemnotfound=§cItem not found!
+mce.command.sellsetting.itemedited=§aSuccessfully edited the item!
+mce.command.sellsetting.itemremoved=§aSuccessfully removed the item!
+mce.command.sellsetting.preset.starting=§eStarting...
+mce.command.sellsetting.preset.erroraddingitem=§cError when adding item with id "%1". %2
+mce.command.sellsetting.successfulpreset=§aSuccessfully applied shop preset.
+mce.command.sellsetting.inputoperation=§cInput an operation (add/edit/remove). Or use §e%ssellsetting preset §cto use sell preset!
+
+## AdminPanel Command
+
+## Items
+item.pao:claimblock1=1x Claim Block
+item.pao:claimblock10=10x Claim Block
+item.pao:claimblock100=100x Claim Block

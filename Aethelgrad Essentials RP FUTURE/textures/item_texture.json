@@ -1,0 +1,13 @@
+{
+	"texture_data": {
+		"pao:claimblock1": {
+			"textures": "textures/items/claimblock1"
+		},
+		"pao:claimblock10": {
+			"textures": "textures/items/claimblock10"
+		},
+		"pao:claimblock100": {
+			"textures": "textures/items/claimblock100"
+		}
+	}
+}

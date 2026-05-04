@@ -1,0 +1,28 @@
+# AethelLib Master Ignore
+
+# Dependencies
+node_modules/
+**/node_modules/**
+package-lock.json
+
+# Server Binaries
+BDS/
+**/BDS/**
+
+# Worlds and Storage
+worlds/
+**/worlds/**
+*.db
+*.log
+ContentLog*
+
+# Development Environment
+.vscode/
+.gemini/
+.gemini_antigravity/
+.DS_Store
+Thumbs.db
+
+# Deployment Packs
+development_behavior_packs/
+development_resource_packs/
