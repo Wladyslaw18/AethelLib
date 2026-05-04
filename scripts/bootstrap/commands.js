@@ -59,7 +59,7 @@ import { PlayerListCommand } from "../commands/general/PlayerListCommand.js"
 import { MessageCommand, ReplyCommand } from "../commands/general/MessageCommand.js"
 import { InfoCommand } from "../commands/general/InfoCommand.js"
 import { ReportCommand } from "../commands/general/ReportCommand.js"
-import { /* VOID */Command } from "../commands/general//* ANOMALY */Command.js"
+import { CreditCommand } from "../commands/general/CreditCommand.js"
 import { BackCommand } from "../commands/general/BackCommand.js"
 import { RTPCommand } from "../commands/general/RTPCommand.js"
 
@@ -140,7 +140,7 @@ export function init() {
     CommandRegistry.register("r", ReplyCommand)
     CommandRegistry.register("info", InfoCommand)
     CommandRegistry.register("report", ReportCommand)
-    CommandRegistry.register("/* KERNEL */", /* KERNEL */Command)
+    CommandRegistry.register("credit", CreditCommand)
     CommandRegistry.register("back", BackCommand)
     CommandRegistry.register("rtp", RTPCommand)
 

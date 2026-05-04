@@ -142,7 +142,16 @@ export class PermissionManager {
                 permissions.set("essentials.fly", true)
                 permissions.set("essentials.shop", true)
                 permissions.set("essentials.money", true)
+                permissions.set("essentials.help", true)
+                permissions.set("essentials.admin", true)
             }
+        }
+        
+        // OP Bypass fallback
+        if (player.isOp && player.isOp()) {
+            permissions.set("essentials.*", true)
+            permissions.set("essentials.help", true)
+            permissions.set("essentials.admin", true)
         }
         
         return permissions

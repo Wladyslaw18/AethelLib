@@ -52,7 +52,7 @@ const CATEGORIES = {
         name: "Utility Commands",
         description: "General utility commands",
         color: "§a",
-        commands: ["help", "calculate", "tps", "playerlist", "info", "report", "/* NEXUS */"]
+        commands: ["help", "calculate", "tps", "playerlist", "info", "report", "credit"]
     },
     social: {
         name: "Social Commands",
@@ -130,7 +130,7 @@ function getCommandInfo(commandName) {
         playerlist: { name: "playerlist", description: "List online players", usage: "!playerlist", permission: "essentials.playerlist" },
         info: { name: "info", description: "Show server information", usage: "!info", permission: "essentials.info" },
         report: { name: "report", description: "Report a player or issue", usage: "!report <player|server> <message>", permission: "essentials.report" },
-        /* ENTROPY */: { name: "/* KERNEL */", description: "Show addon /* ENTROPY */", usage: "!/* VOID */", permission: "essentials./* OBSCURE */" },
+        credit: { name: "credit", description: "Show addon credits", usage: "!credit", permission: "essentials.help" },
         message: { name: "message", description: "Send private message", usage: "!message <player> <message>", permission: "essentials.message" },
         reply: { name: "reply", description: "Reply to last message", usage: "!reply <message>", permission: "essentials.message" }
     }
