@@ -1,0 +1,111 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "aethelgrad:kit_npc",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": ["npc", "mob"]
+      },
+      "minecraft:health": {
+        "value": 20,
+        "max": 20
+      },
+      "minecraft:movement": {
+        "value": 0
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.8
+      },
+      "minecraft:physics": {
+        "has_collision": true,
+        "has_gravity": true
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 1,
+        "look_distance": 6.0,
+        "probability": 0.02
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 3
+      },
+      "minecraft:npc": {
+        "npc_data": {
+          "actions": [
+            {
+              "action": "show_dialogue",
+              "param": [
+                "aethelgrad:kit_dialogue"
+              ]
+            }
+          ],
+          "skin_list": [
+            {
+              "cape_data": {
+                "active": false,
+                "cape_onskin": false
+              },
+              "skin_id": 0,
+              "trading_data": {
+                "tier": 1,
+                "max_tier": 5,
+                "supply_demand_table": {}
+              }
+            }
+          ],
+          "offer_tables": []
+        }
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": [
+            "aethelgrad:kit_npc_immortal"
+          ]
+        }
+      }
+    },
+    "component_groups": {
+      "aethelgrad:kit_npc_immortal": {
+        "minecraft:immunity": {
+          "damage_types": [
+            "minecraft:fall",
+            "minecraft:fire",
+            "minecraft:explosion",
+            "minecraft:drown",
+            "minecraft:lightning",
+            "minecraft:anvil",
+            "minecraft:fire_tick",
+            "minecraft:fireworks",
+            "minecraft:entity_attack",
+            "minecraft:mob_attack",
+            "minecraft:player_attack",
+            "minecraft:projectile",
+            "minecraft:thorns",
+            "minecraft:out_of_world",
+            "minecraft:generic",
+            "minecraft:lava",
+            "minecraft:hot_floor",
+            "minecraft:suffocation",
+            "minecraft:contact",
+            "minecraft:starve",
+            "minecraft:magic",
+            "minecraft:wither",
+            "minecraft:stalactite_drip",
+            "minecraft:stalagmite_drip",
+            "minecraft:freeze",
+            "minecraft:sonic_boom",
+            "minecraft:ram_damage"
+          ]
+        }
+      }
+    }
+  }
+}
+

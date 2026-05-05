@@ -5,6 +5,10 @@
 # Allow the Industrial Payload
 !scripts/
 !scripts/**
+!entities/
+!entities/**
+!manifest.json
+!pack_icon.png
 !README.md
 !LICENSE
 !.gitignore
