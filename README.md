@@ -60,9 +60,9 @@ Kernel.get("commandRegistry").register("ping", {
 
 ## 🛡️ THE RULES OF THE FORGE
 
-1.  **Keep it Tiny**: If a file is over 120 lines, refactor it. Or don't. I'm a rule, not your dad. (But seriously, your future self will find you and he will be angry). 👴🔪
-2.  **Zero-Bypass**: Use the Kernel methods. Going rogue is fun until the engine updates and your script becomes a literal industrial paperweight. 🪨
-3.  **Clean Your Trash**: Use the sharded DB. If the Watchdog kills the server because your buffers are bloated, I'm not helping you. I warned you. 🐕💨
+1.  **Keep it Tiny**: If a file is over 120 lines, refactor it. Or don't. I'm a rule, not your dad. (But seriously, your future self will find you and he will be angry).
+2.  **Zero-Bypass**: Use the Kernel methods. Going rogue is fun until the engine updates and your script becomes a literal industrial paperweight.
+3.  **Clean Your Trash**: Use the sharded DB. If the Watchdog kills the server because your buffers are bloated, I'm not helping you. I warned you.
 4.  **The Vibe Check**: If it works, it's "Industrial Peak." If it crashes, it’s an "Advanced Feature Request." 🧪
 
 **AethelLib: Built so you can actually enjoy modding (while breaking things).**
