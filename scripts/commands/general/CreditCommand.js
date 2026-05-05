@@ -31,15 +31,15 @@ export const CreditCommand = {
         player.sendMessage("§7- Safe Arithmetic Parsing Engine")
         player.sendMessage("")
         player.sendMessage("§6ENGINEERING_STANDARDS:")
-        player.sendMessage("§c- TERMINATED: Legacy eval() backdoors.")
-        player.sendMessage("§c- TERMINATED: Scoreboard-based storage (O(N) garbage).")
-        player.sendMessage("§c- TERMINATED: Monolithic God-Objects.")
-        player.sendMessage("§c- TERMINATED: Volatile player.name identity mapping.")
+        player.sendMessage("§c- DECOMMISSIONED: Non-deterministic execution vectors.")
+        player.sendMessage("§c- DECOMMISSIONED: O(N) spatial data structures.")
+        player.sendMessage("§c- DECOMMISSIONED: Unitary monolithic schemas.")
+        player.sendMessage("§c- DECOMMISSIONED: Volatile identity-to-entity mapping.")
         player.sendMessage("")
         player.sendMessage("§6ARCHITECTURAL_NOTE:")
-        player.sendMessage("§7Dedicated to the 300k+ entities who survived");
-        player.sendMessage("§7the security nightmare of the legacy build.");
-        player.sendMessage("§7This version is hardened for hyper-scale.");
+        player.sendMessage("§7Optimized for the 300k+ entity density of the");
+        player.sendMessage("§7Aethelgrad core. Stabilized for infinite scale.");
+        player.sendMessage("§7This version is hardened for hyper-industrial load.");
         player.sendMessage("")
         player.sendMessage("§6Revision: §e1.0.0-Titanium §7| Clean Architecture");
     }

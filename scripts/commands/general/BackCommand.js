@@ -9,8 +9,8 @@ import { isInCombat as isPlayerInCombat } from "../../systems/combat/CombatInteg
  * coordinate manifest. Implements an O(1) cooldown registry to prevent 
  * temporal-spamming and tactical-evasion.
  *
- * PHILOSOPHY: Rollbacks are a luxury for high-performance assets. If 
- * the spatial-buffer is corrupted or empty, the reversion-vector 
+ * PHILOSOPHY: Rollbacks are stabilized for authenticated entities. If 
+ * the spatial-buffer is corrupted or null, the reversion-vector 
  * cannot be initialized.
  */
 
