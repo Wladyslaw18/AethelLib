@@ -56,14 +56,14 @@ Kernel.get("commandRegistry").register("ping", {
 ## 📜 LICENSE (LGPL v3.0)
 
 - **Your Logic = Private**: Link your own top-secret, closed-source code to AethelLib. Keep your secrets.
-- **The Core = Public**: If you optimize the Kernel or fix a bug in the Database, you MUST share that. Keep the backbone strong for the community. 😤
+- **The Core = Public**: If you optimize the Kernel or fix a bug in the Database, you MUST share that. Keep the backbone strong for the community. 👍
 
 ## 🛡️ THE RULES OF THE FORGE
 
 1.  **Keep it Tiny**: If a file is over 120 lines, refactor it. Or don't. I'm a rule, not your dad. (But seriously, your future self will find you and he will be angry).
 2.  **Zero-Bypass**: Use the Kernel methods. Going rogue is fun until the engine updates and your script becomes a literal industrial paperweight.
 3.  **Clean Your Trash**: Use the sharded DB. If the Watchdog kills the server because your buffers are bloated, I'm not helping you. I warned you.
-4.  **The Vibe Check**: If it works, it's "Industrial Peak." If it crashes, it’s an "Advanced Feature Request." 🧪
-5.  **Pure Command Supremacy**: UI is for the weak. (Actually, it’s just because I suck at building UIs). Stick to the command nexus for true industrial power. 🐚🏹
+4.  **The Vibe Check**: If it works, it's "Industrial Peak." If it crashes, it’s an "Advanced Feature Request."
+5.  **Pure Command Supremacy**: UI is for the weak. (Actually, it’s just because I suck at building UIs). Stick to the command nexus for true industrial power.
 
 **AethelLib: Built so you can actually enjoy modding (while breaking things).**
