@@ -1,57 +1,59 @@
-/**
- * Protection Handler - Intercept beforeEvents for claim protection
- * Smith Forge Rule: Max 100 lines per file
- * Zero-Eval, Identity Rule: UUIDs only
- * Cache-Aside: JS Map cache + debounced Dynamic Property write
+/*
+ * SPATIAL_PROTECTION_INTERCEPTOR
+ * ----------------------------------------------------------------------------
+ * Implements the front-line security checks for land-integrity. We use 
+ * a Cache-Aside strategy (JS Map) to minimize the overhead of 
+ * permission resolution during high-frequency block interactions.
+ *
+ * IDENTITY_RULE: Every check is resolved via UUID strings. Zero reliance 
+ * on volatile entity references.
  */
 
-import { world } from "@minecraft/server"
-import { 
-    locationToChunkKey, 
-    getClaim, 
-    hasPermission 
-} from "../systems/protection/ClaimStore.js"
-import { PERMISSIONS } from "../systems/protection/ClaimService.js"
+import { ClaimStore } from "../systems/protection/ClaimStore.js"
 
-/**
- * Initialize protection event handlers
+/*
+ * SERVICE_BOOTSTRAP
  */
 export function init() {
-    console.log("§2[Aethelgrad Essentials] Protection handlers initialized")
+    console.log("[ProtectionHandler] SPATIAL_INTEGRITY_ONLINE");
 }
 
-/**
- * Check if block is protected
- * @param {Block} block - Block to check
- * @param {string} playerId - Player ID
- * @param {number} requiredPermission - Required permission
- * @returns {boolean} Whether block is protected
+/*
+ * BLOCK_INTEGRITY_VERIFICATION
+ * ----------------------------------------------------------------------------
+ * Resolves the chunk-key for the target block and queries the ClaimStore. 
+ * If a claim exists, we check the player's UUID against the authorized 
+ * access list for the required permission node.
+ *
+ * @param {Block} block - The spatial target.
+ * @param {string} playerId - The actor's UUID.
+ * @param {number} requiredPermission - The numeric auth-node required.
  */
 function isBlockProtected(block, playerId, requiredPermission) {
-    const chunkKey = locationToChunkKey(block.location)
-    const claim = getClaim(chunkKey)
+    const chunkKey = ClaimStore.locationToChunkKey(block.location)
+    const claim = ClaimStore.getClaim(chunkKey)
     
-    if (!claim) return false // No claim, no protection
-    return !hasPermission(chunkKey, playerId, requiredPermission)
+    /* 
+     * FALLBACK_BYPASS
+     * If no claim is registered for this chunk-key, the zone is 
+     * considered 'Open Industrial' and protection is waived.
+     */
+    if (!claim) return false 
+    
+    return !ClaimStore.hasPermission(chunkKey, playerId, requiredPermission)
 }
 
-/**
- * Check if entity interaction is protected
- * @param {Entity} entity - Entity to check
- * @param {string} playerId - Player ID
- * @param {number} requiredPermission - Required permission
- * @returns {boolean} Whether entity is protected
+/*
+ * ENTITY_INTERACTION_VERIFICATION
  */
 function isEntityProtected(entity, playerId, requiredPermission) {
     if (!entity.location) return false
     
-    const chunkKey = locationToChunkKey(entity.location)
-    const claim = getClaim(chunkKey)
+    const chunkKey = ClaimStore.locationToChunkKey(entity.location)
+    const claim = ClaimStore.getClaim(chunkKey)
     
-    if (!claim) return false // No claim, no protection
-    return !hasPermission(chunkKey, playerId, requiredPermission)
+    if (!claim) return false 
+    return !ClaimStore.hasPermission(chunkKey, playerId, requiredPermission)
 }
 
-// Export protection checking functions for other systems
 export { isBlockProtected, isEntityProtected }
-

@@ -1,34 +1,42 @@
 import { Kernel } from "../core/Kernel.js"
 import { RankCommand } from "../commands/social/ranks/RankCommand.js"
 
-// Home Commands
+/*
+ * COMMAND_STAGING_MANIFEST
+ * ----------------------------------------------------------------------------
+ * This module handles the mass-registration of every command vector in the 
+ * AethelLib ecosystem. We use a static import strategy to ensure that all 
+ * command logic is loaded into the memory buffer before the first tick.
+ */
+
+/* SPATIAL_TELEPORTATION_VECTORS */
 import { SetHomeCommand } from "../commands/teleport/SetHomeCommand.js"
 import { GoHomeCommand } from "../commands/teleport/GoHomeCommand.js"
 import { DelHomeCommand } from "../commands/teleport/DelHomeCommand.js"
 import { ListHomeCommand } from "../commands/teleport/ListHomeCommand.js"
 
-// Warp Commands
+/* GLOBAL_WARP_SYSTEM_ENTRIES */
 import { SetWarpCommand } from "../commands/teleport/SetWarpCommand.js"
 import { WarpCommand } from "../commands/teleport/WarpCommand.js"
 import { DelWarpCommand } from "../commands/teleport/DelWarpCommand.js"
 import { ListWarpCommand } from "../commands/teleport/ListWarpCommand.js"
 import { SpawnCommand } from "../commands/teleport/SpawnCommand.js"
 
-// Economy Commands
+/* ECONOMIC_COMMERCE_LOGIC */
 import { MoneyCommand } from "../commands/economy/MoneyCommand.js"
 import { PayCommand } from "../commands/economy/PayCommand.js"
 import { TopMoneyCommand } from "../commands/economy/TopMoneyCommand.js"
 
-// Shop Commands
+/* TRANSACTIONAL_SHOP_HANDLERS */
 import { ShopCommand } from "../commands/shop/ShopCommand.js"
 
-// Sell Commands
+/* INVENTORY_LIQUIDATION_PROTOCOL */
 import { SellCommand } from "../commands/sell/SellCommand.js"
 
-// Auction Commands
+/* BIDDING_ORCHESTRATOR */
 import { AuctionCommand } from "../commands/auction/AuctionCommand.js"
 
-// Admin Commands
+/* ADMINISTRATIVE_AUTH_LEVEL_COMMANDS */
 import { AdminPanelCommand } from "../commands/admin/AdminPanelMain.js"
 import { BroadcastCommand } from "../commands/admin/BroadcastCommand.js"
 import { KickCommand } from "../commands/admin/KickCommand.js"
@@ -43,15 +51,16 @@ import { InvSeeCommand } from "../commands/admin/InvSeeCommand.js"
 import { ResetDataCommand } from "../commands/admin/ResetDataCommand.js"
 import { RankAdminCommand } from "../commands/admin/RankAdminCommand.js"
 import { FloatingTextCommand } from "../commands/admin/FloatingTextCommand.js"
+import { AdminReportCommand } from "../commands/admin/AdminReportCommand.js"
 
-// TPA Commands
+/* SPATIAL_HANDSHAKE_VECTORS (TPA) */
 import { TPACommand } from "../commands/tpa/TPACommand.js"
 import { TPAHereCommand } from "../commands/tpa/TPAHereCommand.js"
 import { TPAcceptCommand } from "../commands/tpa/TPAcceptCommand.js"
 import { TPACancelCommand } from "../commands/tpa/TPACancelCommand.js"
 import { TPASettingCommand } from "../commands/tpa/TPASettingCommand.js"
 
-// General Commands
+/* GENERAL_UTILITY_LOGIC */
 import { CalculateCommand } from "../commands/general/CalculateCommand.js"
 import { HelpCommand } from "../commands/general/HelpCommand.js"
 import { TPSCommand } from "../commands/general/TPSCommand.js"
@@ -62,51 +71,55 @@ import { ReportCommand } from "../commands/general/ReportCommand.js"
 import { CreditCommand } from "../commands/general/CreditCommand.js"
 import { BackCommand } from "../commands/general/BackCommand.js"
 import { RTPCommand } from "../commands/general/RTPCommand.js"
+import { MenuCommand } from "../commands/general/MenuCommand.js"
+import { WhoisCommand } from "../commands/general/WhoisCommand.js"
 
-// TPA Commands
+/* MISCELLANEOUS_SOCIAL_MODULES */
 import { BlockCommand } from "../commands/tpa/BlockCommand.js"
 import { ColorCommand } from "../commands/social/ColorCommand.js"
 
 let initialized = false
 
+/*
+ * BOOTSTRAP_COMMAND_INIT
+ * ----------------------------------------------------------------------------
+ * Handshakes with the CommandRegistry and docks every imported command 
+ * into the O(1) master map. 
+ *
+ * This process is strictly synchronous during the first tick to ensure 
+ * that no commands are 'ghosted' during the initial player handshake.
+ */
 export function init() {
     if (initialized) return
     initialized = true
 
     const CommandRegistry = Kernel.get("commandRegistry")
-    const CommandHandler = Kernel.get("commandHandler")
 
-    // Register commands
+    /* REGISTRATION_PIPELINE: START */
     CommandRegistry.register("rank", RankCommand)
 
-    // Home Commands
+    // Spatial Anchors
     CommandRegistry.register("sethome", SetHomeCommand)
     CommandRegistry.register("home", GoHomeCommand)
     CommandRegistry.register("delhome", DelHomeCommand)
     CommandRegistry.register("listhome", ListHomeCommand)
 
-    // Warp Commands
+    // Global Warps
     CommandRegistry.register("setwarp", SetWarpCommand)
     CommandRegistry.register("warp", WarpCommand)
     CommandRegistry.register("delwarp", DelWarpCommand)
     CommandRegistry.register("listwarp", ListWarpCommand)
     CommandRegistry.register("spawn", SpawnCommand)
 
-    // Economy Commands
+    // Commerce & Liquidity
     CommandRegistry.register("money", MoneyCommand)
     CommandRegistry.register("pay", PayCommand)
     CommandRegistry.register("topmoney", TopMoneyCommand)
-
-    // Shop Commands
     CommandRegistry.register("shop", ShopCommand)
-
-    // Sell Commands
     CommandRegistry.register("sell", SellCommand)
-
-    // Auction Commands
     CommandRegistry.register("auction", AuctionCommand)
 
-    // Admin Commands
+    // Authorization & Control
     CommandRegistry.register("adminpanel", AdminPanelCommand)
     CommandRegistry.register("broadcast", BroadcastCommand)
     CommandRegistry.register("kick", KickCommand)
@@ -121,15 +134,16 @@ export function init() {
     CommandRegistry.register("resetdata", ResetDataCommand)
     CommandRegistry.register("rankadmin", RankAdminCommand)
     CommandRegistry.register("ft", FloatingTextCommand)
+    CommandRegistry.register("reports", AdminReportCommand)
 
-    // TPA Commands
+    // Spatial Handshaking
     CommandRegistry.register("tpa", TPACommand)
     CommandRegistry.register("tpahere", TPAHereCommand)
     CommandRegistry.register("tpaccept", TPAcceptCommand)
     CommandRegistry.register("tpacancel", TPACancelCommand)
     CommandRegistry.register("tpasetting", TPASettingCommand)
 
-    // General Commands
+    // General Logic Modules
     CommandRegistry.register("calculate", CalculateCommand)
     CommandRegistry.register("help", HelpCommand)
     CommandRegistry.register("tps", TPSCommand)
@@ -143,14 +157,32 @@ export function init() {
     CommandRegistry.register("credit", CreditCommand)
     CommandRegistry.register("back", BackCommand)
     CommandRegistry.register("rtp", RTPCommand)
+    CommandRegistry.register("whois", WhoisCommand)
+    CommandRegistry.register("inspect", WhoisCommand)
+    CommandRegistry.register("id", WhoisCommand)
+    CommandRegistry.register("menu", MenuCommand)
+    CommandRegistry.register("m", MenuCommand)
+    CommandRegistry.register("gui", MenuCommand)
 
-    // TPA Commands
+    // Social & Filtering
     CommandRegistry.register("block", BlockCommand)
     CommandRegistry.register("color", ColorCommand)
 
-    // Initialize command handler (intercepts ! messages)
-    CommandHandler.init()
+    /*
+     * GHOST_INTERPRETER_SYNCHRONIZATION
+     * After mass-registration, we trigger an alias refresh to rebuild 
+     * the O(1) lookup table. This ensures !h maps to !heal instantly.
+     */
+    const CommandManager = Kernel.get("commandManager")
+    if (CommandManager) {
+        CommandManager.refreshAliases()
+    }
+    
+    /* 
+     * KERNEL_FINALIZATION
+     * Triggers the final service-locator bootstrap.
+     */
+    Kernel.init()
 
-    console.log("§2[AethelLib] Commands initialized via Titanium Kernel")
+    console.log("[AethelLib] COMMAND_BOOTSTRAP_COMPLETE | Vectors Loaded: " + CommandRegistry.getAll().length);
 }
-

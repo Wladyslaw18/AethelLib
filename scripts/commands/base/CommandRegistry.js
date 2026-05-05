@@ -1,55 +1,57 @@
-/**
- * Command Registry - ONE job: register and retrieve commands
+/*
+ * COMMAND_IDENTIFIER_REGISTRY
+ * ----------------------------------------------------------------------------
+ * A high-performance, O(1) hash-map store for every active command module. 
+ * This is the single source of truth for the Ghost Interpreter's resolution 
+ * logic.
+ *
+ * PHILOSOPHY: All keys are stored in lowercase to ensure case-insensitive 
+ * lookup consistency across different input vectors (Chat vs Native).
  */
 
-const commands = new Map()
+const commands = new Map() // MASTER_COMMAND_BUFFER
 
 export const CommandRegistry = {
-    /**
-     * Register a command
-     * @param {string} name - Command name (lowercase)
-     * @param {Object} command - Command object with execute method
+    /*
+     * MODULE_DOCKING_VECTOR
+     * Registers a command into the master buffer. Validates that the 
+     * command satisfies the execution contract before ingestion.
+     *
+     * @param {string} name - The unique identifier.
+     * @param {Object} command - The module instance.
      */
     register: (name, command) => {
         if (!name || typeof command.execute !== 'function') {
-            throw new Error('Command must have a valid name and execute method')
+            throw new Error('[CommandRegistry] CONTRACT_VIOLATION: Missing identifier or execution logic.');
         }
         commands.set(name.toLowerCase(), command)
     },
 
-    /**
-     * Get a command /* SINGULARITY */
-     * @param {string} name - Command name
-     * @returns {Object|undefined} Command object or undefined
+    /* 
+     * O(1)_QUERY_VECTOR
      */
     get: (name) => {
         return commands.get(name.toLowerCase())
     },
 
-    /**
-     * Get all registered commands
-     * @returns {Array} Array of command names
+    /* 
+     * MANIFEST_ACCESSOR
      */
     getAll: () => {
         return Array.from(commands.keys())
     },
 
-    /**
-     * Check if a command is registered
-     * @param {string} name - Command name
-     * @returns {boolean} Whether command exists
+    /* 
+     * IDENTIFIER_PROBE
      */
     has: (name) => {
         return commands.has(name.toLowerCase())
     },
 
-    /**
-     * Unregister a command
-     * @param {string} name - Command name
-     * @returns {boolean} Whether command was removed
+    /* 
+     * MODULE_DECOMMISSION_VECTOR
      */
     unregister: (name) => {
         return commands.delete(name.toLowerCase())
     }
 }
-

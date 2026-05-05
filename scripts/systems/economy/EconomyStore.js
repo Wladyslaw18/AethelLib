@@ -1,17 +1,26 @@
 import { Kernel } from "../../core/Kernel.js"
+import { SignalBus } from "../../core/signalbus/SignalBus.js"
 
 /** @typedef {import("@minecraft/server").Player} Player */
 
+/*
+ * INDUSTRIAL_LIQUIDITY_REGISTRY
+ * ----------------------------------------------------------------------------
+ * The core persistence layer for the empire's financial engine. Orchestrates 
+ * atomic mutations of entity liquidity buffers via the PlayerStore 
+ * transaction pipeline.
+ *
+ * PHILOSOPHY: Financial integrity is non-negotiable. Every credit must 
+ * be accounted for. Use the transaction-hooks to prevent race-conditions 
+ * or buffer-desyncs.
+ */
 export const EconomyStore = {
-    /**
-     * Default starting balance
-     */
-    DEFAULT_BALANCE: 1000,
+    DEFAULT_BALANCE: 1000, // INDUSTRIAL_STARTING_BUFFER
 
-    /**
-     * Get player balance
-     * @param {Player} player - Player object
-     * @returns {number} Player balance
+    /* 
+     * LIQUIDITY_QUERY_PROTOCOL
+     * Fetches the balance from the PlayerStore. Defaults to the 
+     * industrial-default if no record is found.
      */
     getBalance(player) {
         const PlayerStore = Kernel.get("playerStore")
@@ -21,11 +30,10 @@ export const EconomyStore = {
         return balance !== null ? balance : this.DEFAULT_BALANCE
     },
 
-    /**
-     * Set player balance (atomic)
-     * @param {Player} player - Player object
-     * @param {number} amount - New balance amount
-     * @returns {Promise<boolean>} Success status
+    /* 
+     * BUFFER_CALIBRATION_PIPELINE
+     * Performs an atomic 'set' operation. Dispatches a balanceChanged 
+     * signal upon successful commit.
      */
     async setBalance(player, amount) {
         if (typeof amount !== 'number' || amount < 0 || !Number.isFinite(amount)) {
@@ -36,15 +44,18 @@ export const EconomyStore = {
         const StoreKeys = Kernel.get("keys")
 
         return await PlayerStore.transaction(player, async () => {
-            return PlayerStore.set(player, StoreKeys.money(player.id), Math.floor(amount))
+            const success = PlayerStore.set(player, StoreKeys.money(player.id), Math.floor(amount))
+            if (success) {
+                SignalBus.emit("economy:balanceChanged", { player, newBalance: Math.floor(amount) })
+            }
+            return success
         })
     },
 
-    /**
-     * Add money to player balance (atomic)
-     * @param {Player} player - Player object
-     * @param {number} amount - Amount to add
-     * @returns {Promise<boolean>} Success status
+    /* 
+     * LIQUIDITY_INJECTION_PIPELINE
+     * Increments the entity's buffer by a specific amount within an 
+     * atomic transaction block.
      */
     async addMoney(player, amount) {
         if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount)) {
@@ -56,17 +67,20 @@ export const EconomyStore = {
 
         return await PlayerStore.transaction(player, async () => {
             const currentBalance = this.getBalance(player)
-            const newBalance = currentBalance + amount
+            const newBalance = Math.floor(currentBalance + amount)
 
-            return PlayerStore.set(player, StoreKeys.money(player.id), Math.floor(newBalance))
+            const success = PlayerStore.set(player, StoreKeys.money(player.id), newBalance)
+            if (success) {
+                SignalBus.emit("economy:balanceChanged", { player, newBalance })
+            }
+            return success
         })
     },
 
-    /**
-     * Remove money from player balance (atomic)
-     * @param {Player} player - Player object
-     * @param {number} amount - Amount to remove
-     * @returns {Promise<boolean>} Success status
+    /* 
+     * LIQUIDITY_EXTRACTION_PIPELINE
+     * Decrements the entity's buffer. Performs a pre-flight check for 
+     * sufficient liquidity before committing.
      */
     async removeMoney(player, amount) {
         if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount)) {
@@ -80,20 +94,23 @@ export const EconomyStore = {
             const currentBalance = this.getBalance(player)
 
             if (currentBalance < amount) {
-                return false // Insufficient funds
+                return false // INSUFFICIENT_LIQUIDITY
             }
 
-            const newBalance = currentBalance - amount
-            return PlayerStore.set(player, StoreKeys.money(player.id), Math.floor(newBalance))
+            const newBalance = Math.floor(currentBalance - amount)
+            const success = PlayerStore.set(player, StoreKeys.money(player.id), newBalance)
+            if (success) {
+                SignalBus.emit("economy:balanceChanged", { player, newBalance })
+            }
+            return success
         })
     },
 
-    /**
-     * Transfer money between players (atomic for both players)
-     * @param {Player} sender - Sender player
-     * @param {Player} receiver - Receiver player
-     * @param {number} amount - Amount to transfer
-     * @returns {Promise<boolean>} Success status
+    /* 
+     * CROSS-BUFFER_TRANSFER_ORCHESTRATOR
+     * Orchestrates a multi-entity transaction. Removes liquidity from the 
+     * sender and injects it into the receiver. Implements a 
+     * refund-on-failure protocol to ensure financial atomicity.
      */
     async transferMoney(sender, receiver, amount) {
         if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount)) {
@@ -101,51 +118,48 @@ export const EconomyStore = {
         }
 
         if (sender.id === receiver.id) {
-            return false // Can't transfer to self
+            return false // SELF_TRANSFER_DETECTED
         }
 
         const PlayerStore = Kernel.get("playerStore")
         const StoreKeys = Kernel.get("keys")
 
-        // Use sender's transaction queue to ensure atomicity
         return await PlayerStore.transaction(sender, async () => {
             const senderBalance = this.getBalance(sender)
 
             if (senderBalance < amount) {
-                return false // Sender has insufficient funds
+                return false // SENDER_INSUFFICIENT_LIQUIDITY
             }
 
-            // Remove from sender
-            const senderSuccess = await PlayerStore.set(sender, StoreKeys.money(sender.id), Math.floor(senderBalance - amount))
-            if (!senderSuccess) {
-                return false
-            }
+            const newSenderBalance = Math.floor(senderBalance - amount)
+            const senderSuccess = await PlayerStore.set(sender, StoreKeys.money(sender.id), newSenderBalance)
+            if (!senderSuccess) return false
 
-            // Add to receiver (use receiver's transaction to avoid conflicts)
             try {
                 const receiverBalance = this.getBalance(receiver)
-                const receiverSuccess = await PlayerStore.set(receiver, StoreKeys.money(receiver.id), Math.floor(receiverBalance + amount))
+                const newReceiverBalance = Math.floor(receiverBalance + amount)
+                const receiverSuccess = await PlayerStore.set(receiver, StoreKeys.money(receiver.id), newReceiverBalance)
 
                 if (!receiverSuccess) {
-                    // Refund sender if receiver update failed
+                    // EMERGENCY_REFUND_PROTOCOL
                     await PlayerStore.set(sender, StoreKeys.money(sender.id), Math.floor(senderBalance))
                     return false
                 }
 
+                SignalBus.emit("economy:balanceChanged", { player: sender, newBalance: newSenderBalance })
+                SignalBus.emit("economy:balanceChanged", { player: receiver, newBalance: newReceiverBalance })
+
                 return true
             } catch (error) {
-                // Refund sender on any error
+                // EMERGENCY_REFUND_PROTOCOL
                 await PlayerStore.set(sender, StoreKeys.money(sender.id), Math.floor(senderBalance))
                 return false
             }
         })
     },
 
-    /**
-     * Check if player has enough money
-     * @param {Player} player - Player object
-     * @param {number} amount - Amount to check
-     * @returns {Promise<boolean>} Whether player has enough money
+    /* 
+     * LIQUIDITY_SOLVENCY_PROBE
      */
     async hasEnough(player, amount) {
         if (typeof amount !== 'number' || amount < 0 || !Number.isFinite(amount)) {
@@ -156,12 +170,10 @@ export const EconomyStore = {
         return balance >= amount
     },
 
-    /**
-     * Get all player balances (for top money list)
-     * @returns {Promise<Array>} Array of {playerId, name, balance} objects
+    /* 
+     * GLOBAL_BALANCE_MANIFEST_QUERY (STUB)
      */
     async getAllBalances() {
         return []
     }
 }
-

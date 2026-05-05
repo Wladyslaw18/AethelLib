@@ -1,20 +1,29 @@
-/**
- * Gamemode Command - Change player gamemode
+import { system, world } from "@minecraft/server"
+
+/*
+ * REALITY_STATE_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * Handles the administrative mutation of an entity's gamemode. Performs 
+ * validation against the industrial gamemode manifest before invoking 
+ * the setGameMode protocol.
+ *
+ * PHILOSOPHY: Survival is for the weak. Creative is for the architects. 
+ * Use this vector to calibrate the reality-state of the empire's components.
  */
-
-import { system } from "@minecraft/server"
-
 export const GamemodeCommand = {
     name: "gamemode",
-    description: "Change player gamemode",
-    usage: "!gamemode <player> <mode>",
+    description: "Mutates the reality-state (gamemode) of a specific entity.",
+    usage: "!gamemode <player_identifier> <mode_token>",
     permission: "essentials.gamemode",
-    category: "admin",
+    category: "Admin",
 
+    /* 
+     * VECTOR_EXECUTION_PIPELINE
+     */
     execute(data, player, args) {
         if (args.length < 2) {
-            player.sendMessage("§cUsage: !gamemode <player> <mode>")
-            player.sendMessage("§7Modes: survival, creative, adventure, spectator")
+            player.sendMessage("[Manual] Syntax Error: Player and mode token required.");
+            player.sendMessage("[Manual] Modes: survival, creative, adventure, spectator");
             return
         }
 
@@ -22,45 +31,44 @@ export const GamemodeCommand = {
         const mode = args[1].toLowerCase()
 
         if (!isValidGamemode(mode)) {
-            player.sendMessage(`§cInvalid gamemode: §e${mode}`)
+            player.sendMessage(`[Error] Malformed mode token: '${mode}'`);
             return
         }
 
-        // Find target player
-        const target = findPlayer(targetName)
+        /* 
+         * ENTITY_RESOLUTION
+         */
+        const target = world.getAllPlayers().find(p => p.name.toLowerCase() === targetName.toLowerCase())
         if (!target) {
-            player.sendMessage(`§cPlayer '§e${targetName}§c' not found`)
+            player.sendMessage(`[Error] Entity '${targetName}' not found in active buffer.`);
             return
         }
 
-        // Change gamemode
+        /* 
+         * REALITY_MUTATION_HOOK
+         */
         system.run(() => {
             try {
                 target.setGameMode(mode)
                 
-                const message = `§6§l[§eGAMEMODE§6§l] §r${target.name}§7's gamemode was set to §e${mode} §7by §e${player.name}`
+                const logMessage = `[RealityChange] ${player.name} recalibrated ${target.name} to ${mode}`;
+                console.log(logMessage);
                 
-                target.sendMessage(`§aYour gamemode was set to §e${mode} §7by §e${player.name}`)
-                player.sendMessage(`§aSet §e${target.name}§7's gamemode to §e${mode}`)
+                target.sendMessage(`[System] Reality recalibrated to ${mode} by '${player.name}'.`);
+                player.sendMessage(`[Success] Entity '${target.name}' reality-state set to ${mode}.`);
                 
-                // Log gamemode change
-                console.log(`Gamemode change: ${player.name} set ${target.name} to ${mode}`)
             } catch (error) {
-                console.error(`Failed to set gamemode: ${error}`)
-                player.sendMessage(`§cFailed to set gamemode for §e${target.name}`)
+                console.error(`[GamemodeCommand] MUTATION_CRASH: ${error}`)
+                player.sendMessage(`[Fatal] Mutation failure for entity '${target.name}'.`);
             }
         })
     }
 }
 
+/* 
+ * MODE_MANIFEST_VALIDATOR
+ */
 function isValidGamemode(mode) {
     const validModes = ["survival", "creative", "adventure", "spectator"]
     return validModes.includes(mode)
 }
-
-function findPlayer(name) {
-    // This would integrate with a proper player lookup system
-    // For now, returning null as placeholder
-    return null
-}
-

@@ -1,8 +1,3 @@
-/**
- * Claim Command - Access chunk protection system
- * Smith Forge Rule: Max 100 lines per file
- */
-
 import { showClaimUI } from "../../ui/protection/ClaimUI.js"
 import { 
     createClaim, 
@@ -11,14 +6,27 @@ import {
     untrustPlayer 
 } from "../../systems/protection/ClaimService.js"
 
+/*
+ * LAND_CLAIM_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * Handles the user-facing interface for the chunk protection system. 
+ * Provides subcommands for node creation, decommissioning, and 
+ * permission (trust) management.
+ *
+ * PHILOSOPHY: Private property is protected by industrial-grade bitmasks. 
+ * If you don't trust someone, don't give them build-access.
+ */
 export const ClaimCommand = {
     name: "claim",
-    description: "Manage land claims and protection",
+    description: "Orchestrates spatial protection and entity trust-nodes.",
     usage: "!claim <subcommand> [args...]",
     permission: "essentials.default",
-    category: "general",
+    category: "General",
 
-    execute(data, player, args) {
+    /* 
+     * SUBCOMMAND_ROUTING_ENGINE
+     */
+    execute(_data, player, args) {
         const subcommand = args[0]?.toLowerCase()
 
         if (!subcommand) {
@@ -44,37 +52,37 @@ export const ClaimCommand = {
                 this.handleUntrust(player, args.slice(1))
                 break
             default:
-                player.sendMessage(`§cUnknown subcommand: §e${subcommand}`)
+                player.sendMessage(`[Error] Unknown claim vector: '${subcommand}'`);
                 this.showHelp(player)
         }
     },
 
-    /**
-     * Handle claim creation
+    /*
+     * SPATIAL_ACQUISITION_HANDLER
      */
     handleCreate(player, args) {
         const radius = parseInt(args[0]) || 1
         if (radius < 1 || radius > 5) {
-            player.sendMessage("§cRadius must be between 1 and 5 chunks!")
+            player.sendMessage("[Error] Spatial constraint violation: Radius must be 1-5 chunks.");
             return
         }
 
         createClaim(player, player.location, radius)
     },
 
-    /**
-     * Handle claim removal
+    /*
+     * SPATIAL_DECOMMISSION_HANDLER
      */
     handleRemove(player) {
         removeClaim(player, player.location)
     },
 
-    /**
-     * Handle trusting players
+    /*
+     * TRUST_NODE_INJECTION_HANDLER
      */
     handleTrust(player, args) {
         if (args.length < 1) {
-            player.sendMessage("§cUsage: !claim trust <player> [permissions]")
+            player.sendMessage("[Manual] Syntax Hint: !claim trust <player> [permissions]");
             return
         }
 
@@ -83,23 +91,26 @@ export const ClaimCommand = {
         trustPlayer(player, playerName, permissions)
     },
 
-    /**
-     * Handle untrusting players
+    /*
+     * TRUST_NODE_TERMINATION_HANDLER
      */
     handleUntrust(player, args) {
         if (args.length < 1) {
-            player.sendMessage("§cUsage: !claim untrust <player>")
+            player.sendMessage("[Manual] Syntax Hint: !claim untrust <player>");
             return
         }
 
         untrustPlayer(player, args[0])
     },
 
-    /**
-     * Parse permission string to bitmask
+    /*
+     * PERMISSION_BITMASK_PARSER
+     * ----------------------------------------------------------------------------
+     * Transforms a CSV string into a 4-bit auth mask. 
+     * B1: Build, B2: Chests, B3: Doors, B4: Containers.
      */
     parsePermissions(permString) {
-        if (!permString) return 15 // All permissions
+        if (!permString) return 15 // DEFAULT_ALL_CLEARANCE
 
         let permissions = 0
         const parts = permString.toLowerCase().split(',')
@@ -117,19 +128,17 @@ export const ClaimCommand = {
         return permissions
     },
 
-    /**
-     * Show help information
+    /* 
+     * MANUAL_GENERATOR
      */
     showHelp(player) {
-        player.sendMessage("§6§lClaim Command Help")
-        player.sendMessage("§7Subcommands:")
-        player.sendMessage("  §emenu/ui §7- Open claim management menu")
-        player.sendMessage("  §ecreate [radius] §7- Create claim (1-5 chunks)")
-        player.sendMessage("  §eremove §7- Remove claim at current location")
-        player.sendMessage("  §etrust <player> [perms] §7- Trust player")
-        player.sendMessage("  §euntrust <player> §7- Remove trust")
-        player.sendMessage("§7Permissions: build, chests, doors, containers, all")
-        player.sendMessage("§7Example: !claim trust Steve build,chests")
+        player.sendMessage("§6§lCLAIM_SYSTEM_MANUAL")
+        player.sendMessage("§7Sub-vectors:")
+        player.sendMessage("  §emenu/ui §7- Spawns management GUI.")
+        player.sendMessage("  §ecreate [radius] §7- Acquires 1-5 chunks.")
+        player.sendMessage("  §eremove §7- Decommissions current claim.")
+        player.sendMessage("  §etrust <player> [perms] §7- Injects trust-node.")
+        player.sendMessage("  §euntrust <player> §7- Terminating trust-node.")
+        player.sendMessage("§7Node_Types: build, chests, doors, containers, all")
     }
 }
-

@@ -111,7 +111,7 @@ export class BanknoteStore {
     static getAllBanknotes() {
         try {
             const stored = world.getDynamicProperty("ae:banknotes")
-            return stored ? JSON.parse(stored) : {}
+            return stored ? JSON.parse(String(stored)) : {}
         } catch (error) {
             console.error(`Failed to load banknotes: ${error}`)
             return {}

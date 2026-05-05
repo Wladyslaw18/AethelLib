@@ -1,48 +1,42 @@
-/**
- * Warp Store - Manages server-wide warp data using World Dynamic Properties
- * No scoreboard horror, no invisible entities - just clean data storage
- */
-
 import { WorldStore } from "../../core/store/WorldStore.js"
 import { StoreKeys } from "../../core/store/StoreKeys.js"
-import { Vector3 } from "@minecraft/server"
 
+/*
+ * INDUSTRIAL_GLOBAL_WAYPOINT_REGISTRY
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for the server's public spatial 
+ * waypoints (Warps). Interfaces with the WorldStore to manage the global 
+ * waypoint-buffer and ensure persistent spatial-integrity.
+ *
+ * PHILOSOPHY: Public waypoints are the industrial nodes of the world. 
+ * Use this registry to manifest and preserve the server's global 
+ * navigation manifest.
+ */
 export const WarpStore = {
-    /**
-     * Get all warps
-     * @returns {Promise<Object>} Warps object or empty object
+    /* 
+     * GLOBAL_MANIFEST_QUERY
      */
     async getWarps() {
         return WorldStore.get(StoreKeys.warpList()) || {}
     },
 
-    /**
-     * Get a specific warp
-     * @param {string} name - Warp name
-     * @returns {Promise<Object|null>} Warp data or null
+    /* 
+     * WAYPOINT_NODE_QUERY
      */
     async getWarp(name) {
         const warps = await this.getWarps()
         return warps[name] || null
     },
 
-    /**
-     * Set a warp
-     * @param {string} name - Warp name
-     * @param {Vector3} location - Warp location
-     * @param {string} dimension - Dimension ID
-     * @param {string} creator - Creator name
-     * @returns {Promise<boolean>} Success status
+    /* 
+     * WAYPOINT_NODE_INJECTION
+     * Calibrates a new public waypoint in the global registry. Implements 
+     * regex-based identifier validation and coordinate-flooring to ensure 
+     * data-integrity.
      */
     async setWarp(name, location, dimension, creator) {
-        if (!name || name.length < 1 || name.length > 16) {
-            return false
-        }
-
-        // Validate warp name
-        if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-            return false
-        }
+        if (!name || name.length < 1 || name.length > 16) return false
+        if (!/^[a-zA-Z0-9_-]+$/.test(name)) return false
 
         const warps = await this.getWarps()
         
@@ -58,39 +52,26 @@ export const WarpStore = {
         return WorldStore.set(StoreKeys.warpList(), warps)
     },
 
-    /**
-     * Delete a warp
-     * @param {string} name - Warp name
-     * @returns {Promise<boolean>} Success status
+    /* 
+     * WAYPOINT_NODE_DECOMMISSION
      */
     async deleteWarp(name) {
         const warps = await this.getWarps()
-        
-        if (!warps[name]) {
-            return false
-        }
-
+        if (!warps[name]) return false
         delete warps[name]
         return WorldStore.set(StoreKeys.warpList(), warps)
     },
 
-    /**
-     * Check if a warp exists
-     * @param {string} name - Warp name
-     * @returns {Promise<boolean>} Whether warp exists
+    /* 
+     * REGISTRY_STATUS_QUERY
      */
     async hasWarp(name) {
         const warps = await this.getWarps()
         return warps.hasOwnProperty(name)
     },
 
-    /**
-     * Get warp count
-     * @returns {Promise<number>} Number of warps
-     */
     async getWarpCount() {
         const warps = await this.getWarps()
         return Object.keys(warps).length
     }
 }
-

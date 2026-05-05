@@ -2,7 +2,7 @@
  * Withdraw Command - Convert money to physical banknotes
  */
 
-import { system, world, ItemStack } from "@minecraft/server"
+import { system, ItemStack } from "@minecraft/server"
 import { BanknoteStore } from "../../systems/banknote/BanknoteStore.js"
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 
@@ -13,7 +13,7 @@ export const WithdrawCommand = {
     permission: "essentials.withdraw",
     category: "economy",
 
-    execute(data, player, args) {
+    execute(_data, player, args) {
         if (args.length === 0) {
             player.sendMessage("§cUsage: !withdraw <amount>")
             player.sendMessage("§7Example: !withdraw 1000")

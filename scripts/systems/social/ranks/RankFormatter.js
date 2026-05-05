@@ -1,87 +1,47 @@
-/**
- * Rank Formatter - ONE job: chat prefix formatting
- */
-
 import { Kernel } from "../../../core/Kernel.js"
 
-/** @typedef {import("@minecraft/server").Player} Player */
-
+/*
+ * INDUSTRIAL_HIERARCHY_FORMATTER
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for the visual manifestation of 
+ * entity status-nodes within the communication-buffer. Performs O(1) 
+ * resolution of the highest-clearance rank and maps it to the target 
+ * color-protocol.
+ *
+ * PHILOSOPHY: Status must be visible. Use this formatter to manifest the 
+ * entity's clearance-level and ensure communication-parity across the 
+ * industrial network.
+ */
 export const RankFormatter = {
-    /**
-     * Format player's rank display for chat
-     * @param {Player} player - Player to format
-     * @returns {string} Formatted rank string
+    /* 
+     * HIERARCHY_PREFIX_MANIFEST
+     * Resolves the highest-clearance node and constructs the visual 
+     * prefix-buffer.
      */
     formatPlayerRanks: (player) => {
-        const WorldStore = Kernel.get("worldStore")
-        const StoreKeys = Kernel.get("keys")
-        const ranks = getPlayerRanks(player)
-        if (!ranks.length) return ""
-
-        const visibleRanks = ranks.filter(rank => {
-            const rankData = WorldStore.get(StoreKeys.rankDef(rank))
-            return rankData && !rankData.hideRanks
-        })
-
-        if (!visibleRanks.length) return ""
-
-        const rankNames = visibleRanks.map(rank => {
-            const rankData = WorldStore.get(StoreKeys.rankDef(rank))
-            return `${rankData?.colorName || "§7"}[${rankData?.name || rank}]`
-        })
-
-        return rankNames.join(" §7§l|§r ") + " §r"
+        const PermissionManager = Kernel.get("permissions")
+        const highestRank = PermissionManager.getHighestRank(player)
+        if (!highestRank) return ""
+        return `${highestRank.color || "§7"}[${highestRank.name.toUpperCase()}] §r`
     },
 
-    /**
-     * Get player's chat color
-     * @param {Player} player - Player to check
-     * @returns {string} Chat color code
+    /* 
+     * COMMUNICATION_COLOR_RESOLVER
      */
     getPlayerChatColor: (player) => {
-        const WorldStore = Kernel.get("worldStore")
-        const StoreKeys = Kernel.get("keys")
-        const ranks = getPlayerRanks(player)
-        if (!ranks.length) return "§7"
-
-        const topRank = ranks[0]
-        const rankData = WorldStore.get(StoreKeys.rankDef(topRank))
-        
-        return rankData?.colorText || "§7"
+        const PermissionManager = Kernel.get("permissions")
+        const highestRank = PermissionManager.getHighestRank(player)
+        return highestRank?.chatColor || "§7"
     },
 
-    /**
-     * Format full chat message with rank prefix
-     * @param {Player} player - Player who sent message
-     * @param {string} message - Chat message
-     * @returns {string} Formatted chat message
+    /* 
+     * PACKET_FORMAT_ORCHESTRATOR
+     * Merges the hierarchy-prefix, entity-identifier, and communication-payload 
+     * into a single industrial-grade manifest.
      */
     formatChatMessage: (player, message) => {
         const rankPrefix = RankFormatter.formatPlayerRanks(player)
         const chatColor = RankFormatter.getPlayerChatColor(player)
-        const playerName = player.name
-
-        return `${rankPrefix}${chatColor}${playerName}§r: §f${message}`
+        return `${rankPrefix}${chatColor}${player.name}§r: §f${message}`
     }
 }
-
-/**
- * Get player's ranks sorted /* KERNEL */
- * @param {Player} player - Player to check
- * @returns {string[]} Array of rank tags
- */
-function getPlayerRanks(player) {
-    const WorldStore = Kernel.get("worldStore")
-    const StoreKeys = Kernel.get("keys")
-    return player.getTags()
-        .filter(tag => {
-            const rankData = WorldStore.get(StoreKeys.rankDef(tag))
-            return rankData !== null
-        })
-        .sort((a, b) => {
-            const rankA = WorldStore.get(StoreKeys.rankDef(a))
-            const rankB = WorldStore.get(StoreKeys.rankDef(b))
-            return (rankA?.order || 0) - (rankB?.order || 0)
-        })
-}
-

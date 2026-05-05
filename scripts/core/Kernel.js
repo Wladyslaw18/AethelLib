@@ -1,48 +1,67 @@
 import * as mc from "@minecraft/server";
 
-/**
- * Titanium Kernel 🛡️💎
- * Stable API Bridge & System Registry
- * "Anti-Pao Principles" - Zero Backdoor, High Stability.
+/*
+ * TITANIUM_KERNEL_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * The central nervous system of the AethelLib industrial framework. 
+ * Provides a master service-locator (O(1)) and a stable abstraction bridge 
+ * over the volatile native API.
+ *
+ * PHILOSOPHY: Zero-bypass stability. Isolation of the Minecraft-buffer. 
+ * If the native world object drifts, the Kernel absorbs the impact.
  */
 export class Kernel {
+    /* 
+     * SERVICE_REGISTRY_BUFFER
+     * Private static Map ensures read-only integrity for external consumers.
+     */
     static #systems = new Map();
-    static #version = "1.0.0";
+    static #version = "2.7.0-BETA";
 
-    // --- STABLE API BRIDGE ---
-    // If Minecraft changes these, we only fix them HERE.
+    /*
+     * STABLE_API_ABSTRACTIONS
+     */
     static get world() { return mc.world; }
     static get system() { return mc.system; }
 
-    /**
-     * Register a modular system into the Kernel.
-     * @param {string} id - Unique identifier for the system.
-     * @param {any} instance - The system instance/object.
+    /*
+     * SERVICE_DOCKING_PROTOCOL
+     * Injects a modular sub-system into the Kernel's memory space. 
+     * Performs a collision-scan to prevent silent service overwrites.
      */
     static register(id, instance) {
         if (this.#systems.has(id)) {
-            console.warn(`[Kernel] System already registered: ${id}. Overwriting...`);
+            console.warn(`[Kernel] COLLISION_ALERT: System identifier '${id}' is already registered. Overwriting.`);
         }
         this.#systems.set(id, instance);
-        console.log(`§b[Kernel] System Registered: §f${id} §7(v${this.#version})`);
+        console.log(`[Kernel] SERVICE_DOCKED: ${id.toUpperCase()} | VER: ${this.#version}`);
     }
 
-    /**
-     * Retrieve a registered system.
-     * @param {string} id - The unique identifier.
-     * @returns {any} The system instance or undefined.
+    /*
+     * SERVICE_LOCATOR_PIPELINE
+     * Resolves a docked service identifier to its instance. O(1) lookup.
      */
     static get(id) {
         return this.#systems.get(id);
     }
 
-    /**
-     * Check if a system is registered.
-     * @param {string} id 
-     * @returns {boolean}
+    /*
+     * SERVICE_AVAILABILITY_PROBE
      */
     static has(id) {
         return this.#systems.has(id);
     }
-}
 
+    /*
+     * INDUSTRIAL_BOOTSTRAP_ORCHESTRATOR
+     * Triggers the initialization of critical foundation layers.
+     */
+    static init() {
+        const CommandManager = this.get("commandManager");
+        if (CommandManager) {
+            CommandManager.init();
+        }
+        
+        console.log(`[Kernel] TITANIUM_BOOTSTRAP_COMPLETE | ENGINE_READY`);
+    }
+}

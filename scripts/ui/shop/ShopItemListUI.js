@@ -1,22 +1,32 @@
-/**
- * Shop Item List UI - Phase 3: Paginated item list with navigation
- */
-
 import { ActionFormData } from "@minecraft/server-ui"
 import { ShopStore } from "../../systems/shop/ShopStore.js"
 
+/*
+ * COMMERCE_ASSET_LIST_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for the visual manifestation of 
+ * paginated asset manifests. Performs a query of the ShopStore and 
+ * constructs a navigation-buffer for the entity.
+ *
+ * PHILOSOPHY: Assets are industrial components. Use this interface to 
+ * identify and select components for acquisition.
+ */
 async function showItemList(player, category) {
     try {
-        const items = ShopStore.getItemsByCategory(category)
+        const result = ShopStore.getShopItems(category, null, 1, 1000)
+        const items = result.items
         await showItemListPage(player, items, category, 0)
     } catch (error) {
-        console.error(`Shop item list error: ${error}`)
-        player.sendMessage("§cFailed to load shop items")
+        console.error(`[ShopItemListUI] MANIFEST_LOAD_FAILURE: ${error}`)
+        player.sendMessage("§cINDUSTRIAL_INTERFACE_FAILURE: UNABLE_TO_LOAD_MANIFEST")
     }
 }
 
-export { showItemList as ShopItemListUI }
+export { showItemList }
 
+/* 
+ * PAGINATED_ASSET_BUFFER_MANIFEST
+ */
 async function showItemListPage(player, items, category, page) {
     const ITEMS_PER_PAGE = 48
     const startIndex = page * ITEMS_PER_PAGE
@@ -24,59 +34,51 @@ async function showItemListPage(player, items, category, page) {
     const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE)
 
     const form = new ActionFormData()
-        .title(`§6§l${category.charAt(0).toUpperCase() + category.slice(1)} Shop`)
-        .body(`§7Page ${page + 1}/${totalPages || 1}`)
+        .title(`§6§lMODULE: ${category.toUpperCase()}`)
+        .body(`§7Page: ${page + 1}/${totalPages || 1}\n§7Active_Assets: ${items.length}`)
 
-    // Add "← Back" button first
-    form.button("§c← Back")
+    form.button("§c[RETURN_TO_MANIFEST_ROOT]")
 
-    // Add navigation buttons if needed
     if (page > 0) {
-        form.button("§7← Prev Page")
+        form.button("§7← [PREVIOUS_BUFFER]")
     }
     if (page < totalPages - 1) {
-        form.button("§7Next Page →")
+        form.button("§7[NEXT_BUFFER] →")
     }
 
-    // Add item buttons
     for (let i = startIndex; i < endIndex; i++) {
         const item = items[i]
-        form.button(`§e${item.displayName} §7- §a${item.price}`)
+        form.button(`§e${item.name}\n§7CREDITS: §a${item.price}`)
     }
 
     const res = await form.show(player)
     if (res.canceled) return
 
     const buttonIndex = res.selection
-    const navOffset = 1 // Back button
+    const navOffset = 1 
     const prevOffset = page > 0 ? 1 : 0
     const nextOffset = page < totalPages - 1 ? 1 : 0
 
-    // Handle Back button
     if (buttonIndex === 0) {
-        const { ShopCategoryUI } = await import("./ShopCategoryUI.js")
-        await ShopCategoryUI.showCategoryUI(player)
+        const { showCategoryUI } = await import("./ShopCategoryUI.js")
+        await showCategoryUI(player)
         return
     }
 
-    // Handle Prev Page
     if (page > 0 && buttonIndex === navOffset) {
         await showItemListPage(player, items, category, page - 1)
         return
     }
 
-    // Handle Next Page
     if (page < totalPages - 1 && buttonIndex === navOffset + prevOffset) {
         await showItemListPage(player, items, category, page + 1)
         return
     }
 
-    // Handle item selection
     const itemIndex = buttonIndex - navOffset - prevOffset - nextOffset
     if (itemIndex >= 0 && itemIndex < (endIndex - startIndex)) {
         const item = items[startIndex + itemIndex]
-        const { ShopBuyUI } = await import("./ShopBuyUI.js")
-        await ShopBuyUI.showBuyFlow(player, item)
+        const { showBuyFlow } = await import("./ShopBuyUI.js")
+        await showBuyFlow(player, item)
     }
 }
-

@@ -1,27 +1,37 @@
-/**
- * Shop Search UI - Phase 2: Search functionality
- */
-
 import { ActionFormData } from "@minecraft/server-ui"
 import { ShopStore } from "../../systems/shop/ShopStore.js"
 
+/*
+ * COMMERCE_QUERY_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for manifesting the results of 
+ * a global asset-query. Performs an O(N) scan of the industrial commerce 
+ * manifest and constructs a navigation-buffer for the entity.
+ *
+ * PHILOSOPHY: Information is power. Use this interface to identify 
+ * specific assets within the global trade-registry.
+ */
 async function showSearchResults(player, query) {
     try {
-        const items = ShopStore.getItems()
+        const result = ShopStore.getShopItems(null, null, 1, 1000)
+        const items = result.items
         const results = items.filter(item =>
-            item.displayName.toLowerCase().includes(query) || 
+            item.name.toLowerCase().includes(query) || 
             item.id.toLowerCase().includes(query)
         )
 
         await showResultsPage(player, results, query, 0)
     } catch (error) {
-        console.error(`Shop search error: ${error}`)
-        player.sendMessage("§cFailed to search shop items")
+        console.error(`[ShopSearchUI] QUERY_FAILURE: ${error}`)
+        player.sendMessage("§cINDUSTRIAL_INTERFACE_FAILURE: UNABLE_TO_EXECUTE_QUERY")
     }
 }
 
-export { showSearchResults as ShopSearchUI }
+export { showSearchResults }
 
+/* 
+ * PAGINATED_QUERY_RESULT_MANIFEST
+ */
 async function showResultsPage(player, results, query, page) {
     const ITEMS_PER_PAGE = 48
     const startIndex = page * ITEMS_PER_PAGE
@@ -29,59 +39,51 @@ async function showResultsPage(player, results, query, page) {
     const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE)
 
     const form = new ActionFormData()
-        .title(`§6§lSearch Results`)
-        .body(`§7Query: "${query}" | Page ${page + 1}/${totalPages || 1}`)
+        .title("§6§lQUERY_RESULTS")
+        .body(`§7Query: "${query}"\n§7Page: ${page + 1}/${totalPages || 1}\n§7Matches: ${results.length}`)
 
-    // Add "← Back" button first
-    form.button("§c← Back")
+    form.button("§c[RETURN_TO_MANIFEST_ROOT]")
 
-    // Add navigation buttons if needed
     if (page > 0) {
-        form.button("§7← Prev Page")
+        form.button("§7← [PREVIOUS_BUFFER]")
     }
     if (page < totalPages - 1) {
-        form.button("§7Next Page →")
+        form.button("§7[NEXT_BUFFER] →")
     }
 
-    // Add item buttons
     for (let i = startIndex; i < endIndex; i++) {
         const item = results[i]
-        form.button(`§e${item.displayName} §7- §a${item.price}`)
+        form.button(`§e${item.name}\n§7CREDITS: §a${item.price}`)
     }
 
     const res = await form.show(player)
     if (res.canceled) return
 
     const buttonIndex = res.selection
-    const navOffset = 1 // Back button
+    const navOffset = 1 
     const prevOffset = page > 0 ? 1 : 0
     const nextOffset = page < totalPages - 1 ? 1 : 0
 
-    // Handle Back button
     if (buttonIndex === 0) {
-        const { ShopCategoryUI } = await import("./ShopCategoryUI.js")
-        await ShopCategoryUI.showCategoryUI(player)
+        const { showCategoryUI } = await import("./ShopCategoryUI.js")
+        await showCategoryUI(player)
         return
     }
 
-    // Handle Prev Page
     if (page > 0 && buttonIndex === navOffset) {
         await showResultsPage(player, results, query, page - 1)
         return
     }
 
-    // Handle Next Page
     if (page < totalPages - 1 && buttonIndex === navOffset + prevOffset) {
         await showResultsPage(player, results, query, page + 1)
         return
     }
 
-    // Handle item selection
     const itemIndex = buttonIndex - navOffset - prevOffset - nextOffset
     if (itemIndex >= 0 && itemIndex < (endIndex - startIndex)) {
         const item = results[startIndex + itemIndex]
-        const { ShopBuyUI } = await import("./ShopBuyUI.js")
-        await ShopBuyUI.showBuyFlow(player, item)
+        const { showBuyFlow } = await import("./ShopBuyUI.js")
+        await showBuyFlow(player, item)
     }
 }
-

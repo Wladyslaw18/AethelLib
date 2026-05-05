@@ -5,7 +5,7 @@
  * Cache-Aside: JS Map cache + debounced Dynamic Property write
  */
 
-import { world, system } from "@minecraft/server"
+import { world } from "@minecraft/server"
 import { getAll } from "./FloatingTextStore.js"
 
 // Track spawned entities
@@ -30,7 +30,7 @@ export function init() {
 export function spawnFloatingText(entry) {
     try {
         const dim = world.getDimension(entry.dimension)
-        const entity = dim.spawnEntity("pao:floating_text", { x: entry.x, y: entry.y, z: entry.z })
+        const entity = dim.spawnEntity(/** @type {any} */ ("pao:floating_text"), { x: entry.x, y: entry.y, z: entry.z })
         entity.nameTag = entry.text
         spawnedEntities.set(entry.id, entity)
     } catch (error) {
@@ -59,7 +59,7 @@ export function removeFloatingText(id) {
  */
 export function clearAll() {
     try {
-        for (const [id, entity] of spawnedEntities.entries()) {
+        for (const [_id, entity] of spawnedEntities.entries()) {
             if (entity?.isValid) {
                 entity.remove()
             }

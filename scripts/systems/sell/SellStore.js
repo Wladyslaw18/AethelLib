@@ -1,33 +1,49 @@
-/**
- * Sell Store - Manages item selling prices and transactions
- */
-
 import { world } from "@minecraft/server"
 import { MINECRAFT_ITEMS } from "../../data/minecraft-items.js"
 
+/*
+ * INDUSTRIAL_ASSET_LIQUIDATOR
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for the liquidation of industrial 
+ * assets. Manages asset valuation, inventory-buffer extraction, and 
+ * atomic liquidity-injection.
+ *
+ * PHILOSOPHY: Assets are resources. When an asset is no longer required 
+ * for production, it must be liquidated into the global liquidity-buffer 
+ * at the current industrial rate.
+ */
 export class SellStore {
+    /* 
+     * VALUATION_MANIFEST_QUERY
+     */
     static getSellPrices() {
         try {
             const stored = world.getDynamicProperty("ae:sellPrices")
-            return stored ? JSON.parse(stored) : this.getDefaultSellPrices()
+            return stored ? JSON.parse(String(stored)) : this.getDefaultSellPrices()
         } catch (error) {
-            console.error(`Failed to load sell prices: ${error}`)
+            console.error(`[SellStore] VALUATION_LOAD_FAILURE: ${error}`)
             return this.getDefaultSellPrices()
         }
     }
 
+    /* 
+     * VALUATION_MANIFEST_COMMIT
+     */
     static saveSellPrices(prices) {
         try {
             world.setDynamicProperty("ae:sellPrices", JSON.stringify(prices))
             return true
         } catch (error) {
-            console.error(`Failed to save sell prices: ${error}`)
+            console.error(`[SellStore] VALUATION_SAVE_FAILURE: ${error}`)
             return false
         }
     }
 
+    /* 
+     * DEFAULT_VALUATION_ORCHESTRATION
+     * Calibrates default liquidation rates at 50% of the acquisition cost.
+     */
     static getDefaultSellPrices() {
-        // Default sell prices are 50% of shop prices
         const prices = {}
         Object.entries(MINECRAFT_ITEMS).forEach(([id, item]) => {
             prices[id] = Math.floor(item.price * 0.5)
@@ -35,121 +51,119 @@ export class SellStore {
         return prices
     }
 
+    /* 
+     * ASSET_VALUATION_QUERY
+     */
     static getSellPrice(itemId) {
         const prices = this.getSellPrices()
         return prices[itemId] || 0
     }
 
+    /* 
+     * VALUATION_CALIBRATION_VECTOR
+     */
     static updateSellPrice(itemId, price) {
         if (!MINECRAFT_ITEMS[itemId]) return false
-        
         const prices = this.getSellPrices()
         prices[itemId] = Math.max(0, price)
         return this.saveSellPrices(prices)
     }
 
+    /* 
+     * LIQUIDATION_EXECUTION_PROTOCOL
+     * Orchestrates the extraction of assets from the entity-inventory and 
+     * the injection of credits into the liquidity-buffer.
+     */
     static sellItem(player, itemId, quantity) {
         const item = MINECRAFT_ITEMS[itemId]
-        if (!item) {
-            return { success: false, message: "Item cannot be sold" }
-        }
+        if (!item) return { success: false, message: "ASSET_NON_LIQUIDATABLE" }
 
         const sellPrice = this.getSellPrice(itemId)
-        if (sellPrice <= 0) {
-            return { success: false, message: "This item has no sell value" }
-        }
+        if (sellPrice <= 0) return { success: false, message: "ASSET_ZERO_VALUATION" }
 
-        // Check if player has enough items
         const playerQuantity = this.getPlayerItemCount(player, itemId)
-        if (playerQuantity < quantity) {
-            return { success: false, message: `You don't have enough ${item.name}. Have ${playerQuantity}, need ${quantity}` }
-        }
+        if (playerQuantity < quantity) return { success: false, message: `INSUFFICIENT_ASSET_COUNT: HAVE: ${playerQuantity} | NEED: ${quantity}` }
 
         const totalValue = sellPrice * quantity
 
-        // Remove items from player inventory
-        if (!this.removePlayerItems(player, itemId, quantity)) {
-            return { success: false, message: "Failed to remove items from inventory" }
-        }
+        if (!this.removePlayerItems(player, itemId, quantity)) return { success: false, message: "INVENTORY_EXTRACTION_FAILURE" }
 
-        // Add money to player
         if (!this.addPlayerMoney(player.id, totalValue)) {
-            // Refund items if money addition fails
-            this.givePlayerItems(player, itemId, quantity)
-            return { success: false, message: "Failed to add money to your account" }
+            this.givePlayerItems(player, itemId, quantity) // EMERGENCY_REFUND
+            return { success: false, message: "LIQUIDITY_INJECTION_FAILURE" }
         }
 
-        // Log transaction
         this.logTransaction(player.id, itemId, quantity, sellPrice, totalValue)
 
         return {
             success: true,
-            message: `Sold ${quantity}x ${item.name} for §6$§e${totalValue.toLocaleString()}`,
+            message: `LIQUIDATION_COMPLETE: Sold ${quantity}x ${item.name} | CREDITS: §e${totalValue.toLocaleString()}`,
             item: item,
             quantity: quantity,
             totalValue: totalValue
         }
     }
 
+    /* 
+     * INVENTORY_BUFFER_QUERY
+     */
     static getPlayerItemCount(player, itemId) {
         try {
             const container = player.getComponent("inventory").container
             let count = 0
-
             for (let i = 0; i < container.size; i++) {
                 const item = container.getItem(i)
-                if (item && item.typeId === itemId) {
-                    count += item.amount
-                }
+                if (item && item.typeId === itemId) count += item.amount
             }
-
             return count
         } catch (error) {
-            console.error(`Failed to get player item count: ${error}`)
+            console.error(`[SellStore] INVENTORY_QUERY_FAILURE: ${error}`)
             return 0
         }
     }
 
+    /* 
+     * INVENTORY_BUFFER_EXTRACTION
+     */
     static removePlayerItems(player, itemId, quantity) {
         try {
             const container = player.getComponent("inventory").container
             let remaining = quantity
-
             for (let i = 0; i < container.size && remaining > 0; i++) {
                 const item = container.getItem(i)
                 if (item && item.typeId === itemId) {
                     const toRemove = Math.min(item.amount, remaining)
                     item.amount -= toRemove
                     remaining -= toRemove
-
-                    if (item.amount <= 0) {
-                        container.setItem(i, undefined)
-                    } else {
-                        container.setItem(i, item)
-                    }
+                    if (item.amount <= 0) container.setItem(i, undefined)
+                    else container.setItem(i, item)
                 }
             }
-
             return remaining === 0
         } catch (error) {
-            console.error(`Failed to remove player items: ${error}`)
+            console.error(`[SellStore] INVENTORY_EXTRACTION_FAILURE: ${error}`)
             return false
         }
     }
 
+    /* 
+     * EMERGENCY_ASSET_RESTORATION
+     */
     static givePlayerItems(player, itemId, quantity) {
-        // Placeholder implementation
-        player.sendMessage(`§aRefunded ${quantity}x ${itemId}`)
+        player.sendMessage(`§aASSET_RESTORED: ${quantity}x ${itemId} refunded.`);
         return true
     }
 
+    /* 
+     * LIQUIDITY_MUTATION_VECTORS
+     */
     static addPlayerMoney(playerId, amount) {
         try {
             const currentBalance = this.getPlayerBalance(playerId)
             world.setDynamicProperty(`ae:balance:${playerId}`, currentBalance + amount)
             return true
         } catch (error) {
-            console.error(`Failed to add player money: ${error}`)
+            console.error(`[SellStore] LIQUIDITY_INJECTION_FAILURE: ${error}`)
             return false
         }
     }
@@ -157,13 +171,16 @@ export class SellStore {
     static getPlayerBalance(playerId) {
         try {
             const balance = world.getDynamicProperty(`ae:balance:${playerId}`)
-            return balance || 0
+            return Number(balance) || 0
         } catch (error) {
-            console.error(`Failed to get player balance: ${error}`)
+            console.error(`[SellStore] BALANCE_QUERY_FAILURE: ${error}`)
             return 0
         }
     }
 
+    /* 
+     * TRANSACTION_LOGGING_PROTOCOL
+     */
     static logTransaction(playerId, itemId, quantity, unitPrice, totalValue) {
         try {
             const transactions = this.getTransactions()
@@ -177,63 +194,43 @@ export class SellStore {
                 timestamp: Date.now(),
                 type: "sell"
             }
-
             transactions.push(transaction)
-            
-            // Keep only last 1000 transactions
-            if (transactions.length > 1000) {
-                transactions.splice(0, transactions.length - 1000)
-            }
-
+            if (transactions.length > 1000) transactions.splice(0, transactions.length - 1000)
             world.setDynamicProperty("ae:sellTransactions", JSON.stringify(transactions))
         } catch (error) {
-            console.error(`Failed to log transaction: ${error}`)
+            console.error(`[SellStore] LOG_COMMIT_FAILURE: ${error}`)
         }
     }
 
     static getTransactions() {
         try {
             const stored = world.getDynamicProperty("ae:sellTransactions")
-            return stored ? JSON.parse(stored) : []
+            return stored ? JSON.parse(String(stored)) : []
         } catch (error) {
-            console.error(`Failed to load transactions: ${error}`)
+            console.error(`[SellStore] LOG_LOAD_FAILURE: ${error}`)
             return []
         }
     }
 
+    /* 
+     * IDENTIFIER_GENERATION_PROTOCOL
+     */
     static generateTransactionId() {
-        return `sell_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+        return `SELL_${Date.now()}_${Math.random().toString(36).substr(2, 6).toUpperCase()}`
     }
 
-    static getPlayerTransactions(playerId, limit = 50) {
-        const allTransactions = this.getTransactions()
-        return allTransactions
-            .filter(tx => tx.playerId === playerId)
-            .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, limit)
-    }
-
+    /* 
+     * ANALYTICS_QUERY_VECTORS
+     */
     static getSellStats() {
         const transactions = this.getTransactions()
         const recentTransactions = transactions.filter(tx => 
-            tx.type === "sell" && 
-            (Date.now() - tx.timestamp) < 24 * 60 * 60 * 1000 // Last 24 hours
+            tx.type === "sell" && (Date.now() - tx.timestamp) < 24 * 60 * 60 * 1000
         )
-
         const totalSold = recentTransactions.reduce((sum, tx) => sum + tx.totalValue, 0)
         const itemsSold = recentTransactions.reduce((sum, tx) => sum + tx.quantity, 0)
         const uniqueItems = new Set(recentTransactions.map(tx => tx.itemId)).size
 
-        return {
-            totalSold,
-            itemsSold,
-            uniqueItems,
-            transactions: recentTransactions.length
-        }
-    }
-
-    static formatMoney(amount) {
-        return `§6$§e${amount.toLocaleString()}`
+        return { totalSold, itemsSold, uniqueItems, transactions: recentTransactions.length }
     }
 }
-

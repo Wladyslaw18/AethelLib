@@ -1,115 +1,116 @@
-/**
- * Combat Integrity Suite - Prevent combat logging and reward survival
- * Smith Forge Rule: Max 100 lines per file
- * Zero-Eval, Identity Rule: UUIDs only
- * Cache-Aside: JS Map cache + debounced Dynamic Property write
- */
-
 import { Kernel } from "../../core/Kernel.js"
 
-// Combat state tracking (Identity Map cache)
-const combatState = new Map()
-const COMBAT_DURATION = 200 // 10 seconds (200 ticks)
+/*
+ * INDUSTRIAL_THREAT_INTEGRITY_SUITE
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for monitoring and enforcing 
+ * engagement-integrity. Implements an O(1) volatile memory-map for 
+ * tracking active combat-tags and a persistent debt-manifest for 
+ * penalizing combat-logging events.
+ *
+ * PHILOSOPHY: Desertion is a capital offense. If an entity severs its 
+ * connection during an active engagement, its assets must be liquidated 
+ * and its state reset upon re-initialization.
+ */
 
-/**
- * Initialize combat integrity system
+const combatState = new Map() // VOLATILE_ENGAGEMENT_REGISTRY
+const COMBAT_DURATION = 200 // INDUSTRIAL_TAG_TTL (10 seconds)
+
+/* 
+ * SYSTEM_BOOTSTRAP_PROTOCOL
  */
 export function init() {
-    // Track combat start
+    /* 
+     * ENGAGEMENT_INTERCEPTION_VECTOR
+     * Subscribes to the entityHurt event to tag participants in 
+     * industrial-scale combat.
+     */
     Kernel.world.afterEvents.entityHurt.subscribe((event) => {
         const hurtEntity = event.hurtEntity
         const damagingEntity = event.damageSource?.damagingEntity
 
-        // Only track player combat
         if (hurtEntity?.typeId === "minecraft:player") {
             const currentTick = Kernel.system.currentTick
             combatState.set(hurtEntity.id, currentTick + COMBAT_DURATION)
 
-            // Bug 1: Tag attacker if also a player
             if (damagingEntity?.typeId === "minecraft:player") {
                 combatState.set(damagingEntity.id, currentTick + COMBAT_DURATION)
             }
 
-            // Bug 5: Notify both participants
             Kernel.system.run(() => {
-                if (hurtEntity.isValid) {
-                    hurtEntity.onScreenDisplay.setActionBar("§c⚔ Combat Tagged! Don't log out.")
+                if (hurtEntity.isValid && hurtEntity.typeId === "minecraft:player") {
+                    /** @type {import("@minecraft/server").Player} */ (hurtEntity).onScreenDisplay.setActionBar("§c[ENGAGEMENT_DETECTED] STATUS: TAGGED")
                 }
-                if (damagingEntity?.isValid) {
-                    damagingEntity.onScreenDisplay.setActionBar("§c⚔ Combat Tagged! Don't log out.")
+                if (damagingEntity?.isValid && damagingEntity.typeId === "minecraft:player") {
+                    /** @type {import("@minecraft/server").Player} */ (damagingEntity).onScreenDisplay.setActionBar("§c[ENGAGEMENT_DETECTED] STATUS: TAGGED")
                 }
             })
         }
     })
 
-    // Track player leaving (combat logging detection)
+    /* 
+     * DESERTION_DETECTION_VECTOR
+     * Monitors the playerLeave event. If an entity de-initializes while 
+     * tagged, its UUID is added to the death-debt manifest.
+     */
     Kernel.world.afterEvents.playerLeave.subscribe((event) => {
         const playerId = event.playerId
         const combatTick = combatState.get(playerId)
-        const currentTick = system.currentTick
+        const currentTick = Kernel.system.currentTick
 
-        // Check if player is in combat and leaving early
         if (combatTick && currentTick < combatTick) {
-            // Set death debt flag
             const PlayerStore = Kernel.get("playerStore")
-            PlayerStore.set(playerId, "deathDebt", true)
+            PlayerStore.set({ id: playerId }, "deathDebt", true)
             combatState.delete(playerId)
         }
     })
 
-    // Handle player join with death debt punishment
+    /* 
+     * DEBT_SETTLEMENT_VECTOR
+     * Orchestrates the liquidation of assets for entities re-initializing 
+     * with an active death-debt.
+     */
     Kernel.world.afterEvents.playerSpawn.subscribe((event) => {
         if (!event.initialSpawn) return
 
         const player = event.player
         const PlayerStore = Kernel.get("playerStore")
-        const deathDebt = PlayerStore.get(player.id, "deathDebt")
+        const deathDebt = PlayerStore.get(player, "deathDebt")
 
         if (deathDebt === true) {
-            // Bug 4: Delay punishment to ensure full spawn
             Kernel.system.runTimeout(() => {
                 if (!player.isValid) return
 
                 try {
-                    // Clear inventory
                     const inventory = player.getComponent("minecraft:inventory")
                     if (inventory?.container) {
                         inventory.container.clearAll()
                     }
 
-                    // Kill player
                     player.kill()
 
-                    // Clear debt
-                    const PlayerStore = Kernel.get("playerStore")
-                    PlayerStore.set(player.id, "deathDebt", false)
-
-                    player.sendMessage("§cCombat logging detected! Inventory cleared and respawned.")
+                    PlayerStore.set(player, "deathDebt", false)
+                    player.sendMessage("§c[INDUSTRIAL_PENALTY] COMBAT_LOGGING_DETECTED: ASSETS_LIQUIDATED");
                 } catch (error) {
-                    console.error(`CombatIntegrity: Failed to punish combat logger ${player.id}:`, error)
+                    console.error(`[CombatIntegrity] PENALTY_ORCHESTRATION_FAILURE for ${player.id}:`, error)
                 }
             }, 20)
         }
     })
 
-    // Schedule cleanup interval
     Kernel.system.runInterval(cleanup, 200)
 }
 
-/**
- * Check if player is in combat
- * @param {string} playerId - Player UUID
- * @returns {boolean} Whether player is in combat
+/* 
+ * ENGAGEMENT_STATUS_QUERY
  */
 export function isInCombat(playerId) {
     const combatTick = combatState.get(playerId)
     return combatTick && Kernel.system.currentTick < combatTick
 }
 
-/**
- * Get remaining combat time
- * @param {string} playerId - Player UUID
- * @returns {number} Remaining ticks in combat
+/* 
+ * TEMPORAL_ENGAGEMENT_METRIC
  */
 export function getCombatTime(playerId) {
     const combatTick = combatState.get(playerId)
@@ -117,15 +118,15 @@ export function getCombatTime(playerId) {
     return Math.max(0, combatTick - Kernel.system.currentTick)
 }
 
-/**
- * Clean up expired combat states
+/* 
+ * REGISTRY_MAINTENANCE_PROTOCOL
+ * Decommissions expired engagement nodes from the volatile buffer.
  */
 export function cleanup() {
-    const currentTick = system.currentTick
+    const currentTick = Kernel.system.currentTick
     for (const [playerId, combatTick] of combatState.entries()) {
         if (currentTick >= combatTick) {
             combatState.delete(playerId)
         }
     }
 }
-

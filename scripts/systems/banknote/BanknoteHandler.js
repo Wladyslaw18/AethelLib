@@ -10,7 +10,7 @@ export class BanknoteHandler {
     static init() {
         // Handle item use (right-click)
         world.beforeEvents.itemUse.subscribe((event) => {
-            const { source: player, item } = event
+            const { source: player, itemStack: item } = event
             
             // Check if it's a banknote
             if (!BanknoteStore.isBanknoteItem(item)) return
@@ -22,19 +22,6 @@ export class BanknoteHandler {
             this.handleRedemption(player, item)
         })
 
-        // Handle item drop (left-click in air)
-        world.beforeEvents.itemCompleteUse.subscribe((event) => {
-            const { source: player, item } = event
-            
-            // Check if it's a banknote
-            if (!BanknoteStore.isBanknoteItem(item)) return
-            
-            // Prevent default behavior
-            event.cancel = true
-            
-            // Handle redemption
-            this.handleRedemption(player, item)
-        })
     }
 
     static handleRedemption(player, item) {

@@ -1,20 +1,29 @@
-/**
- * Inventory See Command - View and manage player inventories
- */
-
 import { world, system } from "@minecraft/server"
 import { showInventoryUI } from "./InvSeeUI.js"
 
+/*
+ * INVENTORY_ESPIONAGE_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * A high-clearance utility for direct auditing of an entity's inventory 
+ * components. Performs a name-to-object resolution before invoking the 
+ * visual inspection GUI (InvSeeUI).
+ *
+ * PHILOSOPHY: Assets are temporary. Administrative oversight is eternal. 
+ * Use this vector to identify contraband or structural inventory anomalies.
+ */
 export const InvSeeCommand = {
     name: "invsee",
-    description: "View and manage player inventory",
-    usage: "!invsee <playerName>",
+    description: "Invokes the visual inventory-audit interface for a specific entity.",
+    usage: "!invsee <player_identifier>",
     permission: "essentials.admin.invsee",
-    category: "admin",
+    category: "Admin",
 
+    /* 
+     * VECTOR_EXECUTION_PIPELINE
+     */
     async execute(data, player, args) {
         if (args.length < 1) {
-            player.sendMessage("§cUsage: !invsee <playerName>")
+            player.sendMessage("[Manual] Syntax Error: Player identifier required.");
             return
         }
 
@@ -22,11 +31,13 @@ export const InvSeeCommand = {
         const target = world.getAllPlayers().find(p => p.name === playerName)
         
         if (!target) {
-            player.sendMessage(`§cPlayer '${playerName}' not found or not online`)
+            player.sendMessage(`[Error] Entity '${playerName}' not found in active buffer.`);
             return
         }
 
+        /* 
+         * GUI_INJECTION_HOOK
+         */
         await showInventoryUI(player, target)
     }
 }
-

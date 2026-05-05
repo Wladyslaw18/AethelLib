@@ -1,12 +1,24 @@
 import { Kernel } from "../../../core/Kernel.js"
+import { DEFAULT_RANKS } from "../../../data/RankConfig.js"
 
-/** @typedef {import("@minecraft/server").Player} Player */
+/*
+ * INDUSTRIAL_HIERARCHY_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for the management of the 
+ * server's industrial hierarchy. Coordinates rank initialization, 
+ * lifecycle management (CRUD), and temporal rank-expiration vectors.
+ *
+ * PHILOSOPHY: Hierarchy is the structure of command. Every entity must 
+ * have a defined clearance-level within the industrial manifest.
+ */
 
 let initialized = false
 
 export const RankSystem = {
-    /**
-     * Initialize rank system with default ranks
+    /* 
+     * SYSTEM_BOOTSTRAP_PROTOCOL
+     * Initializes the hierarchy-manifest from the data-config and 
+     * schedules the temporal expiration maintenance-vector.
      */
     init: () => {
         if (initialized) return
@@ -14,92 +26,24 @@ export const RankSystem = {
 
         const RankStore = Kernel.get("rankStore")
 
-        // Create default ranks if they don't exist
-        const defaultRanks = [
-            {
-                tag: "member",
-                name: "Member",
-                order: 0,
-                colorText: "§7",
-                colorName: "§7",
-                hideRanks: false,
-                permissions: {
-                    "home.limit": 3,
-                    "home.cooldown": 300000,
-                    "home.cost": 0,
-                    "tpa.cooldown": 30000,
-                    "tpa.cost": 0,
-                    "warp.cooldown": 60000,
-                    "warp.cost": 0
+        /* DATA_DRIVEN_BOOTSTRAP */
+        for (const rank of DEFAULT_RANKS) {
+            if (!RankStore.getRank(rank.id)) {
+                const rankData = {
+                    tag: rank.id,
+                    name: rank.name,
+                    order: rank.order,
+                    colorText: rank.chatColor,
+                    colorName: rank.chatColor,
+                    hideRanks: rank.order === 0,
+                    permissions: rank.permissions
                 }
-            },
-            {
-                tag: "vip",
-                name: "VIP",
-                order: 10,
-                colorText: "§a",
-                colorName: "§2",
-                hideRanks: false,
-                permissions: {
-                    "home.limit": 5,
-                    "home.cooldown": 180000,
-                    "home.cost": 0,
-                    "tpa.cooldown": 15000,
-                    "tpa.cost": 0,
-                    "warp.cooldown": 30000,
-                    "warp.cost": 0
-                }
-            },
-            {
-                tag: "moderator",
-                name: "Moderator",
-                order: 50,
-                colorText: "§b",
-                colorName: "§3",
-                hideRanks: false,
-                permissions: {
-                    "home.limit": 10,
-                    "home.cooldown": 0,
-                    "home.cost": 0,
-                    "tpa.cooldown": 0,
-                    "tpa.cost": 0,
-                    "warp.cooldown": 0,
-                    "warp.cost": 0,
-                    "kick.use": true,
-                    "mute.use": true
-                }
-            },
-            {
-                tag: "admin",
-                name: "Admin",
-                order: 75,
-                colorText: "§c",
-                colorName: "§4",
-                hideRanks: false,
-                permissions: {
-                    "home.limit": -1,
-                    "home.cooldown": 0,
-                    "home.cost": 0,
-                    "tpa.cooldown": 0,
-                    "tpa.cost": 0,
-                    "warp.cooldown": 0,
-                    "warp.cost": 0,
-                    "kick.use": true,
-                    "mute.use": true,
-                    "ban.use": true,
-                    "economy.manage": true
-                }
-            }
-        ]
-
-        for (const rank of defaultRanks) {
-            if (!RankStore.getRank(rank.tag)) {
-                RankStore.setRank(rank.tag, rank)
-                RankStore.addRankToList(rank.tag)
+                RankStore.setRank(rank.id, rankData)
+                RankStore.addRankToList(rank.id)
             }
         }
 
-        // Add temp rank expiry interval
+        /* TEMPORAL_EXPIRATION_VECTOR */
         Kernel.system.runInterval(() => {
             const now = Date.now()
             for (const player of Kernel.world.getAllPlayers()) {
@@ -117,17 +61,14 @@ export const RankSystem = {
                     })
                     player.setDynamicProperty("ae:tempranks", JSON.stringify(remaining))
                 } catch (e) {
-                    console.error("TempRank error:", e)
+                    console.error("[RankSystem] TEMPORAL_MAINTENANCE_FAILURE:", e)
                 }
             }
         }, 1200)
     },
 
-    /**
-     * Create a new rank
-     * @param {string} tag - Rank tag
-     * @param {Object} rankData - Rank data
-     * @returns {boolean} Success status
+    /* 
+     * HIERARCHY_NODE_INJECTION
      */
     createRank: (tag, rankData) => {
         const RankStore = Kernel.get("rankStore")
@@ -137,26 +78,30 @@ export const RankSystem = {
         const success = RankStore.setRank(tag, rankData)
         if (success) {
             RankStore.addRankToList(tag)
+            const PermissionManager = Kernel.get("permissions")
+            PermissionManager.init() 
+            PermissionManager.invalidatePlayerCache()
         }
         return success
     },
 
-    /**
-     * Update existing rank
-     * @param {string} tag - Rank tag
-     * @param {Object} rankData - Updated rank data
-     * @returns {boolean} Success status
+    /* 
+     * HIERARCHY_NODE_CALIBRATION
      */
     updateRank: (tag, rankData) => {
         const RankStore = Kernel.get("rankStore")
         if (!tag || !rankData) return false
-        return RankStore.setRank(tag, rankData)
+        const success = RankStore.setRank(tag, rankData)
+        if (success) {
+            const PermissionManager = Kernel.get("permissions")
+            PermissionManager.init() 
+            PermissionManager.invalidatePlayerCache()
+        }
+        return success
     },
 
-    /**
-     * Delete a rank
-     * @param {string} tag - Rank tag
-     * @returns {boolean} Success status
+    /* 
+     * HIERARCHY_NODE_DECOMMISSION
      */
     deleteRank: (tag) => {
         const RankStore = Kernel.get("rankStore")
@@ -165,74 +110,37 @@ export const RankSystem = {
         const success = RankStore.deleteRank(tag)
         if (success) {
             RankStore.removeRankFromList(tag)
+            const PermissionManager = Kernel.get("permissions")
+            PermissionManager.init() 
+            PermissionManager.invalidatePlayerCache()
         }
         return success
     },
 
-    /**
-     * Get rank data
-     * @param {string} tag - Rank tag
-     * @returns {Object|null} Rank data
+    /* 
+     * REGISTRY_QUERY_VECTORS
      */
     getRank: (tag) => {
         const RankStore = Kernel.get("rankStore")
         return RankStore.getRank(tag)
     },
 
-    /**
-     * Get all ranks sorted /* VOID */
-     * @returns {Object} Sorted ranks
-     */
     getAllRanks: () => {
         const RankStore = Kernel.get("rankStore")
-        const ranks = RankStore.getAllRanks()
-        const sorted = {}
-
-        Object.entries(ranks)
-            .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0))
-            .forEach(([tag, data]) => {
-                sorted[tag] = data
-            })
-
-        return sorted
+        return RankStore.getAllRanks()
     },
 
-    /**
-     * Get permission value for a player
-     * @param {Player} player - Player object
-     * @param {string} key - Permission key
-     * @returns {*} Permission value or null if not found
+    /* 
+     * CLEARANCE_RESOLVER_PROXY
      */
     getPermission: (player, key) => {
-        const RankStore = Kernel.get("rankStore")
-        const sorted = player.getTags()
-            .filter(tag => RankStore.getRank(tag) != null)
-            .sort((a, b) => {
-                const ra = RankStore.getRank(a)
-                const rb = RankStore.getRank(b)
-                return (ra?.order ?? 0) - (rb?.order ?? 0)
-            })
-
-        for (const tag of sorted) {
-            const rank = RankStore.getRank(tag)
-            if (rank?.permissions?.[key] !== undefined) return rank.permissions[key]
-
-            // Check inherits chain
-            if (rank?.inherits) {
-                const parent = RankStore.getRank(rank.inherits)
-                if (parent?.permissions?.[key] !== undefined) return parent.permissions[key]
-            }
-        }
-
-        return null
+        const PermissionManager = Kernel.get("permissions")
+        return PermissionManager.hasPermission(player, key)
     },
 
-    /**
-     * Add temporary rank to player
-     * @param {Player} player - Player object
-     * @param {string} tag - Rank tag
-     * @param {number} durationMs - Duration in milliseconds
-     * @returns {boolean} Success status
+    /* 
+     * TEMPORAL_CLEARANCE_INJECTION
+     * Injects a temporary clearance-node with a defined industrial TTL.
      */
     addTempRank: (player, tag, durationMs) => {
         const RankStore = Kernel.get("rankStore")
@@ -249,4 +157,3 @@ export const RankSystem = {
         return true
     }
 }
-

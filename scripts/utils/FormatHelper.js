@@ -1,20 +1,21 @@
-/**
- * Format Helper - String and number formatting utilities
- * @/* OBSCURE */ Aethelgrad
- * @version 1.0.0
- */
+import { Configuration } from "../Configuration.js"
 
-/**
- * Formatting utilities for display
+/*
+ * INDUSTRIAL_FORMATTING_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * A collection of high-performance string-manipulation utilities for 
+ * standardizing display-output across the framework. 
+ *
+ * PHILOSOPHY: Raw data is for the Kernel; formatted output is for the 
+ * entities. Use these vectors to ensure visual consistency in the empire.
  */
 class FormatHelper {
-    /**
-     * Format money amount with currency
-     * @param {number} amount - Money amount
-     * @param {string} [currency="$"] - Currency symbol
-     * @returns {string} Formatted money string
+    /* 
+     * LIQUIDITY_FORMATTER
+     * Converts raw numeric values into formatted currency strings with 
+     * locale-specific separators.
      */
-    static formatMoney(amount, currency = "$") {
+    static formatMoney(amount, currency = Configuration.CURRENCY_SYMBOL) {
         if (typeof amount !== "number" || !isFinite(amount)) {
             return `${currency}0`
         }
@@ -22,10 +23,9 @@ class FormatHelper {
         return `${currency}${amount.toLocaleString()}`
     }
 
-    /**
-     * Format duration in ticks to human readable time
-     * @param {number} ticks - Duration in ticks
-     * @returns {string} Formatted duration
+    /* 
+     * TEMPORAL_DURATION_RESOLVER
+     * Converts a tick-based delta into a human-readable duration manifest.
      */
     static formatDuration(ticks) {
         if (typeof ticks !== "number" || ticks < 0) {
@@ -45,10 +45,8 @@ class FormatHelper {
         }
     }
 
-    /**
-     * Format coordinates
-     * @param {import("@minecraft/server").Vector3} location - Location coordinates
-     * @returns {string} Formatted coordinates
+    /* 
+     * SPATIAL_COORDINATE_FORMATTER
      */
     static formatCoords(location) {
         if (!location || typeof location.x !== "number") {
@@ -58,28 +56,25 @@ class FormatHelper {
         return `${Math.floor(location.x)}, ${Math.floor(location.y)}, ${Math.floor(location.z)}`
     }
 
-    /**
-     * Format player name with color
-     * @param {string} name - Player name
-     * @param {string} [color="§f"] - Color code
-     * @returns {string} Colored player name
+    /* 
+     * ENTITY_IDENTIFIER_FORMATTER
      */
     static formatPlayerName(name, color = "§f") {
         if (!name || typeof name !== "string") {
-            return "Unknown"
+            return "UNKNOWN_ENTITY"
         }
         
         return `${color}${name}§r`
     }
 
-    /**
-     * Format list with commas and "and"
-     * @param {string[]} items - List of items
-     * @returns {string} Formatted list
+    /* 
+     * ARRAY_MANIFEST_FORMATTER
+     * Orchestrates the construction of a comma-separated string list 
+     * with industrial-standard conjunctions.
      */
     static formatList(items) {
         if (!Array.isArray(items) || items.length === 0) {
-            return "nothing"
+            return "VACANT"
         }
         
         if (items.length === 1) {
@@ -93,10 +88,8 @@ class FormatHelper {
         }
     }
 
-    /**
-     * Capitalize first letter of string
-     * @param {string} str - String to capitalize
-     * @returns {string} Capitalized string
+    /* 
+     * STRING_NORMALIZATION_VECTOR
      */
     static capitalize(str) {
         if (!str || typeof str !== "string") {
@@ -106,12 +99,9 @@ class FormatHelper {
         return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
     }
 
-    /**
-     * Truncate string to specified length
-     * @param {string} str - String to truncate
-     * @param {number} maxLength - Maximum length
-     * @param {string} [suffix="..."] - Suffix for truncated strings
-     * @returns {string} Truncated string
+    /* 
+     * STRING_TRUNCATION_VECTOR
+     * Truncates a string to a specific length-buffer to prevent UI-overflow.
      */
     static truncate(str, maxLength, suffix = "...") {
         if (!str || typeof str !== "string") {
@@ -125,11 +115,8 @@ class FormatHelper {
         return str.slice(0, maxLength - suffix.length) + suffix
     }
 
-    /**
-     * Format percentage
-     * @param {number} value - Value (0-1)
-     * @param {number} [decimals=1] - Decimal places
-     * @returns {string} Formatted percentage
+    /* 
+     * RATIO_FORMATTER
      */
     static formatPercentage(value, decimals = 1) {
         if (typeof value !== "number" || !isFinite(value)) {
@@ -142,4 +129,3 @@ class FormatHelper {
 }
 
 export { FormatHelper }
-

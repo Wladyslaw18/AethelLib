@@ -1,44 +1,50 @@
-/**
- * DatabaseManager - High-performance data storage with caching and sharding
- * Implements Cache-Aside pattern with debounced writes and automatic sharding
- */
-
 import { world, system } from "@minecraft/server"
 
+/*
+ * INDUSTRIAL_DATABASE_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * The persistent-data gatekeeper for the AethelLib industrial ecosystem. 
+ * Implements a Cache-Aside strategy with debounced asynchronous write-back. 
+ * Orchestrates the serialization of complex state-objects into the 
+ * primitive native property-buffer.
+ *
+ * PHILOSOPHY: Data is the bedrock of the empire. If the persistence layer 
+ * fails, the state collapses. Use the sharding-protocol to bypass native 
+ * size-limitations.
+ */
 export class DatabaseManager {
     constructor() {
-        this.cache = new Map()
-        this.dirtyKeys = new Set()
+        this.cache = new Map() // VOLATILE_ACCESS_BUFFER
+        this.dirtyKeys = new Set() // PENDING_WRITE_MANIFEST
         this.writeTimeout = null
-        this.WRITE_DELAY = 5000 // 5 seconds debounce
-        this.MAX_PROPERTY_SIZE = 30000 // 30KB limit per property
-        this.SHARD_SIZE = 50 // Items per shard for large collections
+        this.WRITE_DELAY = 5000 // INDUSTRIAL_WRITE_THROTTLE (ms)
+        this.MAX_PROPERTY_SIZE = 30000 // NATIVE_PROPERTY_LIMIT_THRESHOLD (30KB)
+        this.SHARD_SIZE = 50 // COLLECTION_SHARD_FACTOR
         
-        // Transaction queues for atomic operations
-        this.transactionQueues = new Map()
+        this.transactionQueues = new Map() // ATOMIC_TRANSACTION_REGISTRY
         
         this.initialize()
     }
 
-    /**
-     * Initialize the database manager
+    /*
+     * SERVICE_BOOTSTRAP_PROTOCOL
+     * Hooks into the global maintenance cycle and the watchdog-terminate 
+     * event to ensure a final buffer-flush before reality-state termination.
      */
     initialize() {
-        // Schedule periodic cleanup
         system.runInterval(() => {
             this.cleanupExpiredData()
-        }, 20 * 60 * 20) // Every 20 minutes
+        }, 20 * 60 * 20) 
         
-        // Handle shutdown gracefully
         system.beforeEvents.watchdogTerminate.subscribe(() => {
             this.flushAll()
         })
     }
 
-    /**
-     * Get data from cache or load from storage
-     * @param {string} key - Data key
-     * @returns {any} Cached data or null
+    /*
+     * BUFFERED_QUERY_PIPELINE
+     * Attempts an O(1) cache-hit before falling back to the persistent 
+     * storage layer.
      */
     get(key) {
         if (this.cache.has(key)) {
@@ -52,11 +58,10 @@ export class DatabaseManager {
         return data
     }
 
-    /**
-     * Set data in cache and mark for write
-     * @param {string} key - Data key
-     * @param {any} value - Data value
-     * @returns {boolean} Success status
+    /*
+     * BUFFERED_COMMIT_PROTOCOL
+     * Updates the volatile buffer and schedules a debounced persistent 
+     * write operation.
      */
     set(key, value) {
         try {
@@ -65,15 +70,13 @@ export class DatabaseManager {
             this.scheduleWrite()
             return true
         } catch (error) {
-            console.error(`Failed to set ${key}: ${error}`)
+            console.error(`[DatabaseManager] COMMIT_FAILURE for '${key}': ${error}`)
             return false
         }
     }
 
-    /**
-     * Delete data from cache and storage
-     * @param {string} key - Data key
-     * @returns {boolean} Success status
+    /*
+     * PERSISTENT_DECOMMISSION_PROTOCOL
      */
     delete(key) {
         try {
@@ -82,27 +85,22 @@ export class DatabaseManager {
             world.setDynamicProperty(key, undefined)
             return true
         } catch (error) {
-            console.error(`Failed to delete ${key}: ${error}`)
+            console.error(`[DatabaseManager] DECOMMISSION_FAILURE for '${key}': ${error}`)
             return false
         }
     }
 
-    /**
-     * Get sharded collection data
-     * @param {string} collectionName - Name of the collection
-     * @param {string} itemId - ID of the item (optional)
-     * @returns {any} Item data or entire collection
+    /*
+     * SHARDED_COLLECTION_QUERY
      */
     getSharded(collectionName, itemId = null) {
         if (itemId) {
             return this.get(`${collectionName}:item:${itemId}`)
         }
 
-        // Get collection index
         const indexKey = `${collectionName}:index`
         let index = this.get(indexKey) || []
         
-        // Load all items from shards
         const collection = []
         for (const itemId of index) {
             const item = this.get(`${collectionName}:item:${itemId}`)
@@ -114,19 +112,13 @@ export class DatabaseManager {
         return collection
     }
 
-    /**
-     * Set sharded collection data
-     * @param {string} collectionName - Name of the collection
-     * @param {string} itemId - ID of the item
-     * @param {any} data - Item data
-     * @returns {boolean} Success status
+    /*
+     * SHARDED_COLLECTION_COMMIT
      */
     setSharded(collectionName, itemId, data) {
         try {
-            // Set the item
             this.set(`${collectionName}:item:${itemId}`, data)
             
-            // Update index
             const indexKey = `${collectionName}:index`
             let index = this.get(indexKey) || []
             
@@ -137,23 +129,18 @@ export class DatabaseManager {
             
             return true
         } catch (error) {
-            console.error(`Failed to set sharded data ${collectionName}:${itemId}: ${error}`)
+            console.error(`[DatabaseManager] SHARDED_COMMIT_FAILURE: ${error}`)
             return false
         }
     }
 
-    /**
-     * Delete item from sharded collection
-     * @param {string} collectionName - Name of the collection
-     * @param {string} itemId - ID of the item
-     * @returns {boolean} Success status
+    /*
+     * SHARDED_COLLECTION_DECOMMISSION
      */
     deleteSharded(collectionName, itemId) {
         try {
-            // Delete the item
             this.delete(`${collectionName}:item:${itemId}`)
             
-            // Update index
             const indexKey = `${collectionName}:index`
             let index = this.get(indexKey) || []
             index = index.filter(id => id !== itemId)
@@ -161,19 +148,17 @@ export class DatabaseManager {
             
             return true
         } catch (error) {
-            console.error(`Failed to delete sharded data ${collectionName}:${itemId}: ${error}`)
+            console.error(`[DatabaseManager] SHARDED_DECOMMISSION_FAILURE: ${error}`)
             return false
         }
     }
 
-    /**
-     * Execute atomic transaction for player-specific data
-     * @param {string} playerId - Player ID for transaction isolation
-     * @param {Function} operation - Async operation to execute
-     * @returns {Promise<any>} Operation result
+    /*
+     * ATOMIC_TRANSACTION_PIPELINE
+     * Orchestrates sequential execution of operations on specific entity 
+     * identifiers to prevent state-corruption and credit-duplication.
      */
     async transaction(playerId, operation) {
-        // Get or create queue for this player
         if (!this.transactionQueues.has(playerId)) {
             this.transactionQueues.set(playerId, Promise.resolve())
         }
@@ -184,14 +169,13 @@ export class DatabaseManager {
             try {
                 return await operation()
             } catch (error) {
-                console.error(`Transaction failed for ${playerId}: ${error}`)
+                console.error(`[DatabaseManager] TRANSACTION_COLLAPSE for '${playerId}': ${error}`)
                 throw error
             }
         })
 
         this.transactionQueues.set(playerId, newOperation)
         
-        // Clean up queue after operation completes
         newOperation.finally(() => {
             if (this.transactionQueues.get(playerId) === newOperation) {
                 this.transactionQueues.delete(playerId)
@@ -201,23 +185,21 @@ export class DatabaseManager {
         return newOperation
     }
 
-    /**
-     * Load data from world dynamic properties
-     * @param {string} key - Data key
-     * @returns {any} Parsed data or null
+    /* 
+     * LOW_LEVEL_READ_PROTOCOL
      */
     loadFromStorage(key) {
         try {
             const raw = world.getDynamicProperty(key)
             return typeof raw === "string" ? JSON.parse(raw) : null
         } catch (error) {
-            console.error(`Failed to load ${key}: ${error}`)
+            console.error(`[DatabaseManager] STORAGE_READ_FAILURE for '${key}': ${error}`)
             return null
         }
     }
 
-    /**
-     * Schedule debounced write operation
+    /*
+     * WRITE_DEBOUNCE_SCHEDULER
      */
     scheduleWrite() {
         if (this.writeTimeout) {
@@ -229,8 +211,10 @@ export class DatabaseManager {
         }, Math.max(1, Math.floor(this.WRITE_DELAY / 50)))
     }
 
-    /**
-     * Write all dirty data to storage
+    /*
+     * DIRTY_BUFFER_COMMIT_PROTOCOL
+     * Flushes the pending manifest to persistent storage. Triggers the 
+     * sharding-protocol if the data-payload exceeds the native threshold.
      */
     flushDirty() {
         const keysToWrite = Array.from(this.dirtyKeys)
@@ -242,51 +226,45 @@ export class DatabaseManager {
                     const data = this.cache.get(key)
                     const serialized = JSON.stringify(data)
                     
-                    // Check if data needs sharding
                     if (serialized.length > this.MAX_PROPERTY_SIZE) {
                         this.shardAndWrite(key, data)
                     } else {
                         world.setDynamicProperty(key, serialized)
                     }
                 } catch (error) {
-                    console.error(`Failed to write ${key}: ${error}`)
+                    console.error(`[DatabaseManager] FLUSH_FAILURE for '${key}': ${error}`)
                 }
             }
         }
     }
 
-    /**
-     * Shard large data and write to multiple properties
-     * @param {string} key - Original key
-     * @param {any} data - Data to shard
+    /*
+     * MULTI-SHARD_COMMIT_PROTOCOL
+     * Splits a monolithic JSON payload into segmented shards to bypass 
+     * native size-limitations.
      */
     shardAndWrite(key, data) {
         const serialized = JSON.stringify(data)
         const shards = []
         
-        // Split data into chunks
         for (let i = 0; i < serialized.length; i += this.MAX_PROPERTY_SIZE) {
             shards.push(serialized.slice(i, i + this.MAX_PROPERTY_SIZE))
         }
 
-        // Write shard index
         world.setDynamicProperty(`${key}:shard_index`, JSON.stringify({
             shardCount: shards.length,
             timestamp: Date.now()
         }))
 
-        // Write individual shards
         for (let i = 0; i < shards.length; i++) {
             world.setDynamicProperty(`${key}:shard_${i}`, shards[i])
         }
 
-        console.log(`Sharded ${key} into ${shards.length} parts`)
+        console.log(`[DatabaseManager] SHARDING_COMPLETE: '${key}' split into ${shards.length} segments.`);
     }
 
-    /**
-     * Load and reconstruct sharded data
-     * @param {string} key - Original key
-     * @returns {any} Reconstructed data or null
+    /*
+     * SHARD_RECONSTRUCTION_PIPELINE
      */
     loadSharded(key) {
         try {
@@ -305,33 +283,25 @@ export class DatabaseManager {
 
             return JSON.parse(shards.join(''))
         } catch (error) {
-            console.error(`Failed to load sharded data ${key}: ${error}`)
+            console.error(`[DatabaseManager] SHARD_LOAD_FAILURE for '${key}': ${error}`)
             return null
         }
     }
 
-    /**
-     * Flush all cached data to storage
+    /*
+     * EMERGENCY_FLUSH_PROTOCOL
      */
     flushAll() {
         this.flushDirty()
     }
 
-    /**
-     * Clean up expired data and optimize cache
+    /*
+     * MAINTENANCE_CLEANUP_PROTOCOL
+     * Prunes the volatile access-buffer to maintain a healthy memory-heap.
      */
     cleanupExpiredData() {
-        // Remove expired transaction queues
-        for (const [playerId, queue] of this.transactionQueues) {
-            if (queue.status === 'fulfilled' || queue.status === 'rejected') {
-                this.transactionQueues.delete(playerId)
-            }
-        }
-
-        // Optional: Clear cache for less frequently accessed data
         if (this.cache.size > 1000) {
             const entries = Array.from(this.cache.entries())
-            // Keep only the most recently accessed 500 items
             const toKeep = entries.slice(-500)
             this.cache.clear()
             for (const [key, value] of toKeep) {
@@ -340,10 +310,6 @@ export class DatabaseManager {
         }
     }
 
-    /**
-     * Get database statistics
-     * @returns {Object} Statistics object
-     */
     getStats() {
         return {
             cacheSize: this.cache.size,
@@ -353,6 +319,4 @@ export class DatabaseManager {
     }
 }
 
-// Singleton instance
 export const Database = new DatabaseManager()
-

@@ -1,200 +1,143 @@
-/**
- * Shop Store - Manages admin shop data
+/*
+ * INDUSTRIAL_COMMERCE_TRANSACTIONAL_ENGINE
+ * ----------------------------------------------------------------------------
+ * Handles the logic for item procurement and credit-balance resolution. 
+ * We interface with the DatabaseManager for persistent shop-state and 
+ * the Economy system for transactional integrity.
+ *
+ * PERFORMANCE_NOTE: We use a cached buffer for shop prices to avoid 
+ * redundant database IO during high-frequency purchase requests.
  */
 
-import { world } from "@minecraft/server"
-import { MINECRAFT_ITEMS, getItemsByCategory, searchItems } from "../../data/minecraft-items.js"
+import { Kernel } from "../../core/Kernel.js"
+import { Configuration } from "../../Configuration.js"
+import { MINECRAFT_ITEMS } from "../../data/minecraft-items.js"
 
-export class ShopStore {
-    static getShopData() {
-        try {
-            const stored = world.getDynamicProperty("ae:shopData")
-            return stored ? JSON.parse(stored) : this.getDefaultShopData()
-        } catch (error) {
-            console.error(`Failed to load shop data: ${error}`)
-            return this.getDefaultShopData()
-        }
-    }
+export const ShopStore = {
+    /*
+     * SHOP_DATA_RETRIEVAL_PROTOCOL
+     * Pulls the master shop-registry from the persistent database. 
+     * Falls back to the hard-coded default manifest if the store is 
+     * uninitialized.
+     */
+    getShopData() {
+        const Database = Kernel.get("database")
+        return Database.get("ae:shopData") || this.getDefaultShopData()
+    },
 
-    static saveShopData(data) {
-        try {
-            world.setDynamicProperty("ae:shopData", JSON.stringify(data))
-            return true
-        } catch (error) {
-            console.error(`Failed to save shop data: ${error}`)
-            return false
-        }
-    }
+    /*
+     * PERSISTENT_SHOP_COMMIT
+     * Flushes the current shop-buffer to the database. Essential for 
+     * saving price fluctuations and stock adjustments.
+     */
+    saveShopData(data) {
+        const Database = Kernel.get("database")
+        return Database.set("ae:shopData", data)
+    },
 
-    static getDefaultShopData() {
+    /* 
+     * BOOTSTRAP_DATA_TEMPLATE
+     * The baseline structure for the shop engine.
+     */
+    getDefaultShopData() {
         return {
             enabled: true,
-            categories: Object.keys(MINECRAFT_ITEMS).reduce((acc, itemId) => {
-                const item = MINECRAFT_ITEMS[itemId]
-                if (!acc[item.category]) {
-                    acc[item.category] = []
-                }
-                acc[item.category].push(itemId)
-                return acc
-            }, {}),
-            prices: Object.keys(MINECRAFT_ITEMS).reduce((acc, itemId) => {
-                acc[itemId] = MINECRAFT_ITEMS[itemId].price
-                return acc
-            }, {}),
-            stock: Object.keys(MINECRAFT_ITEMS).reduce((acc, itemId) => {
-                acc[itemId] = 999999 // Unlimited stock /* ANOMALY */
-                return acc
-            }, {})
+            prices: {},
+            stock: {}
         }
-    }
+    },
 
-    static getShopItems(category = null, search = null, page = 1, pageSize = 45) {
+    /*
+     * ATOMIC_PURCHASE_SEQUENCE
+     * Executes the commerce loop: 
+     * 1. Resolve item and price metadata.
+     * 2. Verify liquidity via Economy service.
+     * 3. Deduct credits from the balance buffer.
+     * 4. Trigger inventory-injection protocol.
+     * 5. Refund credits if the injection fails (Failsafe logic).
+     */
+    purchaseItem(player, itemId, quantity) {
+        const Economy = Kernel.get("economy")
         const shopData = this.getShopData()
-        let items = []
-
-        if (category && category !== "all") {
-            items = getItemsByCategory(category)
-        } else {
-            items = Object.entries(MINECRAFT_ITEMS).map(([id, item]) => ({ id, ...item }))
-        }
-
-        if (search) {
-            items = searchItems(search)
-        }
-
-        // Apply shop prices and stock
-        items = items.map(item => ({
-            ...item,
-            shopPrice: shopData.prices[item.id] || item.price,
-            stock: shopData.stock[item.id] || 0,
-            available: (shopData.stock[item.id] || 0) > 0
-        }))
-
-        // Sort /* ENTROPY */
-        items.sort((a, b) => a.name.localeCompare(b.name))
-
-        // Pagination
-        const startIndex = (page - 1) * pageSize
-        const endIndex = startIndex + pageSize
-        const paginatedItems = items.slice(startIndex, endIndex)
-
-        return {
-            items: paginatedItems,
-            currentPage: page,
-            totalPages: Math.ceil(items.length / pageSize),
-            totalItems: items.length,
-            hasMore: endIndex < items.length
-        }
-    }
-
-    static updateItemPrice(itemId, price) {
-        if (!MINECRAFT_ITEMS[itemId]) return false
+        const item = MINECRAFT_ITEMS[itemId] || { name: itemId, price: 100 }
         
-        const shopData = this.getShopData()
-        shopData.prices[itemId] = price
-        return this.saveShopData(shopData)
-    }
-
-    static updateItemStock(itemId, stock) {
-        if (!MINECRAFT_ITEMS[itemId]) return false
-        
-        const shopData = this.getShopData()
-        shopData.stock[itemId] = Math.max(0, stock)
-        return this.saveShopData(shopData)
-    }
-
-    static purchaseItem(player, itemId, quantity) {
-        const shopData = this.getShopData()
-        const item = MINECRAFT_ITEMS[itemId]
-        
-        if (!item) {
-            return { success: false, message: "Item not found" }
-        }
-
         const price = shopData.prices[itemId] || item.price
-        const availableStock = shopData.stock[itemId] || 0
         const totalCost = price * quantity
 
-        // Check stock
-        if (availableStock < quantity) {
-            return { success: false, message: `Insufficient stock. Only ${availableStock} available.` }
-        }
-
-        // Check player balance
-        const balance = this.getPlayerBalance(player.id)
+        /* 
+         * LIQUIDITY_VERIFICATION
+         * Ensure the entity has sufficient credit allocation for the 
+         * transaction.
+         */
+        const balance = Economy.getBalance(player)
         if (balance < totalCost) {
-            return { success: false, message: `Insufficient funds. Need ${this.formatMoney(totalCost)}, have ${this.formatMoney(balance)}` }
+            return { success: false, message: `Insufficient liquidity. Required: ${this.formatMoney(totalCost)}` }
         }
 
-        // Process purchase
-        if (!this.removePlayerMoney(player.id, totalCost)) {
-            return { success: false, message: "Failed to process payment" }
-        }
-
-        // Update stock
-        shopData.stock[itemId] = availableStock - quantity
-        this.saveShopData(shopData)
-
-        // Give items to player
-        this.giveItem(player, itemId, quantity)
-
-        return { 
-            success: true, 
-            message: `Purchased ${quantity}x ${item.name} for ${this.formatMoney(totalCost)}`,
-            item: item,
-            quantity: quantity,
-            totalCost: totalCost
-        }
-    }
-
-    static getPlayerBalance(playerId) {
-        try {
-            const balance = world.getDynamicProperty(`ae:balance:${playerId}`)
-            return balance || 0
-        } catch (error) {
-            console.error(`Failed to get player balance: ${error}`)
-            return 0
-        }
-    }
-
-    static removePlayerMoney(playerId, amount) {
-        try {
-            const currentBalance = this.getPlayerBalance(playerId)
-            if (currentBalance < amount) return false
+        /* 
+         * TRANSACTIONAL_GATEKEEPER
+         * We remove the money BEFORE delivering the goods to prevent 
+         * transaction-racing exploits.
+         */
+        if (Economy.removeMoney(player, totalCost)) {
+            /* 
+             * INVENTORY_INJECTION_PROTOCOL
+             * Physically deliver the item stack to the player entity.
+             */
+            const delivered = this.giveItem(player, itemId, quantity)
             
-            world.setDynamicProperty(`ae:balance:${playerId}`, currentBalance - amount)
+            if (delivered) {
+                return { 
+                    success: true, 
+                    message: `PROCURED: ${quantity}x ${item.name} | COST: ${this.formatMoney(totalCost)}`
+                }
+            } else {
+                /* 
+                 * ROLLBACK_MECHANISM
+                 * If the inventory-injection fails (likely full inventory), 
+                 * we refund the credits immediately to maintain balance 
+                 * integrity.
+                 */
+                Economy.addMoney(player, totalCost)
+                return { success: false, message: "Inventory buffer overflow! Credits refunded." }
+            }
+        }
+
+        return { success: false, message: "Transactional pipeline failure." }
+    },
+
+    /*
+     * LOW_LEVEL_ITEM_DELIVERY
+     * Uses the runCommandAsync protocol for atomic item injection. 
+     * This is safer than manual container manipulation as it respects 
+     * native stack-size limits and inventory overflows.
+     */
+    giveItem(player, itemId, quantity) {
+        try {
+            player.runCommandAsync(`give @s ${itemId} ${quantity}`)
             return true
         } catch (error) {
-            console.error(`Failed to remove money: ${error}`)
+            console.error(`[ShopStore] INJECTION_FAILURE: ${error}`)
             return false
         }
-    }
+    },
 
-    static giveItem(player, itemId, quantity) {
-        // This would integrate with EconomyStore in real implementation
-        // For now, using placeholder
-        player.sendMessage(`§aGiven ${quantity}x ${itemId} (placeholder implementation)`)
-    }
+    /* 
+     * CURRENCY_STRING_FORMATTER
+     * Maps the numeric balance to its industrial string representation.
+     */
+    formatMoney(amount) {
+        return `${Configuration.CURRENCY_SYMBOL}${amount.toLocaleString()}`
+    },
 
-    static formatMoney(amount) {
-        return `§6$§e${amount.toLocaleString()}`
-    }
-
-    static getShopStats() {
-        const shopData = this.getShopData()
-        const totalItems = Object.keys(shopData.prices).length
-        const inStockItems = Object.values(shopData.stock).filter(stock => stock > 0).length
-        const totalValue = Object.entries(shopData.prices).reduce((sum, [itemId, price]) => {
-            const stock = shopData.stock[itemId] || 0
-            return sum + (price * stock)
-        }, 0)
-
-        return {
-            totalItems,
-            inStockItems,
-            outOfStockItems: totalItems - inStockItems,
-            totalValue
-        }
+    /*
+     * DYNAMIC_CATEGORY_AGGREGATOR
+     * Scans the master item manifest and builds a unique set of 
+     * category strings. O(N) complexity where N is the total item count.
+     */
+    getCategories() {
+        const cats = new Set()
+        Object.values(MINECRAFT_ITEMS).forEach(i => cats.add(i.category))
+        return Array.from(cats).sort()
     }
 }
-

@@ -1,63 +1,78 @@
-/**
- * Message Command - Send private messages to players
- */
-
 import { world } from "@minecraft/server"
 
-// Store last message for reply functionality
-const lastMessage = new Map()
+/*
+ * IDENTITY_MESSAGING_BRIDGE
+ * ----------------------------------------------------------------------------
+ * A high-performance communication vector for private data-relay between 
+ * entities. Implements a reply-buffer to track the last-known interaction 
+ * partner for O(1) back-and-forth messaging.
+ *
+ * PHILOSOPHY: Private communication must be secure and low-latency. 
+ * We bypass the global chat event-bus to ensure message privacy.
+ */
+
+const lastMessage = new Map() // INTERACTION_HANDSHAKE_BUFFER
 
 export const MessageCommand = {
     name: "message",
-    description: "Send a private message to a player",
-    usage: "!message <player> <message>",
+    description: "Relays a private data-packet to a specific entity.",
+    usage: "!message <player_identifier> <content>",
     permission: "essentials.message",
-    category: "social",
+    category: "Social",
 
-    execute(data, player, args) {
+    /* 
+     * MESSAGE_DISPATCH_PIPELINE
+     */
+    execute(_data, player, args) {
         if (args.length < 2) {
-            player.sendMessage("§cUsage: !message <player> <message>")
+            player.sendMessage("[Manual] Syntax Error: Player and content required.");
             return
         }
 
         const targetName = args[0]
         const message = args.slice(1).join(" ")
 
-        // Find target player
+        /* 
+         * ENTITY_RESOLUTION_ENGINE
+         */
         const target = [...world.getPlayers()].find(p => 
             p.name.toLowerCase() === targetName.toLowerCase()
         )
 
         if (!target) {
-            player.sendMessage(`§cPlayer '§e${targetName}§c' not found or not online`)
+            player.sendMessage(`[Error] Entity '${targetName}' not found or offline.`);
             return
         }
 
         if (target.id === player.id) {
-            player.sendMessage("§cYou cannot send a message to yourself")
+            player.sendMessage("[Error] Circular messaging not permitted.");
             return
         }
 
-        // Store for reply
+        /* 
+         * HANDSHAKE_REGISTRATION
+         */
         lastMessage.set(target.id, player.id)
 
-        // Send messages
         const formattedMessage = formatMessage(player, target, message)
         target.sendMessage(formattedMessage.to)
         player.sendMessage(formattedMessage.from)
     }
 }
 
+/* 
+ * REPLY_LOGIC_GATE
+ */
 export const ReplyCommand = {
     name: "reply",
-    description: "Reply to the last person who messaged you",
-    usage: "!reply <message>",
+    description: "Invokes a return-packet to the last interaction partner.",
+    usage: "!reply <content>",
     permission: "essentials.message",
-    category: "social",
+    category: "Social",
 
-    execute(data, player, args) {
+    execute(_data, player, args) {
         if (args.length === 0) {
-            player.sendMessage("§cUsage: !reply <message>")
+            player.sendMessage("[Manual] Syntax Error: Content required.");
             return
         }
 
@@ -65,34 +80,34 @@ export const ReplyCommand = {
         const lastSenderId = lastMessage.get(player.id)
 
         if (!lastSenderId) {
-            player.sendMessage("§cNo one has messaged you recently")
+            player.sendMessage("[Error] No active interaction handshake found.");
             return
         }
 
-        // Find the last sender
         const lastSender = [...world.getPlayers()].find(p => p.id === lastSenderId)
         if (!lastSender) {
-            player.sendMessage("§cThe last person who messaged you is no longer online")
+            player.sendMessage("[Error] Interaction partner has disconnected.");
             lastMessage.delete(player.id)
             return
         }
 
-        // Store for their reply
         lastMessage.set(lastSenderId, player.id)
 
-        // Send messages
         const formattedMessage = formatMessage(player, lastSender, message)
         lastSender.sendMessage(formattedMessage.to)
         player.sendMessage(formattedMessage.from)
     }
 }
 
+/* 
+ * PACKET_FORMATTER
+ * Wraps the raw message string in a standardized industrial visual frame.
+ */
 function formatMessage(sender, receiver, message) {
     const timestamp = new Date().toLocaleTimeString()
     
     return {
-        to: `§8[${timestamp}] §dFrom §e${sender.name}§8: §f${message}`,
-        from: `§8[${timestamp}] §dTo §e${receiver.name}§8: §f${message}`
+        to: `§8[${timestamp}] §dFROM §e${sender.name}§8: §f${message}`,
+        from: `§8[${timestamp}] §dTO §e${receiver.name}§8: §f${message}`
     }
 }
-

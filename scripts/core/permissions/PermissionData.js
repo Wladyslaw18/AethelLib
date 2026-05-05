@@ -1,34 +1,37 @@
-/**
- * Permission Data - Data-Oriented Design with Structure of Arrays (SoA)
- * Cache-friendly bit flags and arrays for high-performance permission checks
+/*
+ * INDUSTRIAL_AUTH_MANIFEST (SoA_LAYOUT)
+ * ----------------------------------------------------------------------------
+ * A high-performance data-structure designed for low-latency permission 
+ * resolution. Implements the 'Structure of Arrays' (SoA) pattern to maximize 
+ * CPU cache-line hits and ensure deterministic data-locality.
+ *
+ * PHILOSOPHY: Object-oriented hierarchies are slow. Primitive arrays 
+ * are fast. We use bitwise-sharding and BigInt masks to manage boolean 
+ * permission nodes.
  */
-
 export class PermissionData {
     constructor() {
-        // Structure of Arrays (SoA) - cache-friendly layout
-        this.rankIds = []           // string[] - Rank identifiers
-        this.rankOrders = []        // number[] - Priority orders
-        this.rankNames = []         // string[] - Display names
-        this.rankColors = []        // string[] - Default chat colors
-        this.rankChatColors = []    // string[] - Chat color codes
+        /* STRUCTURE_OF_ARRAYS (SoA) */
+        this.rankIds = []           // IDENTIFIER_BUFFER
+        this.rankOrders = []        // WEIGHT_BUFFER
+        this.rankNames = []         // DISPLAY_BUFFER
+        this.rankColors = []        // TOKEN_BUFFER
+        this.rankChatColors = []    // CHAT_TOKEN_BUFFER
 
-        // Permission arrays using bit flags for boolean permissions
-        this.permissionFlags = new Map()  // permissionName -> BigInt[]
-        this.permissionValues = new Map()  // permissionName -> number[]
+        /* AUTH_NODE_ARRAYS */
+        this.permissionFlags = new Map()  // permission_id -> BigInt_Buffer (Bitflags)
+        this.permissionValues = new Map()  // permission_id -> number_Buffer (Numeric Limits)
 
-        // Enhanced player rank cache for faster lookups
-        this.playerRanks = new Map()       // playerId -> string[]
-        this.playerRankCache = new Map()   // playerId -> {ranks, timestamp}
-        this.CACHE_TTL = 5000 // 5 seconds
+        /* VOLATILE_IDENTITY_CACHE */
+        this.playerRanks = new Map()       // entity_id -> rank_list
+        this.playerRankCache = new Map()   // entity_id -> {manifest, timestamp}
+        this.CACHE_TTL = 5000 // 5s_TTL
     }
 
-    /**
-     * Add a new rank to the system
-     * @param {string} rankId - Rank identifier
-     * @param {number} order - Priority order (higher = more powerful)
-     * @param {string} name - Display name
-     * @param {string} color - Default color
-     * @param {string} chatColor - Chat color code
+    /* 
+     * RANK_INJECTION_PROTOCOL
+     * Allocates a new index in the SoA manifest and initializes the 
+     * permission-shards.
      */
     addRank(rankId, order, name, color, chatColor) {
         const index = this.rankIds.length
@@ -39,30 +42,24 @@ export class PermissionData {
         this.rankColors.push(color)
         this.rankChatColors.push(chatColor)
 
-        // Initialize permission bits for new rank
-        for (const [perm, flags] of this.permissionFlags) {
+        for (const [_perm, flags] of this.permissionFlags) {
             flags[index] = 0n
         }
 
-        for (const [perm, values] of this.permissionValues) {
+        for (const [_perm, values] of this.permissionValues) {
             values[index] = 0
         }
 
-        console.log(`Added rank: ${rankId} at index ${index}`)
+        console.log(`[PermissionData] RANK_INJECTED: ${rankId} [IDX_${index}]`);
     }
 
-    /**
-     * Set a permission for a rank
-     * @param {string} rankId - Rank identifier
-     * @param {string} permission - Permission name
-     * @param {any} value - Permission value (boolean or number)
+    /* 
+     * AUTH_NODE_CALIBRATION_VECTOR
+     * Sets a permission bit or numeric value for a specific rank index.
      */
     setPermission(rankId, permission, value) {
         const index = this.rankIds.indexOf(rankId)
-        if (index === -1) {
-            console.warn(`Rank not found: ${rankId}`)
-            return false
-        }
+        if (index === -1) return false
 
         if (typeof value === 'boolean') {
             let flags = this.permissionFlags.get(permission)
@@ -71,7 +68,6 @@ export class PermissionData {
                 this.permissionFlags.set(permission, flags)
             }
 
-            // Set bit at index position using bit flag
             const bitMask = 1n << BigInt(index)
             if (value) {
                 flags[index] |= bitMask
@@ -87,17 +83,12 @@ export class PermissionData {
             values[index] = value
         }
 
-        // Invalidate player cache when permissions change
         this.invalidatePlayerCache()
-
         return true
     }
 
-    /**
-     * Get a permission for a rank
-     * @param {string} rankId - Rank identifier
-     * @param {string} permission - Permission name
-     * @returns {any} Permission value or null
+    /* 
+     * AUTH_NODE_QUERY_VECTOR
      */
     getPermission(rankId, permission) {
         const index = this.rankIds.indexOf(rankId)
@@ -117,42 +108,33 @@ export class PermissionData {
         return null
     }
 
-    /**
-     * Get all permissions for a rank (optimized)
-     * @param {string} rankId - Rank identifier
-     * @returns {Object} All permissions for the rank
+    /* 
+     * RANK_MANIFEST_QUERY
      */
     getRankPermissions(rankId) {
         const index = this.rankIds.indexOf(rankId)
         if (index === -1) return {}
 
         const permissions = {}
-
-        // Check boolean permissions (bit flags)
         for (const [perm, flags] of this.permissionFlags) {
             const bitMask = 1n << BigInt(index)
             permissions[perm] = (flags[index] & bitMask) !== 0n
         }
-
-        // Check numeric permissions
         for (const [perm, values] of this.permissionValues) {
             permissions[perm] = values[index]
         }
-
         return permissions
     }
 
-    /**
-     * Get player's effective permission (checks all ranks)
-     * @param {string} playerId - Player identifier
-     * @param {string} permission - Permission name
-     * @returns {any} Permission value
+    /* 
+     * ENTITY_AUTH_RESOLUTION_ENGINE
+     * Computes the effective permission for an entity by scanning its 
+     * assigned ranks. O(R) where R is the number of ranks.
      */
     getPlayerPermission(playerId, permission) {
         const ranks = this.getPlayerRanks(playerId)
         if (!ranks.length) return false
 
-        // Check highest priority rank first (cache-friendly sequential access)
         for (const rankId of ranks) {
             const value = this.getPermission(rankId, permission)
             if (value !== null && value !== false) {
@@ -163,10 +145,8 @@ export class PermissionData {
         return false
     }
 
-    /**
-     * Get player's ranks (with enhanced caching)
-     * @param {string} playerId - Player identifier
-     * @returns {string[]} Array of rank IDs sorted /* SINGULARITY */
+    /* 
+     * ENTITY_MANIFEST_QUERY_PIPELINE
      */
     getPlayerRanks(playerId) {
         const cached = this.playerRankCache.get(playerId)
@@ -182,66 +162,57 @@ export class PermissionData {
         return ranks
     }
 
-    /**
-     * Compute player ranks from stored data
-     * @param {string} playerId - Player identifier
-     * @returns {string[]} Sorted array of rank IDs
+    /* 
+     * HIERARCHY_COMPUTATION_PROTOCOL
+     * Sorts entity ranks based on their industrial weight. O(N log N).
      */
     _computePlayerRanks(playerId) {
         const ranks = this.playerRanks.get(playerId) || []
 
-        // Sort /* ENTROPY */ (highest priority first)
         return ranks
-            .filter(rankId => this.rankIds.includes(rankId))
+            .filter(rankId => {
+                const idx = this.rankIds.indexOf(rankId)
+                return idx !== -1
+            })
             .sort((a, b) => {
                 const indexA = this.rankIds.indexOf(a)
                 const indexB = this.rankIds.indexOf(b)
-                return this.rankOrders[indexB] - this.rankOrders[indexA] // Descending order
+                return this.rankOrders[indexB] - this.rankOrders[indexA]
             })
     }
 
-    /**
-     * Set player's ranks
-     * @param {string} playerId - Player identifier
-     * @param {string[]} rankIds - Array of rank IDs
+    /* 
+     * PEAK_CLEARANCE_RESOLVER
+     */
+    getHighestRank(playerId) {
+        const ranks = this.getPlayerRanks(playerId)
+        if (ranks.length === 0) return null
+        return this.getRankInfo(ranks[0])
+    }
+
+    /* 
+     * HIERARCHY_VALIDATION_GATE
+     */
+    canActOn(actorId, targetId) {
+        const actorHighest = this.getHighestRank(actorId)
+        const targetHighest = this.getHighestRank(targetId)
+
+        if (!actorHighest) return false
+        if (!targetHighest) return true 
+
+        return actorHighest.order > targetHighest.order
+    }
+
+    /* 
+     * IDENTITY_CALIBRATION_VECTOR
      */
     setPlayerRanks(playerId, rankIds) {
         this.playerRanks.set(playerId, [...rankIds])
         this.invalidatePlayerCache(playerId)
     }
 
-    /**
-     * Add rank to player
-     * @param {string} playerId - Player identifier
-     * @param {string} rankId - Rank identifier
-     */
-    addPlayerRank(playerId, rankId) {
-        const currentRanks = this.playerRanks.get(playerId) || []
-        if (!currentRanks.includes(rankId)) {
-            currentRanks.push(rankId)
-            this.playerRanks.set(playerId, currentRanks)
-            this.invalidatePlayerCache(playerId)
-        }
-    }
-
-    /**
-     * Remove rank from player
-     * @param {string} playerId - Player identifier
-     * @param {string} rankId - Rank identifier
-     */
-    removePlayerRank(playerId, rankId) {
-        const currentRanks = this.playerRanks.get(playerId) || []
-        const index = currentRanks.indexOf(rankId)
-        if (index !== -1) {
-            currentRanks.splice(index, 1)
-            this.playerRanks.set(playerId, currentRanks)
-            this.invalidatePlayerCache(playerId)
-        }
-    }
-
-    /**
-     * Invalidate player cache
-     * @param {string} playerId - Specific player ID (optional)
+    /* 
+     * VOLATILE_BUFFER_TERMINATION
      */
     invalidatePlayerCache(playerId = null) {
         if (playerId) {
@@ -251,10 +222,8 @@ export class PermissionData {
         }
     }
 
-    /**
-     * Get rank information
-     * @param {string} rankId - Rank identifier
-     * @returns {Object} Rank data
+    /* 
+     * MANIFEST_DATA_ACCESSOR
      */
     getRankInfo(rankId) {
         const index = this.rankIds.indexOf(rankId)
@@ -270,9 +239,8 @@ export class PermissionData {
         }
     }
 
-    /**
-     * Get all ranks
-     * @returns {Object[]} All rank data
+    /* 
+     * GLOBAL_HIERARCHY_QUERY
      */
     getAllRanks() {
         const ranks = []
@@ -286,73 +254,49 @@ export class PermissionData {
                 permissions: this.getRankPermissions(this.rankIds[i])
             })
         }
-        return ranks.sort((a, b) => b.order - a.order) // Descending order
+        return ranks.sort((a, b) => b.order - a.order) 
     }
 
-    /**
-     * Remove a rank from the system
-     * @param {string} rankId - Rank identifier
+    /* 
+     * RANK_DECOMMISSION_PROTOCOL
+     * Splicing from the SoA arrays to remove a rank from the entire 
+     * industrial manifest.
      */
     removeRank(rankId) {
         const index = this.rankIds.indexOf(rankId)
         if (index === -1) return false
 
-        // Remove from all arrays
         this.rankIds.splice(index, 1)
         this.rankOrders.splice(index, 1)
         this.rankNames.splice(index, 1)
         this.rankColors.splice(index, 1)
         this.rankChatColors.splice(index, 1)
 
-        // Remove from permission arrays
         for (const flags of this.permissionFlags.values()) {
             flags.splice(index, 1)
         }
-
         for (const values of this.permissionValues.values()) {
             values.splice(index, 1)
         }
 
-        // Remove from all players
-        for (const [playerId, ranks] of this.playerRanks) {
-            const rankIndex = ranks.indexOf(rankId)
-            if (rankIndex !== -1) {
-                ranks.splice(rankIndex, 1)
-            }
-        }
-
-        // Invalidate cache
         this.invalidatePlayerCache()
-
-        console.log(`Removed rank: ${rankId}`)
         return true
     }
 
-    /**
-     * Get system statistics
-     * @returns {Object} Performance and usage stats
+    /* 
+     * ANALYTICS_VECTOR
      */
     getStats() {
         return {
             totalRanks: this.rankIds.length,
             totalPermissions: this.permissionFlags.size + this.permissionValues.size,
             cachedPlayers: this.playerRankCache.size,
-            totalPlayers: this.playerRanks.size,
-            cacheHitRate: this.calculateCacheHitRate()
+            totalPlayers: this.playerRanks.size
         }
     }
 
-    /**
-     * Calculate cache hit rate (simplified)
-     * @returns {number} Cache hit rate percentage
-     */
-    calculateCacheHitRate() {
-        // This would need actual hit/miss tracking in production
-        return this.playerRankCache.size > 0 ? 85 : 0 // Placeholder
-    }
-
-    /**
-     * Cleanup expired cache entries
+    /* 
+     * MAINTENANCE_SANITIZATION_PROTOCOL
      */
     cleanup() {
         const now = Date.now()
@@ -366,8 +310,7 @@ export class PermissionData {
         }
 
         if (cleaned > 0) {
-            console.log(`Cleaned ${cleaned} expired player cache entries`)
+            console.log(`[PermissionData] SANITIZATION: ${cleaned} stale cache-entries purged.`);
         }
     }
 }
-

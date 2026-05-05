@@ -1,21 +1,32 @@
-/**
- * Report Command - Report players or server issues
- */
-
 import { world } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js"
 
+/*
+ * INCIDENT_REPORTING_VECTOR
+ * ----------------------------------------------------------------------------
+ * Handles the collection and persistence of behavioral-incident reports. 
+ * Supports both player-specific and global-server report types. 
+ * Reports are serialized and committed to the 'ae:reports' registry 
+ * with a priority-broadcast to authorized staff entities.
+ *
+ * PHILOSOPHY: Snitching is part of industrial health. If you see 
+ * a structural failure or behavioral anomaly, report it.
+ */
 export const ReportCommand = {
     name: "report",
-    description: "Report a player or server issue",
-    usage: "!report <player|server> <message>",
+    description: "Orchestrates the submission of incident reports to the industrial staff.",
+    usage: "!report <player_identifier|'server'> <content>",
     permission: "essentials.report",
-    category: "utility",
+    category: "Utility",
 
+    /* 
+     * REPORT_ENTRY_PIPELINE
+     */
     execute(data, player, args) {
         if (args.length < 2) {
-            player.sendMessage("§cUsage: !report <player|server> <message>")
-            player.sendMessage("§7Example: !report player griefing diamonds")
-            player.sendMessage("§7Example: !report server lag at spawn")
+            player.sendMessage("[Manual] Syntax Error: Type and content required.");
+            player.sendMessage("[Manual] Example: !report player_x behavior_anomaly");
+            player.sendMessage("[Manual] Example: !report server spatial_lag_at_hub");
             return
         }
 
@@ -30,6 +41,9 @@ export const ReportCommand = {
     }
 }
 
+/* 
+ * SERVER_INCIDENT_HANDLER
+ */
 function createServerReport(player, message) {
     const report = {
         id: generateReportId(),
@@ -38,23 +52,27 @@ function createServerReport(player, message) {
         reporterId: player.id,
         message: message,
         timestamp: Date.now(),
-        status: "open"
+        status: "OPEN"
     }
 
     saveReport(report)
     notifyAdmins(report)
     
-    player.sendMessage("§aYour server report has been submitted. Admins have been notified.")
+    player.sendMessage("[Success] Server incident report committed to registry. Staff notified.");
 }
 
+/* 
+ * PLAYER_INCIDENT_HANDLER
+ * Performs a name-to-UUID resolution before committing the report 
+ * to ensure target persistence across session changes.
+ */
 function createPlayerReport(player, targetName, message) {
-    // Find target player
     const target = [...world.getPlayers()].find(p => 
         p.name.toLowerCase() === targetName.toLowerCase()
     )
 
     if (!target) {
-        player.sendMessage(`§cPlayer '§e${targetName}§c' not found or not online`)
+        player.sendMessage(`[Error] Entity '${targetName}' not found or offline.`);
         return
     }
 
@@ -67,55 +85,62 @@ function createPlayerReport(player, targetName, message) {
         reporterId: player.id,
         message: message,
         timestamp: Date.now(),
-        status: "open"
+        status: "OPEN"
     }
 
     saveReport(report)
     notifyAdmins(report)
     
-    player.sendMessage(`§aYour report against §e${target.name}§a has been submitted.`)
+    player.sendMessage(`[Success] Incident report against '${target.name}' submitted.`);
 }
 
+/* 
+ * UUID_GENERATION_VECTOR
+ */
 function generateReportId() {
     return `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
+/* 
+ * REGISTRY_COMMIT_PROTOCOL
+ */
 function saveReport(report) {
-    // Store report in world dynamic properties
     const reports = getReports()
     reports[report.id] = report
     
     try {
         world.setDynamicProperty("ae:reports", JSON.stringify(reports))
     } catch (error) {
-        console.error(`Failed to save report: ${error}`)
+        console.error(`[ReportCommand] PERSISTENCE_FAILURE: ${error}`)
     }
 }
 
+/* 
+ * REGISTRY_QUERY_PROTOCOL
+ */
 function getReports() {
     try {
         const stored = world.getDynamicProperty("ae:reports")
         return stored ? JSON.parse(stored) : {}
     } catch (error) {
-        console.error(`Failed to load reports: ${error}`)
+        console.error(`[ReportCommand] QUERY_FAILURE: ${error}`)
         return {}
     }
 }
 
+/* 
+ * BROADCAST_NOTIFICATION_PROTOCOL
+ * Scans the active player-buffer for entities with admin-level 
+ * clearance and relays the incident report in real-time.
+ */
 function notifyAdmins(report) {
-    const admins = world.getPlayers().filter(player => 
-        player.hasTag("admin") || player.hasTag("moderator")
-    )
+    const PermissionManager = Kernel.get("permissions")
+    const reportType = report.type === "server" ? "§cSERVER_ISSUE" : `§ePLAYER_REPORT: §f${report.target}`
+    const message = `§6[INCIDENT] ${reportType} §7FROM §e${report.reporter}§7: §f${report.message}`
 
-    const reportType = report.type === "server" ? "§cServer Issue" : `§ePlayer Report: §f${report.target}`
-    const message = `§6[REPORT] ${reportType} §7from §e${report.reporter}§7: §f${report.message}`
-
-    admins.forEach(admin => {
-        try {
-            admin.sendMessage(message)
-        } catch (error) {
-            console.error(`Failed to notify admin ${admin.name}: ${error}`)
+    world.getPlayers().forEach(p => {
+        if (PermissionManager.hasPermission(p, "essentials.admin.notify")) {
+            p.sendMessage(message)
         }
     })
 }
-

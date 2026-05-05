@@ -3,6 +3,7 @@
  */
 
 import { system, world } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js"
 
 export const TempbanCommand = {
     name: "tempban",
@@ -31,9 +32,10 @@ export const TempbanCommand = {
             return
         }
 
-        // Check permissions
-        if (target.hasTag("admin") && !player.hasTag("owner")) {
-            player.sendMessage("§cYou cannot ban other admins")
+        // Check permissions (Hierarchy Check)
+        const PermissionManager = Kernel.get("permissions")
+        if (!PermissionManager.canActOn(player, target)) {
+            player.sendMessage("§cYou do not have enough power to ban this player.")
             return
         }
 
@@ -68,8 +70,9 @@ export const TempbanCommand = {
 
             // Announce tempban
             const banMessage = formatBanMessage(banData)
+            const PermissionManager = Kernel.get("permissions")
             world.getPlayers().forEach(p => {
-                if (p.hasTag("admin") || p === player) {
+                if (PermissionManager.hasPermission(p, "essentials.admin.notify") || p.id === player.id) {
                     p.sendMessage(banMessage)
                 }
             })

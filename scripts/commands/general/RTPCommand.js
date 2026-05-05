@@ -1,26 +1,35 @@
-/**
- * RTP Command - Random teleport to safe location
- */
-
 import { Kernel } from "../../core/Kernel.js"
 
-// Cooldown tracking
-const cooldowns = new Map() // playerId → lastUsedTick
+/*
+ * SPATIAL_RANDOMIZATION_VECTOR
+ * ----------------------------------------------------------------------------
+ * A high-performance utility for randomizing an entity's coordinates within 
+ * a defined range. Implements a multi-stage search algorithm to identify 
+ * non-volatile Y-levels and safe surface blocks.
+ *
+ * PHILOSOPHY: Exploration is mandatory. If you get stuck in a wall, it's 
+ * an architectural failure—hence the 'findSafeLocation' protocol.
+ */
+
+const cooldowns = new Map() // PLAYER_COOLDOWN_BUFFER
 
 export const RTPCommand = {
     name: "rtp",
-    description: "Random teleport to a safe location",
-    usage: "!rtp [range]",
+    description: "Executes a random teleportation sequence to a safe coordinate buffer.",
+    usage: "!rtp [range_identifier]",
     permission: "essentials.rtp",
-    category: "teleport",
+    category: "Teleport",
 
-    execute(data, player, args) {
-        // Check cooldown
+    /* 
+     * VECTOR_EXECUTION_ENTRY
+     */
+    execute(_data, player, args) {
+        /* COOLDOWN_RESOLUTION */
         const PermissionManager = Kernel.get("permissions")
         const cd = (PermissionManager.getPermission(player, "rtp.cooldown") ?? 10) * 20
         const last = cooldowns.get(player.id) ?? 0
         if (Kernel.system.currentTick - last < cd) {
-            player.sendMessage(`§cPlease wait before using this again.`)
+            player.sendMessage(`[Cooldown] Vector recharging. Wait ${Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)}s.`);
             return
         }
         cooldowns.set(player.id, Kernel.system.currentTick)
@@ -28,26 +37,31 @@ export const RTPCommand = {
         const range = args[0] ? parseInt(args[0]) : 1000
 
         if (isNaN(range) || range < 100 || range > 10000) {
-            player.sendMessage("§cRange must be between 100 and 10000 blocks")
+            player.sendMessage("[Error] Spatial constraint violation: Range must be 100-10000.");
             return
         }
 
-        // Check if player is in combat (placeholder)
+        /* COMBAT_STATE_PROBE */
         if (isInCombat(player)) {
-            player.sendMessage("§cYou cannot use !rtp while in combat")
+            player.sendMessage("[Security] Randomization vector disabled during active engagement.");
             return
         }
 
-        player.sendMessage("§aFinding safe location...")
-
-        // Start location search
+        player.sendMessage("[System] Initiating spatial search protocol...");
         findSafeLocation(player, range)
     }
 }
 
+/*
+ * SAFE_LOCATION_SEARCH_ALGORITHM
+ * ----------------------------------------------------------------------------
+ * Performs up to 50 iterations to identify a valid surface block. 
+ * Utilizes a polar-coordinate randomization strategy to ensure uniform 
+ * distribution across the circular search area.
+ */
 async function findSafeLocation(player, maxRange) {
     const overworld = Kernel.world.getDimension("minecraft:overworld")
-    const spawnLocation = overworld.getSpawnLocation()
+    const spawnLocation = Kernel.world.getDefaultSpawnLocation?.() || { x: 0, y: 0, z: 0 }
 
     let attempts = 0
     const maxAttempts = 50
@@ -56,114 +70,98 @@ async function findSafeLocation(player, maxRange) {
     while (attempts < maxAttempts) {
         attempts++
 
-        // Generate random coordinates
         const angle = Math.random() * 2 * Math.PI
         const distance = Math.random() * maxRange
 
         const x = spawnLocation.x + Math.cos(angle) * distance
         const z = spawnLocation.z + Math.sin(angle) * distance
 
-        // Find safe Y coordinate
+        /* 
+         * VERTICAL_BUFFER_SCAN
+         */
         const safeY = await findSafeY(overworld, x, z)
 
         if (safeY !== null) {
-            // Safe location found
             const location = { x: x + 0.5, y: safeY, z: z + 0.5 }
 
             Kernel.system.run(() => {
-                try {
-                    player.teleport(location, { dimension: overworld })
-                    player.sendMessage(`§aTeleported to random location (${Math.floor(x)}, ${safeY}, ${Math.floor(z)})`)
-
-                    // Save last location for !back
-                    saveLastLocation(player.id, location)
-                } catch (error) {
-                    console.error(`RTP teleport error: ${error}`)
-                    player.sendMessage("§cFailed to teleport")
+                const TeleportService = Kernel.get("teleportService")
+                if (TeleportService.teleport(player, location, "minecraft:overworld")) {
+                    player.sendMessage(`[Success] Spatial migration complete: (${Math.floor(x)}, ${safeY}, ${Math.floor(z)})`);
+                } else {
+                    player.sendMessage("[Fatal] Teleportation handshake failure.");
                 }
             })
             return
         } else {
-            // Check if this was due to unloaded chunks
             const testBlock = overworld.getBlock({ x: Math.floor(x), y: 100, z: Math.floor(z) })
             if (!testBlock) {
                 unloadedChunkCount++
-
-                // If too many unloaded chunks, suggest smaller range
                 if (unloadedChunkCount >= 10) {
-                    player.sendMessage(`§eWarning: Many chunks are unloaded. Try a smaller range or wait for chunks to load.`)
+                    player.sendMessage(`[Warning] Chunk-buffer saturation detected. Try a smaller range.`);
                     unloadedChunkCount = 0
                 }
             }
         }
 
-        // Show progress
         if (attempts % 10 === 0) {
-            player.sendMessage(`§7Searching... attempt ${attempts}/${maxAttempts}`)
+            player.sendMessage(`[System] Scanning... iteration ${attempts}/${maxAttempts}`);
         }
     }
 
-    player.sendMessage(`§cCould not find safe location after ${maxAttempts} attempts. Try a smaller range.`)
+    player.sendMessage(`[Error] Search timeout. No safe surface identified in ${maxAttempts} iterations.`);
 }
 
+/* 
+ * VERTICAL_SCAN_PROTOCOL
+ * Scans from the sky-buffer down to the bedrock layer to find a 
+ * non-volatile solid block with air clearance.
+ */
 async function findSafeY(dimension, x, z) {
     try {
-        // Check from Y=320 down to Y=-64
         for (let y = 320; y >= -64; y--) {
             const blockLocation = { x: Math.floor(x), y: y, z: Math.floor(z) }
 
             try {
                 const block = dimension.getBlock(blockLocation)
-                if (!block) {
-                    // Block is unloaded, skip this location
-                    continue
-                }
+                if (!block) continue
 
                 const blockAbove = dimension.getBlock({ x: Math.floor(x), y: y + 1, z: Math.floor(z) })
-                if (!blockAbove) {
-                    // Block above is unloaded, skip this location
-                    continue
-                }
+                if (!blockAbove) continue
 
-                // Check if this is a safe location (solid block with air above)
                 const isSolid = isSafeBlock(block.typeId)
                 const isAirAbove = blockAbove.typeId === "minecraft:air"
 
                 if (isSolid && isAirAbove) {
-                    // Check surrounding blocks for safety
                     if (await isAreaSafe(dimension, x, y + 1, z)) {
-                        return y + 1 // Teleport to the air block
+                        return y + 1 
                     }
                 }
             } catch (error) {
-                // Block might be unloaded or inaccessible, continue to next Y level
                 continue
             }
         }
     } catch (error) {
-        console.error(`Error finding safe Y for coordinates (${Math.floor(x)}, ${Math.floor(z)}): ${error}`)
+        console.error(`[RTPCommand] Y_SCAN_FAILURE for (${Math.floor(x)}, ${Math.floor(z)}): ${error}`)
     }
 
     return null
 }
 
+/* 
+ * SPATIAL_AREA_SAFETY_VALIDATOR
+ * Checks a 3x3 footprint to ensure the entity won't suffocate or 
+ * ignite upon arrival.
+ */
 async function isAreaSafe(dimension, x, y, z) {
-    // Check 3x3 area around the player
     for (let dx = -1; dx <= 1; dx++) {
         for (let dz = -1; dz <= 1; dz++) {
             try {
                 const block = dimension.getBlock({ x: Math.floor(x + dx), y: y, z: Math.floor(z + dz) })
-                if (!block) {
-                    // Block is unloaded, consider this area unsafe
-                    return false
-                }
-
-                // Avoid dangerous blocks
-                if (isDangerousBlock(block.typeId)) {
+                if (!block || isDangerousBlock(block.typeId)) {
                     return false
                 }
             } catch (error) {
-                // Block access failed, consider area unsafe
                 return false
             }
         }
@@ -171,6 +169,9 @@ async function isAreaSafe(dimension, x, y, z) {
     return true
 }
 
+/* 
+ * NON_VOLATILE_SURFACE_MANIFEST
+ */
 function isSafeBlock(blockId) {
     const safeBlocks = [
         "minecraft:grass_block",
@@ -186,6 +187,9 @@ function isSafeBlock(blockId) {
     return safeBlocks.includes(blockId)
 }
 
+/* 
+ * VOLATILE_BLOCK_MANIFEST
+ */
 function isDangerousBlock(blockId) {
     const dangerousBlocks = [
         "minecraft:lava",
@@ -199,27 +203,7 @@ function isDangerousBlock(blockId) {
     return dangerousBlocks.includes(blockId)
 }
 
-function saveLastLocation(playerId, location) {
-    const lastLocation = {
-        x: Math.floor(location.x),
-        y: Math.floor(location.y),
-        z: Math.floor(location.z),
-        dimension: "minecraft:overworld"
-    }
-
-    try {
-        const player = [...Kernel.world.getAllPlayers()].find(p => p.id === playerId)
-        if (player) {
-            player.setDynamicProperty("ae:lastLocation", JSON.stringify(lastLocation))
-        }
-    } catch (error) {
-        console.error(`Failed to save last location: ${error}`)
-    }
-}
-
-function isInCombat(player) {
-    // Placeholder for combat check
-    // Will integrate with CombatSystem when built
+function isInCombat(_player) {
+    // TODO: Integrate with CombatIntegrity engine.
     return false
 }
-

@@ -11,8 +11,8 @@
     "dev": "echo 'Start BDS server and connect for testing'"
   },
   "devDependencies": {
-    "@minecraft/server": "beta",
-    "@minecraft/server-ui": "beta",
+    "@minecraft/server": "^2.7.0-beta.1.26.13-stable",
+    "@minecraft/server-ui": "^2.1.0-beta.1.26.13-stable",
     "eslint": "^8.57.0"
   },
   "keywords": [
@@ -28,4 +28,3 @@
     "node": ">=16.0.0"
   }
 }
-

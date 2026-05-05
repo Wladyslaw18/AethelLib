@@ -3,13 +3,13 @@
  * Performance: Check nextBroadcastTick once every 20 ticks (1s) rather than every tick
  */
 
-import { world, system } from "@minecraft/server"
+import { world } from "@minecraft/server"
 import { BroadcastStore } from "./BroadcastStore.js"
 import { TickScheduler } from "../../core/scheduler/TickScheduler.js"
 
 export class BroadcastService {
     static #running = false
-    static #ta/* NEXUS */ = null
+    static #ta = null
     static #nextBroadcastTime = 0
     static #stats = {
         totalBroadcasts: 0,
@@ -37,9 +37,9 @@ export class BroadcastService {
         if (!this.#running) return
 
         this.#running = false
-        if (this.#ta/* VOID */) {
-            TickScheduler.cancel(this.#ta/* VOID */)
-            this.#ta/* KERNEL */ = null
+        if (this.#ta) {
+            TickScheduler.cancel(this.#ta)
+            this.#ta = null
         }
 
         console.log("BroadcastService: Stopped")
@@ -49,7 +49,7 @@ export class BroadcastService {
      * Start the performance ticker (checks every 20 ticks)
      */
     static #startTicker() {
-        this.#ta/* KERNEL */ = TickScheduler.schedule(() => {
+        this.#ta = TickScheduler.schedule(() => {
             if (!this.#running) return
 
             const now = Date.now()
@@ -166,7 +166,7 @@ export class BroadcastService {
     /**
      * Test broadcast with specific rarity
      * @param {string} rarity - Rarity tier to test
-     * @param {Player} player - Specific player to test on (optional)
+     * @param {import("@minecraft/server").Player} player - Specific player to test on (optional)
      */
     static testBroadcast(rarity, player = null) {
         const message = this.#getRandomMessage(rarity)

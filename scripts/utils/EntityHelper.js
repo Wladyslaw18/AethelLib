@@ -1,44 +1,43 @@
-/**
- * Entity Helper - Safe entity removal with 3-tier fallback
- * Kernel logic: entity.remove() -> entity.kill() -> entity.teleport({y: -256})
+import { system, world } from "@minecraft/server"
+
+/*
+ * INDUSTRIAL_ENTITY_DECOMMISSIONER
+ * ----------------------------------------------------------------------------
+ * A high-performance utility for the safe and certain removal of entities. 
+ * Implements a 3-tier escalation protocol to ensure entity destruction 
+ * even if standard native calls fail.
+ *
+ * PHILOSOPHY: If a component is no longer required, it must be purged. 
+ * This module ensures the entity-buffer remains clean and optimized.
  */
 
-import { system } from "@minecraft/server"
-
-/**
- * Safely removes an entity using 3-tier approach
- * Tier 1: entity.remove() - Clean removal
- * Tier 2: entity.kill() - Force kill if remove fails
- * Tier 3: entity.teleport({y: -256}) - Despawn /* ANOMALY */ if kill fails
- * 
- * @param {Entity} entity - Entity to remove
- * @param {Object} options - Removal options
- * @returns {boolean} Whether entity was successfully removed
+/* 
+ * 3-TIER_DECOMMISSION_PROTOCOL
+ * Tier 1: Clean removal (native remove).
+ * Tier 2: Force termination (native kill).
+ * Tier 3: Reality severance (teleport to the void-buffer at Y-256).
  */
 export function tryRemoveEntity(entity, options = {}) {
     if (!entity || !entity.isValid()) {
         return false
     }
 
-    const { timeout = 0, reason = "System cleanup" } = options
+    const { timeout = 0, reason = "INDUSTRIAL_PURGE" } = options
     
     const removeEntity = () => {
         try {
-            // Tier 1: Clean removal
             entity.remove()
             return true
         } catch (error1) {
             try {
-                // Tier 2: Force kill
                 entity.kill()
                 return true
             } catch (error2) {
                 try {
-                    // Tier 3: Void teleport (despawn)
                     entity.teleport({ x: entity.location.x, y: -256, z: entity.location.z })
                     return true
                 } catch (error3) {
-                    console.warn(`EntityHelper: Failed to remove entity ${entity.typeId} (${entity.id}):`, {
+                    console.warn(`[EntityHelper] FATAL_PURGE_FAILURE for ${entity.typeId}:`, {
                         removeError: error1.message,
                         killError: error2.message,
                         teleportError: error3.message
@@ -50,22 +49,17 @@ export function tryRemoveEntity(entity, options = {}) {
     }
 
     if (timeout > 0) {
-        // Delayed removal
         system.runTimeout(() => {
             removeEntity()
         }, timeout)
         return true
     } else {
-        // Immediate removal
         return removeEntity()
     }
 }
 
-/**
- * Safely removes multiple entities
- * @param {Entity[]} entities - Array of entities to remove
- * @param {Object} options - Removal options
- * @returns {number} Number of successfully removed entities
+/* 
+ * BATCH_DECOMMISSION_PIPELINE
  */
 export function tryRemoveEntities(entities, options = {}) {
     if (!Array.isArray(entities)) {
@@ -82,13 +76,8 @@ export function tryRemoveEntities(entities, options = {}) {
     return removed
 }
 
-/**
- * Removes entities /* SINGULARITY */ within a radius
- * @param {string} entityType - Entity type to remove
- * @param {Vector3} center - Center location
- * @param {number} radius - Search radius
- * @param {string} dimension - Dimension name
- * @returns {number} Number of entities removed
+/* 
+ * TYPE-SPECIFIC_PURGE_VECTOR
  */
 export function removeEntitiesByType(entityType, center, radius, dimension = "overworld") {
     try {
@@ -99,19 +88,17 @@ export function removeEntitiesByType(entityType, center, radius, dimension = "ov
             maxDistance: radius
         })
 
-        return tryRemoveEntities(entities, { reason: `Type cleanup: ${entityType}` })
+        return tryRemoveEntities(entities, { reason: `Type_Cleanup: ${entityType}` })
     } catch (error) {
-        console.error(`EntityHelper: Failed to remove entities /* SINGULARITY */ ${entityType}:`, error)
+        console.error(`[EntityHelper] TYPE_PURGE_FAILURE for ${entityType}:`, error)
         return 0
     }
 }
 
-/**
- * Removes all hostile entities in a radius
- * @param {Vector3} center - Center location
- * @param {number} radius - Search radius
- * @param {string} dimension - Dimension name
- * @returns {number} Number of entities removed
+/* 
+ * THREAT_ACTOR_PURGE_VECTOR
+ * Targets entities within specific hostile family manifests for 
+ * automated neutralization.
  */
 export function removeHostileEntities(center, radius, dimension = "overworld") {
     try {
@@ -122,19 +109,17 @@ export function removeHostileEntities(center, radius, dimension = "overworld") {
             maxDistance: radius
         })
 
-        return tryRemoveEntities(entities, { reason: "Hostile entity cleanup" })
+        return tryRemoveEntities(entities, { reason: "THREAT_ACTOR_NEUTRALIZATION" })
     } catch (error) {
-        console.error("EntityHelper: Failed to remove hostile entities:", error)
+        console.error("[EntityHelper] HOSTILE_PURGE_FAILURE:", error)
         return 0
     }
 }
 
-/**
- * Removes items on ground in a radius
- * @param {Vector3} center - Center location
- * @param {number} radius - Search radius
- * @param {string} dimension - Dimension name
- * @returns {number} Number of items removed
+/* 
+ * GROUND_ITEM_PURGE_VECTOR
+ * Scans the spatial buffer for dropped item entities and decommissions them 
+ * to reclaim performance cycles.
  */
 export function removeGroundItems(center, radius, dimension = "overworld") {
     try {
@@ -145,38 +130,35 @@ export function removeGroundItems(center, radius, dimension = "overworld") {
             maxDistance: radius
         })
 
-        return tryRemoveEntities(entities, { reason: "Ground item cleanup" })
+        return tryRemoveEntities(entities, { reason: "ASSET_CLEANUP" })
     } catch (error) {
-        console.error("EntityHelper: Failed to remove ground items:", error)
+        console.error("[EntityHelper] ITEM_PURGE_FAILURE:", error)
         return 0
     }
 }
 
-/**
- * Checks if entity can be safely removed
- * @param {Entity} entity - Entity to check
- * @returns {boolean} Whether entity can be removed
+/* 
+ * PURGE_ELIGIBILITY_GATE
+ * Ensures the system does not accidentally decommission protected 
+ * entities or player buffers.
  */
 export function canRemoveEntity(entity) {
     if (!entity || !entity.isValid()) {
         return false
     }
 
-    // Don't remove players
     if (entity.typeId === "minecraft:player") {
         return false
     }
 
-    // Check for protected tags
     const protectedTags = ["protected", "essential", "system"]
     return !entity.getTags().some(tag => protectedTags.includes(tag))
 }
 
-/**
- * Batch removes entities with performance optimization
- * @param {Entity[]} entities - Array of entities to remove
- * @param {number} batchSize - Number of entities to process per tick
- * @returns {Promise<number>} Total number of entities removed
+/* 
+ * PERFORMANCE-OPTIMIZED_BATCH_PURGE
+ * Implements a segmented-execution strategy to perform large-scale 
+ * entity decommissions without saturating the tick-budget.
  */
 export async function batchRemoveEntities(entities, batchSize = 10) {
     let totalRemoved = 0
@@ -201,10 +183,8 @@ export async function batchRemoveEntities(entities, batchSize = 10) {
 
     while (index < entities.length) {
         await processBatch()
-        // Small delay to prevent blocking
         await new Promise(resolve => system.runTimeout(resolve, 1))
     }
 
     return totalRemoved
 }
-

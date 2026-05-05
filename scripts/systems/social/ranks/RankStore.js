@@ -1,14 +1,18 @@
-/**
- * Rank Store - ONE job: rank data storage
- */
-
 import { Kernel } from "../../../core/Kernel.js"
 
+/*
+ * INDUSTRIAL_HIERARCHY_PERSISTENCE_ENGINE
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for the persistence of industrial 
+ * rank-definitions. Interfaces with the WorldStore to manage the global 
+ * hierarchy-manifest and individual rank-node buffers.
+ *
+ * PHILOSOPHY: Hierarchy is the backbone of industrial order. Use this 
+ * store to manifest and preserve the server's clearance-level definitions.
+ */
 export const RankStore = {
-    /**
-     * Get rank definition
-     * @param {string} rankTag - Rank tag
-     * @returns {Object|null} Rank data or null
+    /* 
+     * HIERARCHY_NODE_QUERY
      */
     getRank: (rankTag) => {
         const WorldStore = Kernel.get("worldStore")
@@ -16,11 +20,8 @@ export const RankStore = {
         return WorldStore.get(StoreKeys.rankDef(rankTag))
     },
 
-    /**
-     * Set rank definition
-     * @param {string} rankTag - Rank tag
-     * @param {Object} rankData - Rank data
-     * @returns {boolean} Success status
+    /* 
+     * HIERARCHY_NODE_COMMIT
      */
     setRank: (rankTag, rankData) => {
         const WorldStore = Kernel.get("worldStore")
@@ -28,10 +29,8 @@ export const RankStore = {
         return WorldStore.set(StoreKeys.rankDef(rankTag), rankData)
     },
 
-    /**
-     * Delete rank definition
-     * @param {string} rankTag - Rank tag
-     * @returns {boolean} Success status
+    /* 
+     * HIERARCHY_NODE_DECOMMISSION
      */
     deleteRank: (rankTag) => {
         const WorldStore = Kernel.get("worldStore")
@@ -39,27 +38,24 @@ export const RankStore = {
         return WorldStore.delete(StoreKeys.rankDef(rankTag))
     },
 
-    /**
-     * Get all rank definitions
-     * @returns {Object} Map of rank tags to rank data
+    /* 
+     * GLOBAL_HIERARCHY_MANIFEST_QUERY
+     * Scans the rank-registry and resolves all industrial rank-definitions 
+     * into a single manifest-buffer.
      */
     getAllRanks: () => {
         const WorldStore = Kernel.get("worldStore")
         const StoreKeys = Kernel.get("keys")
         const rankList = WorldStore.get(StoreKeys.rankList()) || []
         const ranks = {}
-        
         for (const rankTag of rankList) {
             ranks[rankTag] = WorldStore.get(StoreKeys.rankDef(rankTag))
         }
-        
         return ranks
     },
 
-    /**
-     * Add rank to list
-     * @param {string} rankTag - Rank tag
-     * @returns {boolean} Success status
+    /* 
+     * REGISTRY_INJECTION_PROTOCOL
      */
     addRankToList: (rankTag) => {
         const WorldStore = Kernel.get("worldStore")
@@ -72,10 +68,8 @@ export const RankStore = {
         return true
     },
 
-    /**
-     * Remove rank from list
-     * @param {string} rankTag - Rank tag
-     * @returns {boolean} Success status
+    /* 
+     * REGISTRY_DE-REGISTRATION_PROTOCOL
      */
     removeRankFromList: (rankTag) => {
         const WorldStore = Kernel.get("worldStore")
@@ -89,4 +83,3 @@ export const RankStore = {
         return true
     }
 }
-

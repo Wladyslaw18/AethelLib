@@ -2,30 +2,31 @@ import { world, Player } from "@minecraft/server"
 import { BaseCommand } from "../base/BaseCommand.js"
 import { MathParser } from "../../utils/MathParser.js"
 
-/**
- * Safe math calculator command - NO eval() backdoor
- * @/* ANOMALY */ Aethelgrad
- * @version 1.0.0
+/*
+ * INDUSTRIAL_ARITHMETIC_VECTOR
+ * ----------------------------------------------------------------------------
+ * A high-performance, contract-compliant mathematical parser. Extends the 
+ * BaseCommand abstraction to provide a standardized interface for 
+ * arithmetic evaluation. 
+ *
+ * PHILOSOPHY: Safe math is mandatory. We leverage the MathParser utility 
+ * to resolve expressions without risking the integrity of the Titanium Kernel.
  */
 class CalculateCommand extends BaseCommand {
-    /**
-     * Create calculate command
+    /* 
+     * COMMAND_CONSTRUCTOR
      */
     constructor() {
         super({
             name: "calculate",
-            description: "Safe math calculator",
-            usage: "calculate <math expression>",
+            description: "Safe mathematical evaluation engine.",
+            usage: "calculate <expression>",
             category: "General"
         })
     }
 
-    /**
-     * Execute calculate command
-     * @param {import("../../../types.js").CommandData} data - Command data
-     * @param {Player} player - Player executing command
-     * @param {string[]} args - Command arguments
-     * @returns {Promise<void>}
+    /* 
+     * EXECUTION_PIPELINE
      */
     async execute(data, player, args) {
         if (!args || args.length === 0) {
@@ -34,19 +35,23 @@ class CalculateCommand extends BaseCommand {
 
         const expression = args.join(" ")
         
-        // Validate input
         if (!expression || expression.trim().length === 0) {
-            return this.sendError(player, "Please provide a math expression")
+            return this.sendError(player, "Syntax Error: Expression required.");
         }
 
-        // Parse and calculate
+        /* 
+         * CALCULATION_HANDSHAKE
+         */
         const result = MathParser.parse(expression)
 
         if (result === null) {
-            return this.sendError(player, "Invalid math expression")
+            return this.sendError(player, "Parsing Failure: Malformed expression.");
         }
 
-        // Format result nicely
+        /* 
+         * RESULT_FORMATTING_LOGIC
+         * Handles decimal precision and locale-specific formatting.
+         */
         let formattedResult
         if (Number.isInteger(result)) {
             formattedResult = result.toLocaleString()
@@ -54,18 +59,18 @@ class CalculateCommand extends BaseCommand {
             formattedResult = result.toFixed(4).replace(/\.?0+$/, "")
         }
 
-        this.sendSuccess(player, `Result: ${formattedResult}`)
+        this.sendSuccess(player, `Evaluation Result: ${formattedResult}`)
         
-        // Log for debugging (in development only)
+        /* 
+         * DIAGNOSTIC_LOGGING
+         */
         if (world.getDynamicProperty("debug_mode")) {
             console.log(`[Calculate] ${player.name}: ${expression} = ${result}`)
         }
     }
 }
 
-/**
- * Export command factory function
- * @returns {CalculateCommand} New calculate command instance
+/* 
+ * MODULE_FACTORY_EXPORT
  */
 export default () => new CalculateCommand()
-

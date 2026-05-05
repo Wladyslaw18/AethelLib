@@ -1,61 +1,77 @@
-/**
- * Kick Command - Kick players from server
- */
-
 import { system, world } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js"
 
+/*
+ * SESSION_TERMINATION_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * Handles the administrative severance of an entity's session. Performs 
+ * a hierarchy-validation check to resolve the power-delta between the 
+ * administrator and the target before invoking the native kick protocol.
+ *
+ * PHILOSOPHY: If you're in the way, you're removed. This is the 
+ * industrial equivalent of a garbage-collection cycle for non-compliant 
+ * entities.
+ */
 export const KickCommand = {
     name: "kick",
-    description: "Kick a player from the server",
-    usage: "!kick <player> [reason]",
+    description: "Sever the industrial connection of a specific entity identifier.",
+    usage: "!kick <player_identifier> [reason_manifest]",
     permission: "essentials.kick",
-    category: "admin",
+    category: "Admin",
 
+    /* 
+     * VECTOR_EXECUTION_PIPELINE
+     */
     execute(data, player, args) {
         if (args.length === 0) {
-            player.sendMessage("§cUsage: !kick <player> [reason]")
+            player.sendMessage("[Manual] Syntax Error: Player identifier required.");
             return
         }
 
         const targetName = args[0]
-        const reason = args.slice(1).join(" ") || "No reason provided"
+        const reason = args.slice(1).join(" ") || "ADMINISTRATIVE_TERMINATION"
 
+        /* 
+         * ENTITY_RESOLUTION
+         */
         const target = world.getPlayers().find(p =>
             p.name.toLowerCase() === targetName.toLowerCase()
         )
 
         if (!target) {
-            player.sendMessage(`§cPlayer '§e${targetName}§c' not found`)
+            player.sendMessage(`[Error] Entity '${targetName}' not found in active buffer.`);
             return
         }
 
-        // Check permissions (can't kick admins unless you're higher level)
-        if (target.hasTag("admin") && !player.hasTag("owner")) {
-            player.sendMessage("§cYou cannot kick other admins")
+        /* 
+         * HIERARCHY_VALIDATION_GATE
+         */
+        const PermissionManager = Kernel.get("permissions")
+        if (!PermissionManager.canActOn(player, target)) {
+            player.sendMessage("[Security] Authority Paradox: Target power-level exceeds actor clearance.");
             return
         }
 
-        // Perform kick using proper command
+        /* 
+         * REALITY_SEVERANCE_HOOK
+         */
         system.run(() => {
             try {
-                // Use the kick command instead of invalid player.remove()
-                target.runCommand(`kick "${target.name}" ${reason}`)
+                target.runCommand(`kick "${target.name}" [TERMINATED]: ${reason}`)
 
-                // Announce kick
-                const kickMessage = `§6§l[§eKICK§6§l] §r${target.name} §7was kicked by §e${player.name}§7\n§7Reason: §f${reason}`
+                const kickMessage = `§6§l[§eTERMINATION§6§l] §r${target.name} §7WAS SEVERED BY §e${player.name}§7\n§7Reason: §f${reason}`
 
                 world.getPlayers().forEach(p => {
-                    if (p.hasTag("admin") || p === player) {
+                    if (PermissionManager.hasPermission(p, "essentials.admin.notify") || p.id === player.id) {
                         p.sendMessage(kickMessage)
                     }
                 })
 
-                player.sendMessage(`§aSuccessfully kicked §e${target.name}`)
+                player.sendMessage(`[Success] Entity '${target.name}' connection severed.`);
             } catch (error) {
-                console.error(`Failed to kick ${targetName}: ${error}`)
-                player.sendMessage(`§cFailed to kick §e${targetName}`)
+                console.error(`[KickCommand] TERMINATION_CRASH for ${targetName}: ${error}`)
+                player.sendMessage(`[Fatal] Severance failure for entity '${targetName}'.`);
             }
         })
     }
 }
-

@@ -619,10 +619,10 @@ export const ITEM_CATEGORIES = {
     admin: { name: "Admin Only", icon: "👑" }
 }
 
-// Get items /* ANOMALY */
+// Get items by category
 export function getItemsByCategory(category) {
     return Object.entries(MINECRAFT_ITEMS)
-        .filter(([id, item]) => item.category === category)
+        .filter(([_id, item]) => item.category === category)
         .map(([id, item]) => ({ id, ...item }))
         .sort((a, b) => a.name.localeCompare(b.name))
 }

@@ -4,6 +4,7 @@
  */
 
 import { Kernel } from "../../../core/Kernel.js"
+import { ActionFormData } from "@minecraft/server-ui"
 
 export class ColorSystem {
     static COLORS = {
@@ -41,20 +42,9 @@ export class ColorSystem {
         "italic": "chat.format.italic"
     }
     
-    static DEFAULT_COLORS = {
-        "default": "gray",
-        "member": "green", 
-        "vip": "gold",
-        "mvp": "aqua",
-        "helper": "yellow",
-        "moderator": "dark_green",
-        "admin": "red",
-        "owner": "dark_red"
-    }
-    
     /**
      * Get player's current chat color
-     * @param {Player} player - Player to check
+     * @param {import("@minecraft/server").Player} player - Player to check
      * @returns {string} Color code
      */
     static getPlayerColor(player) {
@@ -65,31 +55,21 @@ export class ColorSystem {
         }
         return this.getRankDefaultColor(player)
     }
-    
+
     /**
      * Get rank's default color
-     * @param {Player} player - Player to check
+     * @param {import("@minecraft/server").Player} player - Player to check
      * @returns {string} Color code
      */
     static getRankDefaultColor(player) {
         const PermissionManager = Kernel.get("permissions")
-        const ranks = PermissionManager.getPlayerRanks(player)
-        if (!ranks.length) return this.COLORS.gray
-        
-        // Check highest priority rank first
-        for (const rankId of ranks) {
-            const defaultColor = this.DEFAULT_COLORS[rankId]
-            if (defaultColor) {
-                return this.COLORS[defaultColor] || this.COLORS.gray
-            }
-        }
-        
-        return this.COLORS.gray
+        const highestRank = PermissionManager.getHighestRank(player)
+        return highestRank?.chatColor || this.COLORS.gray
     }
     
     /**
      * Check if player can use a specific color
-     * @param {Player} player - Player to check
+     * @param {import("@minecraft/server").Player} player - Player to check
      * @param {string} color - Color name
      * @returns {boolean} Whether player can use the color
      */
@@ -146,7 +126,7 @@ export class ColorSystem {
     
     /**
      * Format chat message with player's color
-     * @param {Player} player - Player sending message
+     * @param {import("@minecraft/server").Player} player - Player sending message
      * @param {string} message - Message content
      * @returns {string} Formatted chat message
      */
@@ -160,20 +140,15 @@ export class ColorSystem {
     
     /**
      * Get player's rank prefix with colors
-     * @param {Player} player - Player to check
+     * @param {import("@minecraft/server").Player} player - Player to check
      * @returns {string} Rank prefix
      */
     static getRankPrefix(player) {
         const PermissionManager = Kernel.get("permissions")
-        const ranks = PermissionManager.getPlayerRanks(player)
-        if (!ranks.length) return "§7[Default]"
+        const highestRank = PermissionManager.getHighestRank(player)
         
-        // Use highest priority rank
-        const topRank = ranks[0]
-        const rankInfo = PermissionManager.getRankInfo(topRank)
-        
-        if (rankInfo) {
-            return `${rankInfo.chatColor}[${rankInfo.name}]`
+        if (highestRank) {
+            return `${highestRank.color || "§7"}[${highestRank.name}]`
         }
         
         return "§7[Default]"
@@ -181,7 +156,7 @@ export class ColorSystem {
     
     /**
      * Set player's chat color
-     * @param {Player} player - Player to set color for
+     * @param {import("@minecraft/server").Player} player - Player to set color for
      * @param {string} color - Color name
      * @returns {boolean} Success status
      */
@@ -204,7 +179,7 @@ export class ColorSystem {
     
     /**
      * Get available colors for player
-     * @param {Player} player - Player to check
+     * @param {import("@minecraft/server").Player} player - Player to check
      * @returns {Array} Available color names
      */
     static getAvailableColors(player) {
@@ -227,7 +202,7 @@ export class ColorSystem {
     
     /**
      * Show color selection UI to player
-     * @param {Player} player - Player to show UI to
+     * @param {import("@minecraft/server").Player} player - Player to show UI to
      */
     static async showColorSelection(player) {
         const availableColors = this.getAvailableColors(player)
@@ -248,7 +223,7 @@ export class ColorSystem {
         
         form.button("§cReset to Default", "textures/ui/cancel")
         
-        const response = await player.showForm(form)
+        const response = await form.show(player)
         if (response.canceled) return
         
         if (response.selection === availableColors.length) {
@@ -297,7 +272,7 @@ export class ColorSystem {
     
     /**
      * Process message for color codes (with permission checks)
-     * @param {Player} player - Player sending message
+     * @param {import("@minecraft/server").Player} player - Player sending message
      * @param {string} message - Raw message
      * @returns {string} Processed message
      */
@@ -324,8 +299,7 @@ export class ColorSystem {
     static getStats() {
         return {
             totalColors: Object.keys(this.COLORS).length,
-            colorPermissions: Object.keys(this.COLOR_PERMISSIONS).length,
-            defaultColors: Object.keys(this.DEFAULT_COLORS).length
+            colorPermissions: Object.keys(this.COLOR_PERMISSIONS).length
         }
     }
 }

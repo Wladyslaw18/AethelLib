@@ -1,64 +1,70 @@
-/**
- * Command interface - Contract for all commands
- * @/* OBSCURE */ Aethelgrad
- * @version 1.0.0
+/*
+ * ICOMMAND_CONTRACT_INTERFACE
+ * ----------------------------------------------------------------------------
+ * This is the master interface for the Command Architecture. Any module 
+ * attempting to register with the CommandRegistry MUST satisfy these 
+ * getters and methods.
+ *
+ * PHILOSOPHY: If you don't implement these, the registry will throw a 
+ * Runtime Error and crash the boot sequence. This is a design-time 
+ * contract to prevent 'half-baked' commands from entering the ecosystem.
  */
 
-/**
- * @interface ICommand
- */
 class ICommand {
-    /**
-     * Get command name
-     * @returns {string} Command name
+    /* 
+     * IDENTIFIER_TOKEN
+     * The primary key used for command resolution in the O(1) Map. 
      */
     get name() {
-        throw new Error("name getter must be implemented")
+        throw new Error("[ContractViolation] 'name' getter is non-optional.");
     }
 
-    /**
-     * Get command description
-     * @returns {string} Command description
+    /* 
+     * METADATA_DESCRIPTION
+     * Raw string used for the help-manual generation. 
      */
     get description() {
-        throw new Error("description getter must be implemented")
+        throw new Error("[ContractViolation] 'description' getter is non-optional.");
     }
 
-    /**
-     * Get command usage
-     * @returns {string} Command usage
+    /* 
+     * SYNTAX_HINT
+     * The usage string displayed during incorrect parameter input. 
      */
     get usage() {
-        throw new Error("usage getter must be implemented")
+        throw new Error("[ContractViolation] 'usage' getter is non-optional.");
     }
 
-    /**
-     * Get required permission
-     * @returns {string} Required permission
+    /* 
+     * PERMISSION_NODE
+     * The auth-node required for the RBAC handshake. 
      */
     get permission() {
-        throw new Error("permission getter must be implemented")
+        throw new Error("[ContractViolation] 'permission' getter is non-optional.");
     }
 
-    /**
-     * Get command category
-     * @returns {string} Command category
+    /* 
+     * REGISTRY_CATEGORY
+     * Used for grouping commands in the /help UI. 
      */
     get category() {
-        throw new Error("category getter must be implemented")
+        throw new Error("[ContractViolation] 'category' getter is non-optional.");
     }
 
-    /**
-     * Execute command
-     * @param {import("../../types.js").CommandData} data - Command data
-     * @param {import("@minecraft/server").Player} player - Player executing command
-     * @param {string[]} args - Command arguments
-     * @returns {Promise<void>}
+    /*
+     * EXECUTION_LOGIC_GATE
+     * ----------------------------------------------------------------------------
+     * The entry point for the command execution. This method handles the 
+     * transformation of raw strings into actual game-state changes. 
+     *
+     * @param {Object} data - The internal command metadata.
+     * @param {Player} player - The originating actor.
+     * @param {string[]} args - The raw parameter array.
      */
     async execute(data, player, args) {
-        throw new Error("execute method must be implemented")
+        void data; void player; void args;
+        throw new Error("[ContractViolation] 'execute' method is non-optional.");
     }
 }
 
 export { ICommand }
-

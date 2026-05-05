@@ -1,122 +1,159 @@
-/**
- * Claim Service - Modular permission-deep chunk protection
- * Smith Forge Rule: Max 100 lines per file
- * Zero-Eval, Identity Rule: UUIDs only
- * Cache-Aside: JS Map cache + debounced Dynamic Property write
+import { Kernel } from "../../core/Kernel.js"
+import { Configuration } from "../../Configuration.js"
+
+/*
+ * INDUSTRIAL_SPATIAL_SECURITY_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * The primary execution engine for spatial-integrity protection. 
+ * Orchestrates before-event interception for block-mutation and entity-interaction 
+ * to enforce claim-contracts. 
+ *
+ * PHILOSOPHY: Private property is absolute. If you don't have the 
+ * clearance bitmask, the reality-state mutation is cancelled.
  */
 
-import { world, system } from "@minecraft/server"
-import { 
-    locationToChunkKey, 
-    getClaim, 
-    setClaim, 
-    isOwner, 
-    hasPermission,
-    addTrusted,
-    removeTrusted,
-    removeClaim as deleteClaim,
-    getPlayerClaims
-} from "./ClaimStore.js"
-
-// Permission bit definitions
+// AUTH_CLEARANCE_BITMASKS
 const PERMISSIONS = {
     BUILD: 1,
-    CHESTS: 2,
+    CONTAINERS: 2,
     DOORS: 4,
-    INTERACT: 8,
-    CONTAINERS: 16
+    REDSTONE: 8,
+    MOB_INTERACT: 16,
+    CRAFTING: 32
 }
 
-/**
- * Initialize claim protection system
+// BLOCK_CLASSIFICATION_MANIFESTS
+const CONTAINER_BLOCKS = new Set(["chest", "barrel", "trapped_chest", "shulker", "hopper", "dropper", "dispenser", "furnace", "blast_furnace", "smoker", "brewing_stand"])
+const DOOR_BLOCKS = new Set(["door", "gate", "trapdoor"])
+const REDSTONE_BLOCKS = new Set(["lever", "button", "pressure_plate", "daylight_detector", "tripwire_hook", "repeater", "comparator"])
+const CRAFTING_BLOCKS = new Set(["crafting_table", "smithing_table", "cartography_table", "loom", "stonecutter", "grindstone", "anvil", "enchanting_table"])
+
+/* 
+ * AUTHORITY_BYPASS_PROBE
+ */
+function isGodTag(player) {
+    const tags = player.getTags()
+    return Configuration.SUPER_ADMIN_TAGS.some(tag => tags.includes(tag))
+}
+
+/* 
+ * BLOCK_CATEGORY_RESOLVER
+ */
+function classifyBlock(typeId) {
+    for (const keyword of CONTAINER_BLOCKS) {
+        if (typeId.includes(keyword)) return PERMISSIONS.CONTAINERS
+    }
+    for (const keyword of DOOR_BLOCKS) {
+        if (typeId.includes(keyword)) return PERMISSIONS.DOORS
+    }
+    for (const keyword of REDSTONE_BLOCKS) {
+        if (typeId.includes(keyword)) return PERMISSIONS.REDSTONE
+    }
+    for (const keyword of CRAFTING_BLOCKS) {
+        if (typeId.includes(keyword)) return PERMISSIONS.CRAFTING
+    }
+    return 0 
+}
+
+/* 
+ * SERVICE_INITIALIZATION_PROTOCOL
+ * Subscribes to the world's before-events to perform real-time spatial 
+ * clearance checks.
  */
 export function init() {
-    // Intercept block breaking
-    world.beforeEvents.playerBreakBlock.subscribe((event) => {
+    /* BLOCK_DECONSTRUCTION_INTERCEPTOR */
+    Kernel.world.beforeEvents.playerBreakBlock.subscribe((event) => {
         const player = event.player
-        const block = event.block
-        const chunkKey = locationToChunkKey(block.location)
+        if (isGodTag(player)) return
 
-        if (!hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
+        const ClaimStore = Kernel.get("claimStore")
+        const chunkKey = ClaimStore.locationToChunkKey(event.block.location)
+        if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
             event.cancel = true
-            player.sendMessage("§cYou don't have permission to break blocks here!")
-            return
+            player.onScreenDisplay.setActionBar("§c[Security] Access Denied: Spatial Integrity Violation");
         }
     })
 
-    // Intercept block placing
-    world.beforeEvents.playerPlaceBlock.subscribe((event) => {
+    /* BLOCK_CONSTRUCTION_INTERCEPTOR */
+    Kernel.world.beforeEvents.playerPlaceBlock.subscribe((event) => {
         const player = event.player
-        const block = event.block
-        const chunkKey = locationToChunkKey(block.location)
+        if (isGodTag(player)) return
 
-        if (!hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
+        const ClaimStore = Kernel.get("claimStore")
+        const chunkKey = ClaimStore.locationToChunkKey(event.block.location)
+        if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
             event.cancel = true
-            player.sendMessage("§cYou don't have permission to place blocks here!")
-            return
+            player.onScreenDisplay.setActionBar("§c[Security] Access Denied: Spatial Integrity Violation");
         }
     })
 
-    // Intercept block interaction
-    world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
+    /* INTERACTION_VECTOR_INTERCEPTOR */
+    Kernel.world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
         const player = event.player
+        if (isGodTag(player)) return
+
         const block = event.block
-        const chunkKey = locationToChunkKey(block.location)
+        const ClaimStore = Kernel.get("claimStore")
+        const chunkKey = ClaimStore.locationToChunkKey(block.location)
+        const requiredPermission = classifyBlock(block.typeId)
 
-        // Check specific block permissions
-        let requiredPermission = PERMISSIONS.INTERACT
+        if (requiredPermission === 0) return 
 
-        if (block.typeId.includes('chest') || block.typeId.includes('shulker')) {
-            requiredPermission = PERMISSIONS.CHESTS
-        } else if (block.typeId.includes('door') || block.typeId.includes('gate')) {
-            requiredPermission = PERMISSIONS.DOORS
-        } else if (block.typeId.includes('container') || block.typeId.includes('barrel')) {
-            requiredPermission = PERMISSIONS.CONTAINERS
-        }
-
-        if (!hasPermission(chunkKey, player.id, requiredPermission)) {
+        if (!ClaimStore.hasPermission(chunkKey, player.id, requiredPermission)) {
             event.cancel = true
-            player.sendMessage("§cYou don't have permission to interact with this!")
-            return
+            player.onScreenDisplay.setActionBar("§c[Security] Access Denied: Clearance Bitmask Missing");
         }
     })
 
-    console.log("§2[Aethelgrad Essentials] Claim protection initialized")
+    /* ENTITY_INTERACTION_INTERCEPTOR */
+    Kernel.world.beforeEvents.playerInteractWithEntity.subscribe((event) => {
+        const player = event.player
+        if (isGodTag(player)) return
+
+        const entity = event.target
+        if (!entity?.location) return
+
+        const ClaimStore = Kernel.get("claimStore")
+        const chunkKey = ClaimStore.locationToChunkKey(entity.location)
+        if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.MOB_INTERACT)) {
+            event.cancel = true
+            player.onScreenDisplay.setActionBar("§c[Security] Access Denied: Entity Integrity Violation");
+        }
+    })
+
+    console.log("[Aethelgrad Essentials] Spatial Security Engine operational.");
 }
 
-/**
- * Create a new claim
- * @param {Player} player - Player creating claim
- * @param {Vector3} location - Claim center location
- * @param {number} radius - Claim radius in chunks
- * @returns {boolean} Success status
+/* 
+ * SPATIAL_ACQUISITION_PROTOCOL
+ * Performs a collision-scan across the target radius before committing 
+ * the claim to the registry.
  */
 export function createClaim(player, location, radius = 1) {
-    const centerChunk = locationToChunkKey(location)
+    const ClaimStore = Kernel.get("claimStore")
+    const centerChunk = ClaimStore.locationToChunkKey(location)
     const playerId = player.id
 
-    // Check if chunks are already claimed
     for (let x = -radius; x <= radius; x++) {
         for (let z = -radius; z <= radius; z++) {
             const chunkKey = centerChunk.split(',').map((coord, i) => 
                 parseInt(coord) + (i === 0 ? x : z)
             ).join(',')
             
-            if (getClaim(chunkKey)) {
-                player.sendMessage("§cThis chunk is already claimed!")
+            if (ClaimStore.getClaim(chunkKey)) {
+                player.sendMessage("[Error] Spatial Collision: Chunk already registered.");
                 return false
             }
         }
     }
 
-    // Create claims
     for (let x = -radius; x <= radius; x++) {
         for (let z = -radius; z <= radius; z++) {
             const chunkKey = centerChunk.split(',').map((coord, i) => 
                 parseInt(coord) + (i === 0 ? x : z)
             ).join(',')
             
-            setClaim(chunkKey, {
+            ClaimStore.setClaim(chunkKey, {
                 ownerId: playerId,
                 trusted: {},
                 flags: 0
@@ -124,80 +161,69 @@ export function createClaim(player, location, radius = 1) {
         }
     }
 
-    player.sendMessage(`§aClaim created with radius ${radius} chunks!`)
+    player.sendMessage(`[Success] Spatial buffer acquired (Radius: ${radius} chunks).`);
     return true
 }
 
-/**
- * Remove a claim
- * @param {Player} player - Player removing claim
- * @param {Vector3} location - Claim location
- * @returns {boolean} Success status
+/* 
+ * SPATIAL_DECOMMISSION_PROTOCOL
  */
 export function removeClaim(player, location) {
-    const chunkKey = locationToChunkKey(location)
+    const ClaimStore = Kernel.get("claimStore")
+    const chunkKey = ClaimStore.locationToChunkKey(location)
     const playerId = player.id
 
-    if (!isOwner(chunkKey, playerId)) {
-        player.sendMessage("§cYou don't own this claim!")
+    if (!ClaimStore.isOwner(chunkKey, playerId)) {
+        player.sendMessage("[Error] Security Violation: Target spatial buffer is not under your authority.");
         return false
     }
 
-    // Remove claim
-    deleteClaim(chunkKey)
-    player.sendMessage("§aClaim removed!")
+    ClaimStore.removeClaim(chunkKey)
+    player.sendMessage("[Success] Spatial buffer decommissioned.");
     return true
 }
 
-/**
- * Add trusted player to claim
- * @param {Player} player - Claim owner
- * @param {string} targetName - Player to trust
- * @param {number} permissions - Permission bitmask
+/* 
+ * TRUST_PROFILE_ORCHESTRATOR
  */
 export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD) {
-    const target = world.getPlayers().find(p => p.name === targetName)
+    const target = Kernel.world.getPlayers().find(p => p.name === targetName)
     if (!target) {
-        player.sendMessage(`§cPlayer ${targetName} not found!`)
+        player.sendMessage(`[Error] Entity '${targetName}' not found.`);
         return
     }
 
-    // Find any chunk owned /* SINGULARITY */
-    const playerClaims = getPlayerClaims(player.id)
+    const ClaimStore = Kernel.get("claimStore")
+    const playerClaims = ClaimStore.getPlayerClaims(player.id)
     if (playerClaims.length === 0) {
-        player.sendMessage("§cYou don't have any claims!")
+        player.sendMessage("[Error] No active spatial manifests found.");
         return
     }
 
-    // Add trust to all player's claims
     for (const claim of playerClaims) {
-        addTrusted(claim.chunkKey, player.id, target.id, permissions)
+        ClaimStore.addTrusted(claim.chunkKey, player.id, target.id, permissions)
     }
 
-    player.sendMessage(`§aAdded ${targetName} to your claims with permissions ${permissions}!`)
+    player.sendMessage(`[Success] Entity '${targetName}' clearance bitmask injected: ${permissions}`);
 }
 
-/**
- * Remove trusted player from claim
- * @param {Player} player - Claim owner
- * @param {string} targetName - Player to untrust
+/* 
+ * TRUST_PROFILE_DECOMMISSIONER
  */
 export function untrustPlayer(player, targetName) {
-    const target = world.getPlayers().find(p => p.name === targetName)
+    const target = Kernel.world.getPlayers().find(p => p.name === targetName)
     if (!target) {
-        player.sendMessage(`§cPlayer ${targetName} not found!`)
+        player.sendMessage(`[Error] Entity '${targetName}' not found.`);
         return
     }
 
-    // Remove trust from all player's claims
-    const playerClaims = getPlayerClaims(player.id)
+    const ClaimStore = Kernel.get("claimStore")
+    const playerClaims = ClaimStore.getPlayerClaims(player.id)
     for (const claim of playerClaims) {
-        removeTrusted(claim.chunkKey, target.id)
+        ClaimStore.removeTrusted(claim.chunkKey, target.id)
     }
 
-    player.sendMessage(`§aRemoved ${targetName} from your claims!`)
+    player.sendMessage(`[Success] Entity '${targetName}' clearance bitmask purged.`);
 }
 
-// Export permission constants
 export { PERMISSIONS }
-

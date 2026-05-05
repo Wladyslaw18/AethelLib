@@ -1,14 +1,20 @@
-/**
- * Mute Store - Manages player mutes using PlayerStore
- */
-
 import { Kernel } from "../../core/Kernel.js"
 
+/*
+ * INDUSTRIAL_COMMUNICATION_SUPPRESSOR
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for the suppression of entity 
+ * communication-packets. Interfaces with the PlayerStore to manage 
+ * persistent mute-nodes.
+ *
+ * PHILOSOPHY: Non-compliant communication must be suppressed. Use this 
+ * registry to manifest the industrial silence-protocol for specific 
+ * entity identifiers.
+ */
 export const MuteStore = {
-    /**
-     * Mute a player
-     * @param {Player} player - Player object
-     * @returns {Promise<boolean>} Success status
+    /* 
+     * SUPPRESSION_INJECTION_VECTOR
+     * Commits a suppression-node to the entity's persistent buffer.
      */
     async mute(player) {
         const PlayerStore = Kernel.get("playerStore")
@@ -16,10 +22,8 @@ export const MuteStore = {
         return await PlayerStore.set(player, StoreKeys.mute(player.id), true)
     },
 
-    /**
-     * Unmute a player
-     * @param {Player} player - Player object
-     * @returns {Promise<boolean>} Success status
+    /* 
+     * SUPPRESSION_TERMINATION_VECTOR
      */
     async unmute(player) {
         const PlayerStore = Kernel.get("playerStore")
@@ -27,10 +31,8 @@ export const MuteStore = {
         return await PlayerStore.set(player, StoreKeys.mute(player.id), false)
     },
 
-    /**
-     * Check if a player is muted
-     * @param {Player} player - Player object
-     * @returns {boolean} Whether player is muted
+    /* 
+     * SUPPRESSION_STATUS_QUERY
      */
     isMuted(player) {
         const PlayerStore = Kernel.get("playerStore")
@@ -39,4 +41,3 @@ export const MuteStore = {
         return muted === true
     }
 }
-

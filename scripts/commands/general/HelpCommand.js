@@ -1,140 +1,83 @@
-/**
- * Help Command - Display command help and categories
- */
+import { Kernel } from "../../core/Kernel.js"
 
+/*
+ * INDUSTRIAL_MANUAL_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * The primary discovery vector for the command ecosystem. Scans the 
+ * CommandRegistry and generates a categorized manifest of all active 
+ * functional modules. 
+ *
+ * PHILOSOPHY: Information is a resource. Use this manual to identify 
+ * and calibrate the execution-vectors required for industrial operations.
+ */
 export const HelpCommand = {
     name: "help",
-    description: "Show available commands and help",
-    usage: "!help [category|command]",
+    description: "Generates the industrial manual for all registered command modules.",
+    usage: "!help [command_identifier]",
     permission: "essentials.help",
-    category: "utility",
+    category: "GENERAL",
 
-    execute(data, player, args) {
+    /* 
+     * MANUAL_QUERY_VECTOR
+     */
+    execute(player, args) {
+        const CommandRegistry = Kernel.get("commandRegistry")
         const topic = args[0]?.toLowerCase()
         
         if (!topic) {
-            showCategories(player)
+            this._showAllCommands(player, CommandRegistry)
             return
         }
 
-        // Check if it's a category
-        if (CATEGORIES[topic]) {
-            showCategory(player, topic)
-            return
-        }
-
-        // Check if it's a specific command
-        const command = getCommandInfo(topic)
+        const command = CommandRegistry.get(topic)
         if (command) {
-            showCommandHelp(player, command)
+            this._showCommandHelp(player, command)
             return
         }
 
-        player.sendMessage(`§cNo help found for: §e${topic}`)
-        player.sendMessage("§7Use !help to see categories")
-    }
-}
-
-const CATEGORIES = {
-    teleport: {
-        name: "Teleport Commands",
-        description: "Teleportation and location commands",
-        color: "§b",
-        commands: ["home", "sethome", "delhome", "listhome", "warp", "setwarp", "delwarp", "listwarp", "spawn", "tpa", "tpahere", "tpaccept", "tpacancel", "tpasetting", "back", "rtp"]
+        player.sendMessage(`§cERROR: MANUAL_IDENTIFIER_NOT_FOUND: '${topic}'`);
+        player.sendMessage("§7SUGGESTION: Execute !help for the global industrial manifest.");
     },
-    economy: {
-        name: "Economy Commands", 
-        description: "Money and trading commands",
-        color: "§6",
-        commands: ["money", "pay", "topmoney"]
-    },
-    utility: {
-        name: "Utility Commands",
-        description: "General utility commands",
-        color: "§a",
-        commands: ["help", "calculate", "tps", "playerlist", "info", "report", "credit"]
-    },
-    social: {
-        name: "Social Commands",
-        description: "Communication and player interaction",
-        color: "§d",
-        commands: ["message", "reply"]
-    }
-}
 
-function showCategories(player) {
-    player.sendMessage("§6=== Aethelgrad Essentials Help ===")
-    player.sendMessage("")
-    
-    for (const [key, category] of Object.entries(CATEGORIES)) {
-        player.sendMessage(`${category.color}${category.name} §7- ${category.description}`)
-        player.sendMessage(`§7  Commands: ${category.commands.map(cmd => `!${cmd}`).join(", ")}`)
-        player.sendMessage("")
-    }
-    
-    player.sendMessage("§7Use !help <category> for category details")
-    player.sendMessage("§7Use !help <command> for command help")
-}
+    /*
+     * GLOBAL_MANIFEST_RENDERER
+     * Iterates through the entire registry and groups functional modules 
+     * by their industrial category.
+     */
+    _showAllCommands(player, Registry) {
+        const commands = Registry.getAll()
+        const categories = {}
 
-function showCategory(player, categoryKey) {
-    const category = CATEGORIES[categoryKey]
-    if (!category) return
-    
-    player.sendMessage(`${category.color}=== ${category.name} ===`)
-    player.sendMessage(`§7${category.description}`)
-    player.sendMessage("")
-    
-    for (const cmdName of category.commands) {
-        const command = getCommandInfo(cmdName)
-        if (command) {
-            player.sendMessage(`§e!${command.name} §7- ${command.description}`)
+        for (const name of commands) {
+            const cmd = Registry.get(name)
+            const cat = cmd.category || "GENERAL"
+            if (!categories[cat]) categories[cat] = []
+            categories[cat].push(name)
+        }
+
+        player.sendMessage("§0§l» §6§lINDUSTRIAL_MANUAL_MANIFEST§0 «")
+        player.sendMessage("§7Active functional modules and execution-vectors:")
+        
+        for (const [cat, cmds] of Object.entries(categories)) {
+            player.sendMessage(`\n§e[${cat.toUpperCase()}]`)
+            player.sendMessage(`§7${cmds.sort().join(", ")}`)
+        }
+        
+        player.sendMessage("\n§7Execute !help <identifier> for detailed syntax calibration.");
+    },
+
+    /*
+     * MODULE_SPECIFIC_MANUAL_RENDERER
+     */
+    _showCommandHelp(player, command) {
+        player.sendMessage(`§0§l» §6§lMANUAL_ENTRY: !${command.name.toUpperCase()}§0 «`)
+        player.sendMessage(`§7Manifest_Description: §f${command.description}`)
+        player.sendMessage(`§7Syntax_Calibration: §e${command.usage || `!${command.name}`}`)
+        if (command.aliases && command.aliases.length > 0) {
+            player.sendMessage(`§7Alias_Resolution_Nodes: §8${command.aliases.join(", ")}`)
+        }
+        if (command.permission) {
+            player.sendMessage(`§7Clearance_Requirement: §8${command.permission}`)
         }
     }
 }
-
-function showCommandHelp(player, command) {
-    player.sendMessage(`§6=== !${command.name} ===`)
-    player.sendMessage(`§7Description: ${command.description}`)
-    player.sendMessage(`§7Usage: ${command.usage}`)
-    
-    if (command.permission !== "essentials.help") {
-        player.sendMessage(`§7Permission: ${command.permission}`)
-    }
-}
-
-function getCommandInfo(commandName) {
-    // This would ideally query the CommandRegistry
-    // For now, return basic info for known commands
-    const commands = {
-        home: { name: "home", description: "Teleport to your home", usage: "!home [name]", permission: "essentials.home" },
-        sethome: { name: "sethome", description: "Set your home location", usage: "!sethome <name>", permission: "essentials.home.set" },
-        delhome: { name: "delhome", description: "Delete a home", usage: "!delhome <name>", permission: "essentials.home.delete" },
-        listhome: { name: "listhome", description: "List your homes", usage: "!listhome", permission: "essentials.home" },
-        warp: { name: "warp", description: "Teleport to a warp", usage: "!warp <name>", permission: "essentials.warp" },
-        setwarp: { name: "setwarp", description: "Create a server warp", usage: "!setwarp <name>", permission: "essentials.warp.set" },
-        delwarp: { name: "delwarp", description: "Delete a server warp", usage: "!delwarp <name>", permission: "essentials.warp.delete" },
-        listwarp: { name: "listwarp", description: "List server warps", usage: "!listwarp", permission: "essentials.warp" },
-        spawn: { name: "spawn", description: "Teleport to spawn", usage: "!spawn", permission: "essentials.spawn" },
-        tpa: { name: "tpa", description: "Request teleport to player", usage: "!tpa <player>", permission: "essentials.tpa" },
-        tpahere: { name: "tpahere", description: "Request player teleport to you", usage: "!tpahere <player>", permission: "essentials.tpa" },
-        tpaccept: { name: "tpaccept", description: "Accept TPA request", usage: "!tpaccept [player]", permission: "essentials.tpa" },
-        tpacancel: { name: "tpacancel", description: "Cancel TPA requests", usage: "!tpacancel [on/off|player]", permission: "essentials.tpa" },
-        tpasetting: { name: "tpasetting", description: "Configure TPA settings", usage: "!tpasetting <on/off>", permission: "essentials.tpa" },
-        back: { name: "back", description: "Teleport to last location", usage: "!back", permission: "essentials.back" },
-        rtp: { name: "rtp", description: "Random teleport", usage: "!rtp", permission: "essentials.rtp" },
-        money: { name: "money", description: "Check your balance", usage: "!money [player]", permission: "essentials.money" },
-        pay: { name: "pay", description: "Send money to player", usage: "!pay <player> <amount>", permission: "essentials.pay" },
-        topmoney: { name: "topmoney", description: "Show richest players", usage: "!topmoney", permission: "essentials.money" },
-        calculate: { name: "calculate", description: "Calculate math expressions", usage: "!calculate <expression>", permission: "essentials.calculate" },
-        tps: { name: "tps", description: "Show server TPS", usage: "!tps", permission: "essentials.tps" },
-        playerlist: { name: "playerlist", description: "List online players", usage: "!playerlist", permission: "essentials.playerlist" },
-        info: { name: "info", description: "Show server information", usage: "!info", permission: "essentials.info" },
-        report: { name: "report", description: "Report a player or issue", usage: "!report <player|server> <message>", permission: "essentials.report" },
-        credit: { name: "credit", description: "Show addon credits", usage: "!credit", permission: "essentials.help" },
-        message: { name: "message", description: "Send private message", usage: "!message <player> <message>", permission: "essentials.message" },
-        reply: { name: "reply", description: "Reply to last message", usage: "!reply <message>", permission: "essentials.message" }
-    }
-    
-    return commands[commandName]
-}
-

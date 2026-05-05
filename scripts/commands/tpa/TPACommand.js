@@ -3,9 +3,7 @@
  * Smith Forge Rule: Max 100 lines per file
  */
 
-import { world, system } from "@minecraft/server"
-import { sendRequest } from "../../systems/tpa/TpaService.js"
-import { getPendingRequests } from "../../systems/tpa/TpaHandshake.js"
+import { Kernel } from "../../core/Kernel.js"
 
 export const TPACommand = {
     name: "tpa",
@@ -14,7 +12,7 @@ export const TPACommand = {
     permission: "essentials.tpa",
     category: "teleport",
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const targetName = args[0]
 
         if (!targetName) {
@@ -22,8 +20,8 @@ export const TPACommand = {
             return
         }
 
-        // Find target player
-        const targetPlayer = [...world.getPlayers()].find(p =>
+        // Find target player via Kernel
+        const targetPlayer = [...Kernel.world.getAllPlayers()].find(p =>
             p.name.toLowerCase() === targetName.toLowerCase()
         )
 
@@ -37,11 +35,12 @@ export const TPACommand = {
             return
         }
 
-        // Send TPA request
-        const success = sendRequest(player, targetPlayer, "tpa")
+        // Send TPA request via Service
+        const TpaService = Kernel.get("tpaService")
+        const success = TpaService.sendRequest(player, targetPlayer, "tpa")
 
         if (success) {
-            player.sendMessage(`§aTPA request sent to §e${targetPlayer.name}§a! They have 5 minutes to accept.`)
+            player.sendMessage(`§aTPA request sent to §e${targetPlayer.name}§a!`)
         }
     }
 }

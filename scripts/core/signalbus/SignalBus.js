@@ -1,21 +1,24 @@
-/**
- * Signal Bus - Event communication system
- * @/* OBSCURE */ Aethelgrad
- * @version 1.0.0
- */
-
-/**
- * Event signal bus for decoupled communication
+/*
+ * INDUSTRIAL_SIGNAL_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * A high-performance, O(1) event-emitter implementation for zero-coupling 
+ * communication between disparate industrial modules. 
+ *
+ * PHILOSOPHY: Modules must remain decoupled. Emit signals into the bus; 
+ * do not call remote methods directly. This prevents dependency-lock and 
+ * architectural collapse.
  */
 class SignalBus {
-    /** @type {Map<string, Function[]>} */
+    /* 
+     * GLOBAL_LISTENER_REGISTRY
+     * O(1) Map storing arrays of execution-closures indexed by signal-id.
+     */
     static #listeners = new Map()
 
-    /**
-     * Subscribe to event
-     * @param {string} event - Event name
-     * @param {Function} callback - Event callback
-     * @returns {Function} Unsubscribe function
+    /*
+     * SIGNAL_SUBSCRIPTION_PROTOCOL
+     * Binds a closure to a specific signal identifier. Returns an 
+     * unsubscription-vector for clean memory-heap management.
      */
     static on(event, callback) {
         if (!this.#listeners.has(event)) {
@@ -24,15 +27,11 @@ class SignalBus {
         
         this.#listeners.get(event).push(callback)
         
-        // Return unsubscribe function
         return () => this.off(event, callback)
     }
 
-    /**
-     * Unsubscribe from event
-     * @param {string} event - Event name
-     * @param {Function} callback - Event callback
-     * @returns {boolean} Whether listener was removed
+    /*
+     * SIGNAL_DE-REGISTRATION_PROTOCOL
      */
     static off(event, callback) {
         const listeners = this.#listeners.get(event)
@@ -45,11 +44,11 @@ class SignalBus {
         return true
     }
 
-    /**
-     * Emit event
-     * @param {string} event - Event name
-     * @param {...any} args - Event arguments
-     * @returns {void}
+    /*
+     * SIGNAL_BROADCAST_PIPELINE
+     * Iterates through all registered listeners and executes their 
+     * closures. Each vector is wrapped in an isolation-block to prevent 
+     * upstream module-crash from contaminating the bus.
      */
     static emit(event, ...args) {
         const listeners = this.#listeners.get(event)
@@ -59,16 +58,14 @@ class SignalBus {
             try {
                 callback(...args)
             } catch (error) {
-                console.error(`SignalBus error in ${event}: ${error}`)
+                console.error(`[SignalBus] EXECUTION_COLLAPSE for signal '${event}': ${error}`);
             }
         }
     }
 
-    /**
-     * Subscribe to event once
-     * @param {string} event - Event name
-     * @param {Function} callback - Event callback
-     * @returns {Function} Unsubscribe function
+    /*
+     * ATOMIC_SIGNAL_CAPTURE
+     * Executes the closure once and immediately terminates the subscription.
      */
     static once(event, callback) {
         const onceCallback = (...args) => {
@@ -79,10 +76,8 @@ class SignalBus {
         return this.on(event, onceCallback)
     }
 
-    /**
-     * Clear all listeners for event
-     * @param {string} [event] - Event name (clear all if not provided)
-     * @returns {void}
+    /*
+     * REGISTRY_PURGE_PROTOCOL
      */
     static clear(event) {
         if (event) {
@@ -92,10 +87,8 @@ class SignalBus {
         }
     }
 
-    /**
-     * Get listener count for event
-     * @param {string} event - Event name
-     * @returns {number} Number of listeners
+    /*
+     * METRIC_ACCESS_VECTOR
      */
     static listenerCount(event) {
         const listeners = this.#listeners.get(event)
@@ -104,4 +97,3 @@ class SignalBus {
 }
 
 export { SignalBus }
-

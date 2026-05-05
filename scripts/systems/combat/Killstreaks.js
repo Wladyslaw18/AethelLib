@@ -1,27 +1,33 @@
-/**
- * Killstreaks System - Reward high-skill survival
- * Smith Forge Rule: Max 100 lines per file
- * Zero-Eval, Identity Rule: UUIDs only
- * Cache-Aside: JS Map cache + debounced Dynamic Property write
- */
-
 import { Kernel } from "../../core/Kernel.js"
 
-// Killstreak tracking (Identity Map cache)
-const killstreaks = new Map()
-const STREAK_MILESTONE = 5
-const CLEANUP_INTERVAL = 12000 // 10 minutes in ticks
+/*
+ * INDUSTRIAL_MOMENTUM_TRACKER
+ * ----------------------------------------------------------------------------
+ * A high-performance orchestration layer for monitoring and rewarding 
+ * combat-momentum. Implements an O(1) volatile memory-map for tracking 
+ * sequential entity-terminations within a single session.
+ *
+ * PHILOSOPHY: Momentum is the force of the empire. Skill-milestones 
+ * must be broadcasted to maintain industrial morale and identify 
+ * high-performance assets.
+ */
 
-/**
- * Initialize killstreak system
+const killstreaks = new Map() // VOLATILE_MOMENTUM_REGISTRY
+const STREAK_MILESTONE = 5
+const CLEANUP_INTERVAL = 12000 // 10-minute industrial maintenance cycle
+
+/* 
+ * SYSTEM_BOOTSTRAP_PROTOCOL
  */
 export function init() {
-    // Track kills and reset on death
+    /* 
+     * TERMINATION_INTERCEPTION_VECTOR
+     * Subscribes to the entityDie event to calibrate momentum-nodes.
+     */
     Kernel.world.afterEvents.entityDie.subscribe((event) => {
         const victim = event.deadEntity
         const killer = event.damageSource?.damagingEntity
 
-        // Bug 3: Self-kill guard
         if (victim?.typeId === "minecraft:player") {
             if (killer?.typeId === "minecraft:player" && killer.id !== victim.id) {
                 handleKill(killer.id, victim.id)
@@ -31,133 +37,88 @@ export function init() {
         }
     })
 
-    // Periodic cleanup
     Kernel.system.runInterval(cleanup, CLEANUP_INTERVAL)
 }
 
-/**
- * Handle a kill event
- * @param {string} killerId - Killer UUID
- * @param {string} victimId - Victim UUID
+/* 
+ * MOMENTUM_CALIBRATION_PROTOCOL
+ * Increments the momentum-node for the killer and resets the victim. 
+ * Orchestrates milestone-broadcasts when thresholds are reached.
  */
 function handleKill(killerId, victimId) {
-    // Bug 2: Check victim streak for ended broadcast
     const victimStreak = killstreaks.get(victimId) || 0
     if (victimStreak >= 5) {
         const killer = Kernel.world.getAllPlayers().find(p => p.id === killerId)
         const victim = Kernel.world.getAllPlayers().find(p => p.id === victimId)
         if (killer && victim) {
-            Kernel.world.sendMessage(`§7[War Cry] §e${killer.name} §7ended §e${victim.name}§7's §c${victimStreak} §7kill streak!`)
+            Kernel.world.sendMessage(`§7[War_Cry] §e${killer.name} §7terminated §e${victim.name}§7's §c${victimStreak} §7momentum-streak!`)
         }
     }
 
     const currentStreak = killstreaks.get(killerId) || 0
     const newStreak = currentStreak + 1
-
-    // Update cache
     killstreaks.set(killerId, newStreak)
 
-    // Bug 1: Remove useless persistence - streaks are session-only
-    // debouncedWrite(killerId, "killstreak", newStreak)
-
-    // Check for milestone
     if (newStreak % STREAK_MILESTONE === 0) {
         broadcastMilestone(killerId, newStreak)
     }
 }
 
-/**
- * Reset killstreak for player
- * @param {string} playerId - Player UUID
+/* 
+ * MOMENTUM_RESET_PROTOCOL
  */
 function resetKillstreak(playerId) {
     killstreaks.set(playerId, 0)
-    // Bug 1: Remove useless persistence - streaks are session-only
-    // debouncedWrite(playerId, "killstreak", 0)
 }
 
-/**
- * Broadcast milestone message with rarity tier
- * @param {string} playerId - Player UUID
- * @param {number} streak - Current killstreak
+/* 
+ * MILESTONE_BROADCAST_VECTOR
+ * Manifests the visual broadcast for specific momentum-tiers.
  */
 function broadcastMilestone(playerId, streak) {
     const player = Kernel.world.getAllPlayers().find(p => p.id === playerId)
     if (!player) return
 
-    // Rarity tiers based on streak count
     let rarity, color, message
-
     if (streak >= 50) {
-        rarity = "Legendary"
+        rarity = "ULTRA_LEGENDARY"
         color = "§6§l"
-        message = `is an absolute warrior with a ${streak} kill streak!`
+        message = "is a god of the industrial waste!"
     } else if (streak >= 25) {
-        rarity = "Rare"
+        rarity = "LEGENDARY"
         color = "§d"
-        message = `is on fire with a ${streak} kill streak!`
+        message = "is manifesting extreme combat-dominance!"
     } else if (streak >= 15) {
-        rarity = "Uncommon"
+        rarity = "ELITE"
         color = "§e"
-        message = `is dominating with a ${streak} kill streak!`
+        message = "is saturating the engagement-buffer!"
     } else {
-        rarity = "Common"
+        rarity = "STABILIZED"
         color = "§a"
-        message = `is on a ${streak} kill streak!`
+        message = "has achieved a momentum-milestone."
     }
 
-    // Broadcast to all players
-    const broadcast = `${color}[${rarity}] §f${player.name} ${message}`
+    const broadcast = `${color}[${rarity}] §f${player.name} ${message} (Streak: ${streak})`
     Kernel.world.getAllPlayers().forEach(p => p.sendMessage(broadcast))
 }
 
-/**
- * Debounced write to PlayerStore
- * @param {string} playerId - Player UUID
- * @param {string} key - Store key
- * @param {*} value - Value to store
- */
-const debouncedWriteCache = new Map()
-const DEBOUNCE_TIME = 40 // 2 seconds
-
-function debouncedWrite(playerId, key, value) {
-    const cacheKey = `${playerId}:${key}`
-    const existing = debouncedWriteCache.get(cacheKey)
-
-    // Clear existing timeout
-    if (existing) {
-        Kernel.system.clearRun(existing)
-    }
-
-    // Set new timeout
-    const timeoutId = Kernel.system.runTimeout(() => {
-        const PlayerStore = Kernel.get("playerStore")
-        PlayerStore.set(playerId, key, value)
-        debouncedWriteCache.delete(cacheKey)
-    }, DEBOUNCE_TIME)
-
-    debouncedWriteCache.set(cacheKey, timeoutId)
-}
-
-/**
- * Get player's current killstreak
- * @param {string} playerId - Player UUID
- * @returns {number} Current killstreak
+/* 
+ * MOMENTUM_QUERY_VECTOR
  */
 export function getKillstreak(playerId) {
     return killstreaks.get(playerId) || 0
 }
 
-/**
- * Clean up stale killstreak data
+/* 
+ * REGISTRY_MAINTENANCE_PROTOCOL
+ * Purges momentum-nodes for entities no longer present in the 
+ * industrial-buffer.
  */
 function cleanup() {
     const onlinePlayerIds = new Set(Kernel.world.getAllPlayers().map(p => p.id))
-
     for (const [playerId] of killstreaks.entries()) {
         if (!onlinePlayerIds.has(playerId)) {
             killstreaks.delete(playerId)
         }
     }
 }
-

@@ -116,7 +116,7 @@ export class BroadcastStore {
     }
 
     /**
-     * Remove a message from a specific tier /* KERNEL */
+     * Remove a message from a specific tier
      * @param {string} tier - Rarity tier
      * @param {number} index - Message index
      * @returns {boolean} Success status

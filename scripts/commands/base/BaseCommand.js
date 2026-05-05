@@ -1,51 +1,26 @@
-import { world, Player } from "@minecraft/server"
 import { PermissionManager } from "../../core/permissions/PermissionManager.js"
 
-/**
- * Base command class with proper JSDoc typing
- * @/* NEXUS */ Aethelgrad
- * @version 1.0.0
+/*
+ * COMMAND_LOGIC_CONTRACT
+ * ----------------------------------------------------------------------------
+ * The abstract foundation for every industrial command module. Provides 
+ * standardized getters for registry integration and utility methods for 
+ * feedback orchestration.
+ *
+ * PHILOSOPHY: If a command does not extend this class, it is dead-on-arrival 
+ * and will be rejected by the CommandRegistry during the bootstrap sequence.
  */
 class BaseCommand {
-    /**
-     * @type {string}
-     */
     #name
-
-    /**
-     * @type {string}
-     */
     #description
-
-    /**
-     * @type {string}
-     */
     #usage
-
-    /**
-     * @type {string}
-     */
     #permission
-
-    /**
-     * @type {string}
-     */
     #category
-
-    /**
-     * @type {string[]}
-     */
     #aliases
 
-    /**
-     * Create new base command
-     * @param {Object} config - Command configuration
-     * @param {string} config.name - Command name
-     * @param {string} config.description - Command description
-     * @param {string} config.usage - Command usage
-     * @param {string} [config.permission] - Required permission
-     * @param {string} [config.category] - Command category
-     * @param {string[]} [config.aliases] - Command aliases
+    /*
+     * COMMAND_CONSTRUCTOR
+     * @param {Object} config - The industrial manifest for this command.
      */
     constructor(config) {
         this.#name = config.name
@@ -56,69 +31,49 @@ class BaseCommand {
         this.#aliases = config.aliases || []
     }
 
-    /**
-     * Get command name
-     * @returns {string} Command name
-     */
+    /* PRIMARY_IDENTIFIER_GETTER */
     get name() {
         return this.#name
     }
 
-    /**
-     * Get command description
-     * @returns {string} Command description
-     */
+    /* MANUAL_DESCRIPTION_GETTER */
     get description() {
         return this.#description
     }
 
-    /**
-     * Get command usage
-     * @returns {string} Command usage
-     */
+    /* SYNTAX_HINT_GETTER */
     get usage() {
         return this.#usage
     }
 
-    /**
-     * Get required permission
-     * @returns {string} Required permission
-     */
+    /* AUTH_NODE_IDENTIFIER_GETTER */
     get permission() {
         return this.#permission
     }
 
-    /**
-     * Get command category
-     * @returns {string} Command category
-     */
+    /* REGISTRY_CATEGORY_GETTER */
     get category() {
         return this.#category
     }
 
-    /**
-     * Get command aliases
-     * @returns {string[]} Command aliases
-     */
+    /* SHORT_HAND_POINTER_GETTER */
     get aliases() {
         return this.#aliases
     }
 
-    /**
-     * Execute command - must be implemented /* SINGULARITY */
-     * @param {import("../../../types.js").CommandData} data - Command data
-     * @param {Player} player - Player executing command
-     * @param {string[]} args - Command arguments
-     * @returns {Promise<void>}
+    /*
+     * EXECUTION_LOGIC_GATE
+     * Must be overridden by the child class. This is where the actual 
+     * game-state mutation happens. 
      */
-    async execute(data, player, args) {
-        throw new Error(`Execute method must be implemented for command: ${this.#name}`)
+    async execute(_data, _player, _args) {
+        throw new Error(`[BaseCommand] EXECUTION_FAULT: '${this.#name}' has no implemented logic.`);
     }
 
-    /**
-     * Check if player has permission for this command
-     * @param {Player} player - Player to check
-     * @returns {boolean} Whether player has permission
+    /*
+     * AUTH_RESOLUTION_PROTOCOL
+     * Queries the PermissionManager to verify if the actor possesses 
+     * the required clearance levels to invoke this logic-gate.
      */
     hasPermission(player) {
         if (!this.#permission) return true
@@ -126,16 +81,14 @@ class BaseCommand {
         try {
             return PermissionManager.getInstance().hasPermission(player, this.#permission)
         } catch (error) {
-            console.error(`Permission check failed for ${this.#name}: ${error}`)
+            console.error(`[BaseCommand] PERM_CHECK_CRASH for '${this.#name}': ${error}`)
             return false
         }
     }
 
-    /**
-     * Send message to player
-     * @param {Player} player - Player to send message to
-     * @param {string|import("@minecraft/server").RawMessage} message - Message to send
-     * @returns {void}
+    /*
+     * FEEDBACK_DELIVERY_PROTOCOL
+     * Raw message relay to the player's chat buffer.
      */
     sendMessage(player, message) {
         if (!player || !message) return
@@ -143,45 +96,28 @@ class BaseCommand {
         try {
             player.sendMessage(message)
         } catch (error) {
-            console.error(`Failed to send message to ${player.name}: ${error}`)
+            console.error(`[BaseCommand] COMMS_FAILURE to '${player.name}': ${error}`)
         }
     }
 
-    /**
-     * Send error message to player
-     * @param {Player} player - Player to send error to
-     * @param {string} message - Error message
-     * @returns {void}
-     */
+    /* ERROR_FEEDBACK_VECTOR */
     sendError(player, message) {
-        this.sendMessage(player, `§c${message}`)
+        this.sendMessage(player, `§c[Error] ${message}`)
     }
 
-    /**
-     * Send success message to player
-     * @param {Player} player - Player to send success to
-     * @param {string} message - Success message
-     * @returns {void}
-     */
+    /* SUCCESS_FEEDBACK_VECTOR */
     sendSuccess(player, message) {
-        this.sendMessage(player, `§a${message}`)
+        this.sendMessage(player, `§a[Success] ${message}`)
     }
 
-    /**
-     * Send usage message to player
-     * @param {Player} player - Player to send usage to
-     * @returns {void}
-     */
+    /* USAGE_FEEDBACK_VECTOR */
     sendUsage(player) {
-        this.sendMessage(player, `§7Usage: §e${this.#usage}`)
+        this.sendMessage(player, `§7Syntax: §e${this.#usage}`)
     }
 
-    /**
-     * Validate command arguments
-     * @param {string[]} args - Command arguments
-     * @param {number} [minArgs=0] - Minimum required arguments
-     * @param {number} [maxArgs=Infinity] - Maximum allowed arguments
-     * @returns {boolean} Whether arguments are valid
+    /*
+     * PARAMETER_VALIDATION_ENGINE
+     * Checks if the argument count falls within the expected bounds.
      */
     validateArgs(args, minArgs = 0, maxArgs = Infinity) {
         if (!Array.isArray(args)) return false
@@ -192,4 +128,3 @@ class BaseCommand {
 }
 
 export { BaseCommand }
-

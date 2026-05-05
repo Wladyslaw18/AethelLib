@@ -1,47 +1,59 @@
+/*
+ * GLOBAL_NAMESPACE_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * Centralized key-factory for the AethelLib persistence layer. 
+ *
+ * PHILOSOPHY: Standardized naming conventions are mandatory to prevent 
+ * catastrophic key-collisions in the world dynamic property buffer. 
+ * Every entry must follow the 'DOMAIN:SUBDOMAIN:ID' hierarchy.
+ */
 export const StoreKeys = {
-    // Money
+    /* FINANCIAL_DATA_IDENTIFIERS */
     money: (playerId) => `money:${playerId}`,
 
-    // Homes
+    /* SPATIAL_REGISTRY_POINTERS */
     home: (playerId, name) => `home:${playerId}:${name}`,
     homeList: (playerId) => `homeList:${playerId}`,
 
-    // Ranks
+    /* AUTH_AND_ROLE_IDENTIFIERS */
     rankDef: (rankTag) => `rank:def:${rankTag}`,
     rankList: () => `rank:list`,
 
-    // Bans
+    /* SECURITY_ENFORCEMENT_POINTERS */
     ban: (playerId) => `ban:${playerId}`,
-
-    // Mutes
     mute: (playerId) => `mute:${playerId}`,
 
-    // Warps
+    /* GLOBAL_WARP_REGISTRY */
     warp: (name) => `warp:${name}`,
     warpList: () => `warp:list`,
 
-    // Hub
+    /* INDUSTRIAL_ZONE_PROTECTION_PARAMETERS */
     hubCenter: () => `hub:center`,
     hubRadius: () => `hub:radius`,
     hubBannedItems: () => `hub:bannedItems`,
 
-    // NPC Coordinates (salvaged from hubRules.js)
+    /* 
+     * SPATIAL_NPC_ANCHORS
+     * Hard-coded pointers for the industrial hub entities.
+     */
     npc: {
-        hubCenter: () => `npc:hub:center`, // Default: { x: 9027, y: 100, z: 8978 }
-        hubSpawn: () => `npc:hub:spawn`,   // Default: { x: 9026.52, y: 236, z: 9033.47 }
-        kitNPC: () => `npc:kit`,           // Kit NPC location
-        teleportNPC: () => `npc:teleport`   // Teleport NPC location
+        hubCenter: () => `npc:hub:center`,
+        hubSpawn: () => `npc:hub:spawn`,
+        kitNPC: () => `npc:kit`,
+        teleportNPC: () => `npc:teleport`
     },
 
-    // Default NPC Coordinates
+    /* 
+     * HARD_CODED_SPATIAL_CONSTANTS
+     * Baseline coordinate data used as a failsafe if the database is purged.
+     */
     defaultCoordinates: {
         HUB_CENTER: { x: 9027, y: 100, z: 8978 },
         HUB_SPAWN: { x: 9026.52, y: 236, z: 9033.47 }
     },
 
-    // Session
+    /* SESSION_METRICS_IDENTIFIERS */
     firstJoin: (playerId) => `session:firstJoin:${playerId}`,
     playtime: (playerId) => `session:playtime:${playerId}`,
     lastSeen: (playerId) => `session:lastSeen:${playerId}`,
 }
-
