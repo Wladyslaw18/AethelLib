@@ -21,7 +21,7 @@ export const MuteCommand = {
     /* 
      * VECTOR_EXECUTION_PIPELINE
      */
-    async execute(data, player, args) {
+    async execute(player, args) {
         if (args.length < 1) {
             player.sendMessage("[Manual] Syntax Error: Player identifier required.");
             return

@@ -21,7 +21,7 @@ export const EconomyCommand = {
     /* 
      * VECTOR_EXECUTION_PIPELINE
      */
-    async execute(data, player, args) {
+    async execute(player, args) {
         if (args.length < 2) {
             player.sendMessage("[Manual] Syntax Error: Action and player identifier required.");
             return

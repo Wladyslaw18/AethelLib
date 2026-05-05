@@ -116,10 +116,7 @@ export class PermissionManager {
      * HIERARCHY_WEIGHT_RESOLVER
      */
     getHighestRank(player) {
-        if (this._isSuperAdmin(player)) {
-            return { id: "admin", name: "Administrator", order: 1000 }
-        }
-
+        // 🛑 SHADOW_CLEARANCE: Gods have infinite power, but no hardcoded visual manifest.
         return PermissionManager.#data.getHighestRank(player.id)
     }
 

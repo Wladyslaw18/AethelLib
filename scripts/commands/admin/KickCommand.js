@@ -22,7 +22,7 @@ export const KickCommand = {
     /* 
      * VECTOR_EXECUTION_PIPELINE
      */
-    execute(data, player, args) {
+    execute(player, args) {
         if (args.length === 0) {
             player.sendMessage("[Manual] Syntax Error: Player identifier required.");
             return

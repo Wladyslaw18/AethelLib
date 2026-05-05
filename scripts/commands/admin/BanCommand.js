@@ -21,7 +21,7 @@ export const BanCommand = {
     /* 
      * EXCLUSION_EXECUTION_PIPELINE
      */
-    execute(data, player, args) {
+    execute(player, args) {
         if (args.length === 0) {
             player.sendMessage("§cERROR: PLAYER_IDENTIFIER_REQUIRED");
             player.sendMessage("§7Duration_Tokens: 1h (hour), 1d (day), 1w (week), permanent");
@@ -67,7 +67,8 @@ export const BanCommand = {
             /* SESSION_TERMINATION_VECTOR */
             system.run(() => {
                 try {
-                    target.kick(`§c[INDUSTRIAL_EXCLUSION] ACCESS_TERMINATED\n§eREASON: ${reason}`)
+                    // @ts-ignore
+                    target.disconnect(`§c[INDUSTRIAL_EXCLUSION] ACCESS_TERMINATED\n§eREASON: ${reason}`)
                 } catch (error) {
                     console.error(`[BanCommand] SESSION_TERMINATION_FAILURE: ${error}`)
                 }
@@ -124,7 +125,7 @@ function addBan(banData) {
 function getBans() {
     try {
         const stored = world.getDynamicProperty("ae:bans")
-        return stored ? JSON.parse(stored) : []
+        return (typeof stored === "string") ? JSON.parse(stored) : []
     } catch (error) {
         console.error(`[BanCommand] BLACKLIST_LOAD_FAILURE: ${error}`)
         return []

@@ -20,7 +20,7 @@ export const GamemodeCommand = {
     /* 
      * VECTOR_EXECUTION_PIPELINE
      */
-    execute(data, player, args) {
+    execute(player, args) {
         if (args.length < 2) {
             player.sendMessage("[Manual] Syntax Error: Player and mode token required.");
             player.sendMessage("[Manual] Modes: survival, creative, adventure, spectator");

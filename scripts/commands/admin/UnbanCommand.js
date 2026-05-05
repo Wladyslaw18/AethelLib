@@ -21,7 +21,7 @@ export const UnbanCommand = {
     /* 
      * VECTOR_EXECUTION_PIPELINE
      */
-    execute(data, player, args) {
+    execute(player, args) {
         if (args.length < 1) {
             player.sendMessage("[Manual] Syntax Error: Player identifier required.");
             return
@@ -70,7 +70,7 @@ export const UnbanCommand = {
 function getBans() {
     try {
         const stored = world.getDynamicProperty("ae:bans")
-        return stored ? JSON.parse(stored) : []
+        return (typeof stored === "string") ? JSON.parse(stored) : []
     } catch (error) {
         console.error(`[UnbanCommand] REGISTRY_READ_FAILURE: ${error}`)
         return []

@@ -22,7 +22,7 @@ export function tryRemoveEntity(entity, options = {}) {
         return false
     }
 
-    const { timeout = 0, reason = "INDUSTRIAL_PURGE" } = options
+    const { timeout = 0 } = options
     
     const removeEntity = () => {
         try {
@@ -183,7 +183,7 @@ export async function batchRemoveEntities(entities, batchSize = 10) {
 
     while (index < entities.length) {
         await processBatch()
-        await new Promise(resolve => system.runTimeout(resolve, 1))
+        await new Promise(resolve => system.runTimeout(() => resolve(), 1))
     }
 
     return totalRemoved

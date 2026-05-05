@@ -22,7 +22,7 @@ export const ReportCommand = {
     /* 
      * REPORT_ENTRY_PIPELINE
      */
-    execute(data, player, args) {
+    execute(player, args) {
         if (args.length < 2) {
             player.sendMessage("[Manual] Syntax Error: Type and content required.");
             player.sendMessage("[Manual] Example: !report player_x behavior_anomaly");
@@ -121,7 +121,7 @@ function saveReport(report) {
 function getReports() {
     try {
         const stored = world.getDynamicProperty("ae:reports")
-        return stored ? JSON.parse(stored) : {}
+        return (typeof stored === "string") ? JSON.parse(stored) : {}
     } catch (error) {
         console.error(`[ReportCommand] QUERY_FAILURE: ${error}`)
         return {}

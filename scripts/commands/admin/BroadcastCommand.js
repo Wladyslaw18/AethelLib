@@ -21,7 +21,7 @@ export const BroadcastCommand = {
     /* 
      * SUBCOMMAND_ROUTING_ENGINE
      */
-    async execute(data, player, args) {
+    async execute(player, args) {
         const subcommand = args[0]?.toLowerCase()
 
         if (!subcommand) {

@@ -12,7 +12,11 @@ import { init as initCommands } from "./bootstrap/commands.js"
  * PHILOSOPHY: Start fast. Stay stable. Initialized modules define the 
  * operational capacity of the server.
  */
+//  TEMPORAL_SYNC: Early execution node to catch startup events.
+initCore(true)
+
 system.run(() => {
+    // 🏛️ INDUSTRIAL_BOOTSTRAP: Initialize data systems when world-IO is available.
     initCore()
     initCommands()
     console.log("[AethelLib] TITANIUM_KERNEL_ACTIVE_V2.20.2");

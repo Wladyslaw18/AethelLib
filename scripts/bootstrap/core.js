@@ -44,10 +44,18 @@ let initialized = false
  * Handshakes with the Kernel and registers the master service identifiers. 
  * These IDs are used by the Kernel.get() locator throughout the engine.
  */
-export function init() {
-    if (initialized) return
-    initialized = true
+export function init(early = false) {
+    if (initialized && !early) return
+    
+    if (early) {
+        // 🏛️ EARLY_EXECUTION_NODE: Registry and Manager must dock now to catch startup events.
+        Kernel.register("commandRegistry", CommandRegistry)
+        Kernel.register("commandManager",  CommandManager)
+        CommandManager.init();
+        return;
+    }
 
+    initialized = true
     /* DATA_PERSISTENCE_LAYER */
     Kernel.register("database",    Database)
     Kernel.register("playerStore", PlayerStore)
@@ -67,10 +75,6 @@ export function init() {
     Kernel.register("formatter",   RankFormatter)
     Kernel.register("muteStore",   MuteStore)
 
-    /* COMMAND_ARCHITECTURE_COMPONENTS */
-    Kernel.register("commandRegistry", CommandRegistry)
-    Kernel.register("commandManager",  CommandManager)
-
     /* SPATIAL_AND_TELEPORTATION_SERVICES */
     Kernel.register("homeStore",   HomeStore)
     Kernel.register("warpStore",   WarpStore)
@@ -85,19 +89,8 @@ export function init() {
     Kernel.register("claimStore",  ClaimStore)
     Kernel.register("floatingTextStore", FloatingTextStore)
 
-    /*
-     * ASYNC_SERVICE_ORCHESTRATION
-     * Some services require a secondary initialization phase to bind 
-     * interval-based tasks (Cleanups, Schedulers).
-     */
     TpaService.init()
     TeleportService.init()
-
-    /* 
-     * LEGACY_COMPATIBILITY_HANDSHAKES
-     * Triggering internal init loops for systems that haven't been 
-     * fully decoupled from the monolithic model yet.
-     */
     RankSystem.init()
     ChatSystem.init()
     BanManager.init()

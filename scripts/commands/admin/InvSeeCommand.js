@@ -1,4 +1,4 @@
-import { world, system } from "@minecraft/server"
+import { world } from "@minecraft/server"
 import { showInventoryUI } from "./InvSeeUI.js"
 
 /*
@@ -21,7 +21,7 @@ export const InvSeeCommand = {
     /* 
      * VECTOR_EXECUTION_PIPELINE
      */
-    async execute(data, player, args) {
+    async execute(player, args) {
         if (args.length < 1) {
             player.sendMessage("[Manual] Syntax Error: Player identifier required.");
             return

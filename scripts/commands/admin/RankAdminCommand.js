@@ -22,7 +22,7 @@ export const RankAdminCommand = {
     /* 
      * SUBCOMMAND_ROUTING_ENGINE
      */
-    async execute(data, player, args) {
+    async execute(player, args) {
         if (args.length < 1) {
             player.sendMessage("[Manual] Syntax Error: Subcommand required.");
             player.sendMessage("  create <tag> <display_name> <order> <color_token>");

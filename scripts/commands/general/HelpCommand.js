@@ -14,8 +14,11 @@ export const HelpCommand = {
     name: "help",
     description: "Generates the industrial manual for all registered command modules.",
     usage: "!help [command_identifier]",
-    permission: "essentials.help",
+    permission: null,
     category: "GENERAL",
+    parameters: [
+        { name: "command_identifier", type: "string", optional: true }
+    ],
 
     /* 
      * MANUAL_QUERY_VECTOR
@@ -23,7 +26,7 @@ export const HelpCommand = {
     execute(player, args) {
         const CommandRegistry = Kernel.get("commandRegistry")
         const topic = args[0]?.toLowerCase()
-        
+
         if (!topic) {
             this._showAllCommands(player, CommandRegistry)
             return
@@ -31,6 +34,12 @@ export const HelpCommand = {
 
         const command = CommandRegistry.get(topic)
         if (command) {
+            const PermissionManager = Kernel.get("permissions")
+            //  SECURITY_FILTER: Prevent manual-leak of unauthorized vectors.
+            if (command.permission && !PermissionManager.hasPermission(player, command.permission)) {
+                player.sendMessage(`§cSECURITY_FAILURE: CLEARANCE_LEVEL_INADEQUATE`);
+                return;
+            }
             this._showCommandHelp(player, command)
             return
         }
@@ -45,11 +54,16 @@ export const HelpCommand = {
      * by their industrial category.
      */
     _showAllCommands(player, Registry) {
+        const PermissionManager = Kernel.get("permissions")
         const commands = Registry.getAll()
         const categories = {}
 
         for (const name of commands) {
             const cmd = Registry.get(name)
+
+            // 🛡️ SECURITY_FILTER: Skip commands the player is not authorized to use.
+            if (cmd.permission && !PermissionManager.hasPermission(player, cmd.permission)) continue;
+
             const cat = cmd.category || "GENERAL"
             if (!categories[cat]) categories[cat] = []
             categories[cat].push(name)
@@ -57,12 +71,12 @@ export const HelpCommand = {
 
         player.sendMessage("§0§l» §6§lINDUSTRIAL_MANUAL_MANIFEST§0 «")
         player.sendMessage("§7Active functional modules and execution-vectors:")
-        
+
         for (const [cat, cmds] of Object.entries(categories)) {
             player.sendMessage(`\n§e[${cat.toUpperCase()}]`)
             player.sendMessage(`§7${cmds.sort().join(", ")}`)
         }
-        
+
         player.sendMessage("\n§7Execute !help <identifier> for detailed syntax calibration.");
     },
 

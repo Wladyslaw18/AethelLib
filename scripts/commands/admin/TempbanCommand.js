@@ -12,8 +12,8 @@ export const TempbanCommand = {
     permission: "essentials.admin.ban",
     category: "admin",
 
-    execute(data, player, args) {
-        if (args.length < 2) {
+    execute(player, args) {
+        if (args.length === 0) {
             player.sendMessage("§cUsage: !tempban <playerName> <duration> [reason]")
             player.sendMessage("§7Duration examples: 1h, 1d, 1w")
             return
@@ -62,7 +62,8 @@ export const TempbanCommand = {
             // Kick player immediately
             system.run(() => {
                 try {
-                    target.kick(`§cYou have been temporarily banned.\n§eReason: ${reason}\n§7Duration: ${formatTimeRemaining(banDuration)}`)
+                    // @ts-ignore
+                    target.disconnect(`§c[INDUSTRIAL_EXCLUSION] ACCESS_TERMINATED\n§eREASON: ${reason}`)
                 } catch (error) {
                     console.error(`Failed to kick tempbanned player ${targetName}: ${error}`)
                 }
@@ -124,7 +125,7 @@ function addBan(banData) {
 function getBans() {
     try {
         const stored = world.getDynamicProperty("ae:bans")
-        return stored ? JSON.parse(stored) : []
+        return (typeof stored === "string") ? JSON.parse(stored) : []
     } catch (error) {
         console.error(`Failed to load bans: ${error}`)
         return []

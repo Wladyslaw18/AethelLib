@@ -1,4 +1,4 @@
-import { world, system, CustomCommandStatus } from "@minecraft/server";
+import { world, system, CustomCommandStatus, CustomCommandParamType } from "@minecraft/server";
 import { Kernel } from "../Kernel.js";
 
 /**
@@ -21,6 +21,7 @@ export const CommandManager = {
         this._initialized = true;
 
         // 🛑 LEGACY_CHAT_VECTOR: The "!" Prefix Hack
+        // @ts-ignore - Property exists in 1.26.20 runtime but is missing in 1.26.30 preview types.
         world.beforeEvents.chatSend.subscribe((ev) => this._interceptLegacyChat(ev));
 
         // 🚀 NATIVE_BETA_VECTOR: Custom Registry Handshake
@@ -61,10 +62,14 @@ export const CommandManager = {
 
         Registry.getAll().forEach(name => {
             const def = Registry.get(name);
+            
+            // Build Industrial Config with Typed Parameters
             const config = {
                 name: `${this._primaryNS}:${def.name}`,
                 description: def.description || "AethelLib Vector",
-                permissionLevel: this._mapPerms(def.permission)
+                permissionLevel: this._mapPerms(def.permission),
+                mandatoryParameters: this._deriveParams(def.parameters, false),
+                optionalParameters: this._deriveParams(def.parameters, true)
             };
 
             // Register Primary (e.g., /ae:heal)
@@ -78,6 +83,32 @@ export const CommandManager = {
                 });
             }
         });
+
+        console.log(`[CommandManager] NATIVE_REGISTRY_INJECTED | Namespaces: /${this._primaryNS}:, /${this._aliasNS}:`);
+    },
+
+    /**
+     * PARAMETER_DERIVATION_ENGINE
+     * Translates industrial metadata into native parameter types.
+     */
+    _deriveParams(params, isOptional) {
+        if (!params || !Array.isArray(params)) return [];
+        return params
+            .filter(p => !!p.optional === isOptional)
+            .map(p => ({
+                name: p.name,
+                type: this._mapParamType(p.type)
+            }));
+    },
+
+    _mapParamType(type) {
+        switch(type?.toLowerCase()) {
+            case "player": return CustomCommandParamType.PlayerSelector;
+            case "int": return CustomCommandParamType.Integer;
+            case "string": return CustomCommandParamType.String;
+            case "bool": return CustomCommandParamType.Boolean;
+            default: return CustomCommandParamType.String;
+        }
     },
 
     _registerSingle(registry, config, def) {
@@ -99,7 +130,8 @@ export const CommandManager = {
         const msg = event.message.trim();
         if (!msg.startsWith(this._prefix)) return;
 
-        event.cancel = true; // SILENCE_CHAT_BROADCAST
+        // 🛑 ABSOLUTE_CANCELLATION: Prevent any industrial leakage to public chat.
+        event.cancel = true; 
 
         const args = msg.slice(this._prefix.length).split(/\s+/);
         const rawTrigger = args.shift()?.toLowerCase();

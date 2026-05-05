@@ -21,7 +21,8 @@ export const ResetDataCommand = {
     /* 
      * UI_ENTRY_PIPELINE
      */
-    async execute(data, player, args) {
+    async execute(player) {
+        player.sendMessage("§0§l» §c§lRESET_PROTOCOL_INITIATED §0«")
         await showCategorySelection(player)
     }
 }
@@ -87,48 +88,54 @@ async function performReset(player, category) {
         let successCount = 0
         let errorCount = 0
 
+        const runReset = async (fn) => {
+            const success = await fn()
+            if (success) successCount++
+            else errorCount++
+        }
+
         switch (category) {
             case "TOTAL_PURGE":
-                successCount += await resetMoney() ? 1 : 0
-                successCount += await resetHomes() ? 1 : 0
-                successCount += await resetWarps() ? 1 : 0
-                successCount += await resetBans() ? 1 : 0
-                successCount += await resetSellPrices() ? 1 : 0
-                successCount += await resetShop() ? 1 : 0
-                successCount += await resetRanks() ? 1 : 0
-                successCount += await resetFloatingText() ? 1 : 0
+                await runReset(resetMoney)
+                await runReset(resetHomes)
+                await runReset(resetWarps)
+                await runReset(resetBans)
+                await runReset(resetSellPrices)
+                await runReset(resetShop)
+                await runReset(resetRanks)
+                await runReset(resetFloatingText)
                 break
 
             case "MONEY":
-                successCount += await resetMoney() ? 1 : 0
+                await runReset(resetMoney)
                 break
 
             case "HOMES":
-                successCount += await resetHomes() ? 1 : 0
+                await runReset(resetHomes)
                 break
 
             case "WARPS":
-                successCount += await resetWarps() ? 1 : 0
+                await runReset(resetWarps)
                 break
 
             case "BANS":
-                successCount += await resetBans() ? 1 : 0
+                await runReset(resetBans)
                 break
 
             case "SELL_PRICES":
-                successCount += await resetSellPrices() ? 1 : 0
+                await runReset(resetSellPrices)
                 break
 
             case "SHOP":
-                successCount += await resetShop() ? 1 : 0
+                await runReset(resetShop)
                 break
 
             case "RANKS":
-                successCount += await resetRanks() ? 1 : 0
+                await runReset(resetRanks)
                 break
 
             case "FLOATING_TEXT":
-                successCount += await resetFloatingText() ? 1 : 0
+                await runReset(resetFloatingText)
                 break
         }
 
