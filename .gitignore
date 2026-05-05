@@ -9,8 +9,12 @@
 !LICENSE
 !.gitignore
 
-# Re-ignore things inside scripts if needed (none for now)
-# !scripts/my_special_file.js
+# LLM EXCLUSION ZONE (Strict Lockdown)
+*LLM*
+*DUMP*
+*dump*
+ship_payload.ps1
+scripts/ship_payload.ps1
 
 # Prevent accidental inclusion of system files
 .DS_Store
