@@ -64,5 +64,6 @@ Kernel.get("commandRegistry").register("ping", {
 2.  **Zero-Bypass**: Use the Kernel methods. Going rogue is fun until the engine updates and your script becomes a literal industrial paperweight.
 3.  **Clean Your Trash**: Use the sharded DB. If the Watchdog kills the server because your buffers are bloated, I'm not helping you. I warned you.
 4.  **The Vibe Check**: If it works, it's "Industrial Peak." If it crashes, it’s an "Advanced Feature Request." 🧪
+5.  **Pure Command Supremacy**: UI is for the weak. (Actually, it’s just because I suck at building UIs). Stick to the command nexus for true industrial power. 🐚🏹
 
 **AethelLib: Built so you can actually enjoy modding (while breaking things).**
