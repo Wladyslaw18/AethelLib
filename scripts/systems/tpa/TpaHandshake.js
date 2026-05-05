@@ -58,6 +58,19 @@ export const TpaHandshake = {
     },
 
     /* 
+     * SENDER_IDENTIFIER_RESOLVER
+     */
+    getLatestRequestFrom(senderId) {
+        let latest = null
+        for (const req of pendingRequests.values()) {
+            if (req.senderId === senderId) {
+                if (!latest || req.timestamp > latest.timestamp) latest = req
+            }
+        }
+        return latest
+    },
+
+    /* 
      * HANDSHAKE_NODE_DECOMMISSION
      */
     removeRequest(requestId) {

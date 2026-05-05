@@ -13,7 +13,7 @@ export const UnblockCommand = {
     permission: "essentials.tpa",
     category: "teleport",
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const targetName = args[0]
         
         if (!targetName) {

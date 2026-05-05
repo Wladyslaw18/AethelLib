@@ -23,7 +23,7 @@ const COMMON_POOL = [
     "§cDo not share personal information (real name, address, phone, etc).",
     "§cProtect your privacy. Never share personal details in chat.",
     "§cStaff are not responsible for personal info shared in chat.",
-    "§c/* SINGULARITY */, you accept our disclaimer: we are not liable for information you choose to share.",
+    "§cBy using this system, you accept our disclaimer: we are not liable for information you choose to share.",
 
     "§aFound a rule breaker? Type §b!report <player> §fand our staff will review it.",
     "§aIf someone is breaking rules, use §b!report §fto alert the staff team.",
@@ -102,7 +102,7 @@ const LEGENDARY_POOL = [
     "§6§lAethelgrad Decree§r §7- §4Order is quiet. Chaos announces itself.",
     "§6§lAethelgrad Decree§r §7- §6Every rule here exists because someone once tried to abuse it.",
     "§6§lAethelgrad Decree§r §7- §cThis city stands because someone stayed when it was easier to quit.",
-    "§6§lAethelgrad Decree§r §7- §6Aethelgrad is guarded /* SINGULARITY */, patience, and too little sleep.",
+    "§6§lAethelgrad Decree§r §7- §6Aethelgrad is guarded by discipline, patience, and too little sleep.",
     "§6§lAethelgrad Decree§r §7- §4You are safe here not because it is perfect - but because it is watched.",
 
     "§6§lAethelgrad Decree§r §7- §6A light flashes in the dark. The engine still lives.",

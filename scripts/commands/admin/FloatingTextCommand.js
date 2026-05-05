@@ -2,7 +2,7 @@
  * Floating Text Command - Manage floating text
  */
 
-import { add, remove, clear } from "../../systems/floatingtext/FloatingTextStore.js"
+import { FloatingTextStore } from "../../systems/floatingtext/FloatingTextStore.js"
 import { spawnFloatingText, removeFloatingText, clearAll } from "../../systems/floatingtext/FloatingTextService.js"
 
 export const FloatingTextCommand = {
@@ -12,7 +12,7 @@ export const FloatingTextCommand = {
     permission: "essentials.admin.ft",
     category: "admin",
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const sub = args[0]?.toLowerCase()
         
         if (!sub) {
@@ -36,7 +36,7 @@ export const FloatingTextCommand = {
                     dimension: player.dimension.id
                 }
                 
-                const id = add(entry)
+                const id = FloatingTextStore.add(entry)
                 if (id) {
                     spawnFloatingText(entry)
                     player.sendMessage(`§aFloating text added with ID: ${id}`)
@@ -52,7 +52,7 @@ export const FloatingTextCommand = {
                     return
                 }
                 
-                const success = remove(removeId)
+                const success = FloatingTextStore.remove(removeId)
                 if (success) {
                     removeFloatingText(removeId)
                     player.sendMessage(`§aFloating text removed`)
@@ -62,7 +62,7 @@ export const FloatingTextCommand = {
                 break
                 
             case "clear":
-                const clearSuccess = clear()
+                const clearSuccess = FloatingTextStore.clear()
                 if (clearSuccess) {
                     clearAll()
                     player.sendMessage(`§aAll floating texts cleared`)

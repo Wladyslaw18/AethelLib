@@ -6,7 +6,7 @@
  */
 
 import { world } from "@minecraft/server"
-import { getAll } from "./FloatingTextStore.js"
+import { FloatingTextStore } from "./FloatingTextStore.js"
 
 // Track spawned entities
 const spawnedEntities = new Map()
@@ -17,7 +17,8 @@ const spawnedEntities = new Map()
 export function init() {
     // Load existing texts on world load
     world.afterEvents.worldLoad.subscribe(() => {
-        for (const entry of getAll()) {
+        const entries = FloatingTextStore.getAll()
+        for (const entry of entries) {
             spawnFloatingText(entry)
         }
     })

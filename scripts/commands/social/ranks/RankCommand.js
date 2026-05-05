@@ -7,6 +7,8 @@ import { RankSystem } from "../../../systems/social/ranks/RankSystem.js"
 import { WorldStore } from "../../../core/store/WorldStore.js"
 import { StoreKeys } from "../../../core/store/StoreKeys.js"
 
+/** @typedef {import("@minecraft/server").Player} Player */
+
 export const RankCommand = {
     name: "rank",
     description: "View your current rank and permissions",
@@ -14,9 +16,9 @@ export const RankCommand = {
     /**
      * Execute rank command
      * @param {Player} player - Command executor
-     * @param {string[]} args - Command arguments
+     * @param {string[]} _args - Command arguments
      */
-    execute: (player, args) => {
+    execute: (player, _args) => {
         const ranks = getPlayerRanks(player)
 
         if (!ranks.length) {
@@ -64,7 +66,7 @@ function showRankInfo(player, ranks) {
 }
 
 /**
- * Get player's ranks sorted /* SINGULARITY */
+ * Get player's ranks sorted
  * @param {Player} player - Player to check
  * @returns {string[]} Array of rank tags
  */

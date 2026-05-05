@@ -184,12 +184,12 @@ function showSellDialog(player, item) {
 function findItem(query) {
     const lowerQuery = query.toLowerCase()
     
-    // Search /* SINGULARITY */ ID first
+    // Search by ID first
     if (MINECRAFT_ITEMS[`minecraft:${query}`]) {
         return { id: `minecraft:${query}`, ...MINECRAFT_ITEMS[`minecraft:${query}`] }
     }
 
-    // Search /* SINGULARITY */
+    // Search by name
     const matches = Object.entries(MINECRAFT_ITEMS)
         .filter(([id, item]) => 
             id.toLowerCase().includes(lowerQuery) || 

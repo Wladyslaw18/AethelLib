@@ -12,7 +12,7 @@ export const UnmuteCommand = {
     permission: "essentials.admin.mute",
     category: "admin",
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         if (args.length < 1) {
             player.sendMessage("§cUsage: !unmute <playerName>")
             return
@@ -30,7 +30,7 @@ export const UnmuteCommand = {
             const success = await MuteStore.unmute(target.id)
             if (success) {
                 player.sendMessage(`§aSuccessfully unmuted ${target.name}`)
-                target.sendMessage("§aYou have been unmuted /* SINGULARITY */ admin.")
+                target.sendMessage("§aYou have been unmuted by an admin.")
             } else {
                 player.sendMessage("§cFailed to unmute player")
             }

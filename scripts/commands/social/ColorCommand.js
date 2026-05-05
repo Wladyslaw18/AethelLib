@@ -21,7 +21,7 @@ export const ColorCommand = {
     /* 
      * CALIBRATION_EXECUTION_VECTOR
      */
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const color = args[0]?.toLowerCase()
         
         if (!color) {

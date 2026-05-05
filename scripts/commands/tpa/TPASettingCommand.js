@@ -11,7 +11,7 @@ export const TPASettingCommand = {
     permission: "essentials.tpa",
     category: "teleport",
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const option = args[0]?.toLowerCase()
 
         if (!option || (option !== "on" && option !== "off" && option !== "ui")) {
