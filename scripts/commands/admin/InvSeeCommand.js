@@ -1,43 +1,33 @@
-import { world } from "@minecraft/server"
+import { world, system } from "@minecraft/server"
 import { showInventoryUI } from "./InvSeeUI.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
-/*
- * INVENTORY_ESPIONAGE_ORCHESTRATOR
- * ----------------------------------------------------------------------------
- * A high-clearance utility for direct auditing of an entity's inventory 
- * components. Performs a name-to-object resolution before invoking the 
- * visual inspection GUI (InvSeeUI).
- *
- * PHILOSOPHY: Assets are temporary. Administrative oversight is eternal. 
- * Use this vector to identify contraband or structural inventory anomalies.
- */
 export const InvSeeCommand = {
     name: "invsee",
-    description: "Invokes the visual inventory-audit interface for a specific entity.",
-    usage: "!invsee <player_identifier>",
+    description: "View a player's inventory",
+
+    usage: "/ae:invsee <player_identifier>",
     permission: "essentials.admin.invsee",
     category: "Admin",
 
-    /* 
-     * VECTOR_EXECUTION_PIPELINE
-     */
-    async execute(player, args) {
-        if (args.length < 1) {
-            player.sendMessage("[Manual] Syntax Error: Player identifier required.");
+    execute(_data, player, args) {
+        if (args.length === 0) {
+            player.sendMessage("§c§l» §7Usage: /ae:invsee <player_name>");
             return
         }
 
-        const playerName = args[0]
-        const target = world.getAllPlayers().find(p => p.name === playerName)
+
+        const targetName = args.join(" ")
+        const target = PlayerUtils.findPlayer(targetName)
         
         if (!target) {
-            player.sendMessage(`[Error] Entity '${playerName}' not found in active buffer.`);
+            player.sendMessage(`§c§l» §7Player '${targetName}' not found.`);
             return
         }
 
-        /* 
-         * GUI_INJECTION_HOOK
-         */
-        await showInventoryUI(player, target)
+
+        system.run(() => {
+            showInventoryUI(player, target)
+        })
     }
 }

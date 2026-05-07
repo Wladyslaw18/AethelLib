@@ -7,8 +7,9 @@ import { spawnFloatingText, removeFloatingText, clearAll } from "../../systems/f
 
 export const FloatingTextCommand = {
     name: "ft",
-    description: "Manage floating text",
-    usage: "!ft <add/remove/clear> [text]",
+    description: "Manage floating text displays",
+
+    usage: "/ae:ft <add/remove/clear> [text]",
     permission: "essentials.admin.ft",
     category: "admin",
 
@@ -16,17 +17,19 @@ export const FloatingTextCommand = {
         const sub = args[0]?.toLowerCase()
         
         if (!sub) {
-            player.sendMessage("§cUsage: !ft <add/remove/clear> [text]")
+            player.sendMessage("§c§l» §7Usage: /ae:ft <add|remove|clear> [text]");
             return
         }
+
 
         switch (sub) {
             case "add":
                 const text = args.slice(1).join(" ")
                 if (!text) {
-                    player.sendMessage("§cUsage: !ft add <text>")
+                    player.sendMessage("§c§l» §7Usage: /ae:ft add <text>");
                     return
                 }
+
                 
                 const entry = {
                     text,
@@ -39,40 +42,44 @@ export const FloatingTextCommand = {
                 const id = FloatingTextStore.add(entry)
                 if (id) {
                     spawnFloatingText(entry)
-                    player.sendMessage(`§aFloating text added with ID: ${id}`)
+                    player.sendMessage(`§a§l» §fFloating text added (ID: §e${id}§f).`);
                 } else {
-                    player.sendMessage("§cFailed to add floating text")
+                    player.sendMessage("§c§l» §7Failed to add floating text.");
                 }
+
                 break
                 
             case "remove":
                 const removeId = args[1]
                 if (!removeId) {
-                    player.sendMessage("§cUsage: !ft remove <id>")
+                    player.sendMessage("§c§l» §7Usage: /ae:ft remove <id>");
                     return
                 }
+
                 
                 const success = FloatingTextStore.remove(removeId)
                 if (success) {
                     removeFloatingText(removeId)
-                    player.sendMessage(`§aFloating text removed`)
+                    player.sendMessage("§a§l» §fFloating text removed.");
                 } else {
-                    player.sendMessage("§cFailed to remove floating text")
+                    player.sendMessage("§c§l» §7Failed to remove floating text.");
                 }
+
                 break
                 
             case "clear":
                 const clearSuccess = FloatingTextStore.clear()
                 if (clearSuccess) {
                     clearAll()
-                    player.sendMessage(`§aAll floating texts cleared`)
+                    player.sendMessage("§a§l» §fAll floating texts cleared.");
                 } else {
-                    player.sendMessage("§cFailed to clear floating texts")
+                    player.sendMessage("§c§l» §7Failed to clear floating texts.");
                 }
+
                 break
                 
             default:
-                player.sendMessage("§cUsage: !ft <add/remove/clear> [text]")
+                player.sendMessage("§cUsage: /ae:ft <add/remove/clear> [text]")
         }
     }
 }

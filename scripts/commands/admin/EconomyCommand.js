@@ -2,30 +2,28 @@ import { world } from "@minecraft/server"
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 
 /*
- * ADMINISTRATIVE_ECONOMY_ORCHESTRATOR
+ * Economy Admin Command
  * ----------------------------------------------------------------------------
- * A high-clearance interface for direct manipulation of player liquidity 
- * buffers. Orchestrates atomic 'give', 'take', 'set', and 'reset' 
- * operations via the EconomyStore.
- *
- * PHILOSOPHY: Money is data. Control the data, control the economy. 
- * Use this vector to correct structural financial imbalances.
+ * Allows admins to manage player balances (give, take, set, reset).
  */
+
 export const EconomyCommand = {
     name: "economy",
-    description: "Orchestrates administrative liquidity-buffer mutations.",
-    usage: "!economy <give|take|set|reset> <player_identifier> [amount]",
+    description: "Manage player balances",
+
+    usage: "/ae:economy <give|take|set|reset> <player_identifier> [amount]",
     permission: "essentials.admin.economy",
     category: "Admin",
 
     /* 
      * VECTOR_EXECUTION_PIPELINE
      */
-    async execute(player, args) {
+    async execute(_data, player, args) {
         if (args.length < 2) {
-            player.sendMessage("[Manual] Syntax Error: Action and player identifier required.");
+            player.sendMessage("§c§l» §7Usage: /ae:economy <give|take|set|reset> <player> [amount]");
             return
         }
+
 
         const subcommand = args[0].toLowerCase()
         const playerName = args[1]
@@ -35,9 +33,10 @@ export const EconomyCommand = {
          */
         const target = world.getAllPlayers().find(p => p.name === playerName)
         if (!target) {
-            player.sendMessage(`[Error] Entity '${playerName}' not found in active buffer.`);
+            player.sendMessage(`§c§l» §7Player '${playerName}' not found.`);
             return
         }
+
 
         switch (subcommand) {
             case "give":
@@ -53,8 +52,9 @@ export const EconomyCommand = {
                 await handleReset(player, target)
                 break
             default:
-                player.sendMessage("[Manual] Syntax Error: Invalid administrative action.");
+                player.sendMessage("§c§l» §7Invalid action. Use give, take, set, or reset.");
         }
+
     }
 }
 
@@ -64,18 +64,20 @@ export const EconomyCommand = {
 async function handleGive(executor, target, amountStr) {
     const amount = Math.floor(Number(amountStr))
     if (isNaN(amount) || amount <= 0) {
-        executor.sendMessage("[Error] Calibration Error: Amount must be a positive integer.");
+        executor.sendMessage("§c§l» §7Please provide a valid amount.");
         return
     }
+
 
     try {
         const success = await EconomyStore.addMoney(target, amount)
         if (success) {
-            executor.sendMessage(`[Success] Injected ${amount} credits into '${target.name}' buffer.`);
-            target.sendMessage("[System] Administrative balance adjustment detected.");
+            executor.sendMessage(`§a§l» §fAdded §e$${amount.toLocaleString()}§f to §e${target.name}§f's balance.`);
+            target.sendMessage("§a§l» §fYour balance was adjusted by an admin.");
         } else {
-            executor.sendMessage("[Fatal] Injection failure.");
+            executor.sendMessage("§c§l» §7Failed to add money.");
         }
+
     } catch (error) {
         executor.sendMessage(`[Critical] Transaction Crash: ${error.message}`);
     }
@@ -87,18 +89,20 @@ async function handleGive(executor, target, amountStr) {
 async function handleTake(executor, target, amountStr) {
     const amount = Math.floor(Number(amountStr))
     if (isNaN(amount) || amount <= 0) {
-        executor.sendMessage("[Error] Calibration Error: Amount must be a positive integer.");
+        executor.sendMessage("§c§l» §7Please provide a valid amount.");
         return
     }
+
 
     try {
         const success = await EconomyStore.removeMoney(target, amount)
         if (success) {
-            executor.sendMessage(`[Success] Extracted ${amount} credits from '${target.name}' buffer.`);
-            target.sendMessage("[System] Administrative balance adjustment detected.");
+            executor.sendMessage(`§a§l» §fRemoved §e$${amount.toLocaleString()}§f from §e${target.name}§f's balance.`);
+            target.sendMessage("§a§l» §fYour balance was adjusted by an admin.");
         } else {
-            executor.sendMessage("[Error] Extraction failure: Insufficient liquidity in buffer.");
+            executor.sendMessage("§c§l» §7Failed to remove money (Insufficient funds).");
         }
+
     } catch (error) {
         executor.sendMessage(`[Critical] Transaction Crash: ${error.message}`);
     }
@@ -110,18 +114,20 @@ async function handleTake(executor, target, amountStr) {
 async function handleSet(executor, target, amountStr) {
     const amount = Math.floor(Number(amountStr))
     if (isNaN(amount) || amount < 0) {
-        executor.sendMessage("[Error] Calibration Error: Amount must be a non-negative integer.");
+        executor.sendMessage("§c§l» §7Please provide a valid amount.");
         return
     }
+
 
     try {
         const success = await EconomyStore.setBalance(target, amount)
         if (success) {
-            executor.sendMessage(`[Success] Calibrated '${target.name}' balance to ${amount} credits.`);
-            target.sendMessage("[System] Administrative balance adjustment detected.");
+            executor.sendMessage(`§a§l» §fSet §e${target.name}§f's balance to §e$${amount.toLocaleString()}§f.`);
+            target.sendMessage("§a§l» §fYour balance was adjusted by an admin.");
         } else {
-            executor.sendMessage("[Fatal] Calibration failure.");
+            executor.sendMessage("§c§l» §7Failed to set balance.");
         }
+
     } catch (error) {
         executor.sendMessage(`[Critical] Transaction Crash: ${error.message}`);
     }
@@ -134,11 +140,12 @@ async function handleReset(executor, target) {
     try {
         const success = await EconomyStore.setBalance(target, EconomyStore.DEFAULT_BALANCE)
         if (success) {
-            executor.sendMessage(`[Success] Reset '${target.name}' buffer to industrial default: ${EconomyStore.DEFAULT_BALANCE}`);
-            target.sendMessage("[System] Administrative balance adjustment detected.");
+            executor.sendMessage(`§a§l» §fReset §e${target.name}§f's balance to §e$${EconomyStore.DEFAULT_BALANCE.toLocaleString()}§f.`);
+            target.sendMessage("§a§l» §fYour balance was reset by an admin.");
         } else {
-            executor.sendMessage("[Fatal] Reset failure.");
+            executor.sendMessage("§c§l» §7Failed to reset balance.");
         }
+
     } catch (error) {
         executor.sendMessage(`[Critical] Transaction Crash: ${error.message}`);
     }
