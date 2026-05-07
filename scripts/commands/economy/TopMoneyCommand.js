@@ -1,51 +1,47 @@
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
-import { world } from "@minecraft/server"
+
 
 /*
- * INDUSTRIAL_LIQUIDITY_HIERARCHY_MANIFEST
+ * Top Money Command
  * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for querying the global credit-hierarchy. 
- * Resolves the liquidity-status of all online entities and executes an 
- * O(N log N) sorting operation to manifest the top-tier credit-anchors.
- *
- * PHILOSOPHY: Hierarchy is the structure of success. Use this manifest 
- * to identify the primary drivers of the industrial economy.
+ * Displays the richest players on the server.
  */
+
 export const TopMoneyCommand = {
     name: "topmoney",
-    description: "Queries the system for the global liquidity-hierarchy (Top 10).",
-    usage: "!topmoney",
+    description: "View the richest players on the server",
+
+    usage: "/ae:topmoney",
     permission: "essentials.money",
     category: "ECONOMY",
 
     /* 
      * HIERARCHY_QUERY_EXECUTION
      */
-    async execute(data, player, args) {
-        const onlinePlayers = world.getAllPlayers()
-        if (onlinePlayers.length === 0) return
-
-        /* LIQUIDITY_DATA_RESOLUTION */
-        const playerBalances = []
-        for (const p of onlinePlayers) {
-            const balance = await EconomyStore.getBalance(p)
-            playerBalances.push({ name: p.name, balance: balance })
-        }
-
-        /* HIERARCHY_SORTATION_VECTOR */
-        playerBalances.sort((a, b) => b.balance - a.balance)
-        const topPlayers = playerBalances.slice(0, 10)
-
-        player.sendMessage("§0§l» §6§lLIQUIDITY_HIERARCHY_REPORT§0 «")
-        if (topPlayers.length === 0) {
-            player.sendMessage("§cERROR: LIQUIDITY_BUFFER_EMPTY");
+    async execute(_data, player, _args) {
+        const balances = EconomyStore.getAllBalances()
+        
+        if (balances.length === 0) {
+            player.sendMessage("§c§l» §7No balances found.");
             return
         }
 
+
+        // Sort by balance descending
+        balances.sort((a, b) => b.balance - a.balance)
+        const topPlayers = balances.slice(0, 10)
+
+        player.sendMessage(" ")
+        player.sendMessage("§6§lRichest Players §8(Top 10)")
+
+        
         for (let i = 0; i < topPlayers.length; i++) {
             const entry = topPlayers[i]
-            const rankPrefix = i === 0 ? "§e[RANK_01]" : i === 1 ? "§7[RANK_02]" : i === 2 ? "§6[RANK_03]" : `§f[RANK_${String(i + 1).padStart(2, '0')}]`
-            player.sendMessage(`${rankPrefix} §e${entry.name}: §a$${entry.balance.toLocaleString()}`)
+            const color = i === 0 ? "§6§l" : i === 1 ? "§e§l" : i === 2 ? "§f§l" : "§7"
+            player.sendMessage(`${color}${i + 1}. §f${entry.name} §8- §a$${entry.balance.toLocaleString()}`)
         }
+        player.sendMessage(" ")
     }
 }
+
+
