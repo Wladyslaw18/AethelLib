@@ -16,7 +16,6 @@ import { StoreKeys } from "../core/store/StoreKeys.js"
 import { PermissionManagerInstance } from "../core/permissions/PermissionManager.js"
 import { RankFormatter } from "../systems/social/ranks/RankFormatter.js"
 import { MuteStore } from "../systems/social/MuteStore.js"
-import { CommandRegistry } from "../commands/base/CommandRegistry.js"
 import { SignalBus } from "../core/signalbus/SignalBus.js"
 import { HomeStore } from "../systems/teleport/HomeStore.js"
 import { WarpStore } from "../systems/teleport/WarpStore.js"
@@ -29,7 +28,6 @@ import { TpaHandshake } from "../systems/tpa/TpaHandshake.js"
 import { TpaService } from "../systems/tpa/TpaService.js"
 import { TeleportService } from "../systems/teleport/TeleportService.js"
 import { PlayerUtils } from "../utils/PlayerUtils.js"
-import { CommandManager } from "../core/commands/CommandManager.js"
 import { ShopStore } from "../systems/economy/ShopStore.js"
 
 
@@ -39,17 +37,9 @@ let initialized = false
 /**
  * Initialize core services
  */
-export function init(early = false) {
-    if (initialized && !early) return
+export function init() {
+    if (initialized) return
     
-    if (early) {
-        // Register registry and manager early to catch startup events
-        Kernel.register("commandRegistry", CommandRegistry)
-        Kernel.register("commandManager",  CommandManager)
-        CommandManager.init();
-        return;
-    }
-
     initialized = true
 
     // Data layer
@@ -96,5 +86,6 @@ export function init(early = false) {
 
     console.log("[Kernel] Services initialized. Total: " + Kernel.size);
 }
+
 
 
