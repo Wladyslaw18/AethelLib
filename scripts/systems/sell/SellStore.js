@@ -17,8 +17,9 @@ export class SellStore {
      */
     static getSellPrices() {
         try {
-            const stored = world.getDynamicProperty("ae:sellPrices")
-            return stored ? JSON.parse(String(stored)) : this.getDefaultSellPrices()
+            const Database = Kernel.get("database")
+            const stored = Database.get("ae:sellPrices")
+            return stored || this.getDefaultSellPrices()
         } catch (error) {
             console.error(`[SellStore] VALUATION_LOAD_FAILURE: ${error}`)
             return this.getDefaultSellPrices()
@@ -30,7 +31,8 @@ export class SellStore {
      */
     static saveSellPrices(prices) {
         try {
-            world.setDynamicProperty("ae:sellPrices", JSON.stringify(prices))
+            const Database = Kernel.get("database")
+            Database.set("ae:sellPrices", prices)
             return true
         } catch (error) {
             console.error(`[SellStore] VALUATION_SAVE_FAILURE: ${error}`)
@@ -132,6 +134,8 @@ export class SellStore {
      */
     static removePlayerItems(player, itemId, quantity) {
         try {
+            if (this.getPlayerItemCount(player, itemId) < quantity) return false;
+            
             const container = player.getComponent("inventory").container
             let remaining = quantity
             for (let i = 0; i < container.size && remaining > 0; i++) {
@@ -164,24 +168,20 @@ export class SellStore {
      * LIQUIDITY_MUTATION_VECTORS
      */
     static addPlayerMoney(playerId, amount) {
-        try {
-            const currentBalance = this.getPlayerBalance(playerId)
-            world.setDynamicProperty(`ae:balance:${playerId}`, currentBalance + amount)
-            return true
-        } catch (error) {
-            console.error(`[SellStore] LIQUIDITY_INJECTION_FAILURE: ${error}`)
-            return false
-        }
+        const player = Kernel.world.getAllPlayers().find(p => p.id === playerId)
+        if (!player) return false
+        
+        const Economy = Kernel.get("economy")
+        Kernel.system.run(() => Economy.addMoney(player, amount))
+        return true
     }
 
     static getPlayerBalance(playerId) {
-        try {
-            const balance = world.getDynamicProperty(`ae:balance:${playerId}`)
-            return Number(balance) || 0
-        } catch (error) {
-            console.error(`[SellStore] BALANCE_QUERY_FAILURE: ${error}`)
-            return 0
-        }
+        const player = Kernel.world.getAllPlayers().find(p => p.id === playerId)
+        if (!player) return 0
+        
+        const Economy = Kernel.get("economy")
+        return Economy.getBalance(player)
     }
 
     /* 
@@ -201,8 +201,10 @@ export class SellStore {
                 type: "sell"
             }
             transactions.push(transaction)
-            if (transactions.length > 1000) transactions.splice(0, transactions.length - 1000)
-            world.setDynamicProperty("ae:sellTransactions", JSON.stringify(transactions))
+            if (transactions.length > 500) transactions.splice(0, transactions.length - 500)
+            
+            const Database = Kernel.get("database")
+            Database.set("ae:sellTransactions", transactions)
         } catch (error) {
             console.error(`[SellStore] LOG_COMMIT_FAILURE: ${error}`)
         }
@@ -210,8 +212,9 @@ export class SellStore {
 
     static getTransactions() {
         try {
-            const stored = world.getDynamicProperty("ae:sellTransactions")
-            return stored ? JSON.parse(String(stored)) : []
+            const Database = Kernel.get("database")
+            const stored = Database.get("ae:sellTransactions")
+            return stored || []
         } catch (error) {
             console.error(`[SellStore] LOG_LOAD_FAILURE: ${error}`)
             return []

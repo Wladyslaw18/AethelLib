@@ -11,11 +11,11 @@ import { MessageFormData, ModalFormData, ActionFormData } from "@minecraft/serve
 export const SellCommand = {
     name: "sell",
     description: "Sell items for money",
-    usage: "!sell <item> [quantity]",
+    usage: "/ae:sell <item> [quantity]",
     permission: "essentials.sell",
     category: "economy",
 
-    execute(data, player, args) {
+    execute(_data, player, args) {
         if (args.length === 0) {
             showSellMenu(player)
             return
@@ -166,7 +166,7 @@ function showSellDialog(player, item) {
     system.run(async () => {
         const res = await form.show(player)
         if (res.canceled) return
-        const quantity = parseInt(res.formValues[4])
+        const quantity = parseInt(String(res.formValues[4]))
         if (quantity && quantity > 0) {
             const transaction = SellStore.sellItem(player, item.id, quantity)
                     
@@ -199,4 +199,3 @@ function findItem(query) {
 
     return matches.length > 0 ? matches[0] : null
 }
-
