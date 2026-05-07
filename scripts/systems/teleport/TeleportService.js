@@ -1,25 +1,18 @@
 import { Kernel } from "../../core/Kernel.js"
 
 /*
- * INDUSTRIAL_SPATIAL_MIGRATOR
+ * Teleport Service
  * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for the execution of relocation 
- * vectors across the server's spatial dimensions. Manages a volatile 
- * memory-buffer (LAST_POS_STORE) for tracking back-anchors and 
- * death-coordinates.
- *
- * PHILOSOPHY: Migration must be precise. Use this service to execute 
- * validated teleportation and preserve spatial history for return-vectors.
+ * Handles all player teleportation, including delays, combat checks, 
+ * and back-location tracking.
  */
+
 
 const LAST_POS_STORE = new Map() // VOLATILE_BACK_ANCHOR_REGISTRY
 
 export const TeleportService = {
     /* 
      * RELOCATION_EXECUTION_VECTOR
-     * Orchestrates the spatial-repositioning of an entity. Commits the 
-     * entity's current coordinates to the back-anchor buffer before 
-     * executing the migration.
      */
     teleport(player, destination, dimensionId = null) {
         if (!player.isValid) return false
@@ -42,17 +35,62 @@ export const TeleportService = {
     },
 
     /* 
-     * BACK_ANCHOR_QUERY
+     * TEMPORAL_STABILIZATION_VECTOR
+     * Executes a delayed teleportation with stability checks.
      */
+    async teleportWithWait(player, destination, dimensionId, waitTime) {
+        if (!player.isValid) return false
+        
+        const startPos = { x: player.location.x, y: player.location.y, z: player.location.z }
+        
+        for (let i = waitTime; i > 0; i--) {
+            if (!player.isValid) return false
+            
+            player.onScreenDisplay.setActionBar(`§6§l» §eTeleporting in §f${i}s§e...`);
+
+            
+            // Wait 1 second (20 ticks)
+            await new Promise(resolve => Kernel.system.runTimeout(() => resolve(), 20));
+
+            // Stability Checks
+            if (this._hasMoved(player, startPos)) {
+                player.sendMessage("§c§l» §7Teleport cancelled: You moved!");
+                return false
+            }
+
+
+            if (this._isInCombat(player)) {
+                player.sendMessage("§c§l» §7Teleport cancelled: You are in combat!");
+                return false
+            }
+
+        }
+
+        return this.teleport(player, destination, dimensionId);
+    },
+
+    /* 
+     * SPATIAL_DRIFT_PROBE
+     */
+    _hasMoved(player, startPos) {
+        const dx = Math.abs(player.location.x - startPos.x)
+        const dy = Math.abs(player.location.y - startPos.y)
+        const dz = Math.abs(player.location.z - startPos.z)
+        return dx > 0.5 || dy > 0.5 || dz > 0.5
+    },
+
+    /* 
+     * COMBAT_SIGNATURE_PROBE
+     */
+    _isInCombat(player) {
+        const CombatIntegrity = Kernel.get("combatIntegrity")
+        return CombatIntegrity?.isInCombat(player.id) || false
+    },
+
     getLastPosition(playerId) {
         return LAST_POS_STORE.get(playerId) || null
     },
 
-    /* 
-     * SYSTEM_BOOTSTRAP_PROTOCOL
-     * Initializes the death-location interception vector to preserve 
-     * coordinates upon entity-termination.
-     */
     init() {
         Kernel.world.afterEvents.entityDie.subscribe((event) => {
             if (event.deadEntity.typeId === "minecraft:player") {
@@ -63,6 +101,7 @@ export const TeleportService = {
                 })
             }
         })
-        console.log("[TeleportService] INDUSTRIAL_MIGRATION_BUS_ACTIVE");
+        console.log("[TeleportService] Teleport Service online.");
+
     }
 }

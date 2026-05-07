@@ -1,24 +1,17 @@
 import { Configuration } from "../../Configuration.js"
 
 /*
- * INDUSTRIAL_PEER_MIGRATION_HANDSHAKE
+ * TPA Handshake
  * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for peer-to-peer relocation 
- * handshakes. Manages a volatile memory-buffer of pending migration 
- * requests and orchestrates their temporal expiration.
- *
- * PHILOSOPHY: Requests are transient synchronization-nodes. If a 
- * handshake is not completed within the defined industrial TTL, the node 
- * must be decommissioned.
+ * Handles pending teleport requests and their expiration.
  */
 
 /** @type {Map<string, Object>} */
-const pendingRequests = new Map() // VOLATILE_HANDSHAKE_REGISTRY
+const pendingRequests = new Map() // Pending TPA requests
 
 export const TpaHandshake = {
     /* 
-     * HANDSHAKE_NODE_INJECTION
-     * Injects a new migration-request node into the volatile registry.
+     * Create a new TPA request
      */
     createRequest(senderId, senderName, targetId, targetName, type) {
         const requestId = `${senderId}:${targetId}`
@@ -36,16 +29,14 @@ export const TpaHandshake = {
     },
 
     /* 
-     * HANDSHAKE_NODE_QUERY
+     * Get a TPA request by ID
      */
     getRequest(requestId) {
         return pendingRequests.get(requestId) || null
     },
 
     /* 
-     * TARGET_IDENTIFIER_RESOLVER
-     * Scans the volatile manifest for the latest handshake-node associated 
-     * with the target entity.
+     * Get the latest request for a target player
      */
     getLatestRequestFor(targetId) {
         let latest = null
@@ -58,7 +49,7 @@ export const TpaHandshake = {
     },
 
     /* 
-     * SENDER_IDENTIFIER_RESOLVER
+     * Get the latest request from a sender
      */
     getLatestRequestFrom(senderId) {
         let latest = null
@@ -71,16 +62,14 @@ export const TpaHandshake = {
     },
 
     /* 
-     * HANDSHAKE_NODE_DECOMMISSION
+     * Remove a request
      */
     removeRequest(requestId) {
         pendingRequests.delete(requestId)
     },
 
     /* 
-     * REGISTRY_MAINTENANCE_PROTOCOL
-     * Scans the volatile manifest and decommissions handshake-nodes that 
-     * have exceeded the industrial TTL.
+     * Cleanup expired requests
      */
     cleanup() {
         const now = Date.now()
@@ -90,3 +79,4 @@ export const TpaHandshake = {
         }
     }
 }
+
