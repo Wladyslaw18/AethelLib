@@ -5,21 +5,24 @@ import { world } from "@minecraft/server"
  * Uses a cached Map for O(1) lookups.
  */
 
-const nameCache = new Map()
-const idCache = new Map()
+const nameCache = new Map() // lowerName -> Player
+const idToNameCache = new Map() // playerId -> lowerName
 
 // Keep cache in sync
 world.afterEvents.playerSpawn.subscribe((ev) => {
     const { player } = ev
-    nameCache.set(player.name.toLowerCase(), player)
-    idCache.set(player.id, player)
+    const lowerName = player.name.toLowerCase()
+    nameCache.set(lowerName, player)
+    idToNameCache.set(player.id, lowerName)
 })
 
 world.afterEvents.playerLeave.subscribe((ev) => {
     const { playerId } = ev
-    const p = idCache.get(playerId)
-    if (p) nameCache.delete(p.name.toLowerCase())
-    idCache.delete(playerId)
+    const lowerName = idToNameCache.get(playerId)
+    if (lowerName) {
+        nameCache.delete(lowerName)
+    }
+    idToNameCache.delete(playerId)
 })
 
 export const PlayerUtils = {
@@ -28,29 +31,36 @@ export const PlayerUtils = {
      */
     init() {
         world.getAllPlayers().forEach(p => {
-            nameCache.set(p.name.toLowerCase(), p)
-            idCache.set(p.id, p)
+            const lowerName = p.name.toLowerCase()
+            nameCache.set(lowerName, p)
+            idToNameCache.set(p.id, lowerName)
         })
     },
 
     /**
      * Resolves a name or ID to a Player object.
-
      * @param {string} identifier 
      * @returns {import("@minecraft/server").Player|null}
      */
     findPlayer(identifier) {
         if (!identifier) return null
         
+        // If it's already a player object, just return it
+        if (identifier !== null && typeof identifier === 'object' && 'name' in identifier && 'id' in identifier) return identifier;
+        if (typeof identifier !== 'string') return null;
+
         const lowerId = identifier.toLowerCase()
 
         // 1. Exact Name Match (O(1))
         const nameMatch = nameCache.get(lowerId)
         if (nameMatch?.isValid) return nameMatch
 
-        // 2. ID Match (O(1))
-        const idMatch = idCache.get(identifier)
-        if (idMatch?.isValid) return idMatch
+        // 2. ID Match (O(1)) - We check the idToNameCache then pull from nameCache
+        const foundName = [...idToNameCache.entries()].find(([id, _name]) => id === identifier)
+        if (foundName) {
+            const p = nameCache.get(foundName[1])
+            if (p?.isValid) return p
+        }
 
         // 3. Partial Match (Fallback O(N))
         const players = world.getAllPlayers()
@@ -65,6 +75,11 @@ export const PlayerUtils = {
      */
     resolveFromArgs(args) {
         if (args.length === 0) return { player: null, consumedArgs: 0 }
+
+        // If the native parser already resolved the player object
+        if (typeof args[0] === 'object' && args[0] !== null && args[0].name) {
+            return { player: args[0], consumedArgs: 1 }
+        }
 
         let longestMatch = null
         let consumed = 0
@@ -82,4 +97,3 @@ export const PlayerUtils = {
         return { player: longestMatch, consumedArgs: consumed }
     }
 }
-

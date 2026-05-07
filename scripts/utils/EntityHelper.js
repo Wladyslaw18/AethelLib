@@ -34,7 +34,7 @@ export function tryRemoveEntity(entity, options = {}) {
                 return true
             } catch (error2) {
                 try {
-                    entity.teleport({ x: entity.location.x, y: -256, z: entity.location.z })
+                    entity.teleport({ x: entity.location.x, y: -64, z: entity.location.z })
                     return true
                 } catch (error3) {
                     console.warn(`[EntityHelper] FATAL_PURGE_FAILURE for ${entity.typeId}:`, {
