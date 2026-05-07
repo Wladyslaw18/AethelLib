@@ -1,53 +1,49 @@
-import { world } from "@minecraft/server"
-import { MuteStore } from "../../systems/social/MuteStore.js"
-
-/*
- * COMMUNICATION_SUPPRESSION_ORCHESTRATOR
- * ----------------------------------------------------------------------------
- * Handles the administrative silencing of an entity's communication vector. 
- * Injects a suppression-node into the MuteStore to intercept and terminate 
- * chat-broadcast attempts from the target entity.
- *
- * PHILOSOPHY: If the output is toxic, terminate the broadcast. 
- * Silence is the industrial solution for behavioral noise.
+/**
+ * Mute Command - Silences a player
  */
+
+import { Kernel } from "../../core/Kernel.js"
+
 export const MuteCommand = {
     name: "mute",
-    description: "Injects a communication-suppression node into a specific entity's profile.",
-    usage: "!mute <player_identifier>",
-    permission: "essentials.admin.mute",
-    category: "Admin",
+    description: "Mute a player's chat",
 
-    /* 
-     * VECTOR_EXECUTION_PIPELINE
-     */
-    async execute(player, args) {
-        if (args.length < 1) {
-            player.sendMessage("[Manual] Syntax Error: Player identifier required.");
-            return
+    parameters: [
+        { name: "player", type: "player", optional: false },
+        { name: "duration", type: "string", optional: true }
+    ],
+
+    async execute(_data, player, args) {
+        const target = args[0];
+        const durationStr = args[1] || "permanent";
+
+        // Handle failed resolution
+        if (typeof target === "string") {
+            player.sendMessage(`§c§l» §7Player '${target}' not found.`);
+            return;
         }
 
-        const playerName = args[0]
-        const target = world.getAllPlayers().find(p => p.name === playerName)
-        
-        if (!target) {
-            player.sendMessage(`[Error] Entity '${playerName}' not found in active buffer.`);
-            return
+
+        const MuteStore = Kernel.get("muteStore");
+        if (!MuteStore) {
+            player.sendMessage("§c§l» §7Mute system is offline.");
+            return;
         }
+
 
         try {
-            /* 
-             * SUPPRESSION_NODE_INJECTION
-             */
-            const success = await MuteStore.mute(target.id)
+            const success = await MuteStore.mute(target, durationStr);
             if (success) {
-                player.sendMessage(`[Success] Entity '${target.name}' communication vector suppressed.`);
-                target.sendMessage("[System] Administrative communication suppression active.");
+                const timeLabel = durationStr === "permanent" ? "permanently" : `for ${durationStr}`;
+                player.sendMessage(`§a§l» §fPlayer §e${target.name}§f has been muted §e${timeLabel}§f.`);
+                target.sendMessage(`§c§l» §7You have been muted §e${timeLabel}§7 by an administrator.`);
             } else {
-                player.sendMessage("[Fatal] Injection failure.");
+                player.sendMessage("§c§l» §7Failed to apply mute.");
             }
+
         } catch (error) {
-            player.sendMessage(`[Critical] Suppression Crash: ${error.message}`);
+            player.sendMessage(`§cError: ${error.message}`);
         }
     }
 }
+

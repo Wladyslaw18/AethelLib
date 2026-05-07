@@ -2,29 +2,27 @@ import { world } from "@minecraft/server"
 import { ActionFormData, MessageFormData } from "@minecraft/server-ui"
 
 /*
- * GLOBAL_DATA_PURGE_ORCHESTRATOR
+ * Data Reset Command
  * ----------------------------------------------------------------------------
- * A high-clearance administrative interface for performing a scorched-earth 
- * reset of the server's persistent data-buffers. Orchestrates the 
- * de-registration of dynamic properties across multiple sub-systems.
- *
- * PHILOSOPHY: If the state is corrupt, purge it. This vector provides 
- * the surgical tools for a total industrial reset.
+ * Allows admins to reset server data and databases.
  */
+
 export const ResetDataCommand = {
     name: "resetdata",
-    description: "Orchestrates a total purge of specific industrial data-buffers.",
-    usage: "!resetdata",
+    description: "Reset server data and databases",
+
+    usage: "/ae:resetdata",
     permission: "essentials.admin.resetdata",
     category: "Admin",
 
     /* 
      * UI_ENTRY_PIPELINE
      */
-    async execute(player) {
-        player.sendMessage("§0§l» §c§lRESET_PROTOCOL_INITIATED §0«")
+    async execute(_data, player, _args) {
+        player.sendMessage("§c§l» §fReset System Activated.");
         await showCategorySelection(player)
     }
+
 }
 
 /* 
@@ -32,18 +30,19 @@ export const ResetDataCommand = {
  */
 async function showCategorySelection(player) {
     const form = new ActionFormData()
-        .title("§6§lDATA_PURGE_SELECTION")
-        .body("§cWARNING: This action initiates permanent data-buffer termination.\n\nSelect the target manifest for decommissioning:")
-        .button("§c[TOTAL_PURGE]")
-        .button("§eLIQUIDITY_BUFFER (MONEY)")
-        .button("§aSPATIAL_HOMES")
-        .button("§bSPATIAL_WARPS")
-        .button("§cBLACKLIST_REGISTRY (BANS)")
-        .button("§dMARKET_PRICE_MANIFEST")
-        .button("§6COMMERCE_NODES (SHOP)")
-        .button("§fHIERARCHY_MANIFEST (RANKS)")
-        .button("§9FLOATING_TEXT_REGISTRY")
-        .button("§7ABORT_SESSION")
+        .title("§6§lReset Data")
+        .body("§cWARNING: This action will permanently delete server data!\n\nSelect which data to reset:")
+        .button("§c[ RESET ALL DATA ]")
+        .button("§eMoney & Balances")
+        .button("§aPlayer Homes")
+        .button("§bServer Warps")
+        .button("§cBan List")
+        .button("§dSell Prices")
+        .button("§6Shop Data")
+        .button("§fRank Data")
+        .button("§9Floating Texts")
+        .button("§7Cancel")
+
 
     const res = await form.show(player)
     if (res.canceled || res.selection === 9) return
@@ -69,10 +68,11 @@ async function showCategorySelection(player) {
  */
 async function showConfirmation(player, category) {
     const form = new MessageFormData()
-        .title("§6§lCONFIRM_TERMINATION")
-        .body(`§cTarget manifest: ${category}.\n\n§eThis action triggers permanent reality-state mutation.\n\nAre you absolutely sure?`)
-        .button1("§cABORT")
-        .button2("§4§lINITIATE_PURGE")
+        .title("§6§lConfirm Reset")
+        .body(`§cTarget: ${category}.\n\n§eThis action cannot be undone!\n\nAre you absolutely sure?`)
+        .button1("§7Cancel")
+        .button2("§c§lRESET DATA")
+
 
     const res = await form.show(player)
     if (res.canceled || res.selection === 0) return
@@ -140,15 +140,16 @@ async function performReset(player, category) {
         }
 
         if (errorCount === 0) {
-            player.sendMessage(`[Success] ${category} manifest terminated. (${successCount} sub-vectors purged).`);
+            player.sendMessage(`§a§l» §fData for §e${category}§f has been reset.`);
         } else {
-            player.sendMessage(`[Warning] Reset complete with partial failures.`);
+            player.sendMessage(`§e§l» §7Reset complete with some errors.`);
         }
 
     } catch (error) {
-        player.sendMessage(`[Fatal] Reset pipeline collapse: ${error.message}`);
+        player.sendMessage(`§c§l» §7Failed to reset data: ${error.message}`);
         console.error(`[ResetDataCommand] CRASH for ${category}:`, error)
     }
+
 }
 
 /* 
