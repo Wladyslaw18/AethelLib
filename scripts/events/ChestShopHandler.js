@@ -2,13 +2,11 @@ import { Kernel } from "../core/Kernel.js"
 import { SignSide } from "@minecraft/server"
 
 /*
- * CHEST_SHOP_TRANSACTIONAL_INTERCEPTOR
+ * Chest Shop System
  * ----------------------------------------------------------------------------
- * Handles the event lifecycle for physical commerce nodes (Signs + Chests). 
- * This module manages the detection of shop-sign placement, the 
- * orchestration of item-credit swaps, and the enforcement of structural 
- * integrity (anti-grief for shop blocks).
+ * Handles creating and using chest shops (signs attached to chests).
  */
+
 
 const SHOP_HEADERS = ["[buy]", "[sell]"]
 
@@ -50,16 +48,18 @@ export function init() {
                 const chest = getChestAround(block)
 
                 if (!chest) {
-                    player.sendMessage("[System] Error: No valid container detected in cardinal adjacency.");
+                    player.sendMessage("§c§l» §7No chest found next to the sign!");
                     return
                 }
+
 
                 const ChestShopStore = Kernel.get("chestShopStore")
                 const existing = ChestShopStore.findShopByChestLocation(chest.location)
                 if (existing) {
-                    player.sendMessage("[System] Error: Container already linked to an active commerce node.");
+                    player.sendMessage("§c§l» §7This chest is already being used for a shop.");
                     return
                 }
+
 
                 showSetupUI(player, shopType, block.location, chest.location)
 
@@ -88,9 +88,10 @@ export function init() {
         event.cancel = true // TERMINATE_NATIVE_UI
 
         if (shop.ownerId === player.id) {
-            player.sendMessage("[System] Entity owner detected. Structural modification only.");
+            player.sendMessage("§a§l» §fYou own this shop.");
             return
         }
+
 
         Kernel.system.run(() => {
             processTransaction(player, shop)
@@ -114,21 +115,25 @@ export function init() {
             const shop = ChestShopStore.getShop(block.location)
             if (shop && shop.ownerId !== player.id) {
                 event.cancel = true
-                player.onScreenDisplay.setActionBar("PROTECTION_ERROR: ACCESS_DENIED");
+                player.onScreenDisplay.setActionBar("§c§l» §7This shop belongs to someone else!");
                 return
             }
+
             if (shop && shop.ownerId === player.id) {
                 ChestShopStore.removeShop(block.location)
-                Kernel.system.run(() => player.sendMessage("[System] Commerce node decommissioned."));
+                Kernel.system.run(() => player.sendMessage("§a§l» §fShop removed."));
             }
+
             return
         }
 
         const linkedShop = ChestShopStore.findShopByChestLocation(block.location)
         if (linkedShop && linkedShop.ownerId !== player.id) {
             event.cancel = true
-            player.onScreenDisplay.setActionBar("PROTECTION_ERROR: LINKED_CONTAINER");
+            player.onScreenDisplay.setActionBar("§c§l» §7This chest is linked to a shop!");
         }
+
+
     })
 
     console.log("[ChestShopHandler] TRANSACTIONAL_PIPELINE_ONLINE");
@@ -172,15 +177,17 @@ async function processTransaction(buyer, shop) {
         const dim = buyer.dimension
         const chestBlock = dim.getBlock(shop.chestLocation)
         if (!chestBlock) {
-            buyer.sendMessage("[Error] Linked container not found in current dimension.");
+            buyer.sendMessage("§c§l» §7The shop's chest is missing!");
             return
         }
 
+
         const container = chestBlock.getComponent("minecraft:inventory")?.container
         if (!container) {
-            buyer.sendMessage("[Error] Inventory component unreachable.");
+            buyer.sendMessage("§c§l» §7Could not open the shop's chest.");
             return
         }
+
 
         if (shop.type === "buy") {
             await handleBuy(buyer, shop, container)
@@ -189,8 +196,9 @@ async function processTransaction(buyer, shop) {
         }
     } catch (error) {
         console.error(`[ChestShopHandler] TRANSACTION_CRASH: ${error}`)
-        buyer.sendMessage("[Fatal] Transaction pipeline collapse.");
+        buyer.sendMessage("§c§l» §7Something went wrong with the transaction.");
     }
+
 }
 
 /*
@@ -208,9 +216,10 @@ async function handleBuy(buyer, shop, container) {
     const balance = EconomyStore.getBalance(buyer)
 
     if (balance < totalCost) {
-        buyer.sendMessage(`[Liquidity Error] Insufficient funds. Required: $${totalCost}`);
+        buyer.sendMessage("§c§l» §7You don't have enough money!");
         return
     }
+
 
     let stockCount = 0
     for (let i = 0; i < container.size; i++) {
@@ -221,15 +230,17 @@ async function handleBuy(buyer, shop, container) {
     }
 
     if (stockCount < shop.quantity) {
-        buyer.sendMessage(`[Stock Error] Node is depleted. Available: ${stockCount}`);
+        buyer.sendMessage("§c§l» §7This shop is out of stock!");
         return
     }
 
+
     const success = await EconomyStore.removeMoney(buyer, totalCost)
     if (!success) {
-        buyer.sendMessage("[System] Financial transaction failed.");
+        buyer.sendMessage("§c§l» §7Failed to process payment.");
         return
     }
+
 
     const { ItemStack } = await import("@minecraft/server")
     const itemStack = new ItemStack(shop.itemId, shop.quantity)
@@ -257,10 +268,13 @@ async function handleBuy(buyer, shop, container) {
     if (owner) {
         const EconomyStore = Kernel.get("economy")
         await EconomyStore.addMoney(owner, totalCost)
-        owner.sendMessage(`[Sales] Node sold ${shop.quantity}x ${shop.itemId} to ${buyer.name}. Profit: $${totalCost}`);
+        owner.sendMessage(`§a§l» §fSold §e${shop.quantity}x ${shop.itemId} §fto §e${buyer.name}§f. Profit: §a$${totalCost}§f.`);
     }
 
-    buyer.sendMessage(`[Success] Purchased ${shop.quantity}x ${shop.itemId} for $${totalCost}`);
+
+
+    buyer.sendMessage(`§a§l» §fPurchased §e${shop.quantity}x ${shop.itemId} §ffor §a$${totalCost}§f.`);
+
 }
 
 /*
@@ -284,17 +298,19 @@ async function handleSell(seller, shop, container) {
     }
 
     if (sellerStock < shop.quantity) {
-        seller.sendMessage(`[Stock Error] Insufficient items in inventory buffer. Required: ${shop.quantity}`);
+        seller.sendMessage("§c§l» §7You don't have enough items to sell!");
         return
     }
+
 
     const totalPay = shop.price * shop.quantity
     const EconomyStore = Kernel.get("economy")
     const success = await EconomyStore.addMoney(seller, totalPay)
     if (!success) {
-        seller.sendMessage("[System] Payment transaction failed.");
+        seller.sendMessage("§c§l» §7Failed to process payment.");
         return
     }
+
 
     const { ItemStack } = await import("@minecraft/server")
     const itemStack = new ItemStack(shop.itemId, shop.quantity)
@@ -315,7 +331,8 @@ async function handleSell(seller, shop, container) {
         }
     }
 
-    seller.sendMessage(`[Success] Sold ${shop.quantity}x ${shop.itemId} for $${totalPay}`);
+    seller.sendMessage(`§a§l» §fSold §e${shop.quantity}x ${shop.itemId} §ffor §a$${totalPay}§f.`);
+
 }
 
 /*
@@ -328,10 +345,12 @@ async function showSetupUI(player, shopType, signLocation, chestLocation) {
     const { ModalFormData } = await import("@minecraft/server-ui")
 
     const form = new ModalFormData()
-        .title(`NODE_CREATION: ${shopType.toUpperCase()}`)
-        .textField("ITEM_ID_IDENTIFIER", "e.g. minecraft:diamond")
-        .slider("UNIT_PRICE", 1, 10000, { valueStep: 1 })
-        .slider("TRANSACTION_VOLUME", 1, 64, { valueStep: 1 })
+        .title("§6Shop Setup")
+        .textField("Item ID (e.g. minecraft:diamond)", "minecraft:diamond")
+        .slider("Price per Unit", 1, 10000, { defaultValue: 1, valueStep: 1 })
+        .slider("Quantity per Trade", 1, 64, { defaultValue: 1, valueStep: 1 })
+
+
 
     const response = await form.show(player)
     if (response.canceled) return
@@ -341,9 +360,10 @@ async function showSetupUI(player, shopType, signLocation, chestLocation) {
     const quantity = Number(response.formValues[2])
 
     if (!itemId || !itemId.includes(":")) {
-        player.sendMessage("[Error] Malformed Item ID. Syntax: 'namespace:id'.");
+        player.sendMessage("§c§l» §7Invalid Item ID. Example: 'minecraft:diamond'.");
         return
     }
+
 
     const ChestShopStore = Kernel.get("chestShopStore")
     const success = ChestShopStore.createShop({
@@ -358,8 +378,9 @@ async function showSetupUI(player, shopType, signLocation, chestLocation) {
     })
 
     if (success) {
-        player.sendMessage(`[Success] Node registered: ${shopType} ${quantity}x ${itemId} @ $${price}`);
+        player.sendMessage(`§a§l» §fShop created successfully!`);
     } else {
-        player.sendMessage("[Fatal] Node registration failure.");
+        player.sendMessage("§c§l» §7Failed to create shop.");
     }
+
 }

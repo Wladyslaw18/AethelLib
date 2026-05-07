@@ -12,7 +12,9 @@ export const DEFAULT_RANKS = [
         chatColor: "§7",
         permissions: {
             "home.limit": 3,
-            "home.cooldown": 300, // 5 minutes
+            "home.cooldown": 30, 
+            "teleport.wait": 5,
+            "command.cooldown": 3,
             "tpa.cooldown": 30,
             "warp.cooldown": 60,
             "essentials.help": true

@@ -604,19 +604,19 @@ export const MINECRAFT_ITEMS = {
 
 // Categories for shop organization
 export const ITEM_CATEGORIES = {
-    building: { name: "Building Blocks", icon: "🧱" },
-    nature: { name: "Nature & Plants", icon: "🌿" },
-    materials: { name: "Raw Materials", icon: "⛏️" },
-    tools: { name: "Tools", icon: "🔨" },
-    weapons: { name: "Weapons", icon: "⚔️" },
-    armor: { name: "Armor", icon: "🛡️" },
-    food: { name: "Food", icon: "🍖" },
-    functional: { name: "Functional", icon: "⚙️" },
-    decorative: { name: "Decorative", icon: "🎨" },
-    redstone: { name: "Redstone", icon: "🔴" },
-    transport: { name: "Transportation", icon: "🚂" },
-    misc: { name: "Miscellaneous", icon: "📦" },
-    admin: { name: "Admin Only", icon: "👑" }
+    building: { name: "Building Blocks", icon: "textures/ui/hammer_l" },
+    nature: { name: "Nature & Plants", icon: "textures/ui/seed_pack" },
+    materials: { name: "Raw Materials", icon: "textures/ui/mine" },
+    tools: { name: "Tools", icon: "textures/ui/wrench" },
+    weapons: { name: "Weapons", icon: "textures/ui/sword" },
+    armor: { name: "Armor", icon: "textures/ui/shield" },
+    food: { name: "Food", icon: "textures/ui/apple" },
+    functional: { name: "Functional", icon: "textures/ui/gears" },
+    decorative: { name: "Decorative", icon: "textures/ui/palette" },
+    redstone: { name: "Redstone", icon: "textures/ui/redstone_dust" },
+    transport: { name: "Transportation", icon: "textures/ui/minecart" },
+    misc: { name: "Miscellaneous", icon: "textures/ui/box" },
+    admin: { name: "Admin Only", icon: "textures/ui/crown" }
 }
 
 // Get items by category
