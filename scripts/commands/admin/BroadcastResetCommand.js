@@ -1,30 +1,28 @@
 import { Kernel } from "../../core/Kernel.js"
 
 /*
- * BROADCAST_PROTOCOL_66
+ * Broadcast Reset Command
  * ----------------------------------------------------------------------------
- * A high-clearance administrative vector designed to surgically purge the 
- * dynamic broadcast buffer and reset the system to absolute zero.
- *
- * PHILOSOPHY: When the communication stream is compromised, initiate 
- * Protocol 66 to restore industrial silence.
+ * Resets the server broadcast list to default.
  */
+
 export const BroadcastResetCommand = {
     name: "bc66",
-    description: "Surgically purges and resets all dynamic broadcasts.",
-    usage: "!bc66",
+    description: "Reset all custom broadcasts to default",
+
+    usage: "/ae:bc66",
     permission: "admin.broadcast.reset",
     category: "ADMIN",
 
-    execute(player) {
+    execute(_data, player, _args) {
         const WorldStore = Kernel.get("worldStore")
         const StoreKeys = Kernel.get("keys")
 
-        // 🏛️ INDUSTRIAL_PURGE: Wipe the persistent broadcast list
+        // Reset the persistent broadcast list
         WorldStore.set(StoreKeys.broadcastList(), [])
         
-        player.sendMessage("§0§l» §c§lPROTOCOL_66_EXECUTED §0«")
-        player.sendMessage("§7All dynamic broadcasts have been purged from the persistent buffer.");
-        player.sendMessage("§7The system has been recalibrated to the Polish Peak baseline.");
+        player.sendMessage("§a§l» §fBroadcast system has been reset.");
+        player.sendMessage("§7All custom broadcasts have been cleared.");
+
     }
 }

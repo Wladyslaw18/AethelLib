@@ -2,26 +2,20 @@ import { BroadcastStore } from "../../systems/broadcasts/BroadcastStore.js"
 import { BroadcastService } from "../../systems/broadcasts/BroadcastService.js"
 
 /*
- * GLOBAL_BROADCAST_ORCHESTRATOR
+ * BROADCAST_COMMAND
  * ----------------------------------------------------------------------------
- * The administrative interface for managing the system-wide message relay. 
- * Orchestrates sub-system configurations (Tiers, Intervals) and manages 
- * the operational lifecycle (Start/Stop/Reload) of the BroadcastService.
- *
- * PHILOSOPHY: Information is a resource. Control the relay, control the flow.
+ * Administrative interface for global message relay.
  */
 export const BroadcastCommand = {
     name: "broadcast",
-    description: "Orchestrates the global administrative message-relay system.",
-    usage: "!broadcast <subcommand> [args...]",
+    description: "Manage automatic server broadcasts",
+
+    usage: "/ae:broadcast <subcommand> [args...]",
     permission: "essentials.admin",
     category: "Admin",
-    aliases: ["ae:bc"],
+    aliases: ["bc"],
 
-    /* 
-     * SUBCOMMAND_ROUTING_ENGINE
-     */
-    async execute(player, args) {
+    async execute(_data, player, args) {
         const subcommand = args[0]?.toLowerCase()
 
         if (!subcommand) {
@@ -63,212 +57,145 @@ export const BroadcastCommand = {
                 await this.handleClear(player, args.slice(1))
                 break
             default:
-                player.sendMessage(`[Error] Unknown broadcast vector: '${subcommand}'`);
+                player.sendMessage(`§cERROR: Unknown subcommand: '${subcommand}'`);
                 this.showHelp(player)
         }
     },
 
-    /*
-     * MESSAGE_INJECTION_HANDLER
-     */
     async handleAdd(player, args) {
         const tier = args[0]?.toLowerCase()
         const message = args.slice(1).join(" ")
 
         if (!tier || !message) {
-            player.sendMessage("[Manual] Syntax Hint: !broadcast add <tier> <content>");
-            player.sendMessage("[Manual] Valid Tiers: common, uncommon, rare, legendary");
+            player.sendMessage("§7Usage: /ae:bc add <tier> <content>");
             return
         }
 
         const success = BroadcastStore.addMessage(tier, message)
         if (success) {
-            player.sendMessage(`[Success] Content injected into ${tier.toUpperCase()} tier.`);
+            player.sendMessage(`§a§l» §fMessage added to §e${tier}§f tier.`);
         } else {
-            player.sendMessage("[Error] Injection failure: Invalid tier or malformed content.");
+            player.sendMessage("§c§l» §7Invalid tier.");
         }
+
     },
 
-    /*
-     * MESSAGE_DECOMMISSION_HANDLER
-     */
     async handleRemove(player, args) {
         const tier = args[0]?.toLowerCase()
         const index = parseInt(args[1])
 
         if (!tier || isNaN(index)) {
-            player.sendMessage("[Manual] Syntax Hint: !broadcast remove <tier> <index>");
+            player.sendMessage("§7Usage: /ae:bc remove <tier> <index>");
             return
         }
 
         const success = BroadcastStore.removeMessage(tier, index)
         if (success) {
-            player.sendMessage(`[Success] Content decommissioned from ${tier.toUpperCase()} tier.`);
+            player.sendMessage(`§a§l» §fMessage removed from §e${tier}§f tier.`);
         } else {
-            player.sendMessage("[Error] Decommission failure: Invalid tier or index OOB.");
+            player.sendMessage("§c§l» §7Invalid index.");
         }
+
     },
 
-    /*
-     * INTERVAL_CALIBRATION_HANDLER
-     */
     async handleInterval(player, args) {
         const seconds = parseInt(args[0])
 
         if (isNaN(seconds) || seconds < 10) {
-            player.sendMessage("[Error] Calibration failure: Interval must be >= 10s.");
+            player.sendMessage("§c§l» §7Minimum interval is 10s.");
             return
         }
+
 
         const success = BroadcastStore.setInterval(seconds)
         if (success) {
-            player.sendMessage(`[Success] Relay interval calibrated to ${seconds}s.`);
+            player.sendMessage(`§a§l» §fBroadcast interval set to §e${seconds}s§f.`);
             if (BroadcastService.isRunning()) {
                 BroadcastService.updateConfig(BroadcastStore.getConfig())
             }
-        } else {
-            player.sendMessage("[Fatal] Configuration commit failure.");
         }
+
     },
 
-    /*
-     * DIAGNOSTIC_TEST_HANDLER
-     */
     async handleTest(player, args) {
         const tier = args[0]?.toLowerCase() || "common"
-
-        if (!["common", "uncommon", "rare", "legendary"].includes(tier)) {
-            player.sendMessage("[Error] Test failure: Unsupported tier.");
-            return
-        }
-
         BroadcastService.testBroadcast(tier, player)
-        player.sendMessage(`[Success] Dispatching diagnostic packet (${tier.toUpperCase()}).`);
+        player.sendMessage(`§a§l» §fSending §e${tier}§f test broadcast...`);
+
     },
 
-    /*
-     * ANALYTICS_DIAGNOSTIC_HANDLER
-     */
     async handleStats(player) {
         const serviceStats = BroadcastService.getStats()
         const storeStats = BroadcastStore.getStats()
 
-        player.sendMessage("§0§l» §6§lBROADCAST_METRICS§0 «")
-        player.sendMessage(`§7Operational_Status: ${serviceStats.running ? "§aRUNNING" : "§cSTANDBY"}`)
-        player.sendMessage(`§7Relay_Interval: §e${storeStats.interval}s`)
-        player.sendMessage(`§7Next_Dispatch_TTL: §e${BroadcastService.getTimeUntilNext()}`)
-        player.sendMessage(`§7Total_Packets_Relayed: §e${serviceStats.totalBroadcasts}`)
-        player.sendMessage(`§7Message_Density:`)
+        player.sendMessage(" ")
+        player.sendMessage("§6§lBroadcast Stats")
+        player.sendMessage(`§7Status: ${serviceStats.running ? "§aRunning" : "§cStopped"}`)
 
-        for (const [tier, count] of Object.entries(storeStats.messagesByTier)) {
-            player.sendMessage(`  §7${tier.toUpperCase()}: §e${count} entries`)
-        }
+        player.sendMessage(`§7Interval: §e${storeStats.interval}s`)
+        player.sendMessage(`§7Next: §e${BroadcastService.getTimeUntilNext()}`)
+        player.sendMessage(`§7Total: §e${serviceStats.totalBroadcasts}`)
     },
 
-    /*
-     * LIFECYCLE_START_HANDLER
-     */
     async handleStart(player) {
-        if (BroadcastService.isRunning()) {
-            player.sendMessage("[Info] Service already operational.");
-            return
-        }
-
+        if (BroadcastService.isRunning()) return
         BroadcastService.init()
-        player.sendMessage("[Success] Broadcast service activated.");
+        player.sendMessage("§a§l» §fBroadcast system started.");
+
     },
 
-    /*
-     * LIFECYCLE_STOP_HANDLER
-     */
     async handleStop(player) {
-        if (!BroadcastService.isRunning()) {
-            player.sendMessage("[Info] Service already in standby.");
-            return
-        }
-
+        if (!BroadcastService.isRunning()) return
         BroadcastService.stop()
-        player.sendMessage("[Warning] Broadcast service deactivated.");
+        player.sendMessage("§6§l» §7Broadcast system stopped.");
+
     },
 
-    /*
-     * SERVICE_REBOOT_HANDLER
-     */
     async handleReload(player) {
-        const wasRunning = BroadcastService.isRunning()
-        if (wasRunning) BroadcastService.stop()
-
+        if (BroadcastService.isRunning()) BroadcastService.stop()
         BroadcastService.init()
-        player.sendMessage(`[Success] Broadcast service reloaded. (Prev_State: ${wasRunning ? "ACTIVE" : "STANDBY"})`);
+        player.sendMessage("§a§l» §fBroadcast system reloaded.");
+
     },
 
-    /*
-     * CONTENT_MANIFEST_HANDLER
-     */
     async handleList(player, args) {
         const tier = args[0]?.toLowerCase()
-
         if (tier) {
-            if (!["common", "uncommon", "rare", "legendary"].includes(tier)) {
-                player.sendMessage("[Error] Query failure: Unsupported tier.");
-                return
-            }
-
             const messages = BroadcastStore.getMessages(tier)
-            player.sendMessage(`§0§l» §6§lMANIFEST: ${tier.toUpperCase()}§0 «`)
-
-            messages.forEach((message, index) => {
-                player.sendMessage(`§7[${index}] §f${message}`)
-            })
+            player.sendMessage(" ")
+            player.sendMessage(`§6§lBroadcast List: §e${tier.toUpperCase()}`)
+            messages.forEach((m, i) => player.sendMessage(`§7[${i}] §f${m}`))
         } else {
-            const allMessages = BroadcastStore.getAllMessages()
-            player.sendMessage("§0§l» §6§lGLOBAL_BROADCAST_SUMMARY§0 «")
-
-            for (const [tier, messages] of Object.entries(allMessages)) {
-                player.sendMessage(`§7${tier.toUpperCase()}: §e${messages.length} entries`)
+            const stats = BroadcastStore.getStats()
+            player.sendMessage(" ")
+            player.sendMessage("§6§lBroadcast Summary")
+            for (const [t, c] of Object.entries(stats.messagesByTier)) {
+                player.sendMessage(`§7${t.toUpperCase()}: §e${c}`)
             }
         }
+
     },
 
-    /*
-     * TIER_PURGE_HANDLER
-     */
     async handleClear(player, args) {
         const tier = args[0]?.toLowerCase()
+        if (!tier) return
+        BroadcastStore.clearTier(tier)
+        player.sendMessage(`§a§l» §fBroadcast tier §e${tier}§f cleared.`);
 
-        if (!tier) {
-            player.sendMessage("[Manual] Syntax Hint: !broadcast clear <tier>");
-            return
-        }
-
-        if (!["common", "uncommon", "rare", "legendary"].includes(tier)) {
-            player.sendMessage("[Error] Purge failure: Unsupported tier.");
-            return
-        }
-
-        const success = BroadcastStore.clearTier(tier)
-        if (success) {
-            player.sendMessage(`[Success] Tier ${tier.toUpperCase()} purged from registry.`);
-        } else {
-            player.sendMessage("[Fatal] Registry write failure.");
-        }
     },
 
-    /* 
-     * MANUAL_GENERATOR
-     */
     showHelp(player) {
-        player.sendMessage("§6§lBROADCAST_SYSTEM_MANUAL")
-        player.sendMessage("§7Sub-vectors:")
-        player.sendMessage("  §eadd <tier> <content> §7- Injects content.")
-        player.sendMessage("  §eremove <tier> <index> §7- Decommissions content.")
-        player.sendMessage("  §einterval <seconds> §7- Calibrates delay.")
-        player.sendMessage("  §etest [tier] §7- Dispatches diagnostic packet.")
-        player.sendMessage("  §estats §7- Returns analytics.")
-        player.sendMessage("  §eon/start §7- Activates service.")
-        player.sendMessage("  §eoff/stop §7- Deactivates service.")
-        player.sendMessage("  §ereload §7- Reboots service.")
-        player.sendMessage("  §elist [tier] §7- Returns manifest.")
-        player.sendMessage("  §eclear <tier> §7- Purges tier.")
+        player.sendMessage(" ")
+        player.sendMessage("§6§lBroadcast Help")
+        player.sendMessage("§7/ae:bc add <tier> <msg>")
+        player.sendMessage("§7/ae:bc remove <tier> <idx>")
+        player.sendMessage("§7/ae:bc interval <sec>")
+        player.sendMessage("§7/ae:bc test [tier]")
+        player.sendMessage("§7/ae:bc stats")
+        player.sendMessage("§7/ae:bc on | off")
+        player.sendMessage("§7/ae:bc reload")
+        player.sendMessage("§7/ae:bc list [tier]")
+        player.sendMessage(" ")
     }
+
 }

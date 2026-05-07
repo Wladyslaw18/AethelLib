@@ -2,54 +2,57 @@ import { system, world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 
 /*
- * INDUSTRIAL_IDENTITY_TERMINATION_VECTOR
+ * Ban Command
  * ----------------------------------------------------------------------------
- * Handles the administrative exclusion protocol. Performs rigorous 
- * hierarchy-validation before committing the target entity's identifier 
- * to the persistent blacklist manifest ('ae:bans'). 
- *
- * PHILOSOPHY: Non-compliance is a breach of industrial integrity. 
- * Banning is the definitive decommissioning of corrupted assets.
+ * Handles banning players and saving them to the global blacklist.
  */
+
 export const BanCommand = {
     name: "ban",
-    description: "Decommissions a specific entity identifier from the industrial buffer.",
-    usage: "!ban <player_identifier> [duration_token] [reason_manifest]",
+    description: "Permanently ban a player",
+
+    usage: "/ae:ban <player> [duration] [reason]",
     permission: "essentials.ban",
     category: "ADMINISTRATION",
+
 
     /* 
      * EXCLUSION_EXECUTION_PIPELINE
      */
-    execute(player, args) {
+    execute(_data, player, args) {
         if (args.length === 0) {
-            player.sendMessage("§cERROR: PLAYER_IDENTIFIER_REQUIRED");
-            player.sendMessage("§7Duration_Tokens: 1h (hour), 1d (day), 1w (week), permanent");
+            player.sendMessage("§c§l» §7Syntax Error: Player name required.");
+            player.sendMessage("§7Example: /ae:ban PlayerName 1d Spamming");
             return
         }
+
 
         const targetName = args[0]
         const duration = args[1] || "permanent"
-        const reason = args.slice(2).join(" ") || "INDUSTRIAL_PROTOCOL_BREACH"
+        const reason = args.slice(2).join(" ") || "Breaking the rules"
+
 
         const target = world.getAllPlayers().find(p => p.name.toLowerCase() === targetName.toLowerCase())
         if (!target) {
-            player.sendMessage(`§cERROR: ENTITY_NOT_FOUND_IN_BUFFER: '${targetName}'`);
+            player.sendMessage(`§c§l» §7Player '${targetName}' not found.`);
             return
         }
+
 
         /* HIERARCHY_VALIDATION_GATE */
         const PermissionManager = Kernel.get("permissions")
         if (!PermissionManager.canActOn(player, target)) {
-            player.sendMessage("§cAUTHORITY_PARADOX: TARGET_CLEARANCE_LEVEL_EXCEEDS_ACTOR");
+            player.sendMessage("§c§l» §7Permission Denied: Target is more powerful than you.");
             return
         }
 
+
         const banDuration = parseDuration(duration)
         if (banDuration === null) {
-            player.sendMessage(`§cERROR: MALFORMED_DURATION_TOKEN: '${duration}'`);
+            player.sendMessage(`§c§l» §7Invalid duration: '${duration}'`);
             return
         }
+
 
         /* BLACKLIST_REGISTRATION */
         const banData = {
@@ -67,8 +70,9 @@ export const BanCommand = {
             /* SESSION_TERMINATION_VECTOR */
             system.run(() => {
                 try {
-                    // @ts-ignore
-                    target.disconnect(`§c[INDUSTRIAL_EXCLUSION] ACCESS_TERMINATED\n§eREASON: ${reason}`)
+                    // DISCONNECT_V2: Use native kick command as .disconnect() is deprecated.
+                    player.runCommand(`kick "${target.name}" §c[BAN]\n§eREASON: ${reason}`)
+
                 } catch (error) {
                     console.error(`[BanCommand] SESSION_TERMINATION_FAILURE: ${error}`)
                 }
@@ -81,10 +85,12 @@ export const BanCommand = {
                 }
             })
 
-            player.sendMessage(`§aSUCCESS: Identity '${target.name}' decommissioned.`);
+            player.sendMessage(`§a§l» §f${target.name} has been banned.`);
         } else {
-            player.sendMessage("§cERROR: BLACKLIST_MANIFEST_COMMIT_FAILURE");
+            player.sendMessage("§c§l» §7Failed to save ban record.");
         }
+
+
     }
 }
 
@@ -137,8 +143,9 @@ function getBans() {
  */
 function formatBanMessage(banData) {
     const durationText = banData.duration === 0 ? "STATUS: PERMANENT" : `DURATION: ${formatTimeRemaining(banData.expires - Date.now())}`
-    return `§6§l[§eDECOMMISSION§6§l] §r§e${banData.playerName} §7WAS PURGED BY §f${banData.bannedBy}§7\n§7${durationText}\n§7REASON: §f${banData.reason}`
+    return `§6§l[§eBAN§6§l] §r§e${banData.playerName} §7was banished by §f${banData.bannedBy}§7\n§7${durationText}\n§7REASON: §f${banData.reason}`
 }
+
 
 /* 
  * TEMPORAL_DELTA_FORMATTER
