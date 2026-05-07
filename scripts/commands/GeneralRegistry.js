@@ -11,6 +11,7 @@ import { MenuCommand } from "./general/MenuCommand.js"
 import { BlockCommand } from "./tpa/BlockCommand.js"
 import { ColorCommand } from "./social/ColorCommand.js"
 import { RankCommand } from "./social/ranks/RankCommand.js"
+import { ClaimCommand } from "./general/ClaimCommand.js"
 
 /*
  * General Registry
@@ -42,5 +43,7 @@ export const GeneralRegistry = {
         Registry.register("block", BlockCommand)
         Registry.register("color", ColorCommand)
         Registry.register("rank", RankCommand)
+        Registry.register("claim", ClaimCommand)
+        Registry.register("land", ClaimCommand)
     }
 }

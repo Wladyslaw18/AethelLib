@@ -51,6 +51,11 @@ export function init() {
                     player.sendMessage("§c§l» §7No chest found next to the sign!");
                     return
                 }
+                const ClaimService = Kernel.get("claimService")
+                if (ClaimService && !ClaimService.canAccess(player, chest.location)) {
+                    player.sendMessage("§c§l» §7You do not have permission to link to this chest.");
+                    return
+                }
 
 
                 const ChestShopStore = Kernel.get("chestShopStore")
@@ -155,6 +160,9 @@ function getChestAround(block) {
 
     for (const offset of offsets) {
         try {
+            const ny = block.y + offset.y;
+            if (ny < -64 || ny > 320) continue;
+            
             const neighbor = block.offset(offset)
             if (neighbor && containerTypes.some(t => neighbor.typeId.includes(t))) {
                 return neighbor
@@ -245,22 +253,38 @@ async function handleBuy(buyer, shop, container) {
     const { ItemStack } = await import("@minecraft/server")
     const itemStack = new ItemStack(shop.itemId, shop.quantity)
     const buyerInv = buyer.getComponent("minecraft:inventory")?.container
-    if (buyerInv) {
-        buyerInv.addItem(itemStack)
+    if (!buyerInv) return;
+
+    // 2. Attempt delivery. Bedrock addItem returns the LEFTOVER stack if inventory is full!
+    const leftover = buyerInv.addItem(itemStack);
+
+    if (leftover) {
+        // 🚨 INVENTORY FULL - EMERGENCY REFUND PROTOCOL
+        const failedAmount = leftover.amount;
+        const costPerItem = shop.price;
+        const refundAmount = failedAmount * costPerItem;
+
+        await EconomyStore.addMoney(buyer, refundAmount);
+        buyer.sendMessage(`§c§l» §7Inventory full! Refunded §e$${refundAmount}§7 for ${failedAmount} items.`);
+        
+        // Adjust shop quantity so we only deduct what was actually delivered
+        shop.quantity -= failedAmount;
+        if (shop.quantity <= 0) return; // Completely failed
     }
 
-    let remaining = shop.quantity
+    // 3. Deduct ONLY what was successfully given from the chest
+    let remaining = shop.quantity;
     for (let i = 0; i < container.size && remaining > 0; i++) {
-        const item = container.getItem(i)
+        const item = container.getItem(i);
         if (item && item.typeId === shop.itemId) {
-            const take = Math.min(item.amount, remaining)
+            const take = Math.min(item.amount, remaining);
             if (take >= item.amount) {
-                container.setItem(i, undefined)
+                container.setItem(i, undefined);
             } else {
-                item.amount -= take
-                container.setItem(i, item)
+                item.amount -= take;
+                container.setItem(i, item);
             }
-            remaining -= take
+            remaining -= take;
         }
     }
 
@@ -270,8 +294,6 @@ async function handleBuy(buyer, shop, container) {
         await EconomyStore.addMoney(owner, totalCost)
         owner.sendMessage(`§a§l» §fSold §e${shop.quantity}x ${shop.itemId} §fto §e${buyer.name}§f. Profit: §a$${totalCost}§f.`);
     }
-
-
 
     buyer.sendMessage(`§a§l» §fPurchased §e${shop.quantity}x ${shop.itemId} §ffor §a$${totalCost}§f.`);
 
