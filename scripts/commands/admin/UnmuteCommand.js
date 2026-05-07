@@ -2,8 +2,8 @@
  * Unmute Command - Unmute a player
  */
 
-import { world } from "@minecraft/server"
 import { MuteStore } from "../../systems/social/MuteStore.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 export const UnmuteCommand = {
     name: "unmute",
@@ -12,19 +12,22 @@ export const UnmuteCommand = {
     usage: "/ae:unmute <playerName>",
     permission: "essentials.admin.mute",
     category: "admin",
+    parameters: [
+        { name: "player", type: "player", optional: false }
+    ],
 
     async execute(_data, player, args) {
         if (args.length === 0) {
             player.sendMessage("§c§l» §7Usage: /ae:unmute <playerName>")
+            player.sendMessage("§e§l» §fTip: §7Type a player name to unmute them.")
             return
         }
 
-
-        const playerName = args[0]
-        const target = world.getAllPlayers().find(p => p.name === playerName)
+        const playerName = args.join(" ")
+        const target = PlayerUtils.findPlayer(playerName)
         
         if (!target) {
-            player.sendMessage(`§c§l» §7Player '${playerName}' not found or not online`)
+            player.sendMessage(`§c§l» §7Player '${playerName}' not found or not online.`)
             return
         }
 
@@ -43,4 +46,5 @@ export const UnmuteCommand = {
         }
     }
 }
+
 

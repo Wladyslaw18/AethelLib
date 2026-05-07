@@ -1,5 +1,6 @@
-import { system, world } from "@minecraft/server"
+import { system } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 /*
  * Kick Command
@@ -12,32 +13,28 @@ export const KickCommand = {
     description: "Kick a player from the game",
 
     usage: "/ae:kick <player> [reason]",
-
     permission: "essentials.kick",
     category: "Admin",
+    parameters: [
+        { name: "player", type: "player", optional: false },
+        { name: "reason", type: "string", optional: true }
+    ],
 
     /* 
      * VECTOR_EXECUTION_PIPELINE
      */
     execute(_data, player, args) {
         if (args.length === 0) {
-            player.sendMessage("[Manual] Syntax Error: Player identifier required.");
+            player.sendMessage("§c§l» §7Usage: /ae:kick <player> [reason]");
+            player.sendMessage("§e§l» §fTip: §7Provide a player name and optional reason.");
             return
         }
 
-        const targetName = args[0]
-        const reason = args.slice(1).join(" ") || "No reason specified"
-
-
-        /* 
-         * ENTITY_RESOLUTION
-         */
-        const target = world.getAllPlayers().find(p =>
-            p.name.toLowerCase() === targetName.toLowerCase()
-        )
+        const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args)
+        const reason = args.slice(consumedArgs).join(" ") || "No reason specified"
 
         if (!target) {
-            player.sendMessage(`§c§l» §7Player '${targetName}' not found.`);
+            player.sendMessage(`§c§l» §7Player '${args[0]}' not found or is offline.`);
             return
         }
 
@@ -55,14 +52,16 @@ export const KickCommand = {
         /* 
          * REALITY_SEVERANCE_HOOK
          */
-        system.run(() => {
+        Kernel.system.run(() => {
             try {
-                player.runCommand(`kick "${target.name}" §c[KICK]\n§eREASON: ${reason}`)
+                // INDUSTRIAL_TERMINATION_PROTOCOL
+                // We use system.runCommand to ensure the kick executes with elevated administrative permissions.
+                Kernel.system.runCommand(`kick \"${target.name}\" §c[KICK]\n§eREASON: ${reason.replace(/"/g, "'")}`)
 
                 const kickMessage = `§6§l[§eKICK§6§l] §r${target.name} §7was kicked by §e${player.name}§7\n§7Reason: §f${reason}`
 
 
-                world.getAllPlayers().forEach(p => {
+                Kernel.world.getAllPlayers().forEach(p => {
                     if (PermissionManager.hasPermission(p, "essentials.admin.notify") || p.id === player.id) {
                         p.sendMessage(kickMessage)
                     }
@@ -71,9 +70,10 @@ export const KickCommand = {
                 player.sendMessage(`§a§l» §f${target.name} has been kicked.`);
 
             } catch (error) {
-                console.error(`[KickCommand] TERMINATION_CRASH for ${targetName}: ${error}`)
-                player.sendMessage(`[Fatal] Severance failure for entity '${targetName}'.`);
+                console.error(`[KickCommand] TERMINATION_CRASH for ${target?.name ?? args[0]}: ${error}`)
+                player.sendMessage(`§c§l» §7Severance failure for '${target?.name ?? args[0]}'.`);
             }
         })
     }
 }
+

@@ -3,6 +3,7 @@
  */
 
 import { Kernel } from "../../core/Kernel.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 export const MuteCommand = {
     name: "mute",
@@ -14,12 +15,17 @@ export const MuteCommand = {
     ],
 
     async execute(_data, player, args) {
-        const target = args[0];
-        const durationStr = args[1] || "permanent";
+        if (args.length === 0) {
+            player.sendMessage("§c§l» §7Usage: /ae:mute <player> [duration]");
+            player.sendMessage("§e§l» §fTip: §7Duration examples: 1h, 1d, permanent");
+            return;
+        }
 
-        // Handle failed resolution
-        if (typeof target === "string") {
-            player.sendMessage(`§c§l» §7Player '${target}' not found.`);
+        const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args);
+        const durationStr = args.slice(consumedArgs)[0] || "permanent";
+
+        if (!target) {
+            player.sendMessage(`§c§l» §7Player '${args[0]}' not found or is offline.`);
             return;
         }
 
@@ -46,4 +52,5 @@ export const MuteCommand = {
         }
     }
 }
+
 

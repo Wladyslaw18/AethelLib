@@ -21,6 +21,13 @@ export const ChatSystem = {
             const player = ev.sender
             const message = ev.message
             
+            // 🛡️ IGNORE COMMANDS IMMEDIATELY
+            const SettingsStore = Kernel.get("settings")
+            const customPrefix = SettingsStore?.get("commandPrefix") || "-"
+            if (message.startsWith("/") || message.startsWith(customPrefix)) {
+                return
+            }
+            
             const MuteStore = Kernel.get("muteStore")
             const PermissionManager = Kernel.get("permissions")
             const RankFormatter = Kernel.get("formatter")

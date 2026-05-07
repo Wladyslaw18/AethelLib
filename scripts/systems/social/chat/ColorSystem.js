@@ -116,9 +116,10 @@ export class ColorSystem {
         const rainbowColors = ["§c", "§6", "§e", "§a", "§b", "§9", "§d"]
         let result = ""
         
-        for (let i = 0; i < message.length; i++) {
+        const truncated = message.substring(0, 200);
+        for (let i = 0; i < truncated.length; i++) {
             const colorIndex = i % rainbowColors.length
-            result += rainbowColors[colorIndex] + message[i]
+            result += rainbowColors[colorIndex] + truncated[i]
         }
         
         return result + "§r"
