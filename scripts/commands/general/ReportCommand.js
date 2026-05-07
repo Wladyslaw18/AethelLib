@@ -1,5 +1,7 @@
 import { world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
+import { ReportStore } from "../../systems/general/ReportStore.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 /*
  * Report Command
@@ -16,7 +18,7 @@ export const ReportCommand = {
     category: "Utility",
     parameters: [
         { name: "target", type: "player", optional: false },
-        { name: "reason", type: "string", optional: false }
+        { name: "reason", type: "string", optional: true }
     ],
 
     /* 
@@ -25,11 +27,10 @@ export const ReportCommand = {
     execute(_data, player, args) {
         if (args.length < 2) {
             player.sendMessage("§c§l» §7Usage: /ae:report <player|'server'> <reason>");
-            player.sendMessage("§8- Example: /ae:report PlayerX for cheating");
-            player.sendMessage("§8- Example: /ae:report server the hub is lagging");
+            player.sendMessage("§8- Example: /ae:report PlayerX cheating");
+            player.sendMessage("§8- Example: /ae:report server lag issues");
             return
         }
-
 
         const reportType = args[0].toLowerCase()
         const message = args.slice(1).join(" ")
@@ -37,7 +38,7 @@ export const ReportCommand = {
         if (reportType === "server") {
             createServerReport(player, message)
         } else {
-            createPlayerReport(player, reportType, message)
+            createPlayerReport(player, args[0], message) // Use raw arg for exact name lookup
         }
     }
 }
@@ -56,11 +57,10 @@ function createServerReport(player, message) {
         status: "OPEN"
     }
 
-    saveReport(report)
+    ReportStore.saveReport(report)
     notifyAdmins(report)
     
     player.sendMessage("§a§l» §fServer report submitted. The staff have been notified.");
-
 }
 
 /* 
@@ -69,15 +69,12 @@ function createServerReport(player, message) {
  * to ensure target persistence across session changes.
  */
 function createPlayerReport(player, targetName, message) {
-    const target = [...world.getAllPlayers()].find(p => 
-        p.name.toLowerCase() === targetName.toLowerCase()
-    )
+    const target = PlayerUtils.findPlayer(targetName)
 
     if (!target) {
         player.sendMessage(`§c§l» §7Player '${targetName}' not found or offline.`);
         return
     }
-
 
     const report = {
         id: generateReportId(),
@@ -91,11 +88,10 @@ function createPlayerReport(player, targetName, message) {
         status: "OPEN"
     }
 
-    saveReport(report)
+    ReportStore.saveReport(report)
     notifyAdmins(report)
     
     player.sendMessage(`§a§l» §fReport against §e${target.name} §fsubmitted.`);
-
 }
 
 /* 
@@ -105,45 +101,13 @@ function generateReportId() {
     return `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
-
-/* 
- * Save report to database
- */
-function saveReport(report) {
-
-    const reports = getReports()
-    reports[report.id] = report
-    
-    try {
-        world.setDynamicProperty("ae:reports", JSON.stringify(reports))
-    } catch (error) {
-        console.error(`[ReportCommand] PERSISTENCE_FAILURE: ${error}`)
-    }
-}
-
-/* 
- * Get all reports from database
- */
-function getReports() {
-
-    try {
-        const stored = world.getDynamicProperty("ae:reports")
-        return (typeof stored === "string") ? JSON.parse(stored) : {}
-    } catch (error) {
-        console.error(`[ReportCommand] QUERY_FAILURE: ${error}`)
-        return {}
-    }
-}
-
 /* 
  * Notify online admins about the new report
  */
 function notifyAdmins(report) {
-
     const PermissionManager = Kernel.get("permissions")
     const reportType = report.type === "server" ? "§c[SERVER ISSUE]" : `§e[PLAYER REPORT] §f${report.target}`
     const message = `§6§l» §e${reportType} §7from §f${report.reporter}§7: §f${report.message}`
-
 
     world.getAllPlayers().forEach(p => {
         if (PermissionManager.hasPermission(p, "essentials.admin.notify")) {
@@ -151,3 +115,4 @@ function notifyAdmins(report) {
         }
     })
 }
+

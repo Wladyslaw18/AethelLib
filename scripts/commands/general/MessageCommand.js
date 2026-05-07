@@ -11,13 +11,22 @@ export const MessageCommand = {
     name: "message",
     description: "Send a private message to a player.",
     usage: "/ae:message <player> <message>",
-
     permission: "essentials.message",
     category: "Social",
+    parameters: [
+        { name: "player", type: "player", optional: false  },
+        { name: "word1",  type: "string", optional: true  },
+        { name: "word2",  type: "string", optional: true  },
+        { name: "word3",  type: "string", optional: true  },
+        { name: "word4",  type: "string", optional: true  },
+        { name: "word5",  type: "string", optional: true  },
+        { name: "word6",  type: "string", optional: true  }
+    ],
 
     async execute(_data, player, args) {
         if (args.length < 2) {
             player.sendMessage("§c§l» §7Usage: /ae:message <player> <message>");
+            player.sendMessage("§e§l» §fTip: §7You can use /ae:reply to respond.");
             return
         }
 
@@ -45,6 +54,14 @@ export const MessageCommand = {
 
         lastMessage.set(target.id, player.id)
         lastMessage.set(player.id, target.id) // Dual-link for easier replying
+
+        if (lastMessage.size > 2000) {
+            let i = 0;
+            for (const key of lastMessage.keys()) {
+                lastMessage.delete(key);
+                if (++i > 500) break;
+            }
+        }
 
         const formattedMessage = formatMessage(player, target, message)
         target.sendMessage(formattedMessage.to)
@@ -100,3 +117,4 @@ function formatMessage(sender, receiver, message) {
         from: `§8[${timestamp}] §dTO §e${receiver.name}§8: §f${message}`
     }
 }
+

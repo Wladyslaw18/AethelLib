@@ -5,19 +5,15 @@
 
 import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
+import { ReportStore } from "../../systems/general/ReportStore.js"
+import { UIUtils } from "../UIUtils.js"
 
 /**
  * Show report management list
  * @param {import("@minecraft/server").Player} admin
  */
 export async function showAdminReportUI(admin) {
-    let reports = {}
-    try {
-        const stored = Kernel.world.getDynamicProperty("ae:reports")
-        reports = stored ? JSON.parse(String(stored)) : {}
-    } catch {
-        reports = {}
-    }
+    const reports = ReportStore.getReports()
 
     const reportEntries = Object.entries(reports)
         .sort(([, a], [, b]) => (b.timestamp || 0) - (a.timestamp || 0))
@@ -29,7 +25,7 @@ export async function showAdminReportUI(admin) {
             : "§aNo open reports! 🎉")
 
     // Back button
-    form.button("§c← Back")
+    form.button("§c← Back", "textures/ui/refresh")
 
     // Report buttons
     for (const [_id, report] of reportEntries) {
@@ -40,8 +36,7 @@ export async function showAdminReportUI(admin) {
         form.button(`${typeColor}[${typeLabel}] §f${report.reporter}${targetLabel}\n§8${timeAgo}`)
     }
 
-    // @ts-ignore
-    const response = await form.show(admin)
+    const response = await UIUtils.showForm(admin, form)
     if (response.canceled) return
 
     if (response.selection === 0) return // Back
@@ -73,33 +68,33 @@ async function showReportDetail(admin, reportId, report) {
     const form = new ActionFormData()
         .title("§c§lReport Detail")
         .body(body)
-        .button("§c🗑️ Delete Report")
-        .button("§4🔨 Ban Target")
-        .button("§7← Back to Reports")
+        .button("§c🗑️ Delete Report", "textures/ui/cancel")
+        .button("§4🔨 Ban Target", "textures/items/iron_axe")
+        .button("§7← Back to Reports", "textures/ui/refresh")
 
-    const response = await form.show(admin)
+    const response = await UIUtils.showForm(admin, form)
     if (response.canceled) return
 
     switch (response.selection) {
         case 0: {
             // Delete report
-            deleteReport(reportId)
+            ReportStore.deleteReport(reportId)
             admin.sendMessage(`§aReport §e${reportId.slice(0, 8)}... §adeleted.`)
-            await showAdminReportUI(admin)
+            Kernel.system.run(() => showAdminReportUI(admin))
             break
         }
         case 1: {
             // Ban target
             if (!report.target) {
                 admin.sendMessage("§cNo target player to ban (this is a server report).")
-                await showReportDetail(admin, reportId, report)
+                Kernel.system.run(() => showReportDetail(admin, reportId, report))
                 return
             }
 
             const target = Kernel.world.getAllPlayers().find(p => p.name === report.target)
             if (!target) {
                 admin.sendMessage(`§cPlayer '${report.target}' is not online.`)
-                await showReportDetail(admin, reportId, report)
+                Kernel.system.run(() => showReportDetail(admin, reportId, report))
                 return
             }
 
@@ -119,29 +114,14 @@ async function showReportDetail(admin, reportId, report) {
             })
 
             // Auto-delete the report after ban
-            deleteReport(reportId)
+            ReportStore.deleteReport(reportId)
             break
         }
         case 2: {
             // Back
-            await showAdminReportUI(admin)
+            Kernel.system.run(() => showAdminReportUI(admin))
             break
         }
-    }
-}
-
-/**
- * Delete a report from storage
- * @param {string} reportId
- */
-function deleteReport(reportId) {
-    try {
-        const stored = Kernel.world.getDynamicProperty("ae:reports")
-        const reports = stored ? JSON.parse(String(stored)) : {}
-        delete reports[reportId]
-        Kernel.world.setDynamicProperty("ae:reports", JSON.stringify(reports))
-    } catch (error) {
-        console.error(`[AdminReportUI] Failed to delete report: ${error}`)
     }
 }
 

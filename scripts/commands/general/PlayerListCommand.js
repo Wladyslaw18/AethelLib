@@ -1,4 +1,5 @@
 import { world } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js"
 
 /*
  * Player List Command
@@ -45,8 +46,12 @@ export const PlayerListCommand = {
  * the delta against the current system-clock.
  */
 function getPlaytime(player) {
-    const joinTime = player.getDynamicProperty("joinTime")
-    if (!joinTime) return "UNDEFINED"
+    const PlayerStore = Kernel.get("playerStore")
+    let joinTime = PlayerStore.get(player, "joinTime")
+    if (!joinTime) {
+        joinTime = Date.now()
+        PlayerStore.set(player, "joinTime", joinTime)
+    }
     
     const playtimeMs = Date.now() - joinTime
     const hours = Math.floor(playtimeMs / (1000 * 60 * 60))

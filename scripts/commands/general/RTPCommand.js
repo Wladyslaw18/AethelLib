@@ -17,6 +17,9 @@ export const RTPCommand = {
 
     permission: "essentials.rtp",
     category: "Teleport",
+    parameters: [
+        { name: "range", type: "int", optional: true }
+    ],
 
     /* 
      * VECTOR_EXECUTION_ENTRY
@@ -61,96 +64,48 @@ export const RTPCommand = {
  */
 
 async function findSafeLocation(player, maxRange) {
-    const overworld = Kernel.world.getDimension("minecraft:overworld")
-    const spawnLocation = Kernel.world.getDefaultSpawnLocation?.() || { x: 0, y: 0, z: 0 }
-
-    let attempts = 0
-    const maxAttempts = 50
-    let unloadedChunkCount = 0
-
-    while (attempts < maxAttempts) {
-        attempts++
-
-        const angle = Math.random() * 2 * Math.PI
-        const distance = Math.random() * maxRange
-
-        const x = spawnLocation.x + Math.cos(angle) * distance
-        const z = spawnLocation.z + Math.sin(angle) * distance
-
-        /* 
-         * VERTICAL_BUFFER_SCAN
-         */
-        const safeY = await findSafeY(overworld, x, z)
-
-        if (safeY !== null) {
-            const location = { x: x + 0.5, y: safeY, z: z + 0.5 }
-
-            Kernel.system.run(() => {
-                const TeleportService = Kernel.get("teleportService")
-                if (TeleportService.teleport(player, location, "minecraft:overworld")) {
-                    player.sendMessage(`§a§l» §fTeleported to §e(${Math.floor(x)}, ${safeY}, ${Math.floor(z)})§f!`);
-                } else {
-                    player.sendMessage("§c§l» §7Teleport failed.");
-                }
-
-            })
-            return
-        } else {
-            const testBlock = overworld.getBlock({ x: Math.floor(x), y: 100, z: Math.floor(z) })
-            if (!testBlock) {
-                unloadedChunkCount++
-                if (unloadedChunkCount >= 10) {
-                    player.sendMessage(`§e§l» §7Area is too far, try a smaller range.`);
-                    unloadedChunkCount = 0
-                }
-
-            }
-        }
-
-        if (attempts % 10 === 0) {
-            player.sendMessage(`§6§l» §7Searching... (Attempt ${attempts}/${maxAttempts})`);
-        }
-
-    }
-
-    player.sendMessage(`§c§l» §7Could not find a safe spot after ${maxAttempts} attempts.`);
-
+    const overworld = Kernel.world.getDimension("minecraft:overworld");
+    const spawnLoc = Kernel.world.getDefaultSpawnLocation?.() || { x: 0, y: 0, z: 0 };
+    
+    // 🔥 Offload to the background job queue so we don't cook the main thread
+    Kernel.system.runJob(rtpGenerator(player, overworld, spawnLoc, maxRange));
 }
 
-/* 
- * Height Search
- * Scans from the top of the world down to find a solid block.
- */
+function* rtpGenerator(player, dimension, spawnLocation, maxRange) {
+    let attempts = 0;
+    const maxAttempts = 20;
 
-async function findSafeY(dimension, x, z) {
-    try {
+    while (attempts < maxAttempts) {
+        attempts++;
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.random() * maxRange;
+        const x = Math.floor(spawnLocation.x + Math.cos(angle) * distance);
+        const z = Math.floor(spawnLocation.z + Math.sin(angle) * distance);
+
+        // Yield every 10 Y-levels to maintain 20 TPS
         for (let y = 320; y >= -64; y--) {
-            const blockLocation = { x: Math.floor(x), y: y, z: Math.floor(z) }
+            if (y % 10 === 0) yield; // ⬅️ THIS SAVES YOUR SERVER
 
             try {
-                const block = dimension.getBlock(blockLocation)
-                if (!block) continue
+                const block = dimension.getBlock({ x, y, z });
+                if (!block) continue;
 
-                const blockAbove = dimension.getBlock({ x: Math.floor(x), y: y + 1, z: Math.floor(z) })
-                if (!blockAbove) continue
+                const blockAbove = dimension.getBlock({ x, y: y + 1, z });
+                if (!blockAbove) continue;
 
-                const isSolid = isSafeBlock(block.typeId)
-                const isAirAbove = blockAbove.typeId === "minecraft:air"
-
-                if (isSolid && isAirAbove) {
-                    if (await isAreaSafe(dimension, x, y + 1, z)) {
-                        return y + 1 
-                    }
+                if (isSafeBlock(block.typeId) && blockAbove.typeId === "minecraft:air") {
+                    // Safe location found!
+                    const location = { x: x + 0.5, y: y + 1, z: z + 0.5 };
+                    
+                    const TeleportService = Kernel.get("teleportService");
+                    TeleportService.teleport(player, location, "minecraft:overworld");
+                    player.sendMessage(`§a§l» §fTeleported to §e(${x}, ${y + 1}, ${z})§f!`);
+                    return; // End generator
                 }
-            } catch (error) {
-                continue
-            }
+            } catch (e) { /* Chunk unloaded */ }
         }
-    } catch (error) {
-        console.error(`[RTPCommand] Y_SCAN_FAILURE for (${Math.floor(x)}, ${Math.floor(z)}): ${error}`)
     }
-
-    return null
+    player.sendMessage(`§c§l» §7Could not find a safe spot. Try again.`);
 }
 
 /* 

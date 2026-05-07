@@ -12,6 +12,16 @@ export const CalculateCommand = {
     usage: "/ae:calculate <expression>",
     permission: "essentials.calculate",
     category: "GENERAL",
+    parameters: [
+        { name: "token1", type: "string", optional: true },
+        { name: "token2", type: "string", optional: true },
+        { name: "token3", type: "string", optional: true },
+        { name: "token4", type: "string", optional: true },
+        { name: "token5", type: "string", optional: true },
+        { name: "token6", type: "string", optional: true },
+        { name: "token7", type: "string", optional: true },
+        { name: "token8", type: "string", optional: true }
+    ],
 
     /* 
      * EXECUTION_PIPELINE

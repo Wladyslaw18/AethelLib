@@ -5,6 +5,7 @@ import {
     trustPlayer, 
     untrustPlayer 
 } from "../../systems/protection/ClaimService.js"
+import { Kernel } from "../../core/Kernel.js"
 
 /*
  * LAND_CLAIM_ORCHESTRATOR
@@ -65,6 +66,21 @@ export const ClaimCommand = {
         if (radius < 1 || radius > 5) {
             player.sendMessage("[Error] Spatial constraint violation: Radius must be 1-5 chunks.");
             return
+        }
+
+        // 🔥 ENFORCE RANK LIMITS
+        const ClaimStore = Kernel.get("claimStore");
+        const currentClaims = ClaimStore.getPlayerClaims(player.id).length;
+        
+        // Calculate how many chunks they are ABOUT to claim
+        const chunksToClaim = Math.pow((radius * 2) + 1, 2); 
+        
+        const PermissionManager = Kernel.get("permissions");
+        const maxClaims = PermissionManager.getHighestRank(player)?.permissions["limit.land"] || 1;
+
+        if (currentClaims + chunksToClaim > maxClaims) {
+            player.sendMessage(`§c§l» §7Claim limit reached! You have ${currentClaims}/${maxClaims} chunks.`);
+            return;
         }
 
         createClaim(player, player.location, radius)
