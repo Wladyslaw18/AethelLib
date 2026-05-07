@@ -14,6 +14,8 @@ import { SignalBus } from "../../core/signalbus/SignalBus.js"
  * be accounted for. Use the transaction-hooks to prevent race-conditions 
  * or buffer-desyncs.
  */
+let cachedLeaderboard = []
+
 export const EconomyStore = {
     DEFAULT_BALANCE: 1000, // INDUSTRIAL_STARTING_BUFFER
 
@@ -125,36 +127,38 @@ export const EconomyStore = {
         const StoreKeys = Kernel.get("keys")
 
         return await PlayerStore.transaction(sender, async () => {
-            const senderBalance = this.getBalance(sender)
+            return await PlayerStore.transaction(receiver, async () => {
+                const senderBalance = this.getBalance(sender)
 
-            if (senderBalance < amount) {
-                return false // SENDER_INSUFFICIENT_LIQUIDITY
-            }
+                if (senderBalance < amount) {
+                    return false // SENDER_INSUFFICIENT_LIQUIDITY
+                }
 
-            const newSenderBalance = Math.floor(senderBalance - amount)
-            const senderSuccess = await PlayerStore.set(sender, StoreKeys.money(sender.id), newSenderBalance)
-            if (!senderSuccess) return false
+                const newSenderBalance = Math.floor(senderBalance - amount)
+                const senderSuccess = await PlayerStore.set(sender, StoreKeys.money(sender.id), newSenderBalance)
+                if (!senderSuccess) return false
 
-            try {
-                const receiverBalance = this.getBalance(receiver)
-                const newReceiverBalance = Math.floor(receiverBalance + amount)
-                const receiverSuccess = await PlayerStore.set(receiver, StoreKeys.money(receiver.id), newReceiverBalance)
+                try {
+                    const receiverBalance = this.getBalance(receiver)
+                    const newReceiverBalance = Math.floor(receiverBalance + amount)
+                    const receiverSuccess = await PlayerStore.set(receiver, StoreKeys.money(receiver.id), newReceiverBalance)
 
-                if (!receiverSuccess) {
+                    if (!receiverSuccess) {
+                        // EMERGENCY_REFUND_PROTOCOL
+                        await PlayerStore.set(sender, StoreKeys.money(sender.id), Math.floor(senderBalance))
+                        return false
+                    }
+
+                    SignalBus.emit("economy:balanceChanged", { player: sender, newBalance: newSenderBalance })
+                    SignalBus.emit("economy:balanceChanged", { player: receiver, newBalance: newReceiverBalance })
+
+                    return true
+                } catch (error) {
                     // EMERGENCY_REFUND_PROTOCOL
                     await PlayerStore.set(sender, StoreKeys.money(sender.id), Math.floor(senderBalance))
                     return false
                 }
-
-                SignalBus.emit("economy:balanceChanged", { player: sender, newBalance: newSenderBalance })
-                SignalBus.emit("economy:balanceChanged", { player: receiver, newBalance: newReceiverBalance })
-
-                return true
-            } catch (error) {
-                // EMERGENCY_REFUND_PROTOCOL
-                await PlayerStore.set(sender, StoreKeys.money(sender.id), Math.floor(senderBalance))
-                return false
-            }
+            })
         })
     },
 
@@ -170,29 +174,33 @@ export const EconomyStore = {
         return balance >= amount
     },
 
-    /**
-     * Queries the global persistence layer for all player balances.
-     * This includes offline players by resolving their names from the ID mapping.
-     */
-    getAllBalances() {
+    getCachedLeaderboard() {
+        return cachedLeaderboard
+    },
+
+    *updateLeaderboardGenerator() {
         const Database = Kernel.get("database")
         const ids = Kernel.world.getDynamicPropertyIds()
-        const balances = []
         const moneyPattern = /^player:(.+):money$/
+        const newLeaderboard = []
         
-        for (const id of ids) {
-            const match = id.match(moneyPattern)
+        for (let i = 0; i < ids.length; i++) {
+            if (i % 50 === 0) yield
+            
+            const match = ids[i].match(moneyPattern)
             if (match) {
                 const playerId = match[1]
-                const balance = Database.get(id)
+                const balance = Database.get(ids[i])
                 const name = Database.get(`player:${playerId}:name`) || `ID:${playerId.slice(0, 5)}`
                 
                 if (typeof balance === 'number') {
-                    balances.push({ name, balance })
+                    newLeaderboard.push({ name, balance })
                 }
             }
         }
-        return balances
+        
+        newLeaderboard.sort((a, b) => b.balance - a.balance)
+        cachedLeaderboard = newLeaderboard.slice(0, 10)
     }
 }
 

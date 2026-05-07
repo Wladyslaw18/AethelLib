@@ -50,7 +50,12 @@ export class ShopService {
      */
     static giveItem(player, itemId, amount) {
         const inv = player.getComponent(EntityComponentTypes.Inventory).container
-        inv.addItem(new ItemStack(itemId, amount))
+        let remaining = amount
+        while (remaining > 0) {
+            const take = Math.min(remaining, 64)
+            inv.addItem(new ItemStack(itemId, take))
+            remaining -= take
+        }
     }
 
     static hasItem(player, itemId, amount) {
