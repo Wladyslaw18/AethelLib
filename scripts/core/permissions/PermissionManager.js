@@ -1,25 +1,15 @@
 import { PermissionData } from "./PermissionData.js"
-import { system } from "@minecraft/server"
 import { Kernel } from "../Kernel.js"
 import { Configuration } from "../../Configuration.js"
 
-/*
- * INDUSTRIAL_PERMISSION_ORCHESTRATOR
- * ----------------------------------------------------------------------------
- * The primary security gatekeeper for the AethelLib industrial ecosystem. 
- * Implements a high-performance Role-Based Access Control (RBAC) engine with 
- * O(1) resolution for cached clearance levels.
- *
- * PHILOSOPHY: Security is absolute. Implements a multi-layered verification 
- * strategy:
- * 1. Hard-coded SUPER_ADMIN bypass tokens.
- * 2. High-speed volatile memory-cache (TTL: 5s).
- * 3. Data-Oriented Rank Hierarchy resolution logic.
+/**
+ * Manages player permissions and rank hierarchies.
+ * Uses a 5-second cache to keep performance high.
  */
 export class PermissionManager {
     static #instance = null
-    static #data = new PermissionData() // MASTER_DOD_AUTH_STORE
-    static #playerCache = new Map() // VOLATILE_ACCESS_BUFFER
+    static #data = new PermissionData() // Master storage for all rank data
+    static #playerCache = new Map() // Cache for resolved player permissions
     static #CACHE_TTL = 5000 
     static #stats = {
         cacheHits: 0,
@@ -38,10 +28,8 @@ export class PermissionManager {
         this.startCleanupTask()
     }
 
-    /*
-     * AUTH_MANIFEST_STAGING
-     * Handshakes with the RankStore to populate the PermissionData layer 
-     * during the industrial bootstrap sequence.
+    /**
+     * Load ranks from the store and register them
      */
     init() {
         const RankStore = Kernel.get("rankStore")
@@ -77,25 +65,36 @@ export class PermissionManager {
      * cache-aside strategy to minimize CPU cycles.
      */
     hasPermission(player, permission) {
-        if (this._isSuperAdmin(player)) return true
-
         PermissionManager.#stats.totalChecks++
         
         /* CACHE_PROBE */
-        let cache = PermissionManager.#playerCache.get(player.id)
+        const cache = PermissionManager.#playerCache.get(player.id)
         if (cache && Date.now() - cache.timestamp < PermissionManager.#CACHE_TTL) {
             PermissionManager.#stats.cacheHits++
+            if (cache.isSuperAdmin) return true
             return cache.permissions.get(permission) ?? false
         }
         
         /* CACHE_MISS_PROTOCOL */
         PermissionManager.#stats.cacheMisses++
         
+        // Check SuperAdmin status and cache it
+        const isSuperAdmin = this._isSuperAdmin(player)
+        if (isSuperAdmin) {
+            PermissionManager.#playerCache.set(player.id, {
+                permissions: new Map(),
+                isSuperAdmin: true,
+                timestamp: Date.now()
+            })
+            return true
+        }
+
         this.syncPlayerRanks(player)
         const permissions = this.#computePermissions(player)
         
         PermissionManager.#playerCache.set(player.id, {
             permissions,
+            isSuperAdmin: false,
             timestamp: Date.now()
         })
         
@@ -126,8 +125,11 @@ export class PermissionManager {
      * higher-clearance entities.
      */
     canActOn(actor, target) {
-        if (this._isSuperAdmin(actor)) return true
-        if (this._isSuperAdmin(target)) return false
+        const actorSA = this._isSuperAdmin(actor)
+        const targetSA = this._isSuperAdmin(target)
+        
+        if (actorSA) return true
+        if (targetSA) return false
 
         this.syncPlayerRanks(actor)
         this.syncPlayerRanks(target)
@@ -172,7 +174,7 @@ export class PermissionManager {
      * MAINTENANCE_SCHEDULER
      */
     startCleanupTask() {
-        system.runInterval(() => {
+        Kernel.system.runInterval(() => {
             PermissionManager.#data.cleanup()
             this.cleanupExpiredCache()
         }, 6000) 
@@ -215,3 +217,4 @@ export class PermissionManager {
 }
 
 export const PermissionManagerInstance = PermissionManager.getInstance()
+

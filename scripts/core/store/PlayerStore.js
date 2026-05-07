@@ -1,16 +1,18 @@
+import { world } from "@minecraft/server"
 import { Database } from "../datastore/DatabaseManager.js"
 
 /*
  * ENTITY_SPECIFIC_STORAGE_PROXY
- * ----------------------------------------------------------------------------
- * A high-performance abstraction layer for managing persistent data 
- * bound to individual entity identifiers. 
- *
- * PHILOSOPHY: Isolation is mandatory. We enforce a 'player:UUID:KEY' 
- * namespace protocol to prevent cross-buffer contamination in the global 
- * registry.
  */
+
+// Keep name mapping synchronized for offline resolution
+world.afterEvents.playerSpawn.subscribe((ev) => {
+    const { player } = ev
+    Database.set(`player:${player.id}:name`, player.name)
+})
+
 export const PlayerStore = {
+
     /* 
      * ENTITY_BOUND_QUERY_VECTOR
      * Resolves the entity-specific key and performs an O(1) lookup 

@@ -1,42 +1,33 @@
-import { world, system } from "@minecraft/server"
+import { Kernel } from "../Kernel.js"
 
-/*
- * INDUSTRIAL_DATABASE_ORCHESTRATOR
- * ----------------------------------------------------------------------------
- * The persistent-data gatekeeper for the AethelLib industrial ecosystem. 
- * Implements a Cache-Aside strategy with debounced asynchronous write-back. 
- * Orchestrates the serialization of complex state-objects into the 
- * primitive native property-buffer.
- *
- * PHILOSOPHY: Data is the bedrock of the empire. If the persistence layer 
- * fails, the state collapses. Use the sharding-protocol to bypass native 
- * size-limitations.
+/**
+ * Manages persistent data using dynamic properties.
+ * Uses a cache-aside strategy and debounced writes to keep things fast.
+ * Supports sharding for data that exceeds the 32KB limit.
  */
 export class DatabaseManager {
     constructor() {
-        this.cache = new Map() // VOLATILE_ACCESS_BUFFER
-        this.dirtyKeys = new Set() // PENDING_WRITE_MANIFEST
+        this.cache = new Map() // In-memory data cache
+        this.dirtyKeys = new Set() // Keys waiting to be saved
         this.writeTimeout = null
-        this.WRITE_DELAY = 5000 // INDUSTRIAL_WRITE_THROTTLE (ms)
-        this.MAX_PROPERTY_SIZE = 30000 // NATIVE_PROPERTY_LIMIT_THRESHOLD (30KB)
-        this.SHARD_SIZE = 50 // COLLECTION_SHARD_FACTOR
+        this.WRITE_DELAY = 5000 // Delay between writes to save performance
+        this.MAX_PROPERTY_SIZE = 30000 // Limit for a single property
+        this.SHARD_SIZE = 50 
         
-        this.transactionQueues = new Map() // ATOMIC_TRANSACTION_REGISTRY
+        this.transactionQueues = new Map() 
         
         this.initialize()
     }
 
-    /*
-     * SERVICE_BOOTSTRAP_PROTOCOL
-     * Hooks into the global maintenance cycle and the watchdog-terminate 
-     * event to ensure a final buffer-flush before reality-state termination.
+    /**
+     * Setup periodic cleanup and flush on shutdown
      */
     initialize() {
-        system.runInterval(() => {
+        Kernel.system.runInterval(() => {
             this.cleanupExpiredData()
         }, 20 * 60 * 20) 
         
-        system.beforeEvents.watchdogTerminate.subscribe(() => {
+        Kernel.system.beforeEvents.shutdown.subscribe(() => {
             this.flushAll()
         })
     }
@@ -82,7 +73,7 @@ export class DatabaseManager {
         try {
             this.cache.delete(key)
             this.dirtyKeys.delete(key)
-            world.setDynamicProperty(key, undefined)
+            Kernel.world.setDynamicProperty(key, undefined)
             return true
         } catch (error) {
             console.error(`[DatabaseManager] DECOMMISSION_FAILURE for '${key}': ${error}`)
@@ -99,7 +90,7 @@ export class DatabaseManager {
         }
 
         const indexKey = `${collectionName}:index`
-        let index = this.get(indexKey) || []
+        const index = this.get(indexKey) || []
         
         const collection = []
         for (const itemId of index) {
@@ -120,7 +111,7 @@ export class DatabaseManager {
             this.set(`${collectionName}:item:${itemId}`, data)
             
             const indexKey = `${collectionName}:index`
-            let index = this.get(indexKey) || []
+            const index = this.get(indexKey) || []
             
             if (!index.includes(itemId)) {
                 index.push(itemId)
@@ -190,7 +181,7 @@ export class DatabaseManager {
      */
     loadFromStorage(key) {
         try {
-            const raw = world.getDynamicProperty(key)
+            const raw = Kernel.world.getDynamicProperty(key)
             return typeof raw === "string" ? JSON.parse(raw) : null
         } catch (error) {
             console.error(`[DatabaseManager] STORAGE_READ_FAILURE for '${key}': ${error}`)
@@ -203,10 +194,10 @@ export class DatabaseManager {
      */
     scheduleWrite() {
         if (this.writeTimeout) {
-            system.clearRun(this.writeTimeout)
+            Kernel.system.clearRun(this.writeTimeout)
         }
 
-        this.writeTimeout = system.runTimeout(() => {
+        this.writeTimeout = Kernel.system.runTimeout(() => {
             this.flushDirty()
         }, Math.max(1, Math.floor(this.WRITE_DELAY / 50)))
     }
@@ -229,7 +220,7 @@ export class DatabaseManager {
                     if (serialized.length > this.MAX_PROPERTY_SIZE) {
                         this.shardAndWrite(key, data)
                     } else {
-                        world.setDynamicProperty(key, serialized)
+                        Kernel.world.setDynamicProperty(key, serialized)
                     }
                 } catch (error) {
                     console.error(`[DatabaseManager] FLUSH_FAILURE for '${key}': ${error}`)
@@ -251,13 +242,13 @@ export class DatabaseManager {
             shards.push(serialized.slice(i, i + this.MAX_PROPERTY_SIZE))
         }
 
-        world.setDynamicProperty(`${key}:shard_index`, JSON.stringify({
+        Kernel.world.setDynamicProperty(`${key}:shard_index`, JSON.stringify({
             shardCount: shards.length,
             timestamp: Date.now()
         }))
 
         for (let i = 0; i < shards.length; i++) {
-            world.setDynamicProperty(`${key}:shard_${i}`, shards[i])
+            Kernel.world.setDynamicProperty(`${key}:shard_${i}`, shards[i])
         }
 
         console.log(`[DatabaseManager] SHARDING_COMPLETE: '${key}' split into ${shards.length} segments.`);
@@ -268,7 +259,7 @@ export class DatabaseManager {
      */
     loadSharded(key) {
         try {
-            const indexData = world.getDynamicProperty(`${key}:shard_index`)
+            const indexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
             if (!indexData) return null
 
             const index = typeof indexData === "string" ? JSON.parse(indexData) : null
@@ -276,7 +267,7 @@ export class DatabaseManager {
             const shards = []
 
             for (let i = 0; i < index.shardCount; i++) {
-                const shard = world.getDynamicProperty(`${key}:shard_${i}`)
+                const shard = Kernel.world.getDynamicProperty(`${key}:shard_${i}`)
                 if (!shard) return null
                 shards.push(shard)
             }
@@ -320,3 +311,4 @@ export class DatabaseManager {
 }
 
 export const Database = new DatabaseManager()
+

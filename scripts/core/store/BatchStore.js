@@ -1,22 +1,14 @@
-import { WorldStore } from "../store/WorldStore.js"
-import { PlayerStore } from "../store/PlayerStore.js"
-import { system, world } from "@minecraft/server"
+import { Kernel } from "../Kernel.js"
 
-/*
- * BATCH_TRANSACTION_ORCHESTRATOR
- * ----------------------------------------------------------------------------
- * A high-performance buffering layer designed to consolidate multiple 
- * database operations into a single execution window. 
- *
- * PHILOSOPHY: Synchronous database writes are a luxury we cannot afford. 
- * By batching operations, we minimize the overhead of JSON serialization 
- * and persistent property mutation.
+/**
+ * Collects and flushes database operations in batches.
+ * This reduces the overhead of frequent writes and JSON serialization.
  */
 export class BatchStore {
-    static #batches = new Map() // PENDING_OPERATION_BUFFER
-    static #flushTimeouts = new Map() // DEBOUNCE_HANDLERS
-    static #DEFAULT_DELAY = 100 // 100ms Debounce Window
-    static #MAX_BATCH_SIZE = 50 // Threshold for immediate flush
+    static #batches = new Map() // Operations waiting to be flushed
+    static #flushTimeouts = new Map() // Debounce timers
+    static #DEFAULT_DELAY = 100 // Wait time before flushing
+    static #MAX_BATCH_SIZE = 50 // Max ops before forced flush
     static #stats = {
         totalOperations: 0,
         totalBatches: 0,
@@ -24,8 +16,8 @@ export class BatchStore {
         averageBatchSize: 0
     }
     
-    /* 
-     * BUFFER_INITIALIZATION
+    /**
+     * Initialize a new batch for a specific store
      */
     static startBatch(storeName) {
         if (!this.#batches.has(storeName)) {
@@ -77,7 +69,7 @@ export class BatchStore {
     static #scheduleFlush(storeName) {
         if (this.#flushTimeouts.has(storeName)) return
         
-        const timeout = system.runTimeout(() => {
+        const timeout = Kernel.system.runTimeout(() => {
             this.#flush(storeName)
         }, Math.max(1, Math.floor(this.#DEFAULT_DELAY / 50))) 
         
@@ -114,7 +106,7 @@ export class BatchStore {
         try {
             await this.#executeBatch(operations, storeName)
             
-            system.run(() => {
+            Kernel.system.run(() => {
                 console.log(`[BatchStore] FLUSH_COMPLETE | Store: ${storeName} | Ops: ${operations.length}`);
             })
             
@@ -173,12 +165,12 @@ export class BatchStore {
      * PLAYER_TRANSACTION_LOOP
      * ----------------------------------------------------------------------------
      * Groups operations by PlayerID to minimize lookup overhead. 
-     * If a player is offline, we fallback to the WorldStore with a 
-     * 'player:' prefix to ensure data persistence during cross-session 
-     * events.
+     * Uses a lookup manifest to achieve O(1) entity resolution.
      */
     static async #executePlayerBatch(operations) {
         const playerGroups = new Map()
+        const PlayerStore = Kernel.get("playerStore")
+        const WorldStore = Kernel.get("worldStore")
         
         operations.forEach(op => {
             if (!playerGroups.has(op.playerId)) {
@@ -186,10 +178,14 @@ export class BatchStore {
             }
             playerGroups.get(op.playerId).push(op)
         })
+
+        // DOD_OPTIMIZATION: Generate O(1) lookup manifest for entities
+        const players = Kernel.world.getAllPlayers()
+        const playerMap = new Map(players.map(p => [p.id, p]))
         
         for (const [playerId, playerOps] of playerGroups) {
             try {
-                const player = world.getPlayers().find(p => p.id === playerId)
+                const player = playerMap.get(playerId)
                 
                 if (player) {
                     for (const op of playerOps) {
@@ -219,6 +215,7 @@ export class BatchStore {
      * WORLD_TRANSACTION_LOOP
      */
     static async #executeWorldBatch(operations) {
+        const WorldStore = Kernel.get("worldStore")
         for (const op of operations) {
             try {
                 if (op.operation === 'delete') {
@@ -242,7 +239,7 @@ export class BatchStore {
         await Promise.allSettled(flushPromises)
         
         for (const timeout of this.#flushTimeouts.values()) {
-            system.clearRun(timeout)
+            Kernel.system.clearRun(timeout)
         }
         this.#flushTimeouts.clear()
     }
@@ -295,7 +292,7 @@ export class BatchStore {
         }
         
         if (timeout) {
-            system.clearRun(timeout)
+            Kernel.system.clearRun(timeout)
             this.#flushTimeouts.delete(storeName)
         }
         
@@ -329,6 +326,9 @@ export class BatchStore {
  * Ensures all pending transactions are committed before the server process 
  * terminates.
  */
-system.beforeEvents.shutdown.subscribe(() => {
-    BatchStore.flushAll()
+Kernel.system.beforeEvents.startup.subscribe((ev) => {
+    Kernel.system.beforeEvents.shutdown.subscribe(() => {
+        BatchStore.flushAll()
+    })
 })
+

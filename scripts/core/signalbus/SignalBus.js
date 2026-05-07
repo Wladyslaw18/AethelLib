@@ -1,24 +1,13 @@
-/*
- * INDUSTRIAL_SIGNAL_ORCHESTRATOR
- * ----------------------------------------------------------------------------
- * A high-performance, O(1) event-emitter implementation for zero-coupling 
- * communication between disparate industrial modules. 
- *
- * PHILOSOPHY: Modules must remain decoupled. Emit signals into the bus; 
- * do not call remote methods directly. This prevents dependency-lock and 
- * architectural collapse.
+/**
+ * Event bus for cross-module communication.
+ * Allows modules to stay decoupled by using signals instead of direct calls.
  */
 class SignalBus {
-    /* 
-     * GLOBAL_LISTENER_REGISTRY
-     * O(1) Map storing arrays of execution-closures indexed by signal-id.
-     */
+    // List of registered event listeners
     static #listeners = new Map()
 
-    /*
-     * SIGNAL_SUBSCRIPTION_PROTOCOL
-     * Binds a closure to a specific signal identifier. Returns an 
-     * unsubscription-vector for clean memory-heap management.
+    /**
+     * Subscribe to an event
      */
     static on(event, callback) {
         if (!this.#listeners.has(event)) {
@@ -31,7 +20,7 @@ class SignalBus {
     }
 
     /*
-     * SIGNAL_DE-REGISTRATION_PROTOCOL
+     * Unsubscribe from an event
      */
     static off(event, callback) {
         const listeners = this.#listeners.get(event)
@@ -45,10 +34,7 @@ class SignalBus {
     }
 
     /*
-     * SIGNAL_BROADCAST_PIPELINE
-     * Iterates through all registered listeners and executes their 
-     * closures. Each vector is wrapped in an isolation-block to prevent 
-     * upstream module-crash from contaminating the bus.
+     * Emit a signal to all listeners
      */
     static emit(event, ...args) {
         const listeners = this.#listeners.get(event)
@@ -58,14 +44,13 @@ class SignalBus {
             try {
                 callback(...args)
             } catch (error) {
-                console.error(`[SignalBus] EXECUTION_COLLAPSE for signal '${event}': ${error}`);
+                console.error(`[SignalBus] Error in signal '${event}': ${error}`);
             }
         }
     }
 
     /*
-     * ATOMIC_SIGNAL_CAPTURE
-     * Executes the closure once and immediately terminates the subscription.
+     * Listen for a signal once
      */
     static once(event, callback) {
         const onceCallback = (...args) => {
@@ -77,7 +62,7 @@ class SignalBus {
     }
 
     /*
-     * REGISTRY_PURGE_PROTOCOL
+     * Clear all listeners
      */
     static clear(event) {
         if (event) {
@@ -88,12 +73,13 @@ class SignalBus {
     }
 
     /*
-     * METRIC_ACCESS_VECTOR
+     * Get the number of listeners for an event
      */
     static listenerCount(event) {
         const listeners = this.#listeners.get(event)
         return listeners ? listeners.length : 0
     }
+
 }
 
 export { SignalBus }

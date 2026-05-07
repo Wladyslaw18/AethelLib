@@ -202,7 +202,7 @@ export class TickScheduler {
     /* 
      * TELEMETRY_PROTOCOL
      */
-    static #updateTaskStats(task, executionTime, error, errorObj = null) {
+    static #updateTaskStats(task, executionTime, error, _errorObj = null) {
         task.stats.executions++
         task.stats.lastExecution = Date.now()
         task.stats.totalExecutionTime += executionTime
@@ -253,7 +253,7 @@ export const CommonSchedulers = {
         return TickScheduler.schedule(callback, 20 * intervalSeconds, {
             name: "BROADCAST_VECTOR",
             maxRetries: 3,
-            condition: () => world.getPlayers().length > 0
+            condition: () => world.getAllPlayers().length > 0
         })
     },
     
@@ -276,7 +276,7 @@ export const CommonSchedulers = {
     schedulePlayerUpdates: (callback, intervalSeconds = 10) => {
         return TickScheduler.schedule(callback, 20 * intervalSeconds, {
             name: "ENTITY_STATE_SYNC",
-            condition: () => world.getPlayers().length > 0,
+            condition: () => world.getAllPlayers().length > 0,
             maxRetries: 2
         })
     }

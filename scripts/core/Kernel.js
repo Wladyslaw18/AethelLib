@@ -1,67 +1,111 @@
 import * as mc from "@minecraft/server";
+import * as mcui from "@minecraft/server-ui";
 
-/*
- * TITANIUM_KERNEL_ORCHESTRATOR
- * ----------------------------------------------------------------------------
- * The central nervous system of the AethelLib industrial framework. 
- * Provides a master service-locator (O(1)) and a stable abstraction bridge 
- * over the volatile native API.
- *
- * PHILOSOPHY: Zero-bypass stability. Isolation of the Minecraft-buffer. 
- * If the native world object drifts, the Kernel absorbs the impact.
+/**
+ * Central kernel that manages services and proxies native Minecraft APIs.
+ * This keeps the rest of the codebase stable if the native API changes.
  */
 export class Kernel {
-    /* 
-     * SERVICE_REGISTRY_BUFFER
-     * Private static Map ensures read-only integrity for external consumers.
-     */
+    // Stores registered system instances
     static #systems = new Map();
-    static #version = "2.7.0-BETA";
+    // Stores registered external plugins
+    static #plugins = new Map();
 
-    /*
-     * STABLE_API_ABSTRACTIONS
+    /**
+     * Proxies for native Minecraft objects
      */
     static get world() { return mc.world; }
     static get system() { return mc.system; }
+    static get size() { return this.#systems.size; }
 
-    /*
-     * SERVICE_DOCKING_PROTOCOL
-     * Injects a modular sub-system into the Kernel's memory space. 
-     * Performs a collision-scan to prevent silent service overwrites.
+    /**
+     * Proxies for common Minecraft types
+     */
+    static get ItemStack() { return mc.ItemStack; }
+    static get EntityComponentTypes() { return mc.EntityComponentTypes; }
+    static get SignSide() { return mc.SignSide; }
+    static get CustomCommandStatus() { return mc.CustomCommandStatus; }
+    static get CustomCommandParamType() { return mc.CustomCommandParamType; }
+    static get CommandPermissionLevel() { return mc.CommandPermissionLevel; }
+
+    /**
+     * Proxies for UI forms
+     */
+    static get ActionFormData() { return mcui.ActionFormData; }
+    static get ModalFormData() { return mcui.ModalFormData; }
+    static get MessageFormData() { return mcui.MessageFormData; }
+
+    /**
+     * Register a new service or system
      */
     static register(id, instance) {
         if (this.#systems.has(id)) {
-            console.warn(`[Kernel] COLLISION_ALERT: System identifier '${id}' is already registered. Overwriting.`);
+            console.warn(`[Kernel] Service collision: identifier '${id}' is already registered. Overwriting.`);
         }
         this.#systems.set(id, instance);
-        console.log(`[Kernel] SERVICE_DOCKED: ${id.toUpperCase()} | VER: ${this.#version}`);
+        console.log("[Kernel] Service registered. Total services: " + Kernel.size);
     }
 
-    /*
-     * SERVICE_LOCATOR_PIPELINE
-     * Resolves a docked service identifier to its instance. O(1) lookup.
+    /**
+     * Register an external plugin or sub-mod
+     * @param {Object} manifest - { name, version }
+     * @param {Function} onInit - Callback for initialization logic
+     */
+    static registerPlugin(manifest, onInit) {
+        this.#plugins.set(manifest.name, { manifest, onInit });
+        console.log(`[Kernel] Plugin registered: ${manifest.name} v${manifest.version}`);
+    }
+
+    /**
+     * Get a registered service by its ID
      */
     static get(id) {
         return this.#systems.get(id);
     }
 
-    /*
-     * SERVICE_AVAILABILITY_PROBE
+    /**
+     * Check if a service is registered
      */
     static has(id) {
         return this.#systems.has(id);
     }
 
-    /*
-     * INDUSTRIAL_BOOTSTRAP_ORCHESTRATOR
-     * Triggers the initialization of critical foundation layers.
+    /**
+     * Initialize all registered plugins
+     * This must be called when the world state is stable (not early execution).
      */
-    static init() {
-        const CommandManager = this.get("commandManager");
-        if (CommandManager) {
-            CommandManager.init();
+    static bootPlugins() {
+        for (const [name, plugin] of this.#plugins) {
+            try {
+                plugin.onInit(this);
+            } catch (error) {
+                console.error(`[Kernel] Plugin '${name}' failed to initialize:`, error);
+            }
         }
         
-        console.log(`[Kernel] TITANIUM_BOOTSTRAP_COMPLETE | ENGINE_READY`);
+        console.log(`[Kernel] Plugins initialized: ${this.#plugins.size}`);
     }
 }
+
+
+
+/**
+ * Type definitions for core services
+ * @typedef {Object} ServiceRegistry
+ * @property {import("./permissions/PermissionManager").PermissionManager} permissions
+ * @property {import("../systems/social/MuteStore").MuteStore} muteStore
+ * @property {import("./datastore/DatabaseManager").DatabaseManager} database
+ * @property {import("./signalbus/SignalBus").SignalBus} signalBus
+ * @property {import("./store/PlayerStore").PlayerStore} playerStore
+ * @property {import("./store/WorldStore").WorldStore} worldStore
+ * @property {import("../systems/social/chat/ChatSystem").ChatSystem} chat
+ * @property {import("./commands/CommandManager").CommandManager} commandManager
+ * @property {import("../commands/base/CommandRegistry").CommandRegistry} commandRegistry
+ * @property {import("../systems/teleport/HomeStore").HomeStore} homeStore
+ * @property {import("../systems/teleport/WarpStore").WarpStore} warpStore
+ * @property {import("../systems/tpa/TpaStore").TPAStore} tpaStore
+ * @property {import("../systems/teleport/TeleportService").TeleportService} teleportService
+ */
+
+
+

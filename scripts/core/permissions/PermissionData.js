@@ -1,40 +1,35 @@
-/*
- * INDUSTRIAL_AUTH_MANIFEST (SoA_LAYOUT)
- * ----------------------------------------------------------------------------
- * A high-performance data-structure designed for low-latency permission 
- * resolution. Implements the 'Structure of Arrays' (SoA) pattern to maximize 
- * CPU cache-line hits and ensure deterministic data-locality.
- *
- * PHILOSOPHY: Object-oriented hierarchies are slow. Primitive arrays 
- * are fast. We use bitwise-sharding and BigInt masks to manage boolean 
- * permission nodes.
+/**
+ * Stores and manages rank and permission data using a Structure of Arrays (SoA) layout.
+ * This ensures high performance for permission lookups.
  */
 export class PermissionData {
     constructor() {
-        /* STRUCTURE_OF_ARRAYS (SoA) */
-        this.rankIds = []           // IDENTIFIER_BUFFER
-        this.rankOrders = []        // WEIGHT_BUFFER
-        this.rankNames = []         // DISPLAY_BUFFER
-        this.rankColors = []        // TOKEN_BUFFER
-        this.rankChatColors = []    // CHAT_TOKEN_BUFFER
+        // Core rank data arrays
+        this.rankIds = []           
+        this.rankOrders = []        
+        this.rankNames = []         
+        this.rankColors = []        
+        this.rankChatColors = []    
+        this.rankIndexMap = new Map() // O(1) lookup for rank indices
 
-        /* AUTH_NODE_ARRAYS */
-        this.permissionFlags = new Map()  // permission_id -> BigInt_Buffer (Bitflags)
-        this.permissionValues = new Map()  // permission_id -> number_Buffer (Numeric Limits)
+        // Bitflag maps for permissions
+        this.permissionFlags = new Map()  
+        this.permissionValues = new Map()  
 
-        /* VOLATILE_IDENTITY_CACHE */
-        this.playerRanks = new Map()       // entity_id -> rank_list
-        this.playerRankCache = new Map()   // entity_id -> {manifest, timestamp}
-        this.CACHE_TTL = 5000 // 5s_TTL
+        // Cache for player rank resolutions
+        this.playerRanks = new Map()       
+        this.playerRankCache = new Map()   
+        this.CACHE_TTL = 5000 
     }
 
-    /* 
-     * RANK_INJECTION_PROTOCOL
-     * Allocates a new index in the SoA manifest and initializes the 
-     * permission-shards.
+    /**
+     * Add a new rank to the data structure
      */
     addRank(rankId, order, name, color, chatColor) {
+        if (this.rankIndexMap.has(rankId)) return
+
         const index = this.rankIds.length
+        this.rankIndexMap.set(rankId, index)
 
         this.rankIds.push(rankId)
         this.rankOrders.push(order)
@@ -58,8 +53,8 @@ export class PermissionData {
      * Sets a permission bit or numeric value for a specific rank index.
      */
     setPermission(rankId, permission, value) {
-        const index = this.rankIds.indexOf(rankId)
-        if (index === -1) return false
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return false
 
         if (typeof value === 'boolean') {
             let flags = this.permissionFlags.get(permission)
@@ -91,8 +86,8 @@ export class PermissionData {
      * AUTH_NODE_QUERY_VECTOR
      */
     getPermission(rankId, permission) {
-        const index = this.rankIds.indexOf(rankId)
-        if (index === -1) return null
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return null
 
         const flags = this.permissionFlags.get(permission)
         if (flags) {
@@ -112,8 +107,8 @@ export class PermissionData {
      * RANK_MANIFEST_QUERY
      */
     getRankPermissions(rankId) {
-        const index = this.rankIds.indexOf(rankId)
-        if (index === -1) return {}
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return {}
 
         const permissions = {}
         for (const [perm, flags] of this.permissionFlags) {
@@ -171,12 +166,11 @@ export class PermissionData {
 
         return ranks
             .filter(rankId => {
-                const idx = this.rankIds.indexOf(rankId)
-                return idx !== -1
+                return this.rankIndexMap.has(rankId)
             })
             .sort((a, b) => {
-                const indexA = this.rankIds.indexOf(a)
-                const indexB = this.rankIds.indexOf(b)
+                const indexA = this.rankIndexMap.get(a)
+                const indexB = this.rankIndexMap.get(b)
                 return this.rankOrders[indexB] - this.rankOrders[indexA]
             })
     }
@@ -226,8 +220,8 @@ export class PermissionData {
      * MANIFEST_DATA_ACCESSOR
      */
     getRankInfo(rankId) {
-        const index = this.rankIds.indexOf(rankId)
-        if (index === -1) return null
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return null
 
         return {
             id: rankId,
@@ -263,14 +257,20 @@ export class PermissionData {
      * industrial manifest.
      */
     removeRank(rankId) {
-        const index = this.rankIds.indexOf(rankId)
-        if (index === -1) return false
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return false
 
         this.rankIds.splice(index, 1)
         this.rankOrders.splice(index, 1)
         this.rankNames.splice(index, 1)
         this.rankColors.splice(index, 1)
         this.rankChatColors.splice(index, 1)
+        this.rankIndexMap.delete(rankId)
+
+        // Re-index remaining ranks
+        for (let i = index; i < this.rankIds.length; i++) {
+            this.rankIndexMap.set(this.rankIds[i], i)
+        }
 
         for (const flags of this.permissionFlags.values()) {
             flags.splice(index, 1)
@@ -314,3 +314,4 @@ export class PermissionData {
         }
     }
 }
+
