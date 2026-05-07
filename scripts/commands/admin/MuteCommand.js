@@ -8,6 +8,7 @@ import { PlayerUtils } from "../../utils/PlayerUtils.js"
 export const MuteCommand = {
     name: "mute",
     description: "Mute a player's chat",
+    permission: "essentials.admin.mute",
 
     parameters: [
         { name: "player", type: "player", optional: false },

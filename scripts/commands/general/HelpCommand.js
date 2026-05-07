@@ -45,10 +45,8 @@ export const HelpCommand = {
 
         for (const name of commands) {
             const cmd = Registry.get(name)
-            // Skip aliases and commands player can't use
             if (name.includes(":")) continue; 
             if (cmd.permission && !PermissionManager.hasPermission(player, cmd.permission)) continue;
-
             visibleCommands.push(name)
         }
 

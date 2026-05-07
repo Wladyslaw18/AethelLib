@@ -40,7 +40,11 @@ export const AdminRegistry = {
         Registry.register("resetdata", ResetDataCommand)
         Registry.register("ft", FloatingTextCommand)
         Registry.register("reports", AdminReportCommand)
-        Registry.register("log", { execute: (_d, p, _a) => showReports(p) })
+        Registry.register("log", { 
+            description: "View the administrative audit log",
+            permission: "essentials.admin.reports",
+            execute: (_d, p, _a) => showReports(p) 
+        })
         Registry.register("bc66", BroadcastResetCommand)
 
         // Industrial Rank Nexus
