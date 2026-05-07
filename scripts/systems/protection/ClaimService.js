@@ -2,15 +2,11 @@ import { Kernel } from "../../core/Kernel.js"
 import { Configuration } from "../../Configuration.js"
 
 /*
- * INDUSTRIAL_SPATIAL_SECURITY_ORCHESTRATOR
+ * Land Protection System
  * ----------------------------------------------------------------------------
- * The primary execution engine for spatial-integrity protection. 
- * Orchestrates before-event interception for block-mutation and entity-interaction 
- * to enforce claim-contracts. 
- *
- * PHILOSOPHY: Private property is absolute. If you don't have the 
- * clearance bitmask, the reality-state mutation is cancelled.
+ * Handles chunk claims, permissions, and interaction protection.
  */
+
 
 // AUTH_CLEARANCE_BITMASKS
 const PERMISSIONS = {
@@ -70,20 +66,29 @@ export function init() {
         const chunkKey = ClaimStore.locationToChunkKey(event.block.location)
         if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
             event.cancel = true
-            player.onScreenDisplay.setActionBar("§c[Security] Access Denied: Spatial Integrity Violation");
+            player.onScreenDisplay.setActionBar("§c§l» §7You cannot build here!");
         }
+
     })
 
     /* BLOCK_CONSTRUCTION_INTERCEPTOR */
-    Kernel.world.beforeEvents.playerPlaceBlock.subscribe((event) => {
+    // Note: playerPlaceBlock is not in beforeEvents in beta. using playerInteractWithBlock.
+    Kernel.world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
         const player = event.player
         if (isGodTag(player)) return
 
-        const ClaimStore = Kernel.get("claimStore")
-        const chunkKey = ClaimStore.locationToChunkKey(event.block.location)
-        if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
-            event.cancel = true
-            player.onScreenDisplay.setActionBar("§c[Security] Access Denied: Spatial Integrity Violation");
+        const block = event.block
+        const item = event.itemStack
+        
+        // If holding a block-like item, check BUILD permission
+        if (item && (item.typeId.includes("_block") || item.typeId.includes("stone") || item.typeId.includes("planks") || item.typeId.includes("dirt") || item.typeId.includes("log"))) {
+             const ClaimStore = Kernel.get("claimStore")
+             const chunkKey = ClaimStore.locationToChunkKey(block.location)
+             if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
+                 event.cancel = true
+                 player.onScreenDisplay.setActionBar("§c§l» §7You cannot build here!");
+             }
+
         }
     })
 
@@ -101,8 +106,9 @@ export function init() {
 
         if (!ClaimStore.hasPermission(chunkKey, player.id, requiredPermission)) {
             event.cancel = true
-            player.onScreenDisplay.setActionBar("§c[Security] Access Denied: Clearance Bitmask Missing");
+            player.onScreenDisplay.setActionBar("§c§l» §7You cannot interact with this!");
         }
+
     })
 
     /* ENTITY_INTERACTION_INTERCEPTOR */
@@ -117,8 +123,9 @@ export function init() {
         const chunkKey = ClaimStore.locationToChunkKey(entity.location)
         if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.MOB_INTERACT)) {
             event.cancel = true
-            player.onScreenDisplay.setActionBar("§c[Security] Access Denied: Entity Integrity Violation");
+            player.onScreenDisplay.setActionBar("§c§l» §7You cannot interact with mobs here!");
         }
+
     })
 
     console.log("[Aethelgrad Essentials] Spatial Security Engine operational.");
@@ -141,9 +148,10 @@ export function createClaim(player, location, radius = 1) {
             ).join(',')
             
             if (ClaimStore.getClaim(chunkKey)) {
-                player.sendMessage("[Error] Spatial Collision: Chunk already registered.");
+                player.sendMessage("§c§l» §7This area is already claimed!");
                 return false
             }
+
         }
     }
 
@@ -161,7 +169,8 @@ export function createClaim(player, location, radius = 1) {
         }
     }
 
-    player.sendMessage(`[Success] Spatial buffer acquired (Radius: ${radius} chunks).`);
+    player.sendMessage(`§a§l» §fLand claimed! §e(Radius: ${radius} chunks)§f.`);
+
     return true
 }
 
@@ -174,12 +183,14 @@ export function removeClaim(player, location) {
     const playerId = player.id
 
     if (!ClaimStore.isOwner(chunkKey, playerId)) {
-        player.sendMessage("[Error] Security Violation: Target spatial buffer is not under your authority.");
+        player.sendMessage("§c§l» §7You do not own this claim!");
         return false
     }
 
+
     ClaimStore.removeClaim(chunkKey)
-    player.sendMessage("[Success] Spatial buffer decommissioned.");
+    player.sendMessage("§a§l» §fLand unclaimed.");
+
     return true
 }
 
@@ -187,35 +198,39 @@ export function removeClaim(player, location) {
  * TRUST_PROFILE_ORCHESTRATOR
  */
 export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD) {
-    const target = Kernel.world.getPlayers().find(p => p.name === targetName)
+    const target = Kernel.world.getAllPlayers().find(p => p.name === targetName)
     if (!target) {
-        player.sendMessage(`[Error] Entity '${targetName}' not found.`);
+        player.sendMessage(`§c§l» §7Player '${targetName}' not found.`);
         return
     }
+
 
     const ClaimStore = Kernel.get("claimStore")
     const playerClaims = ClaimStore.getPlayerClaims(player.id)
     if (playerClaims.length === 0) {
-        player.sendMessage("[Error] No active spatial manifests found.");
+        player.sendMessage("§c§l» §7You don't have any claims.");
         return
     }
+
 
     for (const claim of playerClaims) {
         ClaimStore.addTrusted(claim.chunkKey, player.id, target.id, permissions)
     }
 
-    player.sendMessage(`[Success] Entity '${targetName}' clearance bitmask injected: ${permissions}`);
+    player.sendMessage(`§a§l» §e${targetName} §fhas been trusted.`);
+
 }
 
 /* 
  * TRUST_PROFILE_DECOMMISSIONER
  */
 export function untrustPlayer(player, targetName) {
-    const target = Kernel.world.getPlayers().find(p => p.name === targetName)
+    const target = Kernel.world.getAllPlayers().find(p => p.name === targetName)
     if (!target) {
-        player.sendMessage(`[Error] Entity '${targetName}' not found.`);
+        player.sendMessage(`§c§l» §7Player '${targetName}' not found.`);
         return
     }
+
 
     const ClaimStore = Kernel.get("claimStore")
     const playerClaims = ClaimStore.getPlayerClaims(player.id)
@@ -223,7 +238,8 @@ export function untrustPlayer(player, targetName) {
         ClaimStore.removeTrusted(claim.chunkKey, target.id)
     }
 
-    player.sendMessage(`[Success] Entity '${targetName}' clearance bitmask purged.`);
+    player.sendMessage(`§a§l» §e${targetName} §fhas been untrusted.`);
+
 }
 
 export { PERMISSIONS }

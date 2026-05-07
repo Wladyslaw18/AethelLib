@@ -95,3 +95,6 @@ export const PlaceholderProvider = {
         return Array.from(registry.keys())
     }
 }
+export function init() {
+    PlaceholderProvider.init()
+}

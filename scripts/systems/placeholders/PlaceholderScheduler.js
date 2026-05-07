@@ -1,24 +1,16 @@
 import { Kernel } from "../../core/Kernel.js"
 
-/*
- * INDUSTRIAL_PLACEHOLDER_SCHEDULER
- * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for the periodic resolution and 
- * manifestation of dynamic strings on floating-text entities. Implements 
- * a spatial-culling strategy to minimize performance saturation in 
- * low-entity-density sectors.
- *
- * PHILOSOPHY: Display updates should only occur if an observer is present. 
- * Use the squared-range check to bypass expensive square-root operations 
- * in the hot-path.
+/**
+ * Updates floating text entities with resolved placeholders.
+ * Only updates entities near players to save performance.
  */
 
 const RANGE = 32
-const RANGE_SQ = RANGE * RANGE // SPATIAL_CULLING_THRESHOLD
+const RANGE_SQ = RANGE * RANGE 
+const entityCache = new Map() // entryId -> Entity
 
-/* 
- * SYSTEM_BOOTSTRAP_PROTOCOL
- * Initializes the temporal heartbeat for manifestation updates.
+/**
+ * Start the update loop (every 20 ticks)
  */
 export function init() {
     Kernel.system.runInterval(() => {
@@ -26,10 +18,8 @@ export function init() {
     }, 20)
 }
 
-/* 
- * MANIFESTATION_UPDATE_LOOP
- * Scans the industrial floating-text registry and executes the resolution 
- * vector for entities within the spatial-culling boundary.
+/**
+ * Main update loop for all floating text entries
  */
 function updateFloatingTexts() {
     const players = Kernel.world.getAllPlayers()
@@ -40,35 +30,55 @@ function updateFloatingTexts() {
     if (entries.length === 0) return
 
     const dim = Kernel.world.getDimension("overworld")
+    const PlaceholderProvider = Kernel.get("placeholders")
+
+    // Pre-extract player locations to avoid multiple property access in the hot loop
+    const playerLocs = players.map(p => p.location)
 
     for (const entry of entries) {
-        /* SPATIAL_CULLING_CHECK */
-        const inRange = players.some(p => {
-            const dx = p.location.x - entry.x
-            const dy = p.location.y - entry.y
-            const dz = p.location.z - entry.z
-            return (dx * dx + dy * dy + dz * dz) <= RANGE_SQ
-        })
+        /* SPATIAL_CULLING_CHECK (O(N*M) but light math) */
+        let inRange = false
+        for (let i = 0; i < playerLocs.length; i++) {
+            const loc = playerLocs[i]
+            const dx = loc.x - entry.x
+            const dy = loc.y - entry.y
+            const dz = loc.z - entry.z
+            if ((dx * dx + dy * dy + dz * dz) <= RANGE_SQ) {
+                inRange = true
+                break
+            }
+        }
 
         if (!inRange) continue
 
         try {
-            const entities = dim.getEntities({
-                type: "pao:floating_text",
-                location: { x: entry.x, y: entry.y, z: entry.z },
-                maxDistance: 1
-            })
-
-            for (const entity of entities) {
-                if (!entity.isValid) continue
-                const PlaceholderProvider = Kernel.get("placeholders")
-                const resolved = PlaceholderProvider.resolve(entry.text, null)
-                if (entity.nameTag !== resolved) {
-                    entity.nameTag = resolved
+            let entity = entityCache.get(entry.id)
+            
+            // CACHE_MISS_OR_INVALIDATION_PROTOCOL
+            if (!entity || !entity.isValid) {
+                const entities = dim.getEntities({
+                    type: "pao:floating_text",
+                    location: { x: entry.x, y: entry.y, z: entry.z },
+                    maxDistance: 1
+                })
+                
+                if (entities.length > 0) {
+                    entity = entities[0]
+                    entityCache.set(entry.id, entity)
+                } else {
+                    continue // Entity not found in world
                 }
             }
+
+            // RESOLUTION_AND_MANIFESTATION
+            const resolved = PlaceholderProvider.resolve(entry.text, null)
+            if (entity.nameTag !== resolved) {
+                entity.nameTag = resolved
+            }
         } catch (error) {
-            /* SILENT_REJECTION: Entity may be in a de-loaded sector. */
+            // SILENT_REJECTION: Entity may be in a de-loaded sector.
+            entityCache.delete(entry.id)
         }
     }
 }
+

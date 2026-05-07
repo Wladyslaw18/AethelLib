@@ -64,7 +64,7 @@ export const ClaimStore = {
         WorldStore.set(`claim:${chunkKey}`, claimData)
 
         const indexKey = `playerClaims:${claimData.ownerId}`
-        let index = WorldStore.get(indexKey) || []
+        const index = WorldStore.get(indexKey) || []
         if (!index.includes(chunkKey)) {
             index.push(chunkKey)
             WorldStore.set(indexKey, index)
