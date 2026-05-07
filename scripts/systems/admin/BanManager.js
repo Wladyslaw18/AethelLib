@@ -25,8 +25,33 @@ export const BanManager = {
 
         console.log("[BanManager] Ban Manager online.");
 
+    },
+
+    getBans: () => {
+        return getBans()
+    },
+
+    addBan: (banData) => {
+        try {
+            const WorldStore = Kernel.get("worldStore")
+            const bans = getBans()
+            bans.push(banData)
+
+            // Remove expired bans
+            const now = Date.now()
+            const activeBans = bans.filter(ban =>
+                ban.expires === 0 || ban.expires > now
+            )
+
+            WorldStore.set("ae:bans", activeBans)
+            return true
+        } catch (error) {
+            console.error(`[BanManager] Failed to add ban: ${error}`)
+            return false
+        }
     }
 }
+
 
 let initialized = false
 

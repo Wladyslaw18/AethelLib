@@ -14,6 +14,11 @@ export const BanCommand = {
     usage: "/ae:ban <player> [duration] [reason]",
     permission: "essentials.ban",
     category: "ADMINISTRATION",
+    parameters: [
+        { name: "player", type: "player", optional: true },
+        { name: "duration", type: "string", optional: true },
+        { name: "reason", type: "string", optional: true }
+    ],
 
 
     /* 
@@ -117,7 +122,8 @@ function addBan(banData) {
         bans.push(banData)
         const now = Date.now()
         const activeBans = bans.filter(ban => ban.expires === 0 || ban.expires > now)
-        world.setDynamicProperty("ae:bans", JSON.stringify(activeBans))
+        const Database = Kernel.get("database")
+        Database.set("ae:bans", activeBans)
         return true
     } catch (error) {
         console.error(`[BanCommand] BLACKLIST_COMMIT_FAILURE: ${error}`)
@@ -130,8 +136,9 @@ function addBan(banData) {
  */
 function getBans() {
     try {
-        const stored = world.getDynamicProperty("ae:bans")
-        return (typeof stored === "string") ? JSON.parse(stored) : []
+        const Database = Kernel.get("database")
+        const stored = Database.get("ae:bans")
+        return stored || []
     } catch (error) {
         console.error(`[BanCommand] BLACKLIST_LOAD_FAILURE: ${error}`)
         return []

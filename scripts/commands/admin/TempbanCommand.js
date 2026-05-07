@@ -4,6 +4,7 @@
 
 import { system, world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 export const TempbanCommand = {
     name: "tempban",
@@ -11,24 +12,31 @@ export const TempbanCommand = {
     usage: "/ae:tempban <playerName> <duration> [reason]",
     permission: "essentials.admin.ban",
     category: "admin",
+    parameters: [
+        { name: "player", type: "player", optional: false  },
+        { name: "duration", type: "string", optional: true  },
+        { name: "reason",   type: "string", optional: true  }
+    ],
 
     execute(_data, player, args) {
-        if (args.length === 0) {
-            player.sendMessage("§cUsage: /ae:tempban <playerName> <duration> [reason]")
-            player.sendMessage("§7Duration examples: 1h, 1d, 1w")
+        if (args.length < 2) {
+            player.sendMessage("§c§l» §7Usage: /ae:tempban <player> <duration> [reason]")
+            player.sendMessage("§7Examples: /ae:tempban Wladyslaw18 1d Spamming")
             return
         }
 
-        const targetName = args[0]
-        const duration = args[1]
-        const reason = args.slice(2).join(" ") || "No reason provided"
-
-        const target = world.getAllPlayers().find(p =>
-            p.name.toLowerCase() === targetName.toLowerCase()
-        )
+        const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args)
 
         if (!target) {
-            player.sendMessage(`§c§l» §7Player '${targetName}' not found`)
+            player.sendMessage(`§c§l» §7Player '${args[0]}' not found or is offline.`)
+            return
+        }
+
+        const duration = args[consumedArgs]
+        const reason = args.slice(consumedArgs + 1).join(" ") || "No reason provided"
+
+        if (!duration) {
+            player.sendMessage("§c§l» §7Please provide a duration (e.g. 1h, 1d, 1w).")
             return
         }
 
@@ -60,22 +68,24 @@ export const TempbanCommand = {
             temp: true
         }
 
-        if (addBan(banData)) {
+        const BanManager = Kernel.get("admin")
+        if (BanManager.addBan(banData)) {
             // Kick player immediately
-            system.run(() => {
+            Kernel.system.run(() => {
                 try {
-                    // DISCONNECT_V2: Use native kick command as .disconnect() is deprecated.
-                    player.runCommand(`kick "${target.name}" §c§l[TEMPORARY BAN]\n§eReason: ${reason}`)
+                    // INDUSTRIAL_TERMINATION_PROTOCOL
+                    // We use system.runCommand to ensure the kick executes with elevated administrative permissions.
+                    Kernel.system.runCommand(`kick \"${target.name}\" §c§l[TEMPORARY BAN]\n§eReason: ${reason}`)
 
                 } catch (error) {
-                    console.error(`Failed to kick tempbanned player ${targetName}: ${error}`)
+                    console.error(`Failed to kick tempbanned player ${target.name}: ${error}`)
                 }
             })
 
             // Announce tempban
             const banMessage = formatBanMessage(banData)
             const PermissionManager = Kernel.get("permissions")
-            world.getAllPlayers().forEach(p => {
+            Kernel.world.getAllPlayers().forEach(p => {
                 if (PermissionManager.hasPermission(p, "essentials.admin.notify") || p.id === player.id) {
                     p.sendMessage(banMessage)
                 }
@@ -107,33 +117,9 @@ function parseDuration(duration) {
     return amount * (multipliers[unit] || 0)
 }
 
-function addBan(banData) {
-    try {
-        const bans = getBans()
-        bans.push(banData)
-
-        // Remove expired bans
-        const now = Date.now()
-        const activeBans = bans.filter(ban =>
-            ban.expires === 0 || ban.expires > now
-        )
-
-        world.setDynamicProperty("ae:bans", JSON.stringify(activeBans))
-        return true
-    } catch (error) {
-        console.error(`Failed to add tempban: ${error}`)
-        return false
-    }
-}
-
 function getBans() {
-    try {
-        const stored = world.getDynamicProperty("ae:bans")
-        return (typeof stored === "string") ? JSON.parse(stored) : []
-    } catch (error) {
-        console.error(`Failed to load bans: ${error}`)
-        return []
-    }
+    const BanManager = Kernel.get("admin")
+    return BanManager.getBans()
 }
 
 function formatBanMessage(banData) {
@@ -157,4 +143,5 @@ function formatTimeRemaining(milliseconds) {
         return `${minutes}m`
     }
 }
+
 

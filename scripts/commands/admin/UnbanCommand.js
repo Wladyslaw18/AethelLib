@@ -14,13 +14,17 @@ export const UnbanCommand = {
     usage: "/ae:unban <player_identifier>",
     permission: "essentials.admin.ban",
     category: "Admin",
+    parameters: [
+        { name: "playerName", type: "string", optional: true }
+    ],
 
     /* 
      * VECTOR_EXECUTION_PIPELINE
      */
     execute(_data, player, args) {
         if (args.length < 1) {
-            player.sendMessage("[Manual] Syntax Error: Player identifier required.");
+            player.sendMessage("§c§l» §7Usage: /ae:unban <playerName>");
+            player.sendMessage("§e§l» §fTip: §7Use the exact name the player was banned under.");
             return
         }
 
@@ -28,7 +32,7 @@ export const UnbanCommand = {
         
         try {
             const bans = getBans()
-            const banIndex = bans.findIndex(ban => ban.playerName === playerName)
+            const banIndex = bans.findIndex(ban => ban.playerName && ban.playerName.toLowerCase() === playerName.toLowerCase())
             
             if (banIndex === -1) {
                 player.sendMessage(`§c§l» §7No ban record found for '${playerName}'.`);
@@ -40,7 +44,8 @@ export const UnbanCommand = {
              * REGISTRY_DE-REGISTRATION
              */
             bans.splice(banIndex, 1)
-            world.setDynamicProperty("ae:bans", JSON.stringify(bans))
+            const Database = Kernel.get("database")
+            Database.set("ae:bans", bans)
             
             player.sendMessage(`§a§l» §fPlayer '${playerName}' has been unbanned.`);
 
@@ -51,7 +56,7 @@ export const UnbanCommand = {
             const unbanMessage = `§6§l[§eUNBAN§6§l] §r${playerName} §7was unbanned by §e${player.name}`;
 
             const PermissionManager = Kernel.get("permissions")
-            world.getAllPlayers().forEach(p => {
+            Kernel.world.getAllPlayers().forEach(p => {
                 if (PermissionManager.hasPermission(p, "essentials.admin.notify") || p.id === player.id) {
                     p.sendMessage(unbanMessage)
                 }
@@ -70,8 +75,9 @@ export const UnbanCommand = {
  */
 function getBans() {
     try {
-        const stored = world.getDynamicProperty("ae:bans")
-        return (typeof stored === "string") ? JSON.parse(stored) : []
+        const Database = Kernel.get("database")
+        const stored = Database.get("ae:bans")
+        return stored || []
     } catch (error) {
         console.error(`[UnbanCommand] REGISTRY_READ_FAILURE: ${error}`)
         return []
