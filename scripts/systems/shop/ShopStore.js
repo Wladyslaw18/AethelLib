@@ -56,12 +56,16 @@ export const ShopStore = {
      * 4. Trigger inventory-injection protocol.
      * 5. Refund credits if the injection fails (Failsafe logic).
      */
-    purchaseItem(player, itemId, quantity) {
+    async purchaseItem(player, itemId, quantity) {
         const Economy = Kernel.get("economy")
-        const shopData = this.getShopData()
-        const item = MINECRAFT_ITEMS[itemId] || { name: itemId, price: 100 }
+        const Database = Kernel.get("database")
         
-        const price = shopData.prices[itemId] || item.price
+        // Resolve price from industrial registry or fallback to legacy manifest
+        let price = Database.get(`shop:price:${itemId}`)
+        if (price === null) {
+            price = MINECRAFT_ITEMS[itemId]?.price || 100
+        }
+        
         const totalCost = price * quantity
 
         /* 
@@ -79,7 +83,8 @@ export const ShopStore = {
          * We remove the money BEFORE delivering the goods to prevent 
          * transaction-racing exploits.
          */
-        if (Economy.removeMoney(player, totalCost)) {
+        const paymentSuccess = await Economy.removeMoney(player, totalCost)
+        if (paymentSuccess) {
             /* 
              * INVENTORY_INJECTION_PROTOCOL
              * Physically deliver the item stack to the player entity.
@@ -89,7 +94,7 @@ export const ShopStore = {
             if (delivered) {
                 return { 
                     success: true, 
-                    message: `PROCURED: ${quantity}x ${item.name} | COST: ${this.formatMoney(totalCost)}`
+                    message: `PROCURED: ${quantity}x ${itemId.split(":")[1].toUpperCase()} | COST: ${this.formatMoney(totalCost)}`
                 }
             } else {
                 /* 
@@ -98,7 +103,7 @@ export const ShopStore = {
                  * we refund the credits immediately to maintain balance 
                  * integrity.
                  */
-                Economy.addMoney(player, totalCost)
+                await Economy.addMoney(player, totalCost)
                 return { success: false, message: "Inventory buffer overflow! Credits refunded." }
             }
         }
