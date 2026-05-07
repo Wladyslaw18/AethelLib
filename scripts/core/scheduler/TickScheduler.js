@@ -77,20 +77,8 @@ export class TickScheduler {
             } catch (error) {
                 const executionTime = Date.now() - startTime
                 this.#updateTaskStats(task, executionTime, true, error)
-                
                 if (task.retries < task.options.maxRetries) {
                     task.retries++
-                    system.runTimeout(() => {
-                        if (task.running) {
-                            try {
-                                callback()
-                                this.#updateTaskStats(task, 0, false)
-                                task.retries = 0
-                            } catch (retryError) {
-                                this.#updateTaskStats(task, 0, true, retryError)
-                            }
-                        }
-                    }, Math.max(1, Math.floor((task.options.retryDelay * task.retries) / 50)))
                 } else {
                     if (task.options.stopOnError) this.cancel(id)
                 }

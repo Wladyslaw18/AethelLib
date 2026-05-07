@@ -130,7 +130,23 @@ export class DatabaseManager {
      */
     deleteSharded(collectionName, itemId) {
         try {
-            this.delete(`${collectionName}:item:${itemId}`)
+            const key = `${collectionName}:item:${itemId}`
+            
+            // 🚨 NUKE THE ORPHANS BEFORE POINTER DELETION
+            const indexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
+            if (typeof indexData === "string") {
+                try {
+                    const index = JSON.parse(indexData)
+                    for (let i = 0; i < index.shardCount; i++) {
+                        Kernel.world.setDynamicProperty(`${key}:shard_${index.version}_${i}`, undefined)
+                    }
+                    Kernel.world.setDynamicProperty(`${key}:shard_index`, undefined)
+                } catch (e) {
+                    console.error(`[DatabaseManager] ORPHAN_NUKE_FAILURE for '${key}': ${e}`)
+                }
+            }
+            
+            this.delete(key)
             
             const indexKey = `${collectionName}:index`
             let index = this.get(indexKey) || []
@@ -181,10 +197,17 @@ export class DatabaseManager {
      */
     loadFromStorage(key) {
         try {
+            // Priority 1: Check for sharded pointer manifest
+            const indexKey = `${key}:shard_index`
+            if (Kernel.world.getDynamicProperty(indexKey)) {
+                return this.loadSharded(key)
+            }
+
+            // Priority 2: Standard resolution
             const raw = Kernel.world.getDynamicProperty(key)
             return typeof raw === "string" ? JSON.parse(raw) : null
         } catch (error) {
-            console.error(`[DatabaseManager] STORAGE_READ_FAILURE for '${key}': ${error}`)
+            console.error(`[DatabaseManager] RETRIEVAL_FAILURE for '${key}': ${error}`)
             return null
         }
     }
@@ -230,9 +253,11 @@ export class DatabaseManager {
     }
 
     /*
-     * MULTI-SHARD_COMMIT_PROTOCOL
-     * Splits a monolithic JSON payload into segmented shards to bypass 
-     * native size-limitations.
+     * MULTI-SHARD_COMMIT_PROTOCOL (ATOMIC_VERSIONING)
+     * ----------------------------------------------------------------------------
+     * Splits monolithic payloads into segmented shards. Uses a double-buffering 
+     * strategy (v1/v2) to ensure that a crash during the write-loop does not 
+     * corrupt the existing dataset. The index is updated LAST as an atomic commit.
      */
     shardAndWrite(key, data) {
         const serialized = JSON.stringify(data)
@@ -242,20 +267,36 @@ export class DatabaseManager {
             shards.push(serialized.slice(i, i + this.MAX_PROPERTY_SIZE))
         }
 
-        Kernel.world.setDynamicProperty(`${key}:shard_index`, JSON.stringify({
-            shardCount: shards.length,
-            timestamp: Date.now()
-        }))
-
-        for (let i = 0; i < shards.length; i++) {
-            Kernel.world.setDynamicProperty(`${key}:shard_${i}`, shards[i])
+        // Resolve current version to determine the target buffer
+        const currentIndexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
+        let nextVersion = "v1"
+        if (typeof currentIndexData === "string") {
+            try {
+                const currentIndex = JSON.parse(currentIndexData)
+                nextVersion = currentIndex.version === "v1" ? "v2" : "v1"
+            } catch (e) { /* Fallback to v1 */ }
         }
 
-        console.log(`[DatabaseManager] SHARDING_COMPLETE: '${key}' split into ${shards.length} segments.`);
+        // Step 1: Write all shards to the INACTIVE buffer
+        for (let i = 0; i < shards.length; i++) {
+            Kernel.world.setDynamicProperty(`${key}:shard_${nextVersion}_${i}`, shards[i])
+        }
+
+        // Step 2: Atomic Commit - Update the index to point to the new buffer
+        Kernel.world.setDynamicProperty(`${key}:shard_index`, JSON.stringify({
+            shardCount: shards.length,
+            timestamp: Date.now(),
+            version: nextVersion
+        }))
+
+        // Step 3: Cleanup (Optional/Deferred) - Prune old shards if they exist
+        // Note: In high-performance scenarios, we leave cleanup to a background task
+        
+        console.log(`[DatabaseManager] SHARDING_COMPLETE: '${key}' [${nextVersion}] split into ${shards.length} segments.`);
     }
 
     /*
-     * SHARD_RECONSTRUCTION_PIPELINE
+     * SHARD_RECONSTRUCTION_PIPELINE (ATOMIC_RESOLUTION)
      */
     loadSharded(key) {
         try {
@@ -263,12 +304,17 @@ export class DatabaseManager {
             if (!indexData) return null
 
             const index = typeof indexData === "string" ? JSON.parse(indexData) : null
-            if (!index) return null
+            if (!index || !index.version) return null
+            
             const shards = []
+            const version = index.version
 
             for (let i = 0; i < index.shardCount; i++) {
-                const shard = Kernel.world.getDynamicProperty(`${key}:shard_${i}`)
-                if (!shard) return null
+                const shard = Kernel.world.getDynamicProperty(`${key}:shard_${version}_${i}`)
+                if (typeof shard !== "string") {
+                    console.error(`[DatabaseManager] CRITICAL_INTEGRITY_FAILURE: Shard ${i} [${version}] missing or invalid for '${key}'`)
+                    return null
+                }
                 shards.push(shard)
             }
 
@@ -293,11 +339,21 @@ export class DatabaseManager {
     cleanupExpiredData() {
         if (this.cache.size > 1000) {
             const entries = Array.from(this.cache.entries())
-            const toKeep = entries.slice(-500)
-            this.cache.clear()
-            for (const [key, value] of toKeep) {
-                this.cache.set(key, value)
+            const toKeep = new Map()
+
+            // Keep the most recent 500
+            for (const [key, value] of entries.slice(-500)) {
+                toKeep.set(key, value)
             }
+
+            // Must keep dirty keys
+            for (const [key, value] of entries) {
+                if (this.dirtyKeys.has(key)) {
+                    toKeep.set(key, value)
+                }
+            }
+
+            this.cache = toKeep
         }
     }
 
@@ -311,4 +367,5 @@ export class DatabaseManager {
 }
 
 export const Database = new DatabaseManager()
+
 

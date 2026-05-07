@@ -239,13 +239,7 @@ export class CacheManager {
      * Essential for monitoring for database-bloat or memory-leaks.
      */
     static #estimateMemoryUsage(cache) {
-        let size = 0
-        for (const [key, entry] of cache) {
-            size += JSON.stringify(key).length * 2 
-            size += JSON.stringify(entry.value).length * 2
-            size += 64 // STACK_OVERHEAD_ESTIMATE
-        }
-        return size
+        return cache.size * 128 // FAST_ESTIMATION
     }
     
     static #startGlobalCleanup() {
