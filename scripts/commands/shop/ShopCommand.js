@@ -1,23 +1,21 @@
-/**
- * Shop Command - Browse and buy from admin shop with new UI
+import { showShopUI } from "../../ui/economy/ShopUI.js"
+
+/*
+ * INDUSTRIAL_SHOP_ENTRY_VECTOR
+ * ----------------------------------------------------------------------------
+ * The primary entry point for the global industrial shop.
+ * Orchestrates the handshake with the visual Shop Manifest GUI.
+ *
+ * PHILOSOPHY: Trade is accessible via the Obsidian Manifest.
  */
-
-import { showShopUI } from "../../ui/shop/ShopUI.js"
-
 export const ShopCommand = {
     name: "shop",
-    description: "Browse and buy from the admin shop",
-    usage: "!shop",
+    description: "Invokes the visual Industrial Shop interface for asset acquisition.",
+    usage: "/ae:shop",
     permission: "essentials.shop",
-    category: "economy",
+    category: "Economy",
 
-    async execute(data, player, args) {
-        try {
-            await showShopUI(player)
-        } catch (error) {
-            console.error(`Shop command error: ${error}`)
-            player.sendMessage("§cFailed to open shop. Please try again.")
-        }
+    execute(_data, player, _args) {
+        showShopUI(player);
     }
 }
-
