@@ -19,6 +19,7 @@
 *dump*
 ship_payload.ps1
 scripts/ship_payload.ps1
+scripts/*.ps1
 
 # Prevent accidental inclusion of system files
 .DS_Store
