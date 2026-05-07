@@ -1,12 +1,6 @@
-/*
- * CORE_FOUNDATION_BOOTSTRAP
- * ----------------------------------------------------------------------------
- * This module is the staging ground for the primary industrial services. 
- * We dock the database controllers, permission managers, and persistent 
- * store proxies into the Titanium Kernel. 
- *
- * PHILOSOPHY: If this file fails to execute, the server is a paperweight. 
- * Zero tolerance for circular dependencies or uninitialized service pointers.
+/**
+ * Core bootstrap logic
+ * Registers services and initializes core systems.
  */
 
 import { Kernel } from "../core/Kernel.js"
@@ -34,21 +28,22 @@ import { TPAStore } from "../systems/tpa/TpaStore.js"
 import { TpaHandshake } from "../systems/tpa/TpaHandshake.js"
 import { TpaService } from "../systems/tpa/TpaService.js"
 import { TeleportService } from "../systems/teleport/TeleportService.js"
+import { PlayerUtils } from "../utils/PlayerUtils.js"
 import { CommandManager } from "../core/commands/CommandManager.js"
+import { ShopStore } from "../systems/economy/ShopStore.js"
+
+
 
 let initialized = false
 
-/*
- * SERVICE_DOCKING_SEQUENCE
- * ----------------------------------------------------------------------------
- * Handshakes with the Kernel and registers the master service identifiers. 
- * These IDs are used by the Kernel.get() locator throughout the engine.
+/**
+ * Initialize core services
  */
 export function init(early = false) {
     if (initialized && !early) return
     
     if (early) {
-        // 🏛️ EARLY_EXECUTION_NODE: Registry and Manager must dock now to catch startup events.
+        // Register registry and manager early to catch startup events
         Kernel.register("commandRegistry", CommandRegistry)
         Kernel.register("commandManager",  CommandManager)
         CommandManager.init();
@@ -56,18 +51,20 @@ export function init(early = false) {
     }
 
     initialized = true
-    /* DATA_PERSISTENCE_LAYER */
+
+    // Data layer
     Kernel.register("database",    Database)
     Kernel.register("playerStore", PlayerStore)
     Kernel.register("worldStore",  WorldStore)
     Kernel.register("rankStore",   RankStore)
     Kernel.register("keys",        StoreKeys)
 
-    /* ECONOMIC_AND_COMMERCE_LOGIC */
+    // Economy
     Kernel.register("economy",     EconomyStore)
+    Kernel.register("shopStore",   ShopStore)
     Kernel.register("chestShopStore", ChestShopStore)
 
-    /* SOCIAL_AND_PERMISSIONS_ENGINE */
+    // Social & Permissions
     Kernel.register("ranks",       RankSystem)
     Kernel.register("chat",        ChatSystem)
     Kernel.register("admin",       BanManager)
@@ -75,7 +72,7 @@ export function init(early = false) {
     Kernel.register("formatter",   RankFormatter)
     Kernel.register("muteStore",   MuteStore)
 
-    /* SPATIAL_AND_TELEPORTATION_SERVICES */
+    // Teleportation
     Kernel.register("homeStore",   HomeStore)
     Kernel.register("warpStore",   WarpStore)
     Kernel.register("tpaStore",    TPAStore)
@@ -83,17 +80,21 @@ export function init(early = false) {
     Kernel.register("tpaService",  TpaService)
     Kernel.register("teleportService", TeleportService)
 
-    /* PROTECTION_AND_UTILITY_SERVICES */
+    // Utility
     Kernel.register("signalBus",   SignalBus)
     Kernel.register("placeholders", PlaceholderProvider)
     Kernel.register("claimStore",  ClaimStore)
     Kernel.register("floatingTextStore", FloatingTextStore)
 
+    // Initialize systems
+    PlayerUtils.init()
     TpaService.init()
     TeleportService.init()
     RankSystem.init()
     ChatSystem.init()
     BanManager.init()
 
-    console.log("[AethelLib] CORE_FOUNDATION_DOCKED | Total Services: " + Object.keys(Kernel).length);
+    console.log("[Kernel] Services initialized. Total: " + Kernel.size);
 }
+
+

@@ -29,7 +29,6 @@ export function init() {
     CommandManager.refreshAliases()
     
     /* KERNEL_FINALIZATION */
-    Kernel.init()
 
     console.log("[AethelLib] COMMAND_BOOTSTRAP_COMPLETE | Vectors Loaded: " + CommandRegistry.getAll().length);
 }
