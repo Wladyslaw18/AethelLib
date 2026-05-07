@@ -3,6 +3,7 @@ import { system } from "@minecraft/server"
 import { WarpStore } from "../../systems/teleport/WarpStore.js"
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
+import { CommandHandler } from "../../commands/base/CommandHandler.js"
 
 /*
  * WARP_UI_CONTROLLER
@@ -39,6 +40,6 @@ export async function showWarpUI(player) {
     if (!selectedName) return
 
     // Execute Warp via command to handle cooldowns/permissions
-    player.runCommand(`ae:warp "${selectedName}"`)
+    CommandHandler.executeCommand(player, `/ae:warp "${selectedName}"`)
 }
 

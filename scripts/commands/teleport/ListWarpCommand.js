@@ -12,7 +12,7 @@ export const ListWarpCommand = {
     permission: "essentials.warp",
     category: "teleport",
 
-    async execute(data, player, args) {
+    async execute(_data, player, _args) {
         const warps = await WarpStore.getWarps()
         const warpNames = Object.keys(warps)
         
@@ -37,4 +37,5 @@ export const ListWarpCommand = {
     }
 
 }
+
 

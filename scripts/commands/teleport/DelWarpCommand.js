@@ -12,8 +12,11 @@ export const DelWarpCommand = {
     usage: "/ae:delwarp <name>",
     permission: "essentials.warp.delete",
     category: "teleport",
+    parameters: [
+        { name: "warpName", type: "string", optional: false }
+    ],
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const name = args[0]
         
         if (!name) {
@@ -40,4 +43,6 @@ export const DelWarpCommand = {
 
     }
 }
+
+
 

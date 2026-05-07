@@ -9,7 +9,7 @@ export const SpawnCommand = {
     permission: "essentials.spawn",
     category: "teleport",
 
-    async execute(data, player, args) {
+    async execute(_data, player, _args) {
         const spawn = await WarpStore.getWarp("spawn")
         const teleportService = Kernel.get("teleportService")
         
@@ -23,4 +23,5 @@ export const SpawnCommand = {
         player.sendMessage("§a§l» §fTeleported to spawn.");
     }
 }
+
 

@@ -8,11 +8,15 @@ export const WarpCommand = {
     usage: "/ae:warp <waypoint_identifier>",
     permission: "essentials.warp",
     category: "TELEPORTATION",
+    parameters: [
+        { name: "warpName", type: "string", optional: true }
+    ],
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const name = args[0]
-        if (!name) {
+        if (!name || typeof name !== "string") {
             player.sendMessage("§c§l» §7Usage: /ae:warp <warp_name>");
+            player.sendMessage("§e§l» §fTip: §7Type a valid warp name to teleport.");
             return
         }
 

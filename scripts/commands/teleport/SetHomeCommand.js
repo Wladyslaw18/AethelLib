@@ -13,8 +13,11 @@ export const SetHomeCommand = {
     usage: "/ae:sethome <name>",
     permission: "essentials.home",
     category: "teleport",
+    parameters: [
+        { name: "homeName", type: "string", optional: true }
+    ],
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const name = args[0]
 
         if (!name) {
@@ -39,17 +42,24 @@ export const SetHomeCommand = {
         const location = player.location
         const dimension = player.dimension.id
 
+        const homeCount = await HomeStore.getHomeCount(player);
+        const homeLimit = RankSystem.getPermission(player, "home.limit") ?? 10;
+
+        if (homeCount >= homeLimit) {
+            player.sendMessage(`§c§l» §7Failed to set home. Limit: §e${homeCount}/${homeLimit}§7.`);
+            return;
+        }
+
         const success = await HomeStore.setHome(player, name, location, dimension)
 
         if (success) {
             player.sendMessage(`§a§l» §fHome §e${name}§f has been set.`);
         } else {
-
-            const homeCount = await HomeStore.getHomeCount(player)
-            const homeLimit = RankSystem.getPermission(player, "home.limit") ?? 10
-            player.sendMessage(`§c§l» §7Failed to set home. Limit: §e${homeCount}/${homeLimit}§7.`);
+            player.sendMessage(`§c§l» §7Failed to set home.`);
         }
 
     }
 }
+
+
 

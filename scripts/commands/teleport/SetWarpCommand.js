@@ -12,8 +12,11 @@ export const SetWarpCommand = {
     usage: "/ae:setwarp <name>",
     permission: "essentials.warp.set",
     category: "teleport",
+    parameters: [
+        { name: "warpName", type: "string", optional: false }
+    ],
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const name = args[0]
         
         if (!name) {
@@ -38,6 +41,12 @@ export const SetWarpCommand = {
         const location = player.location
         const dimension = player.dimension.id
 
+        const warps = await WarpStore.getWarps();
+        if (warps.length >= 50) {
+            player.sendMessage(`§c§l» §7Failed to set warp. Global server limit (50) reached.`);
+            return;
+        }
+        
         const success = await WarpStore.setWarp(name, location, dimension, player.name)
         
         if (success) {
@@ -48,4 +57,6 @@ export const SetWarpCommand = {
 
     }
 }
+
+
 

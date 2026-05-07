@@ -22,6 +22,11 @@ export const TeleportService = {
             dimensionId: player.dimension.id
         })
 
+        if (!this._isLocationSafe(destination, dimensionId || player.dimension.id)) {
+            player.sendMessage("§c§l» §7Teleport failed: Destination is unsafe!")
+            return false
+        }
+
         try {
             player.teleport(destination, {
                 dimension: dimensionId ? Kernel.world.getDimension(dimensionId) : player.dimension,
@@ -35,15 +40,36 @@ export const TeleportService = {
     },
 
     /* 
+     * SPATIAL_SAFETY_PROBE
+     * Checks if the destination block is hazardous (lava/fire/void).
+     */
+    _isLocationSafe(location, dimensionId) {
+        try {
+            const dim = Kernel.world.getDimension(dimensionId)
+            const block = dim.getBlock(location)
+            if (!block) return true // Chunk not loaded, assume safe or let native handle
+            
+            const typeId = block.typeId
+            if (typeId.includes("lava") || typeId.includes("fire")) return false
+            if (location.y < -64) return false // Void check
+            
+            return true
+        } catch {
+            return true // Failsafe
+        }
+    },
+
+    /* 
      * TEMPORAL_STABILIZATION_VECTOR
      * Executes a delayed teleportation with stability checks.
      */
     async teleportWithWait(player, destination, dimensionId, waitTime) {
         if (!player.isValid) return false
         
+        const time = Math.max(0, parseInt(waitTime) || 0)
         const startPos = { x: player.location.x, y: player.location.y, z: player.location.z }
         
-        for (let i = waitTime; i > 0; i--) {
+        for (let i = time; i > 0; i--) {
             if (!player.isValid) return false
             
             player.onScreenDisplay.setActionBar(`§6§l» §eTeleporting in §f${i}s§e...`);
@@ -66,7 +92,12 @@ export const TeleportService = {
 
         }
 
-        return this.teleport(player, destination, dimensionId);
+        return new Promise(resolve => {
+            Kernel.system.run(() => {
+                const success = this.teleport(player, destination, dimensionId);
+                resolve(success);
+            });
+        });
     },
 
     /* 
@@ -100,6 +131,9 @@ export const TeleportService = {
                     dimensionId: player.dimension.id
                 })
             }
+        })
+        Kernel.world.afterEvents.playerLeave.subscribe((event) => {
+            LAST_POS_STORE.delete(event.playerId)
         })
         console.log("[TeleportService] Teleport Service online.");
 

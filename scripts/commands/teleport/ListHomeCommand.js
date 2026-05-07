@@ -12,7 +12,7 @@ export const ListHomeCommand = {
     permission: "essentials.home",
     category: "teleport",
 
-    async execute(data, player, args) {
+    async execute(_data, player, _args) {
         const homes = await HomeStore.getHomes(player)
         const homeNames = Object.keys(homes)
         
@@ -36,4 +36,5 @@ export const ListHomeCommand = {
     }
 
 }
+
 

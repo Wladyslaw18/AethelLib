@@ -18,6 +18,9 @@ export const GoHomeCommand = {
     usage: "/ae:home <anchor_identifier>",
     permission: "essentials.home",
     category: "TELEPORTATION",
+    parameters: [
+        { name: "homeName", type: "string", optional: false }
+    ],
 
     /* 
      * MIGRATION_EXECUTION_PIPELINE

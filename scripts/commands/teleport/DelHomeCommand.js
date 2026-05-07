@@ -11,8 +11,11 @@ export const DelHomeCommand = {
     usage: "/ae:delhome <name>",
     permission: "essentials.home",
     category: "teleport",
+    parameters: [
+        { name: "homeName", type: "string", optional: false }
+    ],
 
-    async execute(data, player, args) {
+    async execute(_data, player, args) {
         const name = args[0]
         
         if (!name) {
@@ -39,4 +42,6 @@ export const DelHomeCommand = {
 
     }
 }
+
+
 
