@@ -3,6 +3,7 @@
  */
 
 import { world, system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js"
 
 export class BanknoteStore {
     static getBanknoteId() {
@@ -73,24 +74,26 @@ export class BanknoteStore {
     static extractBanknoteData(item) {
         if (!this.isBanknoteItem(item)) return null
         
-        const lore = item.getLore()
-        const idLine = lore.find(line => line.startsWith("§8ID: "))
+        let noteId = null;
+        try { noteId = item.getDynamicProperty("ae:banknote_id") } catch (e) {}
+
+        if (!noteId) {
+            const lore = item.getLore()
+            const idLine = lore?.find(line => line.startsWith("§8ID: "))
+            if (idLine) noteId = idLine.replace("§8ID: ", "")
+        }
         
-        if (!idLine) return null
-        
-        const noteId = idLine.replace("§8ID: ", "")
-        
-        // For now, we'll store the banknote data in world properties
-        // In a real implementation, this would be stored in the item's NBT
+        if (!noteId) return null
         return this.getBanknoteData(noteId)
     }
 
     static storeBanknoteData(banknote) {
         try {
+            const Database = Kernel.get("database")
             const banknotes = this.getAllBanknotes()
             banknotes[banknote.id] = banknote
             
-            world.setDynamicProperty("ae:banknotes", JSON.stringify(banknotes))
+            Database.set("ae:banknotes", banknotes)
             return true
         } catch (error) {
             console.error(`Failed to store banknote data: ${error}`)
@@ -110,8 +113,9 @@ export class BanknoteStore {
 
     static getAllBanknotes() {
         try {
-            const stored = world.getDynamicProperty("ae:banknotes")
-            return stored ? JSON.parse(String(stored)) : {}
+            const Database = Kernel.get("database")
+            const stored = Database.get("ae:banknotes")
+            return stored || {}
         } catch (error) {
             console.error(`Failed to load banknotes: ${error}`)
             return {}
@@ -120,11 +124,12 @@ export class BanknoteStore {
 
     static markRedeemed(noteId) {
         try {
+            const Database = Kernel.get("database")
             const banknotes = this.getAllBanknotes()
             if (banknotes[noteId]) {
                 banknotes[noteId].redeemed = true
                 banknotes[noteId].redeemedAt = Date.now()
-                world.setDynamicProperty("ae:banknotes", JSON.stringify(banknotes))
+                Database.set("ae:banknotes", banknotes)
                 return true
             }
             return false
@@ -150,7 +155,8 @@ export class BanknoteStore {
         }
         
         if (cleaned > 0) {
-            world.setDynamicProperty("ae:banknotes", JSON.stringify(banknotes))
+            const Database = Kernel.get("database")
+            Database.set("ae:banknotes", banknotes)
             console.log(`Cleaned up ${cleaned} old redeemed banknotes`)
         }
     }

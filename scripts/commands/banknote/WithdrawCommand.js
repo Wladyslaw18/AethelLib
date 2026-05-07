@@ -5,25 +5,29 @@
 import { system, ItemStack } from "@minecraft/server"
 import { BanknoteStore } from "../../systems/banknote/BanknoteStore.js"
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
+import { ValidationHelper } from "../../utils/ValidationHelper.js"
 
 export const WithdrawCommand = {
     name: "withdraw",
     description: "Convert money to physical banknotes",
-    usage: "!withdraw <amount>",
+    usage: "/ae:withdraw <amount>",
     permission: "essentials.withdraw",
     category: "economy",
+    parameters: [
+        { name: "amount", type: "int", optional: false }
+    ],
 
     execute(_data, player, args) {
         if (args.length === 0) {
-            player.sendMessage("§cUsage: !withdraw <amount>")
-            player.sendMessage("§7Example: !withdraw 1000")
+            player.sendMessage("§cUsage: /ae:withdraw <amount>")
+            player.sendMessage("§7Example: /ae:withdraw 1000")
             return
         }
 
-        const amount = parseInt(args[0])
+        const amount = Math.floor(parseFloat(args[0]))
         
-        if (isNaN(amount) || amount <= 0) {
-            player.sendMessage("§cAmount must be a positive number")
+        if (!ValidationHelper.isValidMoney(amount)) {
+            player.sendMessage("§c§l» §7Invalid liquidity amount. Exceeds safe industrial bounds.");
             return
         }
 
@@ -102,12 +106,13 @@ function createBanknotes(player, totalAmount) {
             const item = new ItemStack(BanknoteStore.getBanknoteId(), 1)
             item.nameTag = BanknoteStore.getBanknoteName(denom)
             item.setLore(BanknoteStore.getBanknoteLore(banknote))
+            try { item.setDynamicProperty("ae:banknote_id", banknote.id) } catch (e) {}
             
             // Give item to player
             const container = player.getComponent("inventory").container
-            const success = container.addItem(item)
+            const leftover = container.addItem(item)
             
-            if (success) {
+            if (leftover === undefined) {
                 remaining -= denom
                 created++
             } else {

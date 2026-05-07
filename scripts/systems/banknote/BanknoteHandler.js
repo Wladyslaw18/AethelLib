@@ -65,14 +65,14 @@ export class BanknoteHandler {
 
     static extractBanknoteFromItem(item) {
         try {
+            let noteId = item.getDynamicProperty("ae:banknote_id")
+
             const lore = item.getLore()
             if (!lore || lore.length === 0) return null
 
-            // Parse lore to extract banknote data
             let amount = 0
             let timestamp = 0
             let creator = ""
-            let noteId = ""
 
             for (const line of lore) {
                 if (line.startsWith("§6Value: §e$")) {
@@ -82,7 +82,7 @@ export class BanknoteHandler {
                     timestamp = new Date(dateStr).getTime()
                 } else if (line.startsWith("§7By: §f")) {
                     creator = line.replace("§7By: §f", "")
-                } else if (line.startsWith("§8ID: ")) {
+                } else if (!noteId && line.startsWith("§8ID: ")) {
                     noteId = line.replace("§8ID: ", "")
                 }
             }
