@@ -5,7 +5,8 @@
     "description": "§7AethelEssentials BETA OP!\n§c[REQUIRED] ENABLE BETA API!",
     "uuid": "c0953459-e159-42b6-9090-08b4825db606",
     "version": [1, 0, 0],
-    "min_engine_version": [1, 26, 20]
+    "min_engine_version": [1, 26, 20],
+    "license": "LGPL"
   },
   "modules": [
     {
