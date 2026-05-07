@@ -1,46 +1,39 @@
 import { ActionFormData } from "@minecraft/server-ui"
+import { system } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
+import { Lang } from "../Lang.js"
+import { UIUtils } from "../UIUtils.js"
 
 /*
- * INDUSTRIAL_SPATIAL_REGISTRY_ORCHESTRATOR
+ * HOME_UI_CONTROLLER
  * ----------------------------------------------------------------------------
- * Handles the visual manifestation of entity-specific spatial coordinates 
- * (Homes). Orchestrates the mapping of raw coordinate data into the 
- * ActionFormData buffer for industrial-grade navigation.
- *
- * PHILOSOPHY: Spatial anchors are the waypoints of the empire. Use 
- * this interface to calibrate and execute relocation vectors.
+ * Handles spatial anchor navigation and management.
  */
 
-/*
- * MASTER_ANCHOR_MANIFEST_UI
- * Queries the HomeStore for all active pointers associated with the 
- * entity identifier and generates an interactive navigation manifest.
- */
 export async function showHomeUI(player) {
     const HomeStore = Kernel.get("homeStore")
     const homes = await HomeStore.getHomes(player)
     const homeNames = Object.keys(homes)
 
     const form = new ActionFormData()
-        .title("§0§l» §6§lSPATIAL_REGISTRY§0 «")
+        .title(Lang.UI.HOMES_TITLE)
         .body(homeNames.length > 0
-            ? `§7Active_Nodes: §e${homeNames.length}\n§7Status: §aLINKED`
-            : "§cERROR: NO_SPATIAL_ENTRIES_FOUND\n§7Execute !sethome to calibrate a node.")
+            ? `§7Active Anchors: §e${homeNames.length}`
+            : "§cNO HOMES FOUND.")
 
-    form.button("§c[RETURN_TO_ROOT]")
+    form.button("§c§l[BACK]", "textures/ui/refresh")
 
     for (const name of homeNames) {
         const home = homes[name]
-        form.button(`§l${name.toUpperCase()}\n§8COORD: ${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}`)
+        form.button(`§f§l${name.toUpperCase()}\n§8COORD: ${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}`, "textures/items/map_filled")
     }
 
-    const response = await form.show(player)
+    const response = await UIUtils.showForm(player, form)
     if (response.canceled) return
 
     if (response.selection === 0) {
         const { showMainGUI } = await import("../MainGUI.js")
-        await showMainGUI(player)
+        system.run(() => showMainGUI(player))
         return
     }
 
@@ -48,23 +41,18 @@ export async function showHomeUI(player) {
     const selectedName = homeNames[selectedIndex]
     if (!selectedName) return
 
-    await showHomeActions(player, selectedName, homes[selectedName])
+    system.run(() => showHomeActions(player, selectedName, homes[selectedName]))
 }
 
-/*
- * ANCHOR_ACTION_MANIFEST
- * Orchestrates the specific execution vectors for a selected spatial node: 
- * Migration, Decommission, or Return.
- */
 async function showHomeActions(player, name, home) {
     const form = new ActionFormData()
-        .title(`§6NODE_CALIBRATION: ${name.toUpperCase()}`)
-        .body(`§7Spatial_Target: §e${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}\n§7Dimension_ID: §e${home.dimension}`)
-        .button("§l[EXECUTE_MIGRATION]")
-        .button("§c[PURGE_DATA_ENTRY]")
-        .button("§7[RETURN_TO_MANIFEST]")
+        .title(Lang.GOLD + "DETAILS: " + name.toUpperCase())
+        .body(`§7Target: §e${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}\n§7Dim: §e${home.dimension}`)
+        .button("§a§lTELEPORT\n§8Relocate to anchor", "textures/items/ender_pearl")
+        .button("§c§lDELETE\n§8Remove anchor", "textures/ui/cancel")
+        .button("§7§l[BACK]", "textures/ui/refresh")
 
-    const response = await form.show(player)
+    const response = await UIUtils.showForm(player, form)
     if (response.canceled) return
 
     switch (response.selection) {
@@ -76,9 +64,9 @@ async function showHomeActions(player, name, home) {
                         { x: home.x + 0.5, y: home.y, z: home.z + 0.5 },
                         { dimension: targetDim }
                     )
-                    player.sendMessage(`§aMIGRATION_SUCCESSFUL: Relocated to node ${name}.`);
+                    player.sendMessage(Lang.SUCCESS + `TELEPORTED: Arrived at ${name}.`);
                 } catch (error) {
-                    player.sendMessage("§cMIGRATION_FAILURE: SPATIAL_STABILIZATION_COLLAPSE");
+                    player.sendMessage(Lang.ERROR + "TELEPORT FAILURE.");
                 }
             })
             break
@@ -87,13 +75,15 @@ async function showHomeActions(player, name, home) {
             const HomeStore = Kernel.get("homeStore")
             const success = await HomeStore.deleteHome(player, name)
             player.sendMessage(success
-                ? `§aPURGE_SUCCESSFUL: Spatial node ${name} decommissioned.`
-                : "§cPURGE_FAILURE: DATABASE_REJECTION");
+                ? Lang.SUCCESS + `DELETED: Anchor ${name} removed.`
+                : Lang.ERROR + "DELETE FAILURE.");
+            system.run(() => showHomeUI(player))
             break
         }
         case 2: {
-            await showHomeUI(player)
+            system.run(() => showHomeUI(player))
             break
         }
     }
 }
+

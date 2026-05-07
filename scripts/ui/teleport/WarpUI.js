@@ -1,60 +1,44 @@
 import { ActionFormData } from "@minecraft/server-ui"
-import { Kernel } from "../../core/Kernel.js"
+import { system } from "@minecraft/server"
+import { WarpStore } from "../../systems/teleport/WarpStore.js"
+import { Lang } from "../Lang.js"
+import { UIUtils } from "../UIUtils.js"
 
 /*
- * INDUSTRIAL_WAYPOINT_ORCHESTRATOR
+ * WARP_UI_CONTROLLER
  * ----------------------------------------------------------------------------
- * Handles the visual manifestation of global spatial waypoints (Warps). 
- * Orchestrates the mapping of the server-wide waypoint registry into the 
- * ActionFormData buffer for public navigation.
- *
- * PHILOSOPHY: Waypoints are the industrial nodes of the world. Use this 
- * interface to execute high-speed migration to public sectors.
+ * Visual interface for public waypoints.
  */
+
 export async function showWarpUI(player) {
-    const WarpStore = Kernel.get("warpStore")
     const warps = await WarpStore.getWarps()
     const warpNames = Object.keys(warps)
 
     const form = new ActionFormData()
-        .title("§0§l» §6§lWAYPOINT_REGISTRY§0 «")
-        .body(warpNames.length > 0
-            ? `§7Public_Nodes: §e${warpNames.length}\n§7Status: §aBROADCASTING`
-            : "§cERROR: NO_WAYPOINTS_FOUND\n§7System waypoints are currently offline.")
+        .title(Lang.GOLD + "WAYPOINTS")
+        .body(warpNames.length > 0 
+            ? `§7Available Waypoints: §e${warpNames.length}`
+            : "§cNO WAYPOINTS CONFIGURED.")
 
-    form.button("§c[RETURN_TO_ROOT]")
+    form.button("§c§l[BACK]", "textures/ui/refresh")
 
     for (const name of warpNames) {
-        const warp = warps[name]
-        const dimName = (warp.dimension || "overworld").replace("minecraft:", "").toUpperCase()
-        form.button(`§l${name.toUpperCase()}\n§8SECTOR: ${dimName}`)
+        form.button(`§f§l${name.toUpperCase()}\n§8Public waypoint`, "textures/items/ender_eye")
     }
 
-    const response = await form.show(player)
-    if (response.canceled) return
+    const res = await UIUtils.showForm(player, form)
+    if (res.canceled) return
 
-    if (response.selection === 0) {
+    if (res.selection === 0) {
         const { showMainGUI } = await import("../MainGUI.js")
-        await showMainGUI(player)
+        system.run(() => showMainGUI(player))
         return
     }
 
-    const selectedIndex = response.selection - 1
-    const selectedName = warpNames[selectedIndex]
+    const selectedName = warpNames[res.selection - 1]
     if (!selectedName) return
 
-    const warp = warps[selectedName]
-
-    Kernel.system.run(() => {
-        try {
-            const targetDim = Kernel.world.getDimension(warp.dimension)
-            player.teleport(
-                { x: warp.x + 0.5, y: warp.y, z: warp.z + 0.5 },
-                { dimension: targetDim }
-            )
-            player.sendMessage(`§aMIGRATION_SUCCESSFUL: Waypoint ${selectedName} reached.`);
-        } catch (error) {
-            player.sendMessage("§cMIGRATION_FAILURE: SPATIAL_STABILIZATION_COLLAPSE");
-        }
-    })
+    // Execute Warp via command to handle cooldowns/permissions
+    player.runCommand(`ae:warp "${selectedName}"`)
 }
+
