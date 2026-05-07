@@ -1,31 +1,25 @@
 import { Kernel } from "../../core/Kernel.js"
 
 /*
- * INDUSTRIAL_THREAT_INTEGRITY_SUITE
+ * Combat Integrity
  * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for monitoring and enforcing 
- * engagement-integrity. Implements an O(1) volatile memory-map for 
- * tracking active combat-tags and a persistent debt-manifest for 
- * penalizing combat-logging events.
- *
- * PHILOSOPHY: Desertion is a capital offense. If an entity severs its 
- * connection during an active engagement, its assets must be liquidated 
- * and its state reset upon re-initialization.
+ * Handles combat tagging and penalizing players who combat-log.
  */
 
-const combatState = new Map() // VOLATILE_ENGAGEMENT_REGISTRY
-const COMBAT_DURATION = 200 // INDUSTRIAL_TAG_TTL (10 seconds)
+
+const combatState = new Map() // Active combat participants
+const COMBAT_DURATION = 200 // Combat duration (10 seconds)
 
 /* 
- * SYSTEM_BOOTSTRAP_PROTOCOL
+ * System Initialization
  */
 export function init() {
     /* 
-     * ENGAGEMENT_INTERCEPTION_VECTOR
-     * Subscribes to the entityHurt event to tag participants in 
-     * industrial-scale combat.
+     * Combat Detection
+     * Subscribes to the entityHurt event to tag participants in combat.
      */
     Kernel.world.afterEvents.entityHurt.subscribe((event) => {
+
         const hurtEntity = event.hurtEntity
         const damagingEntity = event.damageSource?.damagingEntity
 
@@ -39,19 +33,20 @@ export function init() {
 
             Kernel.system.run(() => {
                 if (hurtEntity.isValid && hurtEntity.typeId === "minecraft:player") {
-                    /** @type {import("@minecraft/server").Player} */ (hurtEntity).onScreenDisplay.setActionBar("§c[ENGAGEMENT_DETECTED] STATUS: TAGGED")
+                    /** @type {import("@minecraft/server").Player} */ (hurtEntity).onScreenDisplay.setActionBar("§c§l» §eIn Combat! §cDo not leave! §l«")
                 }
                 if (damagingEntity?.isValid && damagingEntity.typeId === "minecraft:player") {
-                    /** @type {import("@minecraft/server").Player} */ (damagingEntity).onScreenDisplay.setActionBar("§c[ENGAGEMENT_DETECTED] STATUS: TAGGED")
+                    /** @type {import("@minecraft/server").Player} */ (damagingEntity).onScreenDisplay.setActionBar("§c§l» §eIn Combat! §cDo not leave! §l«")
                 }
             })
+
         }
     })
 
     /* 
-     * DESERTION_DETECTION_VECTOR
-     * Monitors the playerLeave event. If an entity de-initializes while 
-     * tagged, its UUID is added to the death-debt manifest.
+     * Combat Logging Detection
+     * Monitors the playerLeave event. If a player leaves while 
+     * tagged, they are marked for a penalty.
      */
     Kernel.world.afterEvents.playerLeave.subscribe((event) => {
         const playerId = event.playerId
@@ -66,11 +61,11 @@ export function init() {
     })
 
     /* 
-     * DEBT_SETTLEMENT_VECTOR
-     * Orchestrates the liquidation of assets for entities re-initializing 
-     * with an active death-debt.
+     * Combat Log Penalty
+     * Handles players who log back in after combat logging.
      */
     Kernel.world.afterEvents.playerSpawn.subscribe((event) => {
+
         if (!event.initialSpawn) return
 
         const player = event.player
@@ -90,7 +85,8 @@ export function init() {
                     player.kill()
 
                     PlayerStore.set(player, "deathDebt", false)
-                    player.sendMessage("§c[INDUSTRIAL_PENALTY] COMBAT_LOGGING_DETECTED: ASSETS_LIQUIDATED");
+                    player.sendMessage("§c§l» §eCombat Logging Detected! §7Your items have been removed.");
+
                 } catch (error) {
                     console.error(`[CombatIntegrity] PENALTY_ORCHESTRATION_FAILURE for ${player.id}:`, error)
                 }

@@ -59,7 +59,7 @@ export class BroadcastService {
             }
         }, 20, {
             name: "BroadcastTicker",
-            condition: () => this.#running && world.getPlayers().length > 0
+            condition: () => this.#running && world.getAllPlayers().length > 0
         })
     }
 
@@ -106,7 +106,7 @@ export class BroadcastService {
         try {
             const rarity = this.#rollRarity()
             const message = this.#getRandomMessage(rarity)
-            const players = world.getPlayers()
+            const players = world.getAllPlayers()
 
             // Send to all online players
             for (const player of players) {
@@ -151,7 +151,7 @@ export class BroadcastService {
     static broadcastNow(message) {
         if (!message || typeof message !== "string") return
 
-        const players = world.getPlayers()
+        const players = world.getAllPlayers()
         for (const player of players) {
             try {
                 player.sendMessage(message)
@@ -170,7 +170,7 @@ export class BroadcastService {
      */
     static testBroadcast(rarity, player = null) {
         const message = this.#getRandomMessage(rarity)
-        const targetPlayers = player ? [player] : world.getPlayers()
+        const targetPlayers = player ? [player] : world.getAllPlayers()
 
         for (const targetPlayer of targetPlayers) {
             try {
