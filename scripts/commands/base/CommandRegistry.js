@@ -12,20 +12,20 @@
 const commands = new Map() // MASTER_COMMAND_BUFFER
 
 export const CommandRegistry = {
-    /*
-     * MODULE_DOCKING_VECTOR
-     * Registers a command into the master buffer. Validates that the 
-     * command satisfies the execution contract before ingestion.
-     *
-     * @param {string} name - The unique identifier.
-     * @param {Object} command - The module instance.
+    /**
+     * Registers a command module.
+     * Supports both (name, module) and (module) signatures.
      */
-    register: (name, command) => {
+    register: (arg1, arg2) => {
+        const command = arg2 || arg1;
+        const name = arg2 ? arg1 : command.name;
+
         if (!name || typeof command.execute !== 'function') {
-            throw new Error('[CommandRegistry] CONTRACT_VIOLATION: Missing identifier or execution logic.');
+            throw new Error(`[CommandRegistry] Invalid command registration for '${name}'`);
         }
-        commands.set(name.toLowerCase(), command)
+        commands.set(name.toLowerCase(), command);
     },
+
 
     /* 
      * O(1)_QUERY_VECTOR
