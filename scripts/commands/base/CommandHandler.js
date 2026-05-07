@@ -1,4 +1,5 @@
 import { Kernel } from "../../core/Kernel.js"
+import { LifecycleController } from "../../core/LifecycleController.js"
 
 /*
  * LEGACY_COMMAND_INTERCEPTOR
@@ -13,7 +14,7 @@ import { Kernel } from "../../core/Kernel.js"
  */
 export const CommandHandler = {
     _initialized: false,
-    _prefix: "!",
+    _prefix: "/",
     _slashCommands: new Map(),
     _commandStats: new Map(),
 
@@ -21,7 +22,7 @@ export const CommandHandler = {
      * SERVICE_BOOTSTRAP
      */
     init() {
-        if (this._initialized) return
+        if (!LifecycleController.boot("commandHandler")) return
         this._initialized = true
 
         /* 
@@ -29,6 +30,7 @@ export const CommandHandler = {
          * Subscribes to the world.beforeEvents.chatSend event to catch 
          * potential commands before they are broadcast to other players.
          */
+        // @ts-ignore
         const chatEvent = Kernel.world.beforeEvents.chatSend || Kernel.world.beforeEvents.chat
         if (chatEvent) {
             chatEvent.subscribe(this._handleChatCommand.bind(this))
@@ -57,6 +59,7 @@ export const CommandHandler = {
         const CommandRegistry = Kernel.get("commandRegistry")
         const commands = CommandRegistry.getAll()
 
+        // @ts-ignore
         const chatEvent = Kernel.world.beforeEvents.chatSend || Kernel.world.beforeEvents.chat
         if (chatEvent) {
             chatEvent.subscribe((event) => {
@@ -87,7 +90,7 @@ export const CommandHandler = {
 
         event.cancel = true // TERMINATE_CHAT_BROADCAST
 
-        const [commandName, ...args] = message.slice(this._prefix.length).trim().split(/\s+/)
+        const [commandName, ...args] = message.slice(this._prefix.length).trim().split(/\s+/).filter(Boolean)
         if (!commandName) return
 
         Kernel.system.run(async () => {
@@ -100,7 +103,7 @@ export const CommandHandler = {
      */
     _handleSlashCommand(event) {
         if (event.id !== "cmd:execute") return
-        if (!event.sourceEntity || !event.sourceEntity.isValid()) return
+        if (!event.sourceEntity || !event.sourceEntity.isValid) return
 
         try {
             const data = JSON.parse(event.message || "{}")
@@ -125,7 +128,7 @@ export const CommandHandler = {
      * 3. Invoke the command.execute() method.
      * 4. Log performance metrics.
      */
-    async _executeCommand(player, commandName, args, source) {
+    async _executeCommand(player, commandName, args, _source) {
         const startTime = Date.now()
         const CommandRegistry = Kernel.get("commandRegistry")
 
@@ -230,7 +233,7 @@ export const CommandHandler = {
         const prefix = this._prefix
 
         if (trimmed.startsWith(prefix)) {
-            const [cmdName, ...args] = trimmed.slice(prefix.length).split(/\s+/)
+            const [cmdName, ...args] = trimmed.slice(prefix.length).trim().split(/\s+/).filter(Boolean)
             await this._executeCommand(player, cmdName, args, "programmatic")
             return true
         }

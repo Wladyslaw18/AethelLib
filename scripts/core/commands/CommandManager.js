@@ -1,7 +1,6 @@
 import { Kernel } from "../Kernel.js";
 import { PlayerUtils } from "../../utils/PlayerUtils.js";
 
-
 /**
  * Manages custom command registration and dispatch.
  * Uses the native custom command registry to avoid chat listener lag.
@@ -18,12 +17,12 @@ export const CommandManager = {
         // Hook into the startup event to register commands
         Kernel.system.beforeEvents.startup.subscribe((ev) => this._injectNativeRegistry(ev));
 
-        console.log(`[CommandManager] Registry online. Namespace: /${this._primaryNS}:`);
+        console.log(`[CommandManager] Registry online. Primary Namespace: /${this._primaryNS}:`);
     },
 
     /**
      * NATIVE_REGISTRY_INJECTION
-     * Injects logic into the /ae: and /ael: namespaces.
+     * Maps the modular registry into the native Bedrock command engine.
      */
     _injectNativeRegistry(event) {
         const Registry = Kernel.get("commandRegistry");
@@ -32,56 +31,46 @@ export const CommandManager = {
 
         Registry.getAll().forEach(name => {
             const def = Registry.get(name);
-            const cmdName = name.startsWith("ae:") ? name.split(":")[1] : name;
             
-            //  CATCH-ALL_PARAMETER_PROTOCOL
-            const mandatory = this._deriveParams(def.parameters, false);
-            let optional = this._deriveParams(def.parameters, true);
-
-            if (!def.parameters || def.parameters.length === 0) {
-                optional = [
-                    { name: "arg1", type: Kernel.CustomCommandParamType.String },
-                    { name: "arg2", type: Kernel.CustomCommandParamType.String },
-                    { name: "arg3", type: Kernel.CustomCommandParamType.String },
-                    { name: "arg4", type: Kernel.CustomCommandParamType.String },
-                    { name: "arg5", type: Kernel.CustomCommandParamType.String }
-                ];
+            // SMART_NAMESPACE_PARSING
+            // If the command already has a namespace (e.g., "plugin:cmd"), we preserve it.
+            // Otherwise, we default to the primary system namespace.
+            let finalName = name;
+            if (!name.includes(":")) {
+                finalName = `${this._primaryNS}:${name}`;
             }
 
-            // Build Primary Config (e.g., /ae:teleport_ask)
             const config = {
-                name: `${this._primaryNS}:${cmdName}`,
-                description: def.description || "Aethelgrad Essential Command",
-
-                permissionLevel: this._mapPerms(def.permission),
-                mandatoryParameters: mandatory,
-                optionalParameters: optional
+                name: finalName,
+                description: def.description || "Aethelgrad Command Vector",
+                permissionLevel: this._mapPerms(),
+                mandatoryParameters: this._deriveParams(def.parameters, false),
+                optionalParameters: this._deriveParams(def.parameters, true)
             };
+
+            // Fallback for commands with no parameters defined
+            if (config.mandatoryParameters.length === 0 && config.optionalParameters.length === 0) {
+                config.optionalParameters = [
+                    { name: "args", type: Kernel.CustomCommandParamType.String }
+                ];
+            }
 
             this._registerSingle(nativeReg, config, def);
             
             // 🚀 FAST_TYPING_ALIASES
             if (def.aliases && Array.isArray(def.aliases)) {
                 def.aliases.forEach(alias => {
-                    // Only register alias if it's different from the primary name
-                    if (alias === cmdName) return;
+                    const aliasName = alias.includes(":") ? alias : `${this._aliasNS}:${alias}`;
+                    if (aliasName === finalName) return;
                     
-                    const aliasConfig = { 
-                        ...config, 
-                        name: `${this._aliasNS}:${alias}` 
-                    };
-                    this._registerSingle(nativeReg, aliasConfig, def);
+                    this._registerSingle(nativeReg, { ...config, name: aliasName }, def);
                 });
             }
         });
 
-        console.log(`[CommandManager] NATIVE_REGISTRY_INJECTED`);
+        console.log(`[CommandManager] GHOST_REGISTRY_SYNC_COMPLETE`);
     },
 
-    /**
-     * PARAMETER_DERIVATION_ENGINE
-     * Translates industrial metadata into native parameter types.
-     */
     _deriveParams(params, isOptional) {
         if (!params || !Array.isArray(params)) return [];
         return params
@@ -94,7 +83,7 @@ export const CommandManager = {
 
     _mapParamType(type) {
         switch(type?.toLowerCase()) {
-            case "player": return Kernel.CustomCommandParamType.String; 
+            case "player": return Kernel.CustomCommandParamType.PlayerSelector; 
             case "int": return Kernel.CustomCommandParamType.Integer;
             case "string": return Kernel.CustomCommandParamType.String;
             case "bool": return Kernel.CustomCommandParamType.Boolean;
@@ -109,7 +98,7 @@ export const CommandManager = {
                 return { status: Kernel.CustomCommandStatus.Success };
             });
         } catch (e) {
-            console.error(`[CommandManager] REGISTRATION_FAILURE [${config.name}]: ${e}`);
+            console.error(`[CommandManager] FAILED_INJECTION [${config.name}]: ${e}`);
         }
     },
 
@@ -117,11 +106,20 @@ export const CommandManager = {
      * UNIFIED_DISPATCH_BRIDGE
      */
     _dispatch(player, cmd, args, vector) {
+        if (!player) return;
+
         try {
-            // 🚀 UNIVERSAL_COOLDOWN_CHECK
+            // 🛡️ SECURITY_&_COOLDOWN_LAYER
             const PM = Kernel.get("permissions");
-            const cooldownSec = PM ? (PM.hasPermission(player, "command.cooldown") ?? 0) : 0;
             
+            // Permission check
+            if (!this._checkAuth(player, cmd.permission)) {
+                player.sendMessage(`§c§l» §7You lack the clearance level for this vector.`);
+                return;
+            }
+
+            // Cooldown logic
+            const cooldownSec = PM ? (PM.hasPermission(player, "command.cooldown") ?? 0) : 0;
             if (cooldownSec > 0) {
                 const now = Kernel.system.currentTick;
                 const last = player.getDynamicProperty("ae:last_cmd_tick") ?? 0;
@@ -132,75 +130,66 @@ export const CommandManager = {
                     player.sendMessage(`§c§l» §7Slow down! Wait §e${remaining}s §7before using another command.`);
                     return;
                 }
-
                 player.setDynamicProperty("ae:last_cmd_tick", now);
             }
 
-            // SMART_PARAMETER_RESOLUTION
+            // 🧠 INTELLIGENT_ARGUMENT_RESOLVER
             const cleanArgs = args.filter(a => a !== undefined).map((arg, index) => {
                 const paramDef = cmd.parameters ? cmd.parameters[index] : null;
                 
-                // If it's already an object (from native selector), use it
-                if (typeof arg === "object") {
-                    if (arg.name && paramDef?.type === "string") return arg.name;
+                // If Bedrock parsed an entity or object
+                if (typeof arg === "object" && arg !== null) {
+                    if (arg.name) return arg.name;
+                    return arg;
+                }
+
+                // If it's a native type like number or boolean, preserve it
+                if (typeof arg === "number" || typeof arg === "boolean") {
                     return arg;
                 }
 
                 const strArg = String(arg);
-
-                // Auto-resolve players if expected
                 if (paramDef?.type?.toLowerCase() === "player") {
                     return this._resolvePlayer(strArg) || strArg;
                 }
-
                 return strArg;
             });
 
+            // ASYNC_EXECUTION_WRAPPER
             Kernel.system.run(() => {
-                if (typeof cmd.execute === "function") {
-                    cmd.execute(null, player, cleanArgs);
-                } else if (typeof cmd.callback === "function") {
-                    const origin = { sourceEntity: player, sourceType: "Entity", vector };
-                    cmd.callback(origin, cleanArgs);
+                try {
+                    if (typeof cmd.execute === "function") {
+                        cmd.execute(null, player, cleanArgs);
+                    } else if (typeof cmd.callback === "function") {
+                        cmd.callback({ sourceEntity: player, sourceType: "Entity", vector }, cleanArgs);
+                    }
+                } catch (execError) {
+                    console.error(`[CommandManager] EXECUTION_CRASH [${cmd.name}]:`, execError);
+                    player.sendMessage(`§c§l» §7Command execution failed due to an internal error.`);
                 }
             });
-        } catch (e) {
-            console.error(`[CommandManager] Dispatch error [${cmd.name}]: ${e}`);
-            player.sendMessage(`§cAn error occurred while executing the command.`);
+        } catch (dispatchError) {
+            console.error(`[CommandManager] DISPATCH_CRASH [${cmd.name}]:`, dispatchError);
         }
     },
 
-    /**
-     * Resolves a string to a player object using fuzzy matching
-     */
     _resolvePlayer(query) {
         return PlayerUtils.findPlayer(query);
     },
 
-
-
-    /**
-     * CLEARANCE_LEVEL_VALIDATION
-     */
     _checkAuth(player, perm) {
-        if (!perm) return true; // Public Vector
+        if (!perm) return true;
         const PM = Kernel.get("permissions");
         if (!PM) return player.hasTag("admin");
         return PM.hasPermission(player, perm);
     },
 
-    /**
-     * NATIVE_PERMISSION_MAPPER
-     * Maps industrial permission nodes to primitive 0-4 levels.
-     */
-    _mapPerms(perm) {
-        if (!perm) return Kernel.CommandPermissionLevel.Any;
-        if (perm.includes("admin")) return Kernel.CommandPermissionLevel.Admin;
-        if (perm.includes("owner") || perm.includes("manage")) return Kernel.CommandPermissionLevel.Owner;
+    _mapPerms() {
         return Kernel.CommandPermissionLevel.Any;
     },
 
-    // Legacy support for bootstrap
-    refreshAliases() {}
+    refreshAliases() {
+        // Handled by init() on startup event
+    }
 };
 
