@@ -2,6 +2,7 @@ import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { system } from "@minecraft/server"
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
+import { CommandHandler } from "../../commands/base/CommandHandler.js"
 
 /*
  * PLAYER_INTERACTION_PROTOCOL
@@ -33,7 +34,7 @@ export async function showPlayerInteractionUI(player, target) {
         case 0: system.run(() => showPayUI(player, target)); break
         case 1: system.run(() => showMessageUI(player, target)); break
         case 2: 
-            player.runCommand(`ae:tpa "${target.name}"`)
+            CommandHandler.executeCommand(player, `/ae:tpa "${target.name}"`)
             const { showPlayersUI } = await import("./PlayerListUI.js")
             system.run(() => showPlayersUI(player))
             break
@@ -51,7 +52,7 @@ async function showPayUI(player, target) {
         return
     }
 
-    player.runCommand(`ae:pay "${target.name}" ${res.formValues[0]}`)
+    CommandHandler.executeCommand(player, `/ae:pay "${target.name}" ${res.formValues[0]}`)
     const { showPlayersUI } = await import("./PlayerListUI.js")
     system.run(() => showPlayersUI(player))
 }
@@ -67,7 +68,7 @@ async function showMessageUI(player, target) {
         return
     }
 
-    player.runCommand(`ae:msg "${target.name}" ${res.formValues[0]}`)
+    CommandHandler.executeCommand(player, `/ae:msg "${target.name}" ${res.formValues[0]}`)
     const { showPlayersUI } = await import("./PlayerListUI.js")
     system.run(() => showPlayersUI(player))
 }
