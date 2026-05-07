@@ -53,7 +53,7 @@ export const MoneyCommand = {
                 const match = id.match(namePattern)
                 if (match) {
                     const name = Database.get(id)
-                    if (name.toLowerCase() === targetName.toLowerCase()) {
+                    if (name && typeof name === "string" && name.toLowerCase() === targetName.toLowerCase()) {
                         foundId = match[1]
                         foundName = name
                         break

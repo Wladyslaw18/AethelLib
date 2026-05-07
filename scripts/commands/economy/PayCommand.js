@@ -1,5 +1,6 @@
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
+import { ValidationHelper } from "../../utils/ValidationHelper.js"
 
 /*
  * Pay Command
@@ -12,33 +13,35 @@ export const PayCommand = {
     description: "Send money to another player",
 
     usage: "/ae:pay <player> <amount>",
-
     permission: "essentials.pay",
     category: "ECONOMY",
-    // No explicit parameters to allow the CommandManager catch-all to handle spaces
+    parameters: [
+        { name: "target", type: "player", optional: false },
+        { name: "amount", type: "int", optional: false }
+    ],
 
     async execute(_data, player, args) {
         if (args.length < 2) {
             player.sendMessage("§c§l» §7Usage: /ae:pay <player> <amount>");
+            player.sendMessage("§e§l» §fTip: §7Type a player name and an amount to send money.");
             return
         }
 
 
         // Resolve player from arguments (handles names with spaces)
-
         const { player: targetPlayer, consumedArgs } = PlayerUtils.resolveFromArgs(args)
         
         if (!targetPlayer) {
-            player.sendMessage(`§c§l» §7Player '${args[0]}' not found.`);
+            player.sendMessage(`§c§l» §7Player '${args[0]}' not found or is offline.`);
             return
         }
 
 
         const amountStr = args.slice(consumedArgs).join(" ")
-        const amount = parseFloat(amountStr)
+        const amount = Math.floor(parseFloat(amountStr))
 
-        if (isNaN(amount) || amount <= 0 || !Number.isFinite(amount)) {
-            player.sendMessage("§c§l» §7Please provide a valid amount.");
+        if (!ValidationHelper.isValidMoney(amount)) {
+            player.sendMessage("§c§l» §7Invalid liquidity amount. Exceeds safe industrial bounds.");
             return
         }
 
@@ -63,8 +66,9 @@ export const PayCommand = {
             player.sendMessage(`§a§l» §fSent §e$${amount.toLocaleString()}§f to §e${targetPlayer.name}§f.`);
             targetPlayer.sendMessage(`§a§l» §fReceived §e$${amount.toLocaleString()}§f from §e${player.name}§f.`);
         } else {
-            player.sendMessage("§c§l» §7Failed to process payment.");
+            player.sendMessage("§c§l» §7Transaction failed. Please try again later.");
         }
 
     }
 }
+
