@@ -3,7 +3,7 @@ import { system } from "@minecraft/server"
 import { EntityComponentTypes } from "@minecraft/server"
 import { AuctionStore } from "../../systems/auction/AuctionStore.js"
 import { AuctionService } from "../../systems/auction/AuctionService.js"
-import { Lang } from "../Lang.js"
+
 import { UIUtils } from "../UIUtils.js"
 
 /*
@@ -109,9 +109,17 @@ export async function showCreateUI(player) {
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || !res.formValues[0]) return
 
+    // 🔥 RE-VERIFY AFTER AWAIT!
+    const currentItem = equippable.getEquipment("Mainhand");
+    if (!currentItem || currentItem.typeId !== item.typeId || currentItem.amount !== item.amount) {
+        player.sendMessage("§c§l» §7Transaction aborted: Asset state changed during UI operation.");
+        return;
+    }
+
     const [_, start, buy, dur] = res.formValues
     AuctionStore.createAuction(player.id, player.name, item.typeId, item.typeId.replace("minecraft:", "").toUpperCase(), item.amount, Number(start), Number(buy), Number(dur))
     equippable.setEquipment("Mainhand", undefined)
     player.sendMessage("§a§l» §fItem listed successfully on the Auction House!")
 }
+
 

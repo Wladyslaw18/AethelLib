@@ -1,24 +1,24 @@
 import { world } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js"
 
 /*
- * INDUSTRIAL_AUCTION_ORCHESTRATOR
+ * AUCTION_DATA_CONTROLLER
  * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for the global trade-manifest. 
- * Manages the persistence, bidding-vectors, and atomic settlement of 
- * industrial asset auctions. 
- *
- * PHILOSOPHY: Trade is the engine of the empire. This module ensures 
- * the integrity of the global trade-registry and prevents liquidity-leaks 
- * during settlement.
+ * Persistence and state-management for auction manifest.
  */
 export class AuctionStore {
+    static formatMoney(amount) {
+        return `§6$§f${amount.toLocaleString()}`
+    }
+
     /* 
-     * GLOBAL_MANIFEST_QUERY
+     * MANIFEST_QUERY
      */
     static getAuctions() {
         try {
-            const stored = world.getDynamicProperty("ae:auctions")
-            return stored ? JSON.parse(String(stored)) : []
+            const Database = Kernel.get("database")
+            const stored = Database.get("ae:auctions")
+            return stored || []
         } catch (error) {
             console.error(`[AuctionStore] MANIFEST_LOAD_FAILURE: ${error}`)
             return []
@@ -26,11 +26,12 @@ export class AuctionStore {
     }
 
     /* 
-     * MANIFEST_COMMIT_PROTOCOL
+     * MANIFEST_COMMIT
      */
     static saveAuctions(auctions) {
         try {
-            world.setDynamicProperty("ae:auctions", JSON.stringify(auctions))
+            const Database = Kernel.get("database")
+            Database.set("ae:auctions", auctions)
             return true
         } catch (error) {
             console.error(`[AuctionStore] MANIFEST_SAVE_FAILURE: ${error}`)
@@ -39,7 +40,7 @@ export class AuctionStore {
     }
 
     /* 
-     * AUCTION_INJECTION_VECTOR
+     * AUCTION_INJECTION
      */
     static createAuction(sellerId, sellerName, itemId, itemName, quantity, startingBid, buyNowPrice, duration = 24) {
         const auctions = this.getAuctions()
@@ -66,9 +67,7 @@ export class AuctionStore {
     }
 
     /* 
-     * BID_CALIBRATION_PROTOCOL
-     * Orchestrates the placement of a bid-node on an active auction. 
-     * Implements an atomic refund-vector for the previous bidder.
+     * BID_PROTOCOL
      */
     static placeBid(auctionId, bidderId, bidderName, bidAmount) {
         const auctions = this.getAuctions()
@@ -93,7 +92,7 @@ export class AuctionStore {
     }
 
     /* 
-     * IMMEDIATE_ACQUISITION_PROTOCOL
+     * ACQUISITION_PROTOCOL
      */
     static buyNow(auctionId, buyerId, buyerName) {
         const auctions = this.getAuctions()
@@ -101,13 +100,13 @@ export class AuctionStore {
 
         if (!auction) return { success: false, message: "AUCTION_NOT_FOUND" }
         if (auction.status !== "active") return { success: false, message: "AUCTION_INACTIVE" }
-        if (!auction.buyNowPrice || auction.buyNowPrice <= 0) return { success: false, message: "ACQUISITION_VECTOR_UNAVAILABLE" }
+        if (!auction.buyNowPrice || auction.buyNowPrice <= 0) return { success: false, message: "ACQUISITION_UNAVAILABLE" }
         if (auction.sellerId === buyerId) return { success: false, message: "SELF_ACQUISITION_PROHIBITED" }
 
         const buyerBalance = this.getPlayerBalance(buyerId)
         if (buyerBalance < auction.buyNowPrice) return { success: false, message: "INSUFFICIENT_LIQUIDITY" }
 
-        if (!this.removePlayerMoney(buyerId, auction.buyNowPrice)) return { success: false, message: "PAYMENT_ORCHESTRATION_FAILURE" }
+        if (!this.removePlayerMoney(buyerId, auction.buyNowPrice)) return { success: false, message: "PAYMENT_FAILURE" }
 
         this.addPlayerMoney(auction.sellerId, auction.buyNowPrice)
 
@@ -121,14 +120,12 @@ export class AuctionStore {
     }
 
     /* 
-     * TEMPORAL_SETTLEMENT_PROTOCOL
-     * Scans the manifest for expired auctions and orchestrates final 
-     * state-transitions and payouts.
+     * EXPIRATION_SETTLEMENT
      */
     static endExpiredAuctions() {
         const auctions = this.getAuctions()
         const now = Date.now()
-        let endedAuctions = []
+        const endedAuctions = []
 
         auctions.forEach(auction => {
             if (auction.status === "active" && now > auction.endTime) {
@@ -150,7 +147,7 @@ export class AuctionStore {
     }
 
     /* 
-     * MANIFEST_QUERY_VECTORS
+     * QUERY_VECTORS
      */
     static getPlayerAuctions(playerId) {
         return this.getAuctions().filter(a => a.sellerId === playerId)
@@ -164,60 +161,65 @@ export class AuctionStore {
     }
 
     /* 
-     * LIQUIDITY_RESTORATION_VECTOR
+     * REFUND_VECTOR
      */
     static refundBid(playerId, amount) {
         this.addPlayerMoney(playerId, amount)
     }
 
     /* 
-     * LIQUIDITY_QUERY_VECTOR
+     * BALANCE_QUERY
      */
     static getPlayerBalance(playerId) {
         try {
-            const balance = world.getDynamicProperty(`ae:balance:${playerId}`)
-            return Number(balance) || 0
+            const Database = Kernel.get("database")
+            const balance = Database.get(`player:${playerId}:money`)
+            return typeof balance === 'number' ? balance : 1000
         } catch (error) {
             console.error(`[AuctionStore] BALANCE_QUERY_FAILURE: ${error}`)
-            return 0
+            return 1000
         }
     }
 
     /* 
-     * LIQUIDITY_MUTATION_VECTORS
+     * BALANCE_MUTATION
      */
     static addPlayerMoney(playerId, amount) {
         try {
+            const Database = Kernel.get("database")
+            const key = `player:${playerId}:money`
             const currentBalance = this.getPlayerBalance(playerId)
-            world.setDynamicProperty(`ae:balance:${playerId}`, currentBalance + amount)
+            Database.set(key, currentBalance + amount)
             return true
         } catch (error) {
-            console.error(`[AuctionStore] LIQUIDITY_INJECTION_FAILURE: ${error}`)
+            console.error(`[AuctionStore] BALANCE_INJECTION_FAILURE: ${error}`)
             return false
         }
     }
 
     static removePlayerMoney(playerId, amount) {
         try {
+            const Database = Kernel.get("database")
+            const key = `player:${playerId}:money`
             const currentBalance = this.getPlayerBalance(playerId)
             if (currentBalance < amount) return false
-            world.setDynamicProperty(`ae:balance:${playerId}`, currentBalance - amount)
+            Database.set(key, currentBalance - amount)
             return true
         } catch (error) {
-            console.error(`[AuctionStore] LIQUIDITY_EXTRACTION_FAILURE: ${error}`)
+            console.error(`[AuctionStore] BALANCE_EXTRACTION_FAILURE: ${error}`)
             return false
         }
     }
 
     /* 
-     * IDENTIFIER_GENERATION_PROTOCOL
+     * ID_GENERATION
      */
     static generateAuctionId() {
         return `AUCTION_${Date.now()}_${Math.random().toString(36).substr(2, 6).toUpperCase()}`
     }
 
     /* 
-     * TEMPORAL_DURATION_RESOLVER
+     * TEMPORAL_RESOLVER
      */
     static getTimeRemaining(endTime) {
         const now = Date.now()
@@ -230,9 +232,7 @@ export class AuctionStore {
     }
 
     /* 
-     * MAINTENANCE_PURGE_PROTOCOL
-     * Decommissions stale auction nodes from the global manifest to 
-     * reclaim memory-heap.
+     * MAINTENANCE_PURGE
      */
     static cleanupOldAuctions() {
         const auctions = this.getAuctions()
@@ -243,5 +243,52 @@ export class AuctionStore {
             this.saveAuctions(filtered)
             console.log(`[AuctionStore] PURGE_COMPLETE: ${originalLength - filtered.length} stale nodes decommissioned.`);
         }
+    }
+
+    /* 
+     * ASSET_RECLAMATION
+     */
+    static claimAsset(auctionId, claimantId) {
+        const auctions = this.getAuctions()
+        const index = auctions.findIndex(a => a.id === auctionId)
+        
+        if (index === -1) return { success: false, message: "NODE_NOT_FOUND" }
+        
+        const auction = auctions[index]
+        if (auction.status === "active") return { success: false, message: "NODE_STILL_ACTIVE" }
+
+        if (auction.status === "sold" && auction.buyerId !== claimantId && auction.sellerId !== claimantId) {
+            return { success: false, message: "UNAUTHORIZED_CLAIM" }
+        }
+
+        // 🔥 ACTUALLY GIVE THE ITEM!
+        const player = Kernel.world.getAllPlayers().find(p => p.id === claimantId);
+        if (player) {
+            const inv = player.getComponent("inventory").container;
+            let remaining = auction.quantity;
+            while (remaining > 0) {
+                const take = Math.min(remaining, 64);
+                inv.addItem(new Kernel.ItemStack(auction.itemId, take));
+                remaining -= take;
+            }
+        }
+
+        auctions.splice(index, 1)
+        this.saveAuctions(auctions)
+        
+        return { success: true, message: "ASSET_RECLAIMED" }
+    }
+
+    /* 
+     * ADMINISTRATIVE_DECOMMISSION
+     */
+    static deleteAuction(auctionId) {
+        const auctions = this.getAuctions()
+        const filtered = auctions.filter(a => a.id !== auctionId)
+        if (filtered.length < auctions.length) {
+            this.saveAuctions(filtered)
+            return true
+        }
+        return false
     }
 }
