@@ -3,7 +3,7 @@
  * List, detail view, delete, ban, teleport
  */
 
-import { ActionFormData, MessageFormData } from "@minecraft/server-ui"
+import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 
 /**
@@ -32,7 +32,7 @@ export async function showAdminReportUI(admin) {
     form.button("§c← Back")
 
     // Report buttons
-    for (const [id, report] of reportEntries) {
+    for (const [_id, report] of reportEntries) {
         const timeAgo = getTimeAgo(report.timestamp)
         const typeColor = report.type === "server" ? "§c" : "§e"
         const typeLabel = report.type === "server" ? "SERVER" : "PLAYER"
@@ -40,6 +40,7 @@ export async function showAdminReportUI(admin) {
         form.button(`${typeColor}[${typeLabel}] §f${report.reporter}${targetLabel}\n§8${timeAgo}`)
     }
 
+    // @ts-ignore
     const response = await form.show(admin)
     if (response.canceled) return
 
