@@ -14,6 +14,13 @@ export const RankAdminCommand = {
     usage: "/ae:rankadmin <subcommand> [args...]",
     permission: "essentials.admin.ranks",
     category: "Admin",
+    parameters: [
+        { name: "subcommand", type: "string", optional: true },
+        { name: "arg1",       type: "string", optional: true  },
+        { name: "arg2",       type: "string", optional: true  },
+        { name: "arg3",       type: "string", optional: true  },
+        { name: "arg4",       type: "string", optional: true  }
+    ],
 
     /* 
      * SUBCOMMAND_ROUTING_ENGINE

@@ -14,6 +14,14 @@ export const BroadcastCommand = {
     permission: "essentials.admin",
     category: "Admin",
     aliases: ["bc"],
+    parameters: [
+        { name: "subcommand", type: "string", optional: true },
+        { name: "arg1",       type: "string", optional: true },
+        { name: "arg2",       type: "string", optional: true },
+        { name: "arg3",       type: "string", optional: true },
+        { name: "arg4",       type: "string", optional: true },
+        { name: "arg5",       type: "string", optional: true }
+    ],
 
     async execute(_data, player, args) {
         const subcommand = args[0]?.toLowerCase()

@@ -1,4 +1,5 @@
-import { system, world } from "@minecraft/server"
+import { system, GameMode } from "@minecraft/server"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 /*
  * Gamemode Command
@@ -13,6 +14,10 @@ export const GamemodeCommand = {
     usage: "/ae:gamemode <player_identifier> <mode_token>",
     permission: "essentials.gamemode",
     category: "Admin",
+    parameters: [
+        { name: "player", type: "player", optional: false },
+        { name: "mode",   type: "string", optional: true }
+    ],
 
     /* 
      * VECTOR_EXECUTION_PIPELINE
@@ -24,22 +29,20 @@ export const GamemodeCommand = {
             return
         }
 
+        // Resolve player — the last arg is always the mode token
+        // Strategy: try args[0] as player, args[last] as mode
+        const modeToken = args[args.length - 1].toLowerCase()
+        const nameArgs = args.slice(0, args.length - 1)
+        const targetName = nameArgs.join(" ")
+        const target = PlayerUtils.findPlayer(targetName)
 
-        const targetName = args[0]
-        const mode = args[1].toLowerCase()
-
-        if (!isValidGamemode(mode)) {
-            player.sendMessage(`§c§l» §7Invalid mode: '${mode}'`);
+        if (!isValidGamemode(modeToken)) {
+            player.sendMessage(`§c§l» §7Invalid mode: '§e${modeToken}§7'. Use: survival, creative, adventure, spectator`);
             return
         }
 
-
-        /* 
-         * ENTITY_RESOLUTION
-         */
-        const target = world.getAllPlayers().find(p => p.name.toLowerCase() === targetName.toLowerCase())
         if (!target) {
-            player.sendMessage(`§c§l» §7Player '${targetName}' not found.`);
+            player.sendMessage(`§c§l» §7Player '§e${targetName}§7' not found or is offline.`);
             return
         }
 
@@ -49,10 +52,16 @@ export const GamemodeCommand = {
          */
         system.run(() => {
             try {
-                target.setGameMode(mode)
+                const modeMap = {
+                    "survival": GameMode.survival,
+                    "creative": GameMode.creative,
+                    "adventure": GameMode.adventure,
+                    "spectator": GameMode.spectator
+                }
+                target.setGameMode(modeMap[modeToken] || GameMode.survival)
                 
-                target.sendMessage(`§a§l» §fYour game mode was set to §e${mode}§f by §e${player.name}§f.`);
-                player.sendMessage(`§a§l» §fSet §e${target.name}§f's game mode to §e${mode}§f.`);
+                target.sendMessage(`§a§l» §fYour game mode was set to §e${modeToken}§f by §e${player.name}§f.`);
+                player.sendMessage(`§a§l» §fSet §e${target.name}§f's game mode to §e${modeToken}§f.`);
 
                 
             } catch (error) {
@@ -70,3 +79,4 @@ function isValidGamemode(mode) {
     const validModes = ["survival", "creative", "adventure", "spectator"]
     return validModes.includes(mode)
 }
+

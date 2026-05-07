@@ -14,6 +14,11 @@ export const EconomyCommand = {
     usage: "/ae:economy <give|take|set|reset> <player_identifier> [amount]",
     permission: "essentials.admin.economy",
     category: "Admin",
+    parameters: [
+        { name: "subcommand", type: "string", optional: true },
+        { name: "player", type: "player", optional: true },
+        { name: "amount", type: "int",    optional: true  }
+    ],
 
     /* 
      * VECTOR_EXECUTION_PIPELINE
