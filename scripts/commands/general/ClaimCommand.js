@@ -19,7 +19,7 @@ import {
 export const ClaimCommand = {
     name: "claim",
     description: "Orchestrates spatial protection and entity trust-nodes.",
-    usage: "!claim <subcommand> [args...]",
+    usage: "/ae:claim <subcommand> [args...]",
     permission: "essentials.default",
     category: "General",
 

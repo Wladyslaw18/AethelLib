@@ -1,18 +1,15 @@
 /*
- * INDUSTRIAL_ARITHMETIC_EVALUATOR
+ * Calculator Command
  * ----------------------------------------------------------------------------
- * A high-performance, hardened mathematical parsing engine. Rejects the 
- * use of unsafe execution-vectors (eval) in favor of a deterministic 
- * shunting-yard algorithm for O(N) resolution.
- *
- * PHILOSOPHY: Mathematics is the language of industry. Use this 
- * evaluation-vector to calibrate industrial calculations without 
- * compromising system-integrity.
+ * A safe mathematical parsing engine using the shunting-yard algorithm.
  */
+
 export const CalculateCommand = {
     name: "calculate",
-    description: "Evaluates raw mathematical expressions using a safe industrial-grade parsing engine.",
-    usage: "!calculate <expression>",
+    description: "Calculate a math expression",
+
+
+    usage: "/ae:calculate <expression>",
     permission: "essentials.calculate",
     category: "GENERAL",
 
@@ -22,17 +19,19 @@ export const CalculateCommand = {
     execute(_data, player, args) {
         const expression = args.join(" ")
         if (!expression) {
-            player.sendMessage("§cERROR: EXPRESSION_REQUIRED");
-            player.sendMessage("§7Example: !calculate 2 + 3 * (4 / 2)");
+            player.sendMessage("§c§l» §7Syntax Error: Math expression required.");
+            player.sendMessage("§7Example: /ae:calculate 2 + 3 * (4 / 2)");
             return
         }
 
+
         try {
             const result = safeMathParse(expression)
-            player.sendMessage(`§aCALCULATION_SUCCESSFUL: ${expression} = §e${result}`);
+            player.sendMessage(`§a§l» §fResult: §e${expression} = §a${result.toLocaleString()}`);
         } catch (error) {
-            player.sendMessage(`§cCALCULATION_FAILURE: ${error.message.toUpperCase()}`);
+            player.sendMessage(`§c§l» §7Error: ${error.message}`);
         }
+
     }
 }
 
@@ -42,15 +41,17 @@ export const CalculateCommand = {
  */
 function safeMathParse(expression) {
     const clean = expression.replace(/[^0-9+\-*/().\s]/g, '')
-    if (clean !== expression.trim()) throw new Error("UNAUTHORIZED_TOKENS_DETECTED");
+    if (clean !== expression.trim()) throw new Error("Invalid characters in expression.");
+
 
     let parenCount = 0
     for (const char of clean) {
         if (char === '(') parenCount++
         if (char === ')') parenCount--
-        if (parenCount < 0) throw new Error("STACK_ERROR: UNBALANCED_PARENTHESES");
+        if (parenCount < 0) throw new Error("Unbalanced parentheses.");
     }
-    if (parenCount !== 0) throw new Error("STACK_ERROR: UNBALANCED_PARENTHESES");
+    if (parenCount !== 0) throw new Error("Unbalanced parentheses.");
+
 
     const tokens = tokenize(clean)
     const rpn = toRPN(tokens)
@@ -113,19 +114,23 @@ function evaluateRPN(rpn) {
         } else {
             const b = stack.pop()
             const a = stack.pop()
-            if (a === undefined || b === undefined) throw new Error("MALFORMED_STACK_STATE");
+            if (a === undefined || b === undefined) throw new Error("Malformed expression.");
+
             switch (token) {
                 case '+': stack.push(a + b); break
                 case '-': stack.push(a - b); break
                 case '*': stack.push(a * b); break
                 case '/': 
-                    if (b === 0) throw new Error("ZERO_DIVISION_EXCEPTION");
+                    if (b === 0) throw new Error("You can't divide by zero!");
                     stack.push(a / b); 
+
                     break
-                default: throw new Error("UNKNOWN_OPERATOR_EXCEPTION");
+                default: throw new Error("Unknown operator.");
+
             }
         }
     }
-    if (stack.length !== 1) throw new Error("STACK_RESOLUTION_FAILURE");
+    if (stack.length !== 1) throw new Error("Calculation failed.");
     return stack[0]
 }
+

@@ -2,20 +2,16 @@ import { isInCombat, getCombatTime } from "../../systems/combat/CombatIntegrity.
 import { getKillstreak } from "../../systems/combat/Killstreaks.js"
 
 /*
- * COMBAT_THREAT_DIAGNOSTIC
+ * Combat Status Command
  * ----------------------------------------------------------------------------
- * A utility command for monitoring the active engagement status of an 
- * entity. Queries the CombatIntegrity engine to resolve combat-tag 
- * persistence and the Killstreak registry for active momentum metrics.
- *
- * PHILOSOPHY: Knowledge is power. If you know how long you're tagged, 
- * you know how long you have to survive before the TPA-safety vector 
- * re-activates.
+ * Displays the player's current combat tag time and active killstreak.
  */
+
 export const CombatStatusCommand = {
     name: "combat",
-    description: "Queries the system for active combat-tag and killstreak metrics.",
-    usage: "!combat",
+    description: "Check your combat status and killstreak.",
+
+    usage: "/ae:combat",
     permission: "essentials.default",
     category: "General",
 
@@ -33,10 +29,11 @@ export const CombatStatusCommand = {
          */
         if (inCombat) {
             const secondsLeft = Math.ceil(combatTime / 20)
-            player.sendMessage(`[Threat] ACTIVE_ENGAGEMENT | TTL: ${secondsLeft}s`);
+            player.sendMessage(`§c§l» §eIn Combat! §cTime left: §f${secondsLeft}s`);
         } else {
-            player.sendMessage("[Threat] Status: STANDBY");
+            player.sendMessage("§a§l» §7Status: §fSafe");
         }
+
 
         /* 
          * MOMENTUM_METRIC_OUTPUT
@@ -47,9 +44,10 @@ export const CombatStatusCommand = {
             else if (streak >= 25) color = "§d"
             else if (streak >= 15) color = "§e"
             
-            player.sendMessage(`${color}Current_Momentum (Killstreak): ${streak}`);
+            player.sendMessage(`§6§l» §fKillstreak: ${color}${streak}`);
         } else {
-            player.sendMessage("[Metrics] Current_Momentum: 0");
+            player.sendMessage("§6§l» §fKillstreak: §70");
         }
+
     }
 }

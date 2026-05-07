@@ -3,23 +3,19 @@ import { system, world } from "@minecraft/server"
 import { isInCombat as isPlayerInCombat } from "../../systems/combat/CombatIntegrity.js"
 
 /*
- * INDUSTRIAL_SPATIAL_ROLLBACK_VECTOR
+ * Back Command
  * ----------------------------------------------------------------------------
- * Orchestrates the relocation of an entity to its previous registered 
- * coordinate manifest. Implements an O(1) cooldown registry to prevent 
- * temporal-spamming and tactical-evasion.
- *
- * PHILOSOPHY: Rollbacks are stabilized for authenticated entities. If 
- * the spatial-buffer is corrupted or null, the reversion-vector 
- * cannot be initialized.
+ * Teleports players back to their previous location (e.g. after death).
  */
+
 
 const cooldowns = new Map() // TEMPORAL_RECHARGE_REGISTRY
 
 export const BackCommand = {
     name: "back",
-    description: "Executes a spatial-rollback to the latest registered coordinate-buffer.",
-    usage: "!back",
+    description: "Return to your previous location",
+
+    usage: "/ae:back",
     permission: "essentials.back",
     category: "GENERAL",
 
@@ -31,22 +27,26 @@ export const BackCommand = {
         const cd = (RankSystem.getPermission(player, "back.cooldown") ?? 5) * 20
         const last = cooldowns.get(player.id) ?? 0
         if (system.currentTick - last < cd) {
-            player.sendMessage(`§cRECHARGE_REQUIRED: Vector stabilizing. Wait ${Math.ceil((cd - (system.currentTick - last)) / 20)}s.`);
+            const remaining = Math.ceil((cd - (system.currentTick - last)) / 20)
+            player.sendMessage(`§c§l» §7Please wait §e${remaining}s §7before using this again.`);
             return
         }
+
         cooldowns.set(player.id, system.currentTick)
 
         const lastLocation = getLastLocation(player)
         if (!lastLocation) {
-            player.sendMessage("§cERROR: SPATIAL_BUFFER_EMPTY: NO_ROLLBACK_TARGET_FOUND");
+            player.sendMessage("§c§l» §7No previous location found.");
             return
         }
 
+
         /* COMBAT_INTEGRITY_PROBE */
         if (isInCombat(player)) {
-            player.sendMessage("§cACCESS_DENIED: REVERSION_VECTOR_LOCKED_IN_COMBAT");
+            player.sendMessage("§c§l» §7You cannot teleport while in combat!");
             return
         }
+
 
         /* MIGRATION_EXECUTION */
         system.run(() => {
@@ -56,11 +56,11 @@ export const BackCommand = {
                     { x: lastLocation.x + 0.5, y: lastLocation.y, z: lastLocation.z + 0.5 },
                     { dimension }
                 )
-                player.sendMessage("§aROLLBACK_SUCCESSFUL: Spatial coordinates restored.");
+                player.sendMessage("§a§l» §fTeleported back to your previous location.");
             } catch (error) {
-                console.error(`[BackCommand] MIGRATION_FAILURE: ${error}`)
-                player.sendMessage("§cERROR: SPATIAL_STABILIZATION_COLLAPSE");
+                player.sendMessage("§c§l» §7Failed to teleport back.");
             }
+
         })
     }
 }
