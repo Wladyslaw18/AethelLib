@@ -7,7 +7,7 @@ import { TPAStore } from "../../systems/tpa/TpaStore.js"
 export const TPASettingCommand = {
     name: "tpasetting",
     description: "Configure your TPA settings",
-    usage: "!tpasetting <on/off/ui>",
+    usage: "/ae:tpasetting <on/off/ui>",
     permission: "essentials.tpa",
     category: "teleport",
 
@@ -18,35 +18,41 @@ export const TPASettingCommand = {
             const enabled = TPAStore.isEnabled(player.id)
             const uiEnabled = TPAStore.getUIToggle(player.id)
 
-            player.sendMessage("§6=== TPA Settings ===")
+            player.sendMessage(" ")
+            player.sendMessage("§6§lTPA Settings")
             player.sendMessage(`§7Requests: ${enabled ? "§aEnabled" : "§cDisabled"}`)
-            player.sendMessage(`§7Opt-in UI: ${uiEnabled ? "§aEnabled" : "§cDisabled"}`)
-            player.sendMessage("")
-            player.sendMessage("§eUsage: !tpasetting <on/off/ui>")
+            player.sendMessage(`§7UI Pop-ups: ${uiEnabled ? "§aEnabled" : "§cDisabled"}`)
+            player.sendMessage(" ")
+            player.sendMessage("§eUsage: /ae:tpasetting <on/off/ui>")
+            player.sendMessage(" ")
             return
         }
+
 
         if (option === "ui") {
             const current = TPAStore.getUIToggle(player.id)
             TPAStore.setUIToggle(player.id, !current)
-            player.sendMessage(`§aOpt-in UI ${!current ? "enabled" : "disabled"}`)
+            player.sendMessage(`§a§l» §fUI Pop-ups ${!current ? "§aEnabled" : "§cDisabled"}§f.`);
             return
         }
+
 
         const enabled = option === "on"
         const success = await TPAStore.setSettings(player.id, { enabled })
 
         if (success) {
-            player.sendMessage(`§aTPA requests ${enabled ? "enabled" : "disabled"}`)
+            player.sendMessage(`§a§l» §fTPA requests ${enabled ? "§aEnabled" : "§cDisabled"}§f.`);
+
 
             if (!enabled) {
                 // Cancel all existing requests when disabling
                 await TPAStore.cancelAllRequestsForPlayer(player.id)
-                player.sendMessage("§7All existing TPA requests cancelled")
+                player.sendMessage("§e§l» §7All existing TPA requests cancelled.");
             }
         } else {
-            player.sendMessage("§cFailed to update TPA settings")
+            player.sendMessage("§c§l» §7Failed to update TPA settings.");
         }
+
     }
 }
 

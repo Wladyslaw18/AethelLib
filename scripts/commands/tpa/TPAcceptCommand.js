@@ -8,9 +8,12 @@ import { Kernel } from "../../core/Kernel.js"
 export const TPAcceptCommand = {
     name: "tpaccept",
     description: "Accept incoming TPA request",
-    usage: "!tpaccept",
+    usage: "/ae:tpaccept",
     permission: "essentials.tpa",
     category: "teleport",
+    parameters: [
+        { name: "target", type: "player", optional: true }
+    ],
 
     async execute(_data, player, _args) {
         const TpaService = Kernel.get("tpaService")

@@ -9,7 +9,7 @@ import { TPAStore } from "../../systems/tpa/TpaStore.js"
 export const UnblockCommand = {
     name: "unblock",
     description: "Unblock a player from TPA requests",
-    usage: "!unblock <player_name>",
+    usage: "/ae:unblock <player_name>",
     permission: "essentials.tpa",
     category: "teleport",
 
@@ -22,7 +22,7 @@ export const UnblockCommand = {
         }
 
         // Find target player
-        const target = [...world.getPlayers()].find(p => 
+        const target = [...world.getAllPlayers()].find(p => 
             p.name.toLowerCase() === targetName.toLowerCase()
         )
 

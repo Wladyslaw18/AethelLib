@@ -1,46 +1,42 @@
-/**
- * TPAHere Command - Request another player to teleport to you
- */
-
 import { Kernel } from "../../core/Kernel.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 export const TPAHereCommand = {
     name: "tpahere",
     description: "Request another player to teleport to you",
-    usage: "!tpahere <player_name>",
+    usage: "/ae:tpahere <player_name>",
     permission: "essentials.tpa",
     category: "teleport",
+    // No explicit parameters to allow spaces in names via catch-all
 
     async execute(_data, player, args) {
-        const targetName = args[0]
-        
-        if (!targetName) {
-            player.sendMessage("§cUsage: !tpahere <player_name>")
+        if (args.length === 0) {
+            player.sendMessage("§c§l» §7Usage: /ae:tpahere <player>");
             return
         }
 
-        // Find target player via Kernel
-        const targetPlayer = [...Kernel.world.getAllPlayers()].find(p => 
-            p.name.toLowerCase() === targetName.toLowerCase()
-        )
+
+        const targetName = args.join(" ")
+        const targetPlayer = PlayerUtils.findPlayer(targetName)
 
         if (!targetPlayer) {
-            player.sendMessage(`§cPlayer '§e${targetName}§c' not found or not online`)
+            player.sendMessage(`§c§l» §7Player '${targetName}' not found.`);
             return
         }
+
 
         if (targetPlayer.id === player.id) {
-            player.sendMessage("§cYou cannot send a TPAHere request to yourself")
+            player.sendMessage("§c§l» §7You cannot send a TPA request to yourself.");
             return
         }
 
-        // Send TPAHere request via Service
+
         const TpaService = Kernel.get("tpaService")
         const success = TpaService.sendRequest(player, targetPlayer, "tpahere")
 
         if (success) {
-            player.sendMessage(`§aTPAHere request sent to §e${targetPlayer.name}§a!`)
+            player.sendMessage(`§a§l» §fTPAHere request sent to §e${targetPlayer.name}§f.`);
         }
+
     }
 }
-

@@ -9,7 +9,7 @@ import { TPAStore } from "../../systems/tpa/TpaStore.js"
 export const BlockCommand = {
     name: "block",
     description: "Block a player from TPA requests",
-    usage: "!block <player_name>",
+    usage: "/ae:block <player_name>",
     permission: "essentials.tpa",
     category: "teleport",
 
@@ -17,35 +17,40 @@ export const BlockCommand = {
         const targetName = args[0]
         
         if (!targetName) {
-            player.sendMessage("§cUsage: !block <player_name>")
+            player.sendMessage("§c§l» §7Usage: /ae:block <player_name>")
             return
         }
 
+
         // Find target player
-        const target = [...world.getPlayers()].find(p => 
+        const target = [...world.getAllPlayers()].find(p => 
             p.name.toLowerCase() === targetName.toLowerCase()
         )
 
         if (!target) {
-            player.sendMessage(`§cPlayer '§e${targetName}§c' not found or not online`)
+            player.sendMessage(`§c§l» §7Player '${targetName}' not found or offline.`)
             return
         }
 
+
         if (target.id === player.id) {
-            player.sendMessage("§cYou cannot block yourself!")
+            player.sendMessage("§c§l» §7You cannot block yourself!")
             return
         }
+
 
         // Check if already blocked
         const blocked = TPAStore.getBlocked(player.id)
         if (blocked.includes(target.id)) {
-            player.sendMessage(`§c${target.name} is already blocked!`)
+            player.sendMessage(`§c§l» §7${target.name} is already blocked.`)
             return
         }
 
+
         // Block the player
         TPAStore.blockPlayer(player.id, target.id)
-        player.sendMessage(`§aBlocked §e${target.name}§a from sending you TPA requests!`)
+        player.sendMessage(`§a§l» §fBlocked §e${target.name}§f from sending you TPA requests.`)
+
     }
 }
 
