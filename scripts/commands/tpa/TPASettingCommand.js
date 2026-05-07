@@ -10,6 +10,9 @@ export const TPASettingCommand = {
     usage: "/ae:tpasetting <on/off/ui>",
     permission: "essentials.tpa",
     category: "teleport",
+    parameters: [
+        { name: "option", type: "string", optional: true }
+    ],
 
     async execute(_data, player, args) {
         const option = args[0]?.toLowerCase()

@@ -93,9 +93,9 @@ export const TpaService = {
         const waitTime = 5 // Standard stabilization window
 
         if (request.type === "tpa") {
-            teleportService.teleportWithWait(sender, player.location, player.dimension.id, waitTime)
+            teleportService.teleportWithWait(sender, player.location, player.dimension?.id || "minecraft:overworld", waitTime)
         } else {
-            teleportService.teleportWithWait(player, sender.location, sender.dimension.id, waitTime)
+            teleportService.teleportWithWait(player, sender.location, sender.dimension?.id || "minecraft:overworld", waitTime)
         }
 
         TpaHandshake.removeRequest(request.id)

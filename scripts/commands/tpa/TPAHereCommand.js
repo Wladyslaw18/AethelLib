@@ -7,7 +7,9 @@ export const TPAHereCommand = {
     usage: "/ae:tpahere <player_name>",
     permission: "essentials.tpa",
     category: "teleport",
-    // No explicit parameters to allow spaces in names via catch-all
+    parameters: [
+        { name: "player", type: "player", optional: false }
+    ],
 
     async execute(_data, player, args) {
         if (args.length === 0) {
@@ -40,3 +42,4 @@ export const TPAHereCommand = {
 
     }
 }
+

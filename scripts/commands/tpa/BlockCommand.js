@@ -3,8 +3,8 @@
  * Smith Forge Rule: Max 100 lines per file
  */
 
-import { world } from "@minecraft/server"
 import { TPAStore } from "../../systems/tpa/TpaStore.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 export const BlockCommand = {
     name: "block",
@@ -12,20 +12,19 @@ export const BlockCommand = {
     usage: "/ae:block <player_name>",
     permission: "essentials.tpa",
     category: "teleport",
+    parameters: [
+        { name: "player", type: "player", optional: false }
+    ],
 
-    async execute(data, player, args) {
-        const targetName = args[0]
-        
-        if (!targetName) {
+    async execute(_data, player, args) {
+        if (args.length === 0) {
             player.sendMessage("§c§l» §7Usage: /ae:block <player_name>")
+            player.sendMessage("§e§l» §fTip: §7Blocked players cannot send you TPA requests.")
             return
         }
 
-
-        // Find target player
-        const target = [...world.getAllPlayers()].find(p => 
-            p.name.toLowerCase() === targetName.toLowerCase()
-        )
+        const targetName = args.join(" ")
+        const target = PlayerUtils.findPlayer(targetName)
 
         if (!target) {
             player.sendMessage(`§c§l» §7Player '${targetName}' not found or offline.`)
@@ -53,4 +52,5 @@ export const BlockCommand = {
 
     }
 }
+
 

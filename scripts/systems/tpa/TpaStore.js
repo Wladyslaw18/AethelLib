@@ -43,5 +43,19 @@ export const TPAStore = {
      */
     setUIToggle(playerId, enabled) {
         Kernel.world.setDynamicProperty(`ae:tpaui:${playerId}`, enabled)
+    },
+
+    setSettings(playerId, options) {
+        if (options.enabled !== undefined) {
+            this.setEnabled(playerId, options.enabled);
+        }
+        return true;
+    },
+
+    cancelAllRequestsForPlayer(playerId) {
+        const TpaHandshake = Kernel.get("tpaHandshake");
+        if (TpaHandshake) {
+            TpaHandshake.cleanup();
+        }
     }
 }

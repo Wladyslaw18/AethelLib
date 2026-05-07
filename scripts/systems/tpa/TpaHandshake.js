@@ -8,13 +8,15 @@ import { Configuration } from "../../Configuration.js"
 
 /** @type {Map<string, Object>} */
 const pendingRequests = new Map() // Pending TPA requests
+const targetToLatest = new Map()
+const senderToLatest = new Map()
 
 export const TpaHandshake = {
     /* 
      * Create a new TPA request
      */
     createRequest(senderId, senderName, targetId, targetName, type) {
-        const requestId = `${senderId}:${targetId}`
+        const requestId = `${senderId}:${targetId}:${type}`
         const request = {
             id: requestId,
             senderId,
@@ -25,6 +27,8 @@ export const TpaHandshake = {
             timestamp: Date.now()
         }
         pendingRequests.set(requestId, request)
+        targetToLatest.set(targetId, request)
+        senderToLatest.set(senderId, request)
         return requestId
     },
 
@@ -39,33 +43,26 @@ export const TpaHandshake = {
      * Get the latest request for a target player
      */
     getLatestRequestFor(targetId) {
-        let latest = null
-        for (const req of pendingRequests.values()) {
-            if (req.targetId === targetId) {
-                if (!latest || req.timestamp > latest.timestamp) latest = req
-            }
-        }
-        return latest
+        return targetToLatest.get(targetId) || null
     },
 
     /* 
      * Get the latest request from a sender
      */
     getLatestRequestFrom(senderId) {
-        let latest = null
-        for (const req of pendingRequests.values()) {
-            if (req.senderId === senderId) {
-                if (!latest || req.timestamp > latest.timestamp) latest = req
-            }
-        }
-        return latest
+        return senderToLatest.get(senderId) || null
     },
 
     /* 
      * Remove a request
      */
     removeRequest(requestId) {
-        pendingRequests.delete(requestId)
+        const req = pendingRequests.get(requestId)
+        if (req) {
+            if (targetToLatest.get(req.targetId)?.id === requestId) targetToLatest.delete(req.targetId)
+            if (senderToLatest.get(req.senderId)?.id === requestId) senderToLatest.delete(req.senderId)
+            pendingRequests.delete(requestId)
+        }
     },
 
     /* 
@@ -75,7 +72,9 @@ export const TpaHandshake = {
         const now = Date.now()
         const expirationMs = (Configuration.TPA_EXPIRATION || 60) * 1000
         for (const [id, req] of pendingRequests.entries()) {
-            if (now - req.timestamp > expirationMs) pendingRequests.delete(id)
+            if (now - req.timestamp > expirationMs) {
+                this.removeRequest(id)
+            }
         }
     }
 }
