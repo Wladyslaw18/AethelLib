@@ -12,6 +12,14 @@ export const FloatingTextCommand = {
     usage: "/ae:ft <add/remove/clear> [text]",
     permission: "essentials.admin.ft",
     category: "admin",
+    parameters: [
+        { name: "subcommand", type: "string", optional: false },
+        { name: "word1",      type: "string", optional: true  },
+        { name: "word2",      type: "string", optional: true  },
+        { name: "word3",      type: "string", optional: true  },
+        { name: "word4",      type: "string", optional: true  },
+        { name: "word5",      type: "string", optional: true  }
+    ],
 
     async execute(_data, player, args) {
         const sub = args[0]?.toLowerCase()

@@ -6,6 +6,7 @@
  */
 
 import { Kernel } from "../../core/Kernel.js"
+import { Database } from "../../core/datastore/DatabaseManager.js"
 
 const STORAGE_KEY = "ae:floatingtexts"
 
@@ -20,7 +21,7 @@ export const FloatingTextStore = {
             const entries = this.getAll()
             const id = this.generateId()
             entries.push({ ...entry, id })
-            Kernel.world.setDynamicProperty(STORAGE_KEY, JSON.stringify(entries))
+            Database.set(STORAGE_KEY, entries)
             return id
         } catch (error) {
             console.error(`Failed to add floating text: ${error}`)
@@ -37,7 +38,7 @@ export const FloatingTextStore = {
         try {
             const entries = this.getAll()
             const filtered = entries.filter(entry => entry.id !== id)
-            Kernel.world.setDynamicProperty(STORAGE_KEY, JSON.stringify(filtered))
+            Database.set(STORAGE_KEY, filtered)
             return true
         } catch (error) {
             console.error(`Failed to remove floating text: ${error}`)
@@ -51,8 +52,7 @@ export const FloatingTextStore = {
      */
     getAll() {
         try {
-            const stored = Kernel.world.getDynamicProperty(STORAGE_KEY)
-            return stored ? JSON.parse(String(stored)) : []
+            return Database.get(STORAGE_KEY) || []
         } catch (error) {
             console.error(`Failed to load floating texts: ${error}`)
             return []
@@ -65,7 +65,7 @@ export const FloatingTextStore = {
      */
     clear() {
         try {
-            Kernel.world.setDynamicProperty(STORAGE_KEY, undefined)
+            Database.delete(STORAGE_KEY)
             return true
         } catch (error) {
             console.error(`Failed to clear floating texts: ${error}`)
