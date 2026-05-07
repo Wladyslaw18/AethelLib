@@ -108,13 +108,13 @@ export const ShopStore = {
 
     /*
      * LOW_LEVEL_ITEM_DELIVERY
-     * Uses the runCommandAsync protocol for atomic item injection. 
-     * This is safer than manual container manipulation as it respects 
+     * Uses the runCommand protocol for atomic item injection.
+     * This is safer than manual container manipulation as it respects
      * native stack-size limits and inventory overflows.
      */
     giveItem(player, itemId, quantity) {
         try {
-            player.runCommandAsync(`give @s ${itemId} ${quantity}`)
+            player.runCommand(`give @s ${itemId} ${quantity}`)
             return true
         } catch (error) {
             console.error(`[ShopStore] INJECTION_FAILURE: ${error}`)

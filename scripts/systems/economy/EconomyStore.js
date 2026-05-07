@@ -170,10 +170,29 @@ export const EconomyStore = {
         return balance >= amount
     },
 
-    /* 
-     * GLOBAL_BALANCE_MANIFEST_QUERY (STUB)
+    /**
+     * Queries the global persistence layer for all player balances.
+     * This includes offline players by resolving their names from the ID mapping.
      */
-    async getAllBalances() {
-        return []
+    getAllBalances() {
+        const Database = Kernel.get("database")
+        const ids = Kernel.world.getDynamicPropertyIds()
+        const balances = []
+        const moneyPattern = /^player:(.+):money$/
+        
+        for (const id of ids) {
+            const match = id.match(moneyPattern)
+            if (match) {
+                const playerId = match[1]
+                const balance = Database.get(id)
+                const name = Database.get(`player:${playerId}:name`) || `ID:${playerId.slice(0, 5)}`
+                
+                if (typeof balance === 'number') {
+                    balances.push({ name, balance })
+                }
+            }
+        }
+        return balances
     }
 }
+

@@ -2,17 +2,16 @@ import { world } from "@minecraft/server"
 import { MINECRAFT_ITEMS } from "../../data/minecraft-items.js"
 
 /*
- * INDUSTRIAL_ASSET_LIQUIDATOR
+ * Sell Store
  * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for the liquidation of industrial 
- * assets. Manages asset valuation, inventory-buffer extraction, and 
- * atomic liquidity-injection.
- *
- * PHILOSOPHY: Assets are resources. When an asset is no longer required 
- * for production, it must be liquidated into the global liquidity-buffer 
- * at the current industrial rate.
+ * Handles selling items and managing sell prices.
  */
+
 export class SellStore {
+    static formatMoney(amount) {
+        return `§6$§f${amount.toLocaleString()}`
+    }
+
     /* 
      * VALUATION_MANIFEST_QUERY
      */
@@ -76,29 +75,35 @@ export class SellStore {
      */
     static sellItem(player, itemId, quantity) {
         const item = MINECRAFT_ITEMS[itemId]
-        if (!item) return { success: false, message: "ASSET_NON_LIQUIDATABLE" }
+        if (!item) return { success: false, message: "Item cannot be sold." }
+
 
         const sellPrice = this.getSellPrice(itemId)
-        if (sellPrice <= 0) return { success: false, message: "ASSET_ZERO_VALUATION" }
+        if (sellPrice <= 0) return { success: false, message: "This item is worth nothing." }
+
 
         const playerQuantity = this.getPlayerItemCount(player, itemId)
-        if (playerQuantity < quantity) return { success: false, message: `INSUFFICIENT_ASSET_COUNT: HAVE: ${playerQuantity} | NEED: ${quantity}` }
+        if (playerQuantity < quantity) return { success: false, message: "You don't have enough of that item." }
+
 
         const totalValue = sellPrice * quantity
 
-        if (!this.removePlayerItems(player, itemId, quantity)) return { success: false, message: "INVENTORY_EXTRACTION_FAILURE" }
+        if (!this.removePlayerItems(player, itemId, quantity)) return { success: false, message: "Failed to remove items from inventory." }
+
 
         if (!this.addPlayerMoney(player.id, totalValue)) {
             this.givePlayerItems(player, itemId, quantity) // EMERGENCY_REFUND
-            return { success: false, message: "LIQUIDITY_INJECTION_FAILURE" }
+            return { success: false, message: "Failed to add money to your account." }
         }
+
 
         this.logTransaction(player.id, itemId, quantity, sellPrice, totalValue)
 
         return {
             success: true,
-            message: `LIQUIDATION_COMPLETE: Sold ${quantity}x ${item.name} | CREDITS: §e${totalValue.toLocaleString()}`,
+            message: `§a§l» §fSold §e${quantity}x ${item.name} §ffor §a$${totalValue.toLocaleString()}§f.`,
             item: item,
+
             quantity: quantity,
             totalValue: totalValue
         }
@@ -150,9 +155,10 @@ export class SellStore {
      * EMERGENCY_ASSET_RESTORATION
      */
     static givePlayerItems(player, itemId, quantity) {
-        player.sendMessage(`§aASSET_RESTORED: ${quantity}x ${itemId} refunded.`);
+        player.sendMessage(`§a§l» §fRefunded §e${quantity}x ${itemId}§f.`);
         return true
     }
+
 
     /* 
      * LIQUIDITY_MUTATION_VECTORS
