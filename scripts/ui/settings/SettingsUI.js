@@ -17,6 +17,7 @@ export async function showSettingsUI(player) {
         .toggle("§eTPA Requests", { defaultValue: tpaEnabled })
         .toggle("§6Scoreboard Visible", { defaultValue: scoreboardVisible })
 
+    // @ts-ignore
     const response = await form.show(player)
     if (response.canceled) return
 

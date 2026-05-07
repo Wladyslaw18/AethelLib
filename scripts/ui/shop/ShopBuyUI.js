@@ -2,21 +2,17 @@ import { ModalFormData } from "@minecraft/server-ui"
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 
 /*
- * COMMERCE_TRANSACTION_ORCHESTRATOR
+ * Shop Buy Flow
  * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for the atomic acquisition of 
- * industrial assets. Performs a dual-phase validation handshake:
- * 1. Verification of the entity's liquidity-buffer.
- * 2. Verification of the entity's inventory-container access.
- *
- * PHILOSOPHY: Transactions must be atomic. If any phase of the acquisition 
- * vector fails, the liquidity-buffer must be restored.
+ * Handles the UI and logic for buying items from the shop.
  */
+
 export async function showBuyFlow(player, item) {
     try {
         const modal = new ModalFormData()
-            .title(`§6ACQUISITION: ${item.displayName}`)
-            .slider("Specify unit-count for acquisition:", 1, 64, { defaultValue: 1, valueStep: 1 })
+            .title(`§6Purchase: ${item.displayName}`)
+            .slider("Amount to buy:", 1, 64, { defaultValue: 1, valueStep: 1 })
+
 
         const res = await modal.show(player)
         if (res.canceled) return
@@ -26,9 +22,10 @@ export async function showBuyFlow(player, item) {
         const balance = EconomyStore.getBalance(player)
 
         if (balance < total) {
-            player.sendMessage(`§cINSUFFICIENT_LIQUIDITY: REQUIRED_CREDITS: §e${total}§c | CURRENT_BUFFER: §e${balance}`)
+            player.sendMessage(`§c§l» §7You don't have enough money! (§e$${total}§7)`)
             return
         }
+
 
         const success = EconomyStore.removeMoney(player, total)
         if (success) {
@@ -37,16 +34,19 @@ export async function showBuyFlow(player, item) {
                 const { ItemStack } = await import("@minecraft/server")
                 const itemStack = new ItemStack(item.id, qty)
                 inv.addItem(itemStack)
-                player.sendMessage(`§aACQUISITION_SUCCESSFUL: §e${qty}x ${item.name}§a | DEBITED: §e${total}`)
+                player.sendMessage(`§a§l» §fPurchased §e${qty}x ${item.name} §ffor §a$${total}§f.`)
+
             } else {
                 EconomyStore.addMoney(player, total)
-                player.sendMessage("§cCONTAINER_ACCESS_FAILURE: TRANSACTION_REFUNDED")
+                player.sendMessage("§c§l» §7Failed to access inventory. Refunded.")
             }
         } else {
-            player.sendMessage("§cCOMMERCE_TRANSACTION_FAILURE: SYSTEM_REJECTION")
+            player.sendMessage("§c§l» §7Transaction failed.")
         }
+
     } catch (error) {
-        console.error(`[ShopBuyUI] TRANSACTION_COLLAPSE: ${error}`)
-        player.sendMessage("§cCOMMERCE_TRANSACTION_FAILURE: FATAL_SYSTEM_ERROR")
+        console.error(`[ShopBuyUI] TRANSACTION_CRASH: ${error}`)
+        player.sendMessage("§c§l» §7Transaction failed.")
     }
+
 }
