@@ -18,7 +18,7 @@ import { system, world } from "@minecraft/server"
  * Tier 3: Reality severance (teleport to the void-buffer at Y-256).
  */
 export function tryRemoveEntity(entity, options = {}) {
-    if (!entity || !entity.isValid()) {
+    if (!entity || !entity.isValid) {
         return false
     }
 
@@ -143,7 +143,7 @@ export function removeGroundItems(center, radius, dimension = "overworld") {
  * entities or player buffers.
  */
 export function canRemoveEntity(entity) {
-    if (!entity || !entity.isValid()) {
+    if (!entity || !entity.isValid) {
         return false
     }
 
