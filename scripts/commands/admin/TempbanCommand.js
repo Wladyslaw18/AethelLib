@@ -8,13 +8,13 @@ import { Kernel } from "../../core/Kernel.js"
 export const TempbanCommand = {
     name: "tempban",
     description: "Temporarily ban a player",
-    usage: "!tempban <playerName> <duration> [reason]",
+    usage: "/ae:tempban <playerName> <duration> [reason]",
     permission: "essentials.admin.ban",
     category: "admin",
 
-    execute(player, args) {
+    execute(_data, player, args) {
         if (args.length === 0) {
-            player.sendMessage("§cUsage: !tempban <playerName> <duration> [reason]")
+            player.sendMessage("§cUsage: /ae:tempban <playerName> <duration> [reason]")
             player.sendMessage("§7Duration examples: 1h, 1d, 1w")
             return
         }
@@ -23,14 +23,15 @@ export const TempbanCommand = {
         const duration = args[1]
         const reason = args.slice(2).join(" ") || "No reason provided"
 
-        const target = world.getPlayers().find(p =>
+        const target = world.getAllPlayers().find(p =>
             p.name.toLowerCase() === targetName.toLowerCase()
         )
 
         if (!target) {
-            player.sendMessage(`§cPlayer '§e${targetName}§c' not found`)
+            player.sendMessage(`§c§l» §7Player '${targetName}' not found`)
             return
         }
+
 
         // Check permissions (Hierarchy Check)
         const PermissionManager = Kernel.get("permissions")
@@ -41,9 +42,10 @@ export const TempbanCommand = {
 
         const banDuration = parseDuration(duration)
         if (banDuration === null) {
-            player.sendMessage(`§cInvalid duration: §e${duration}`)
+            player.sendMessage(`§c§l» §7Invalid duration: '${duration}'`)
             return
         }
+
 
         // Perform tempban
         const banData = {
@@ -62,8 +64,9 @@ export const TempbanCommand = {
             // Kick player immediately
             system.run(() => {
                 try {
-                    // @ts-ignore
-                    target.disconnect(`§c[INDUSTRIAL_EXCLUSION] ACCESS_TERMINATED\n§eREASON: ${reason}`)
+                    // DISCONNECT_V2: Use native kick command as .disconnect() is deprecated.
+                    player.runCommand(`kick "${target.name}" §c§l[TEMPORARY BAN]\n§eReason: ${reason}`)
+
                 } catch (error) {
                     console.error(`Failed to kick tempbanned player ${targetName}: ${error}`)
                 }
@@ -72,16 +75,17 @@ export const TempbanCommand = {
             // Announce tempban
             const banMessage = formatBanMessage(banData)
             const PermissionManager = Kernel.get("permissions")
-            world.getPlayers().forEach(p => {
+            world.getAllPlayers().forEach(p => {
                 if (PermissionManager.hasPermission(p, "essentials.admin.notify") || p.id === player.id) {
                     p.sendMessage(banMessage)
                 }
             })
 
-            player.sendMessage(`§aSuccessfully tempbanned §e${target.name} §7for §e${formatTimeRemaining(banDuration)}`)
+            player.sendMessage(`§a§l» §fPlayer '${target.name}' tempbanned for §e${formatTimeRemaining(banDuration)}`)
         } else {
-            player.sendMessage("§cFailed to add tempban")
+            player.sendMessage("§c§l» §7Failed to add tempban")
         }
+
     }
 }
 

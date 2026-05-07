@@ -3,7 +3,6 @@
  */
 
 import { ActionFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
 import { showPlayerManagement } from "./AdminPanelPlayers.js"
 import { showEconomyControl } from "./AdminPanelEconomy.js"
 import { showServerSettings } from "./AdminPanelSettings.js"
@@ -12,11 +11,11 @@ import { showReports } from "./AdminPanelReports.js"
 export const AdminPanelCommand = {
     name: "adminpanel",
     description: "Open admin control panel",
-    usage: "!adminpanel",
+    usage: "/ae:adminpanel",
     permission: "essentials.admin",
     category: "admin",
 
-    async execute(data, player, args) {
+    async execute(_data, player, _args) {
         await showAdminPanel(player)
     }
 }
