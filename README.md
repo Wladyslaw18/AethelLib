@@ -53,6 +53,17 @@ Kernel.get("commandRegistry").register("ping", {
 });
 ```
 
+## 🔌 THE PLUGIN PROTOCOL (DON'T TOUCH THE CORE)
+
+You don't want to dock stuff in the main core or kernel files? No issue. Follow the **Industrial Isolation Protocol**:
+
+1.  **Create your Base**: Go to the `scripts/plugins/` folder and create a dedicated folder for your plugin.
+2.  **Logic Separation**: Create a loader file (e.g., `MyCustomPlugin.js`) inside your folder. This file should handle all your imports and system registrations, similar to how `main.js` handles the core.
+3.  **Unique Signature**: Ensure your plugin name and file names are unique. If you conflict with an existing module, the Kernel might reject your boot-sequence.
+4.  **Register the Vector**: Add your plugin's path and a dynamic import to `scripts/plugins/PluginLoader.js`.
+
+By using the plugin system, you ensure that your logic survives AethelLib core updates without you ever having to resolve merge conflicts in the kernel. Keep the core clean, keep the plugins dirty. 🛠️⛓️
+
 ## 📜 LICENSE (LGPL v3.0)
 
 - **Your Logic = Private**: Link your own top-secret, closed-source code to AethelLib. Keep your secrets.
