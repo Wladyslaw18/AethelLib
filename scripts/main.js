@@ -1,23 +1,23 @@
 import { system } from "@minecraft/server"
+import { Kernel } from "./core/Kernel.js"
 import { init as initCore } from "./bootstrap/core.js"
 import { init as initCommands } from "./bootstrap/commands.js"
+import "./plugins/PluginLoader.js"
 
-/*
- * INDUSTRIAL_KERNEL_IGNITION_VECTOR
- * ----------------------------------------------------------------------------
- * The primary entry-node for the Titanium Framework. Orchestrates the 
- * sequential initialization of core-subsystems and command-registries 
- * on the first temporal tick.
- *
- * PHILOSOPHY: Start fast. Stay stable. Initialized modules define the 
- * operational capacity of the server.
+/**
+ * Main Initialization Entry Point
+ * Orchestrates the boot sequence of core systems and command registries.
  */
-//  TEMPORAL_SYNC: Early execution node to catch startup events.
+
+// Early initialization for startup events
 initCore(true)
+initCommands()
 
 system.run(() => {
-    // 🏛️ INDUSTRIAL_BOOTSTRAP: Initialize data systems when world-IO is available.
+    // Full system initialization when world state is stable
     initCore()
-    initCommands()
-    console.log("[AethelLib] TITANIUM_KERNEL_ACTIVE_V2.20.2");
+    Kernel.bootPlugins()
+    console.log("[AethelLib] AethelNexus Core Active");
 })
+
+
