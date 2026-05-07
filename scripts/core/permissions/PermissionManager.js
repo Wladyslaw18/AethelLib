@@ -45,8 +45,8 @@ export class PermissionManager {
                 tag, 
                 data.order || 0, 
                 data.name || tag, 
-                data.colorText || "§7", 
-                data.colorName || "§7"
+                data.colorName || "§7", 
+                data.colorText || "§7"
             )
 
             if (data.permissions) {
@@ -146,16 +146,33 @@ export class PermissionManager {
         const permissions = new Map()
         const playerRanks = PermissionManager.#data.getPlayerRanks(player.id)
         
+        // SCAN_HIERARCHY: Highest rank takes priority unless it says 'Inherit'
         for (const rankId of playerRanks) {
             const rankPerms = PermissionManager.#data.getRankPermissions(rankId)
             
             for (const [perm, value] of Object.entries(rankPerms)) {
-                if (!permissions.has(perm)) {
-                    permissions.set(perm, value)
+                if (permissions.has(perm)) continue
+
+                // 3-STATE_LOGIC_RESOLUTION
+                // 0: NO_ACTION | 1: ALLOW | 2: DENY
+                if (value === 1) { // 1 IS ALLOW
+                    permissions.set(perm, true)
+                } else if (value === 2) { // 2 IS DENY
+                    permissions.set(perm, false)
                 }
+                // If value is 0 (NO_ACTION), we skip and look for the next rank's value
             }
         }
         
+        // BASELINE_FALLBACK: If node is still unresolved, check the 'member' rank
+        const memberRank = PermissionManager.#data.getRankPermissions("member")
+        for (const [perm, value] of Object.entries(memberRank)) {
+            if (!permissions.has(perm)) {
+                // For member rank, we treat truthy/0 as true, falsy/2 as false
+                permissions.set(perm, value === true || value === 0)
+            }
+        }
+
         return permissions
     }
     

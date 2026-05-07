@@ -1,4 +1,5 @@
 import { Kernel } from "../../../core/Kernel.js"
+import { ColorSystem } from "../../social/chat/ColorSystem.js"
 
 /*
  * INDUSTRIAL_HIERARCHY_FORMATTER
@@ -24,14 +25,12 @@ export const RankFormatter = {
         if (!highestRank || !highestRank.name) return ""
         return `${highestRank.color || "§7"}[${highestRank.name.toUpperCase()}] §r`
     },
-
+ 
     /* 
      * COMMUNICATION_COLOR_RESOLVER
      */
     getPlayerChatColor: (player) => {
-        const PermissionManager = Kernel.get("permissions")
-        const highestRank = PermissionManager.getHighestRank(player)
-        return highestRank?.chatColor || "§7"
+        return ColorSystem.getPlayerColor(player)
     },
 
     /* 
@@ -42,6 +41,7 @@ export const RankFormatter = {
     formatChatMessage: (player, message) => {
         const rankPrefix = RankFormatter.formatPlayerRanks(player)
         const chatColor = RankFormatter.getPlayerChatColor(player)
-        return `${rankPrefix}${chatColor}${player.name}§r: §f${message}`
+        const sanitizedMessage = message.replace(/\n/g, "")
+        return `${rankPrefix}${chatColor}${player.name}§r: §f${sanitizedMessage}`
     }
 }

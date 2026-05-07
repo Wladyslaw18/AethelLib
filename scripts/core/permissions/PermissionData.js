@@ -38,7 +38,7 @@ export class PermissionData {
         this.rankChatColors.push(chatColor)
 
         for (const [_perm, flags] of this.permissionFlags) {
-            flags[index] = 0n
+            flags[index] = 0
         }
 
         for (const [_perm, values] of this.permissionValues) {
@@ -59,16 +59,11 @@ export class PermissionData {
         if (typeof value === 'boolean') {
             let flags = this.permissionFlags.get(permission)
             if (!flags) {
-                flags = new Array(this.rankIds.length).fill(0n)
+                flags = new Array(this.rankIds.length).fill(0)
                 this.permissionFlags.set(permission, flags)
             }
 
-            const bitMask = 1n << BigInt(index)
-            if (value) {
-                flags[index] |= bitMask
-            } else {
-                flags[index] &= ~bitMask
-            }
+            flags[index] = value ? 1 : 0
         } else {
             let values = this.permissionValues.get(permission)
             if (!values) {
@@ -91,8 +86,7 @@ export class PermissionData {
 
         const flags = this.permissionFlags.get(permission)
         if (flags) {
-            const bitMask = 1n << BigInt(index)
-            return (flags[index] & bitMask) !== 0n
+            return flags[index] === 1
         }
 
         const values = this.permissionValues.get(permission)
@@ -112,8 +106,7 @@ export class PermissionData {
 
         const permissions = {}
         for (const [perm, flags] of this.permissionFlags) {
-            const bitMask = 1n << BigInt(index)
-            permissions[perm] = (flags[index] & bitMask) !== 0n
+            permissions[perm] = flags[index] === 1
         }
         for (const [perm, values] of this.permissionValues) {
             permissions[perm] = values[index]

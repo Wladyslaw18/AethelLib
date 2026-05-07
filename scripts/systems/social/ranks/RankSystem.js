@@ -1,5 +1,6 @@
 import { Kernel } from "../../../core/Kernel.js"
 import { DEFAULT_RANKS } from "../../../data/RankConfig.js"
+import { LifecycleController } from "../../../core/LifecycleController.js"
 
 /*
  * INDUSTRIAL_HIERARCHY_ORCHESTRATOR
@@ -21,27 +22,30 @@ export const RankSystem = {
      * schedules the temporal expiration maintenance-vector.
      */
     init: () => {
-        if (initialized) return
+        if (!LifecycleController.boot("rankSystem")) return
         initialized = true
 
         const RankStore = Kernel.get("rankStore")
+        const PermissionManager = Kernel.get("permissions")
 
         /* DATA_DRIVEN_BOOTSTRAP */
         for (const rank of DEFAULT_RANKS) {
             if (!RankStore.getRank(rank.id)) {
                 const rankData = {
-                    tag: rank.id,
-                    name: rank.name,
-                    order: rank.order,
-                    colorText: rank.chatColor,
-                    colorName: rank.chatColor,
+                    name: rank.name || rank.id,
+                    order: rank.order || 0,
+                    colorText: rank.chatColor || "§7",
+                    colorName: rank.color || "§7",
                     hideRanks: rank.order === 0,
-                    permissions: rank.permissions
+                    permissions: rank.permissions || {}
                 }
                 RankStore.setRank(rank.id, rankData)
                 RankStore.addRankToList(rank.id)
             }
         }
+
+        // Synchronize PermissionManager with the persistent store
+        PermissionManager.init()
 
         /* TEMPORAL_EXPIRATION_VECTOR */
         Kernel.system.runInterval(() => {
@@ -74,7 +78,6 @@ export const RankSystem = {
         const RankStore = Kernel.get("rankStore")
         if (!tag || !rankData) return false
 
-        rankData.tag = tag
         const success = RankStore.setRank(tag, rankData)
         if (success) {
             RankStore.addRankToList(tag)
