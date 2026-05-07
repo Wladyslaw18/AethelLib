@@ -5,6 +5,8 @@
 import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { showAdminPanel } from "./AdminPanelMain.js"
+import { EconomyStore } from "../../systems/economy/EconomyStore.js"
+import { UIUtils } from "../../ui/UIUtils.js"
 
 /** @typedef {import("@minecraft/server").Player} Player */
 
@@ -15,16 +17,16 @@ export async function showEconomyControl(player) {
         return
     }
     const form = new ActionFormData()
-        .title("§6§lEconomy Control")
+        .title("§a§e§m§6§lEconomy Control")
         .body("Select an economy action")
-        .button("§aGive Money")
-        .button("§bTake Money")
-        .button("§cSet Balance")
-        .button("§eView Economy Stats")
-        .button("§fReset Economy")
-        .button("§cBack")
+        .button("§aGive Money", "textures/items/emerald")
+        .button("§bTake Money", "textures/items/gold_nugget")
+        .button("§cSet Balance", "textures/items/gold_ingot")
+        .button("§eView Economy Stats", "textures/items/paper")
+        .button("§fReset Economy", "textures/items/barrier")
+        .button("§cBack", "textures/ui/refresh")
 
-    const res = await form.show(player)
+    const res = await UIUtils.showForm(player, form)
     if (res.canceled) return
 
     switch (res.selection) {
@@ -60,14 +62,14 @@ async function showGiveMoneyInterface(player) {
     }
 
     const form = new ActionFormData()
-        .title("§6§lGive Money")
+        .title("§a§e§l§6§lGive Money")
         .body("Select a player to give money to")
 
-    players.forEach(p => form.button(p.name))
+    players.forEach(p => form.button(p.name, "textures/items/totem"))
 
-    form.button("§cBack")
+    form.button("§cBack", "textures/ui/refresh")
 
-    const res = await form.show(player)
+    const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === players.length) {
         await showEconomyControl(player)
         return
@@ -80,7 +82,7 @@ async function showGiveMoneyInterface(player) {
         .textField("Amount:", "1000")
         .toggle("Confirm Give", { defaultValue: false })
 
-    const amountRes = await amountForm.show(player)
+    const amountRes = await UIUtils.showForm(player, amountForm)
     if (amountRes.canceled || !amountRes.formValues[1]) {
         await showEconomyControl(player)
         return
@@ -93,7 +95,8 @@ async function showGiveMoneyInterface(player) {
         return
     }
 
-    player.sendMessage(`§7Give money interface for ${target.name} (${amount}) coming soon...`)
+    EconomyStore.addMoney(target.id, amount)
+    player.sendMessage(`§aSuccessfully gave $${amount} to ${target.name}.`)
     await showEconomyControl(player)
 }
 
@@ -106,14 +109,14 @@ async function showTakeMoneyInterface(player) {
     }
 
     const form = new ActionFormData()
-        .title("§6§lTake Money")
+        .title("§a§e§l§6§lTake Money")
         .body("Select a player to take money from")
 
-    players.forEach(p => form.button(p.name))
+    players.forEach(p => form.button(p.name, "textures/items/totem"))
 
-    form.button("§cBack")
+    form.button("§cBack", "textures/ui/refresh")
 
-    const res = await form.show(player)
+    const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === players.length) {
         await showEconomyControl(player)
         return
@@ -126,7 +129,7 @@ async function showTakeMoneyInterface(player) {
         .textField("Amount:", "1000")
         .toggle("Confirm Take", { defaultValue: false })
 
-    const amountRes = await amountForm.show(player)
+    const amountRes = await UIUtils.showForm(player, amountForm)
     if (amountRes.canceled || !amountRes.formValues[1]) {
         await showEconomyControl(player)
         return
@@ -139,7 +142,8 @@ async function showTakeMoneyInterface(player) {
         return
     }
 
-    player.sendMessage(`§7Take money interface for ${target.name} (${amount}) coming soon...`)
+    EconomyStore.removeMoney(target.id, amount)
+    player.sendMessage(`§aSuccessfully took $${amount} from ${target.name}.`)
     await showEconomyControl(player)
 }
 
@@ -152,14 +156,14 @@ async function showSetBalanceInterface(player) {
     }
 
     const form = new ActionFormData()
-        .title("§6§lSet Balance")
+        .title("§a§e§l§6§lSet Balance")
         .body("Select a player to set balance for")
 
-    players.forEach(p => form.button(p.name))
+    players.forEach(p => form.button(p.name, "textures/items/totem"))
 
-    form.button("§cBack")
+    form.button("§cBack", "textures/ui/refresh")
 
-    const res = await form.show(player)
+    const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === players.length) {
         await showEconomyControl(player)
         return
@@ -172,7 +176,7 @@ async function showSetBalanceInterface(player) {
         .textField("New Balance:", "1000")
         .toggle("Confirm Set", { defaultValue: false })
 
-    const amountRes = await amountForm.show(player)
+    const amountRes = await UIUtils.showForm(player, amountForm)
     if (amountRes.canceled || !amountRes.formValues[1]) {
         await showEconomyControl(player)
         return
@@ -185,7 +189,8 @@ async function showSetBalanceInterface(player) {
         return
     }
 
-    player.sendMessage(`§7Set balance interface for ${target.name} (${amount}) coming soon...`)
+    EconomyStore.setMoney(target.id, amount)
+    player.sendMessage(`§aSuccessfully set ${target.name}'s balance to $${amount}.`)
     await showEconomyControl(player)
 }
 
