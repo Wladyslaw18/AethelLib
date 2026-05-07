@@ -49,8 +49,9 @@ function getUptime() {
 
 export const TPSCommand = {
     name: "tps",
-    description: "Queries the system for real-time Ticks-Per-Second and industrial uptime metrics.",
-    usage: "!tps",
+    description: "Check server performance and uptime",
+
+    usage: "/ae:tps",
     permission: "essentials.tps",
     category: "GENERAL",
 
@@ -62,12 +63,15 @@ export const TPSCommand = {
         const tpsColor = tps >= 18 ? "§a" : tps >= 12 ? "§e" : "§c"
         const playerCount = world.getAllPlayers().length
 
-        player.sendMessage("§0§l» §6§lPERFORMANCE_DIAGNOSTIC_REPORT§0 «")
-        player.sendMessage(`§aEngine_Pulse (TPS): ${tpsColor}${tps}§f/20`);
-        player.sendMessage(`§aEntity_Density (Entities): §e${playerCount}`);
-        player.sendMessage(`§aKernel_Uptime: §e${getUptime()}`);
-        player.sendMessage(`§aMemory_Heap_Status: ${getMemoryUsage()}`);
+        player.sendMessage(" ")
+        player.sendMessage("§6§lServer Performance")
+        player.sendMessage(`§7TPS: ${tpsColor}${tps} §f/ 20`)
+        player.sendMessage(`§7Players: §e${playerCount}`)
+        player.sendMessage(`§7Uptime: §e${getUptime()}`)
+        player.sendMessage(`§7Memory: ${getMemoryUsage()}`)
+        player.sendMessage(" ")
     }
+
 }
 
 /* 

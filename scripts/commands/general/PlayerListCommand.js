@@ -1,41 +1,42 @@
 import { world } from "@minecraft/server"
 
 /*
- * ENTITY_MANIFEST_ORCHESTRATOR
+ * Player List Command
  * ----------------------------------------------------------------------------
- * Performs a global scan of the active player-buffer. Generates a manifest 
- * documenting entity identifiers, session-duration (playtime), and 
- * vitality-state (health-status).
- *
- * PHILOSOPHY: Knowledge of your peers is essential for industrial 
- * coordination. Or for identifying targets.
+ * Displays a list of online players and their current status.
  */
+
 export const PlayerListCommand = {
     name: "playerlist",
-    description: "Generates a manifest of all online entity-identifiers.",
-    usage: "!playerlist",
+    description: "View the list of online players",
+
+    usage: "/ae:playerlist",
     permission: "essentials.playerlist",
     category: "Utility",
 
     /* 
      * MANIFEST_GENERATION_PIPELINE
      */
-    execute(data, player, args) {
-        const players = world.getPlayers()
+    execute(_data, player, _args) {
+        const players = world.getAllPlayers()
         
         if (players.length === 0) {
-            player.sendMessage("[System] Error: Active player-buffer is empty.");
+            player.sendMessage("§c§l» §7No players online.");
             return
         }
 
-        player.sendMessage(`§0§l» §6§lONLINE_ENTITY_MANIFEST (${players.length})§0 «`)
+        player.sendMessage(" ")
+        player.sendMessage(`§6§lOnline Players §7(${players.length})`)
+
         
         players.forEach(p => {
             const playtime = getPlaytime(p)
             const status = getPlayerStatus(p)
-            player.sendMessage(`§a${p.name} §7- ${status} §8[Session: ${playtime}]`)
+            player.sendMessage(`§a- ${p.name} §7[${status}§7] §8(${playtime})`)
         })
+        player.sendMessage(" ")
     }
+
 }
 
 /* 
@@ -71,10 +72,11 @@ function getPlayerStatus(player) {
     const healthPercent = (currentHealth / maxHealth) * 100
     
     if (healthPercent >= 75) {
-        return "§aHEALTHY"
+        return "§aHealthy"
     } else if (healthPercent >= 25) {
-        return "§eSTRESSED"
+        return "§eHurt"
     } else {
-        return "§cCRITICAL"
+        return "§cCritical"
     }
+
 }

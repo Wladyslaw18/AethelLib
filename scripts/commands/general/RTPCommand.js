@@ -1,22 +1,20 @@
 import { Kernel } from "../../core/Kernel.js"
 
 /*
- * SPATIAL_RANDOMIZATION_VECTOR
+ * Random Teleport Command
  * ----------------------------------------------------------------------------
- * A high-performance utility for randomizing an entity's coordinates within 
- * a defined range. Implements a multi-stage search algorithm to identify 
- * non-volatile Y-levels and safe surface blocks.
- *
- * PHILOSOPHY: Exploration is mandatory. If you get stuck in a wall, it's 
- * an architectural failure—hence the 'findSafeLocation' protocol.
+ * Teleports a player to a random safe location within a defined range.
  */
+
 
 const cooldowns = new Map() // PLAYER_COOLDOWN_BUFFER
 
 export const RTPCommand = {
     name: "rtp",
-    description: "Executes a random teleportation sequence to a safe coordinate buffer.",
-    usage: "!rtp [range_identifier]",
+    description: "Teleport to a random safe location",
+
+    usage: "/ae:rtp [range]",
+
     permission: "essentials.rtp",
     category: "Teleport",
 
@@ -29,36 +27,39 @@ export const RTPCommand = {
         const cd = (PermissionManager.getPermission(player, "rtp.cooldown") ?? 10) * 20
         const last = cooldowns.get(player.id) ?? 0
         if (Kernel.system.currentTick - last < cd) {
-            player.sendMessage(`[Cooldown] Vector recharging. Wait ${Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)}s.`);
+            player.sendMessage(`§c§l» §7Teleport on cooldown. Wait §e${Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)}s§7.`);
             return
         }
+
         cooldowns.set(player.id, Kernel.system.currentTick)
 
         const range = args[0] ? parseInt(args[0]) : 1000
 
         if (isNaN(range) || range < 100 || range > 10000) {
-            player.sendMessage("[Error] Spatial constraint violation: Range must be 100-10000.");
+            player.sendMessage("§c§l» §7Range must be between 100 and 10000.");
             return
         }
+
 
         /* COMBAT_STATE_PROBE */
         if (isInCombat(player)) {
-            player.sendMessage("[Security] Randomization vector disabled during active engagement.");
+            player.sendMessage("§c§l» §7Teleport disabled while in combat.");
             return
         }
 
-        player.sendMessage("[System] Initiating spatial search protocol...");
+
+        player.sendMessage("§6§l» §eFinding a safe spot...");
+
         findSafeLocation(player, range)
     }
 }
 
 /*
- * SAFE_LOCATION_SEARCH_ALGORITHM
+ * Safe Location Search
  * ----------------------------------------------------------------------------
- * Performs up to 50 iterations to identify a valid surface block. 
- * Utilizes a polar-coordinate randomization strategy to ensure uniform 
- * distribution across the circular search area.
+ * Searches for a safe location to teleport the player.
  */
+
 async function findSafeLocation(player, maxRange) {
     const overworld = Kernel.world.getDimension("minecraft:overworld")
     const spawnLocation = Kernel.world.getDefaultSpawnLocation?.() || { x: 0, y: 0, z: 0 }
@@ -87,10 +88,11 @@ async function findSafeLocation(player, maxRange) {
             Kernel.system.run(() => {
                 const TeleportService = Kernel.get("teleportService")
                 if (TeleportService.teleport(player, location, "minecraft:overworld")) {
-                    player.sendMessage(`[Success] Spatial migration complete: (${Math.floor(x)}, ${safeY}, ${Math.floor(z)})`);
+                    player.sendMessage(`§a§l» §fTeleported to §e(${Math.floor(x)}, ${safeY}, ${Math.floor(z)})§f!`);
                 } else {
-                    player.sendMessage("[Fatal] Teleportation handshake failure.");
+                    player.sendMessage("§c§l» §7Teleport failed.");
                 }
+
             })
             return
         } else {
@@ -98,25 +100,28 @@ async function findSafeLocation(player, maxRange) {
             if (!testBlock) {
                 unloadedChunkCount++
                 if (unloadedChunkCount >= 10) {
-                    player.sendMessage(`[Warning] Chunk-buffer saturation detected. Try a smaller range.`);
+                    player.sendMessage(`§e§l» §7Area is too far, try a smaller range.`);
                     unloadedChunkCount = 0
                 }
+
             }
         }
 
         if (attempts % 10 === 0) {
-            player.sendMessage(`[System] Scanning... iteration ${attempts}/${maxAttempts}`);
+            player.sendMessage(`§6§l» §7Searching... (Attempt ${attempts}/${maxAttempts})`);
         }
+
     }
 
-    player.sendMessage(`[Error] Search timeout. No safe surface identified in ${maxAttempts} iterations.`);
+    player.sendMessage(`§c§l» §7Could not find a safe spot after ${maxAttempts} attempts.`);
+
 }
 
 /* 
- * VERTICAL_SCAN_PROTOCOL
- * Scans from the sky-buffer down to the bedrock layer to find a 
- * non-volatile solid block with air clearance.
+ * Height Search
+ * Scans from the top of the world down to find a solid block.
  */
+
 async function findSafeY(dimension, x, z) {
     try {
         for (let y = 320; y >= -64; y--) {
@@ -149,10 +154,10 @@ async function findSafeY(dimension, x, z) {
 }
 
 /* 
- * SPATIAL_AREA_SAFETY_VALIDATOR
- * Checks a 3x3 footprint to ensure the entity won't suffocate or 
- * ignite upon arrival.
+ * Area Safety Check
+ * Ensures the player won't suffocate or fall into lava.
  */
+
 async function isAreaSafe(dimension, x, y, z) {
     for (let dx = -1; dx <= 1; dx++) {
         for (let dz = -1; dz <= 1; dz++) {
@@ -170,8 +175,9 @@ async function isAreaSafe(dimension, x, y, z) {
 }
 
 /* 
- * NON_VOLATILE_SURFACE_MANIFEST
+ * Safe Blocks List
  */
+
 function isSafeBlock(blockId) {
     const safeBlocks = [
         "minecraft:grass_block",
@@ -188,8 +194,9 @@ function isSafeBlock(blockId) {
 }
 
 /* 
- * VOLATILE_BLOCK_MANIFEST
+ * Dangerous Blocks List
  */
+
 function isDangerousBlock(blockId) {
     const dangerousBlocks = [
         "minecraft:lava",
