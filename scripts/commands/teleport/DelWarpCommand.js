@@ -7,8 +7,9 @@ import { WarpStore } from "../../systems/teleport/WarpStore.js"
 
 export const DelWarpCommand = {
     name: "delwarp",
-    description: "Delete a server-wide warp",
-    usage: "!delwarp <name>",
+    description: "Delete a global warp point",
+
+    usage: "/ae:delwarp <name>",
     permission: "essentials.warp.delete",
     category: "teleport",
 
@@ -16,24 +17,27 @@ export const DelWarpCommand = {
         const name = args[0]
         
         if (!name) {
-            player.sendMessage("§cUsage: !delwarp <name>")
+            player.sendMessage("§c§l» §7Usage: /ae:delwarp <name>");
             return
         }
+
 
         const exists = await WarpStore.hasWarp(name)
         
         if (!exists) {
-            player.sendMessage(`§cWarp '§e${name}§c' not found`)
+            player.sendMessage(`§c§l» §7Warp §e${name}§7 not found.`);
             return
         }
+
 
         const success = await WarpStore.deleteWarp(name)
         
         if (success) {
-            player.sendMessage(`§aWarp '§e${name}§a' deleted`)
+            player.sendMessage(`§a§l» §fWarp §e${name}§f has been deleted.`);
         } else {
-            player.sendMessage("§cFailed to delete warp")
+            player.sendMessage("§c§l» §7Failed to delete warp.");
         }
+
     }
 }
 

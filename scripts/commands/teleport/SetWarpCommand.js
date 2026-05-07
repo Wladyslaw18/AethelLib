@@ -7,8 +7,9 @@ import { WarpStore } from "../../systems/teleport/WarpStore.js"
 
 export const SetWarpCommand = {
     name: "setwarp",
-    description: "Create a new server-wide warp",
-    usage: "!setwarp <name>",
+    description: "Create a global warp point",
+
+    usage: "/ae:setwarp <name>",
     permission: "essentials.warp.set",
     category: "teleport",
 
@@ -16,20 +17,23 @@ export const SetWarpCommand = {
         const name = args[0]
         
         if (!name) {
-            player.sendMessage("§cUsage: !setwarp <name>")
+            player.sendMessage("§c§l» §7Usage: /ae:setwarp <name>");
             return
         }
+
 
         // Validate warp name
         if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-            player.sendMessage("§cWarp name can only contain letters, numbers, underscores, and hyphens")
+            player.sendMessage("§c§l» §7Warp name can only contain alphanumeric characters.");
             return
         }
 
+
         if (name.length < 1 || name.length > 16) {
-            player.sendMessage("§cWarp name must be between 1 and 16 characters")
+            player.sendMessage("§c§l» §7Warp name must be between 1-16 characters.");
             return
         }
+
 
         const location = player.location
         const dimension = player.dimension.id
@@ -37,10 +41,11 @@ export const SetWarpCommand = {
         const success = await WarpStore.setWarp(name, location, dimension, player.name)
         
         if (success) {
-            player.sendMessage(`§aWarp '§e${name}§a' created at your current location`)
+            player.sendMessage(`§a§l» §fWarp §e${name}§f has been created.`);
         } else {
-            player.sendMessage("§cFailed to create warp. A warp with this name may already exist")
+            player.sendMessage("§c§l» §7Failed to create warp. Name may be taken.");
         }
+
     }
 }
 
