@@ -14,20 +14,21 @@ export const RankCommand = {
     description: "View your current rank and permissions",
 
     /**
-     * Execute rank command
-     * @param {Player} player - Command executor
-     * @param {string[]} _args - Command arguments
+     * @param {any} _data Unused command data
+     * @param {Player} player Command executor
+     * @param {string[]} _args Command arguments
      */
-    execute: (player, _args) => {
+    async execute(_data, player, _args) {
         const ranks = getPlayerRanks(player)
 
         if (!ranks.length) {
-            player.sendMessage("§cYou don't have any ranks. Defaulting to Member.")
+            player.sendMessage("§c§l» §7You don't have any ranks. Defaulting to Member.")
             // Give default rank
             player.addTag("member")
             showRankInfo(player, ["member"])
             return
         }
+
 
         showRankInfo(player, ranks)
     }
@@ -62,8 +63,12 @@ function showRankInfo(player, ranks) {
         }
     }
 
+    player.sendMessage(" ")
+    player.sendMessage("§6§lYour Ranks")
     player.sendMessage(message)
+    player.sendMessage(" ")
 }
+
 
 /**
  * Get player's ranks sorted
