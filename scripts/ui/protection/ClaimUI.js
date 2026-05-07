@@ -4,7 +4,7 @@
 
 import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
-import { PERMISSIONS } from "../../systems/protection/ClaimService.js"
+// import { PERMISSIONS } from "../../systems/protection/ClaimService.js"
 
 /**
  * Show claim management UI
@@ -28,6 +28,7 @@ export async function showClaimUI(player) {
         form.button(`§b${claim.chunkKey}\n§7Trusted: ${Object.keys(claim.data?.trusted || {}).length}`)
     }
 
+    // @ts-ignore
     const response = await form.show(player)
     if (response.canceled) return
 
