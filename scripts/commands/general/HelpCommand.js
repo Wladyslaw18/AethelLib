@@ -1,29 +1,18 @@
 import { Kernel } from "../../core/Kernel.js"
 
-/*
- * INDUSTRIAL_MANUAL_ORCHESTRATOR
- * ----------------------------------------------------------------------------
- * The primary discovery vector for the command ecosystem. Scans the 
- * CommandRegistry and generates a categorized manifest of all active 
- * functional modules. 
- *
- * PHILOSOPHY: Information is a resource. Use this manual to identify 
- * and calibrate the execution-vectors required for industrial operations.
+/**
+ * Help Command - Shows available commands
  */
+
+
 export const HelpCommand = {
     name: "help",
-    description: "Generates the industrial manual for all registered command modules.",
-    usage: "!help [command_identifier]",
-    permission: null,
-    category: "GENERAL",
+    description: "Displays a list of available commands",
     parameters: [
-        { name: "command_identifier", type: "string", optional: true }
+        { name: "command", type: "string", optional: true }
     ],
 
-    /* 
-     * MANUAL_QUERY_VECTOR
-     */
-    execute(player, args) {
+    execute(_data, player, args) {
         const CommandRegistry = Kernel.get("commandRegistry")
         const topic = args[0]?.toLowerCase()
 
@@ -35,63 +24,82 @@ export const HelpCommand = {
         const command = CommandRegistry.get(topic)
         if (command) {
             const PermissionManager = Kernel.get("permissions")
-            //  SECURITY_FILTER: Prevent manual-leak of unauthorized vectors.
             if (command.permission && !PermissionManager.hasPermission(player, command.permission)) {
-                player.sendMessage(`§cSECURITY_FAILURE: CLEARANCE_LEVEL_INADEQUATE`);
+                player.sendMessage("§cYou do not have permission to view this command.");
                 return;
             }
             this._showCommandHelp(player, command)
             return
         }
 
-        player.sendMessage(`§cERROR: MANUAL_IDENTIFIER_NOT_FOUND: '${topic}'`);
-        player.sendMessage("§7SUGGESTION: Execute !help for the global industrial manifest.");
+        player.sendMessage(`§cCommand '§e${topic}§c' not found.`);
     },
 
-    /*
-     * GLOBAL_MANIFEST_RENDERER
-     * Iterates through the entire registry and groups functional modules 
-     * by their industrial category.
+    /**
+     * Show all available commands
      */
     _showAllCommands(player, Registry) {
         const PermissionManager = Kernel.get("permissions")
         const commands = Registry.getAll()
-        const categories = {}
+        const visibleCommands = []
 
         for (const name of commands) {
             const cmd = Registry.get(name)
-
-            // 🛡️ SECURITY_FILTER: Skip commands the player is not authorized to use.
+            // Skip aliases and commands player can't use
+            if (name.includes(":")) continue; 
             if (cmd.permission && !PermissionManager.hasPermission(player, cmd.permission)) continue;
 
-            const cat = cmd.category || "GENERAL"
-            if (!categories[cat]) categories[cat] = []
-            categories[cat].push(name)
+            visibleCommands.push(name)
         }
 
-        player.sendMessage("§0§l» §6§lINDUSTRIAL_MANUAL_MANIFEST§0 «")
-        player.sendMessage("§7Active functional modules and execution-vectors:")
+        player.sendMessage(" ")
+        player.sendMessage("§6§lAethel§fLib")
+        player.sendMessage("§7Commands List")
+        player.sendMessage(" ")
 
-        for (const [cat, cmds] of Object.entries(categories)) {
-            player.sendMessage(`\n§e[${cat.toUpperCase()}]`)
-            player.sendMessage(`§7${cmds.sort().join(", ")}`)
-        }
+        visibleCommands.sort().forEach(name => {
+            const cmd = Registry.get(name);
+            const split = Math.ceil(name.length / 2);
+            const firstHalf = name.substring(0, split);
+            const secondHalf = name.substring(split);
+            const desc = cmd.description || "No description";
+            
+            // Padding for alignment (22 characters + 5 extra spaces)
+            const padding = " ".repeat(Math.max(5, 22 - name.length));
+            
+            player.sendMessage(`§6- §6§l${firstHalf}§f§l${secondHalf}${padding}§b§o${desc}`);
+        });
 
-        player.sendMessage("\n§7Execute !help <identifier> for detailed syntax calibration.");
+
+
+
+
+        player.sendMessage(" ")
+        player.sendMessage("§7Use §6/ae:help <command> §7for more info.")
+        player.sendMessage(" ")
     },
 
-    /*
-     * MODULE_SPECIFIC_MANUAL_RENDERER
+
+    /**
+     * Show details for a specific command
      */
     _showCommandHelp(player, command) {
-        player.sendMessage(`§0§l» §6§lMANUAL_ENTRY: !${command.name.toUpperCase()}§0 «`)
-        player.sendMessage(`§7Manifest_Description: §f${command.description}`)
-        player.sendMessage(`§7Syntax_Calibration: §e${command.usage || `!${command.name}`}`)
+        player.sendMessage(" ")
+        player.sendMessage(`§6§l» §f§lCOMMAND: /ae:${command.name.toUpperCase()} §6§l«`);
+        player.sendMessage(`§7${command.description}`);
+        player.sendMessage(" ")
+        player.sendMessage(`§6§lCategory:  §f${command.category || "General"}`);
+        player.sendMessage(`§6§lUsage:     §f${command.usage || `/ae:${command.name}`}`);
+        
         if (command.aliases && command.aliases.length > 0) {
-            player.sendMessage(`§7Alias_Resolution_Nodes: §8${command.aliases.join(", ")}`)
+            player.sendMessage(`§6§lAliases:   §f${command.aliases.join(", ")}`);
         }
+        
         if (command.permission) {
-            player.sendMessage(`§7Clearance_Requirement: §8${command.permission}`)
+            player.sendMessage(`§6§lSecurity:  §f${command.permission}`);
         }
+        
+        player.sendMessage(" ")
     }
 }
+

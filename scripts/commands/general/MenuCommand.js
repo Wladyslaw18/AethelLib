@@ -1,26 +1,19 @@
 import { showMainGUI } from "../../ui/MainGUI.js"
 
 /*
- * GUI_INJECTION_VECTOR
+ * INDUSTRIAL_MENU_ENTRY_VECTOR
  * ----------------------------------------------------------------------------
- * A high-performance manual trigger for the primary navigation interface. 
- * Invokes the MainGUI protocol to present a visual abstraction layer 
- * over the command ecosystem.
- *
- * PHILOSOPHY: For those who prefer buttons over CLI tokens.
+ * The primary entry-node for the visual navigation nexus.
  */
 export const MenuCommand = {
     name: "menu",
-    description: "Invokes the primary industrial navigation interface.",
-    usage: "!menu",
+    description: "Open the main server menu",
+
+    usage: "/ae:menu",
     permission: "essentials.menu",
     category: "General",
-    aliases: ["m", "gui"],
 
-    /* 
-     * INTERFACE_TRIGGER_ENTRY
-     */
     execute(_data, player, _args) {
-        showMainGUI(player)
+        showMainGUI(player);
     }
 }
