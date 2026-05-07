@@ -1,16 +1,11 @@
 import { Kernel } from "../../core/Kernel.js"
 
 /*
- * INDUSTRIAL_ENTITY_EXCLUSION_ENGINE
+ * Ban Manager
  * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for the permanent or temporal 
- * exclusion of non-compliant entities. Manages the global exclusion-manifest 
- * and orchestrates the immediate ejection of entities with active 
- * ban-nodes.
- *
- * PHILOSOPHY: Compliance is mandatory. Entities that breach industrial 
- * protocols must be purged from the server's spatial-buffer.
+ * Handles permanent and temporary bans for players.
  */
+
 export const BanManager = {
     /* 
      * SYSTEM_BOOTSTRAP_PROTOCOL
@@ -28,7 +23,8 @@ export const BanManager = {
             checkPlayerBan(player)
         })
 
-        console.log("[BanManager] EXCLUSION_ENGINE_DOCKED_AND_OPERATIONAL");
+        console.log("[BanManager] Ban Manager online.");
+
     }
 }
 
@@ -47,9 +43,10 @@ function cleanupExpiredBans() {
         
         const activeBans = bans.filter(ban => {
             if (ban.temp && ban.expires <= now) {
-                console.log(`[BanManager] TEMPORAL_EXCLUSION_EXPIRED: ${ban.playerName}`)
+                console.log(`[BanManager] Ban expired for: ${ban.playerName}`)
                 return false
             }
+
             return true
         })
 
@@ -82,8 +79,9 @@ function checkPlayerBan(player) {
                 "STATUS: PERMANENT"
                 
             Kernel.system.run(() => {
-                player.kick(`§c[INDUSTRIAL_EXCLUSION] ACCESS_TERMINATED\n§eREASON: ${activeBan.reason}\n§7${durationText}`)
+                player.kick(`§c§lYou are banned!\n§eReason: ${activeBan.reason}\n§7${durationText}`)
             })
+
         }
     } catch (error) {
         console.error(`[BanManager] PROBE_FAILURE: ${error}`)

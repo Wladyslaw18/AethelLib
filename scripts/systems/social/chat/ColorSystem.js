@@ -223,6 +223,7 @@ export class ColorSystem {
         
         form.button("§cReset to Default", "textures/ui/cancel")
         
+        // @ts-ignore
         const response = await form.show(player)
         if (response.canceled) return
         

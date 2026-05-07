@@ -5,14 +5,18 @@ import { Kernel } from "../../../core/Kernel.js"
 let initialized = false
 const chatCooldowns = new Map()
 
+/**
+ * Manages chat events, formatting, and mutes.
+ */
 export const ChatSystem = {
     /**
-     * Initialize chat system
+     * Initialize chat listeners
      */
     init: () => {
         if (initialized) return
         initialized = true
 
+        // @ts-ignore
         Kernel.world.beforeEvents.chatSend.subscribe((ev) => {
             const player = ev.sender
             const message = ev.message
@@ -21,19 +25,23 @@ export const ChatSystem = {
             const PermissionManager = Kernel.get("permissions")
             const RankFormatter = Kernel.get("formatter")
 
-            // Check if player is muted
+            // Check if player is muted via the SUPREME_STORE
             if (MuteStore.isMuted(player)) {
                 ev.cancel = true
                 Kernel.system.run(() => {
-                    player.sendMessage("§cYou are currently muted and cannot speak.")
+                    const muteData = MuteStore.getMuteData(player)
+                    if (muteData && muteData.duration > 0) {
+                        const remaining = Math.ceil((muteData.duration - (Date.now() - muteData.startTime)) / 1000 / 60)
+                        player.sendMessage(`§cYou are muted. Remaining: §e${remaining}m`)
+                    } else {
+                        player.sendMessage("§cYou are permanently muted.")
+                    }
                 })
                 return
             }
 
             // Check chat cooldown
-            const cooldownTime = PermissionManager.hasPermission(player, "chat.cooldown") ? 0 : 2000 // Example logic
-            // Note: Original code used PermissionManager.get(player, "chat.cooldown")
-            // We should stick to the new PermissionManager instance methods
+            const cooldownTime = PermissionManager.hasPermission(player, "chat.cooldown") ? 0 : 2000 
             
             if (cooldownTime > 0) {
                 const lastChat = chatCooldowns.get(player.id) || 0
@@ -42,9 +50,10 @@ export const ChatSystem = {
                 if (now - lastChat < cooldownTime) {
                     ev.cancel = true
                     const remaining = Math.ceil((cooldownTime - (now - lastChat)) / 1000)
-                    player.sendMessage(`§cPlease wait ${remaining} seconds before chatting again.`)
+                    player.sendMessage(`§c§l» §7Slow down! Wait §e${remaining}s §7before chatting again.`)
                     return
                 }
+
 
                 chatCooldowns.set(player.id, now)
             }
@@ -65,64 +74,28 @@ export const ChatSystem = {
     },
 
     /**
-     * Mute a player
-     * @param {Player} player - Player to mute
-     * @param {number} durationMs - Duration in milliseconds (0 = permanent)
+     * Mute a player (Proxy to Store)
      */
     mutePlayer: (player, durationMs = 0) => {
-        const muteData = {
-            muted: true,
-            startTime: Date.now(),
-            duration: durationMs
-        }
-
-        player.setDynamicProperty("ae:mute", JSON.stringify(muteData))
+        const MuteStore = Kernel.get("muteStore")
+        return MuteStore.mute(player, durationMs)
     },
 
     /**
-     * Unmute a player
-     * @param {Player} player - Player to unmute
+     * Unmute a player (Proxy to Store)
      */
     unmutePlayer: (player) => {
-        player.setDynamicProperty("ae:mute", undefined)
+        const MuteStore = Kernel.get("muteStore")
+        return MuteStore.unmute(player)
     },
 
     /**
-     * Check if player is muted
-     * @param {Player} player - Player to check
-     * @returns {boolean} Whether player is muted
+     * Check if player is muted (Proxy to Store)
      */
     isMuted: (player) => {
-        return isPlayerMuted(player)
+        const MuteStore = Kernel.get("muteStore")
+        return MuteStore.isMuted(player)
     }
 }
 
-/**
- * Check if player is muted (internal function)
- * @param {Player} player - Player to check
- * @returns {boolean} Whether player is muted
- */
-function isPlayerMuted(player) {
-    try {
-        const muteData = player.getDynamicProperty("ae:mute")
-        if (!muteData) return false
-
-        const mute = JSON.parse(String(muteData))
-        if (!mute.muted) return false
-
-        // Check if mute has expired
-        if (mute.duration > 0) {
-            const elapsed = Date.now() - mute.startTime
-            if (elapsed >= mute.duration) {
-                // Mute expired, remove it
-                player.setDynamicProperty("ae:mute", undefined)
-                return false
-            }
-        }
-
-        return true
-    } catch {
-        return false
-    }
-}
 

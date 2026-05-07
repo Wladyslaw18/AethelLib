@@ -1,25 +1,24 @@
 import { Kernel } from "../../core/Kernel.js"
 
-/*
- * INDUSTRIAL_COMMUNICATION_SUPPRESSOR
- * ----------------------------------------------------------------------------
- * A high-performance orchestration layer for the suppression of entity 
- * communication-packets. Interfaces with the PlayerStore to manage 
- * persistent mute-nodes.
- *
- * PHILOSOPHY: Non-compliant communication must be suppressed. Use this 
- * registry to manifest the industrial silence-protocol for specific 
- * entity identifiers.
+/**
+ * Manages player mutes using the PlayerStore.
+ * Supports both permanent and timed mutes with automatic expiration.
  */
 export const MuteStore = {
-    /* 
-     * SUPPRESSION_INJECTION_VECTOR
-     * Commits a suppression-node to the entity's persistent buffer.
+    /**
+     * Mute a player for a specific duration
      */
-    async mute(player) {
+    async mute(player, durationMs = 0) {
         const PlayerStore = Kernel.get("playerStore")
         const StoreKeys = Kernel.get("keys")
-        return await PlayerStore.set(player, StoreKeys.mute(player.id), true)
+        
+        const muteData = {
+            muted: true,
+            startTime: Date.now(),
+            duration: durationMs
+        }
+        
+        return await PlayerStore.set(player, StoreKeys.mute(player.id), muteData)
     },
 
     /* 
@@ -28,16 +27,41 @@ export const MuteStore = {
     async unmute(player) {
         const PlayerStore = Kernel.get("playerStore")
         const StoreKeys = Kernel.get("keys")
-        return await PlayerStore.set(player, StoreKeys.mute(player.id), false)
+        return await PlayerStore.delete(player, StoreKeys.mute(player.id))
     },
 
     /* 
      * SUPPRESSION_STATUS_QUERY
+     * Checks the entity's persistent buffer for an active suppression-node. 
+     * Automatically handles temporal expiration logic.
      */
     isMuted(player) {
         const PlayerStore = Kernel.get("playerStore")
         const StoreKeys = Kernel.get("keys")
-        const muted = PlayerStore.get(player, StoreKeys.mute(player.id))
-        return muted === true
+        
+        const muteData = PlayerStore.get(player, StoreKeys.mute(player.id))
+        if (!muteData || !muteData.muted) return false
+
+        // Check for temporal expiration
+        if (muteData.duration > 0) {
+            const elapsed = Date.now() - muteData.startTime
+            if (elapsed >= muteData.duration) {
+                // SUPPRESSION_EXPIRED: Async decommissioning scheduled
+                Kernel.system.run(() => this.unmute(player))
+                return false
+            }
+        }
+
+        return true
+    },
+
+    /**
+     * GET_SUPPRESSION_DATA
+     */
+    getMuteData(player) {
+        const PlayerStore = Kernel.get("playerStore")
+        const StoreKeys = Kernel.get("keys")
+        return PlayerStore.get(player, StoreKeys.mute(player.id))
     }
 }
+
