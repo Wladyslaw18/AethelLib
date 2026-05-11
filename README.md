@@ -4,12 +4,12 @@ AethelLib is a hard-coded shield for people who want to build things that don't 
 
 ## 🚀 WHY WASTE TIME?
 
-- **Don't Reinvent the Wheel**: I spent the sleepless nights making sure the Map lookups don't grow forever and the Database doesn't choke the engine. Just plug in and play. 🛡️
+- **Don't Reinvent the Wheel**: I spent the sleepless nights making sure the Map lookups don't grow forever and the Database doesn't choke the engine. Just plug in and play. 
 - **Fork It**: Don't like my logic? Take it. Rip it apart. Make it faster.
 - **Expand It**: The Kernel is a modular dock. You can add your own systems in seconds without touching my core files.
 - **Learn From It**: See how we handle sharding and the Ghost Interpreter. Use it to level up your own scripts.
 
-## 🏗️ THE ARCHITECTURE
+##  THE ARCHITECTURE
 
 We use the Stable Proxy Pattern. You talk to the Kernel; the Kernel talks to Minecraft. When Minecraft’s API changes (and it will), you only fix the Kernel. Your game logic stays 100% the same.
 
@@ -53,7 +53,7 @@ Kernel.get("commandRegistry").register("ping", {
 });
 ```
 
-## 🔌 THE PLUGIN PROTOCOL (DON'T TOUCH THE CORE)
+##  THE PLUGIN PROTOCOL (DON'T TOUCH THE CORE)
 
 You don't want to dock stuff in the main core or kernel files? No issue. Follow the **Industrial Isolation Protocol**:
 
@@ -69,7 +69,7 @@ By using the plugin system, you ensure that your logic survives AethelLib core u
 - **Your Logic = Private**: Link your own top-secret, closed-source code to AethelLib. Keep your secrets.
 - **The Core = Public**: If you optimize the Kernel or fix a bug in the Database, you MUST share that. Keep the backbone strong for the community. 👍
 
-## 🛡️ THE RULES OF THE FORGE
+## THE RULES OF THE FORGE
 
 1.  **Keep it Tiny**: If a file is over 120 lines, refactor it. Or don't. I'm a rule, not your dad. (But seriously, your future self will find you and he will be angry).
 2.  **Zero-Bypass**: Use the Kernel methods. Going rogue is fun until the engine updates and your script becomes a literal industrial paperweight.
