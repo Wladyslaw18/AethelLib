@@ -1,138 +1,143 @@
 import { Kernel } from "../../core/Kernel.js"
 
-/*
- * Random Teleport Command
- * ----------------------------------------------------------------------------
- * Teleports a player to a random safe location within a defined range.
- */
+// ----------------------------------------------------------------------------
+// | variable: cooldowns                                                      |
+// | in-memory registry of player IDs and their last execution tick.          |
+// | used to prevent spamming the heavy RTP search algorithm.                 |
+// ----------------------------------------------------------------------------
+const cooldowns = new Map()
 
-
-const cooldowns = new Map() // PLAYER_COOLDOWN_BUFFER
-
+// ----------------------------------------------------------------------------
+// | object: RTPCommand                                                       |
+// | command definition for random spatial migration.                          |
+// | utilizes a background job to search for safe landing zones.               |
+// ----------------------------------------------------------------------------
 export const RTPCommand = {
+    // internal name.
     name: "rtp",
+    // human-readable description.
     description: "Teleport to a random safe location",
-
+    // syntax guide.
     usage: "/ae:rtp [range]",
-
+    // required permission node.
     permission: "essentials.rtp",
+    // command category.
     category: "Teleport",
+    // native parameter definitions.
     parameters: [
         { name: "range", type: "int", optional: true }
     ],
 
-    /* 
-     * VECTOR_EXECUTION_ENTRY
-     */
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | the entry vector for random teleportation. handles range validation      |
+    // | and triggers the asynchronous search job.                                |
+    // ----------------------------------------------------------------------------
     execute(_data, player, args) {
-        /* COOLDOWN_RESOLUTION */
+        // step 1: cooldown resolution.
         const PermissionManager = Kernel.get("permissions")
         const cd = (PermissionManager.getPermission(player, "rtp.cooldown") ?? 10) * 20
         const last = cooldowns.get(player.id) ?? 0
         if (Kernel.system.currentTick - last < cd) {
-            player.sendMessage(`§c§l» §7Teleport on cooldown. Wait §e${Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)}s§7.`);
+            player.sendMessage(`\xA7c\xA7l» \xA77Teleport on cooldown. Wait \xA7e${Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)}s\xA77.`);
             return
         }
 
+        // update cooldown pointer.
         cooldowns.set(player.id, Kernel.system.currentTick)
 
+        // step 2: resolve range. default to 1000 blocks.
         const range = args[0] ? parseInt(args[0]) : 1000
-
+        // safety constraints to prevent searching outside loaded world bounds.
         if (isNaN(range) || range < 100 || range > 10000) {
-            player.sendMessage("§c§l» §7Range must be between 100 and 10000.");
+            player.sendMessage("\xA7c\xA7l» \xA77Range must be between 100 and 10000.");
             return
         }
 
-
-        /* COMBAT_STATE_PROBE */
+        // step 3: combat status check.
         if (isInCombat(player)) {
-            player.sendMessage("§c§l» §7Teleport disabled while in combat.");
+            player.sendMessage("\xA7c\xA7l» \xA77Teleport disabled while in combat.");
             return
         }
 
+        // feedback to the player.
+        player.sendMessage("\xA76\xA7l» \xA7eFinding a safe spot...");
 
-        player.sendMessage("§6§l» §eFinding a safe spot...");
-
+        // step 4: trigger the safe search job.
         findSafeLocation(player, range)
     }
 }
 
-/*
- * Safe Location Search
- * ----------------------------------------------------------------------------
- * Searches for a safe location to teleport the player.
- */
-
+// ----------------------------------------------------------------------------
+// | function: findSafeLocation                                               |
+// | initiates the random search sequence by offloading a generator job       |
+// | to the kernel's scheduler.                                               |
+// ----------------------------------------------------------------------------
 async function findSafeLocation(player, maxRange) {
     const overworld = Kernel.world.getDimension("minecraft:overworld");
     const spawnLoc = Kernel.world.getDefaultSpawnLocation?.() || { x: 0, y: 0, z: 0 };
     
-    // 🔥 Offload to the background job queue so we don't cook the main thread
+    // offload to the background job queue. 
+    // this prevents the script from hanging the server while scanning blocks.
     Kernel.system.runJob(rtpGenerator(player, overworld, spawnLoc, maxRange));
 }
 
+// ----------------------------------------------------------------------------
+// | function: rtpGenerator                                                   |
+// | a time-slicing generator that scans for safe landing coordinates.        |
+// | yields execution back to the engine every 10 Y-levels to maintain 20 TPS.|
+// ----------------------------------------------------------------------------
 function* rtpGenerator(player, dimension, spawnLocation, maxRange) {
     let attempts = 0;
     const maxAttempts = 20;
 
+    // attempt to find a spot up to 20 times.
     while (attempts < maxAttempts) {
         attempts++;
+        // calculate random radial coordinates around spawn.
         const angle = Math.random() * 2 * Math.PI;
         const distance = Math.random() * maxRange;
         const x = Math.floor(spawnLocation.x + Math.cos(angle) * distance);
         const z = Math.floor(spawnLocation.z + Math.sin(angle) * distance);
 
-        // Yield every 10 Y-levels to maintain 20 TPS
+        // scan vertically from the sky down to bedrock.
         for (let y = 320; y >= -64; y--) {
-            if (y % 10 === 0) yield; // ⬅️ THIS SAVES YOUR SERVER
+            // CRITICAL: yield every 10 levels. 
+            // this allows the engine to process other tasks and keep the game smooth.
+            if (y % 10 === 0) yield; 
 
             try {
+                // fetch the block at the target coordinate.
                 const block = dimension.getBlock({ x, y, z });
                 if (!block) continue;
 
+                // check the block above for suffocation hazards.
                 const blockAbove = dimension.getBlock({ x, y: y + 1, z });
                 if (!blockAbove) continue;
 
+                // validation criteria: solid base block and air gap for the player.
                 if (isSafeBlock(block.typeId) && blockAbove.typeId === "minecraft:air") {
-                    // Safe location found!
+                    // safe location found. execute the migration.
                     const location = { x: x + 0.5, y: y + 1, z: z + 0.5 };
                     
                     const TeleportService = Kernel.get("teleportService");
                     TeleportService.teleport(player, location, "minecraft:overworld");
-                    player.sendMessage(`§a§l» §fTeleported to §e(${x}, ${y + 1}, ${z})§f!`);
-                    return; // End generator
+                    player.sendMessage(`\xA7a\xA7l» \xA7fTeleported to \xA7e(${x}, ${y + 1}, ${z})\xA7f!`);
+                    return; // exit generator.
                 }
-            } catch (e) { /* Chunk unloaded */ }
-        }
-    }
-    player.sendMessage(`§c§l» §7Could not find a safe spot. Try again.`);
-}
-
-/* 
- * Area Safety Check
- * Ensures the player won't suffocate or fall into lava.
- */
-
-async function isAreaSafe(dimension, x, y, z) {
-    for (let dx = -1; dx <= 1; dx++) {
-        for (let dz = -1; dz <= 1; dz++) {
-            try {
-                const block = dimension.getBlock({ x: Math.floor(x + dx), y: y, z: Math.floor(z + dz) })
-                if (!block || isDangerousBlock(block.typeId)) {
-                    return false
-                }
-            } catch (error) {
-                return false
+            } catch (e) { 
+                // chunk might not be loaded yet. skip.
             }
         }
     }
-    return true
+    // if all attempts failed.
+    player.sendMessage(`\xA7c\xA7l» \xA77Could not find a safe spot. Try again.`);
 }
 
-/* 
- * Safe Blocks List
- */
-
+// ----------------------------------------------------------------------------
+// | function: isSafeBlock                                                    |
+// | whitelist of block identifiers that are safe to stand on.                |
+// ----------------------------------------------------------------------------
 function isSafeBlock(blockId) {
     const safeBlocks = [
         "minecraft:grass_block",
@@ -148,23 +153,10 @@ function isSafeBlock(blockId) {
     return safeBlocks.includes(blockId)
 }
 
-/* 
- * Dangerous Blocks List
- */
-
-function isDangerousBlock(blockId) {
-    const dangerousBlocks = [
-        "minecraft:lava",
-        "minecraft:magma_block",
-        "minecraft:fire",
-        "minecraft:soul_fire",
-        "minecraft:cactus",
-        "minecraft:water",
-        "minecraft:flowing_water"
-    ]
-    return dangerousBlocks.includes(blockId)
-}
-
+// ----------------------------------------------------------------------------
+// | function: isInCombat                                                     |
+// | placeholder for combat integrity check.                                  |
+// ----------------------------------------------------------------------------
 function isInCombat(_player) {
     // TODO: Integrate with CombatIntegrity engine.
     return false

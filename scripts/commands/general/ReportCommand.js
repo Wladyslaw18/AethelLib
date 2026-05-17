@@ -3,51 +3,63 @@ import { Kernel } from "../../core/Kernel.js"
 import { ReportStore } from "../../systems/general/ReportStore.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
-/*
- * Report Command
- * ----------------------------------------------------------------------------
- * Allows players to report bugs or player misconduct to the staff.
- */
-
+// ----------------------------------------------------------------------------
+// | object: ReportCommand                                                    |
+// | command definition for the centralized incident reporting vector.         |
+// | supports both server-wide issues (bugs) and player misconduct reports.    |
+// ----------------------------------------------------------------------------
 export const ReportCommand = {
+    // internal identifier.
     name: "report",
+    // human-readable description.
     description: "Report a player or a bug to the staff.",
-
+    // syntax guide.
     usage: "/ae:report <player_identifier|'server'> <content>",
+    // required permission node.
     permission: "essentials.report",
+    // command category.
     category: "Utility",
+    // native parameter definitions.
     parameters: [
         { name: "target", type: "player", optional: false },
         { name: "reason", type: "string", optional: true }
     ],
 
-    /* 
-     * REPORT_ENTRY_PIPELINE
-     */
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | entry point for report submission. routes the request to either a server  |
+    // | bug handler or a player report handler based on the first token.         |
+    // ----------------------------------------------------------------------------
     execute(_data, player, args) {
+        // syntax validation.
         if (args.length < 2) {
-            player.sendMessage("§c§l» §7Usage: /ae:report <player|'server'> <reason>");
-            player.sendMessage("§8- Example: /ae:report PlayerX cheating");
-            player.sendMessage("§8- Example: /ae:report server lag issues");
+            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:report <player|'server'> <reason>");
+            player.sendMessage("\xA78- Example: /ae:report PlayerX cheating");
+            player.sendMessage("\xA78- Example: /ae:report server lag issues");
             return
         }
 
         const reportType = args[0].toLowerCase()
+        // join remaining tokens as the report description.
         const message = args.slice(1).join(" ")
 
+        // branch based on target type.
         if (reportType === "server") {
             createServerReport(player, message)
         } else {
-            createPlayerReport(player, args[0], message) // Use raw arg for exact name lookup
+            // we use the raw targetName token and resolve it inside the handler.
+            createPlayerReport(player, args[0], message) 
         }
     }
 }
 
-/* 
- * SERVER_INCIDENT_HANDLER
- */
+// ----------------------------------------------------------------------------
+// | function: createServerReport                                             |
+// | packages a bug report and commits it to the persistent store.            |
+// ----------------------------------------------------------------------------
 function createServerReport(player, message) {
     const report = {
+        // generate a unique temporal identifier.
         id: generateReportId(),
         type: "server",
         reporter: player.name,
@@ -57,22 +69,24 @@ function createServerReport(player, message) {
         status: "OPEN"
     }
 
+    // persist to the database.
     ReportStore.saveReport(report)
+    // alert online staff members immediately.
     notifyAdmins(report)
     
-    player.sendMessage("§a§l» §fServer report submitted. The staff have been notified.");
+    player.sendMessage("\xA7a\xA7l» \xA7fServer report submitted. The staff have been notified.");
 }
 
-/* 
- * PLAYER_INCIDENT_HANDLER
- * Performs a name-to-UUID resolution before committing the report 
- * to ensure target persistence across session changes.
- */
+// ----------------------------------------------------------------------------
+// | function: createPlayerReport                                             |
+// | resolves the target player and builds a conduct report.                  |
+// ----------------------------------------------------------------------------
 function createPlayerReport(player, targetName, message) {
+    // resolve the target entity. must be online for the initial report.
     const target = PlayerUtils.findPlayer(targetName)
 
     if (!target) {
-        player.sendMessage(`§c§l» §7Player '${targetName}' not found or offline.`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found or offline.`);
         return
     }
 
@@ -88,31 +102,35 @@ function createPlayerReport(player, targetName, message) {
         status: "OPEN"
     }
 
+    // commit and notify.
     ReportStore.saveReport(report)
     notifyAdmins(report)
     
-    player.sendMessage(`§a§l» §fReport against §e${target.name} §fsubmitted.`);
+    player.sendMessage(`\xA7a\xA7l» \xA7fReport against \xA7e${target.name} \xA7fsubmitted.`);
 }
 
-/* 
- * Generate a unique report ID
- */
+// ----------------------------------------------------------------------------
+// | function: generateReportId                                               |
+// | builds a collision-resistant unique ID string for database indexing.     |
+// ----------------------------------------------------------------------------
 function generateReportId() {
     return `report_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
-/* 
- * Notify online admins about the new report
- */
+// ----------------------------------------------------------------------------
+// | function: notifyAdmins                                                   |
+// | broadcasts the report metadata to all online players with staff perms.   |
+// ----------------------------------------------------------------------------
 function notifyAdmins(report) {
     const PermissionManager = Kernel.get("permissions")
-    const reportType = report.type === "server" ? "§c[SERVER ISSUE]" : `§e[PLAYER REPORT] §f${report.target}`
-    const message = `§6§l» §e${reportType} §7from §f${report.reporter}§7: §f${report.message}`
+    // format a pretty header based on the report type.
+    const reportType = report.type === "server" ? "\xA7c[SERVER ISSUE]" : `\xA7e[PLAYER REPORT] \xA7f${report.target}`
+    const message = `\xA76\xA7l» \xA7e${reportType} \xA77from \xA7f${report.reporter}\xA77: \xA7f${report.message}`
 
+    // iterate through all players and check permission nodes.
     world.getAllPlayers().forEach(p => {
         if (PermissionManager.hasPermission(p, "essentials.admin.notify")) {
             p.sendMessage(message)
         }
     })
 }
-

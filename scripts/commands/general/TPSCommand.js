@@ -1,44 +1,43 @@
 import { system, world } from "@minecraft/server"
 
-/*
- * INDUSTRIAL_PERFORMANCE_DIAGNOSTIC
- * ----------------------------------------------------------------------------
- * A high-performance diagnostic tool for monitoring server-side temporal 
- * heartbeat. Implements a rolling-buffer of tick-timestamps to resolve 
- * the real-time Ticks-Per-Second (TPS) delta and uptime metrics.
- *
- * PHILOSOPHY: Performance is the lifeblood of the empire. Use this 
- * diagnostic vector to identify industrial-scale performance-degradation 
- * before system-collapse occurs.
- */
+// ----------------------------------------------------------------------------
+// | variable: tickTimes                                                      |
+// | a rolling buffer of millisecond timestamps from the last 20 ticks.       |
+// | used to calculate the real-world passage of time vs engine ticks.        |
+// ----------------------------------------------------------------------------
+const tickTimes = []
 
-const tickTimes = [] // ROLLING_TIMESTAMP_BUFFER
-
-/* 
- * TEMPORAL_SAMPLING_PROTOCOL
- * Pushes the current millisecond-timestamp into the buffer every tick. 
- * Caps at 21 entries to provide a 1-second rolling industrial average.
- */
+// ----------------------------------------------------------------------------
+// | system: temporal sampling                                                 |
+// | pushes the current time into the buffer every single tick.               |
+// | we cap it at 21 entries to get exactly 1 second of rolling data.         |
+// ----------------------------------------------------------------------------
 system.runInterval(() => {
     tickTimes.push(Date.now())
     if (tickTimes.length > 21) tickTimes.shift()
 }, 1)
 
-/* 
- * TPS_RESOLUTION_PROTOCOL
- */
+// ----------------------------------------------------------------------------
+// | function: getRealTPS                                                     |
+// | resolves the Ticks-Per-Second by comparing the time delta between the    |
+// | first and last samples in our 1-second window.                           |
+// ----------------------------------------------------------------------------
 function getRealTPS() {
     if (tickTimes.length < 2) return 20
     const elapsed = tickTimes[tickTimes.length - 1] - tickTimes[0]
-    if (elapsed === 0) return 20
+    // prevent division by zero or negative time.
+    if (elapsed <= 0) return 20
+    // formula: (total samples - 1) / (seconds elapsed).
     return Math.min(20, Math.round((tickTimes.length - 1) / (elapsed / 1000)))
 }
 
-const startTime = Date.now() // KERNEL_INITIALIZATION_STAMP
+// capture the exact moment the script engine started.
+const startTime = Date.now()
 
-/* 
- * UPTIME_RESOLUTION_PROTOCOL
- */
+// ----------------------------------------------------------------------------
+// | function: getUptime                                                      |
+// | calculates human-readable hours/mins/secs since the kernel boot.         |
+// ----------------------------------------------------------------------------
 function getUptime() {
     const uptime = Date.now() - startTime
     const hours = Math.floor(uptime / 3600000)
@@ -47,39 +46,51 @@ function getUptime() {
     return `${hours}h ${minutes}m ${seconds}s` 
 }
 
+// ----------------------------------------------------------------------------
+// | object: TPSCommand                                                       |
+// | command definition for monitoring engine health and temporal stability.   |
+// ----------------------------------------------------------------------------
 export const TPSCommand = {
+    // internal name.
     name: "tps",
+    // human-readable description.
     description: "Check server performance and uptime",
-
+    // syntax guide.
     usage: "/ae:tps",
+    // required permission level.
     permission: "essentials.tps",
+    // command category.
     category: "GENERAL",
 
-    /* 
-     * DIAGNOSTIC_EXECUTION_VECTOR
-     */
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | collects performance metrics and prints a colored status report.         |
+    // ----------------------------------------------------------------------------
     execute(_data, player, _args) {
         const tps = getRealTPS()
-        const tpsColor = tps >= 18 ? "§a" : tps >= 12 ? "§e" : "§c"
+        // color coding: Green for 18-20 (Healthy), Yellow for 12-17 (Lagging), Red for <12 (Dying).
+        const tpsColor = tps >= 18 ? "\xA7a" : tps >= 12 ? "\xA7e" : "\xA7c"
         const playerCount = world.getAllPlayers().length
 
         player.sendMessage(" ")
-        player.sendMessage("§6§lServer Performance")
-        player.sendMessage(`§7TPS: ${tpsColor}${tps} §f/ 20`)
-        player.sendMessage(`§7Players: §e${playerCount}`)
-        player.sendMessage(`§7Uptime: §e${getUptime()}`)
-        player.sendMessage(`§7Memory: ${getMemoryUsage()}`)
+        player.sendMessage("\xA76\xA7lServer Performance")
+        player.sendMessage(`\xA77TPS: ${tpsColor}${tps} \xA7f/ 20`)
+        player.sendMessage(`\xA77Players: \xA7e${playerCount}`)
+        player.sendMessage(`\xA77Uptime: \xA7e${getUptime()}`)
+        player.sendMessage(`\xA77Memory: ${getMemoryUsage()}`)
         player.sendMessage(" ")
     }
-
 }
 
-/* 
- * MEMORY_PRESSURE_PROBE (PROVISIONAL)
- */
+// ----------------------------------------------------------------------------
+// | function: getMemoryUsage                                                 |
+// | PROVISIONAL: Bedrock's JS environment lacks a direct heap probe.         |
+// | this returns a simulated status based on engine rhythm until we find a   |
+// | way to hook the allocator or we get a native API.                        |
+// ----------------------------------------------------------------------------
 function getMemoryUsage() {
     const tick = system.currentTick
-    if (tick % 100 === 0) return "§aSTABLE"
-    if (tick % 50 === 0) return "§eMODERATE_LOAD"
-    return "§cHIGH_PRESSURE"
+    if (tick % 100 === 0) return "\xA7aSTABLE"
+    if (tick % 50 === 0) return "\xA7eMODERATE_LOAD"
+    return "\xA7cHIGH_PRESSURE"
 }
