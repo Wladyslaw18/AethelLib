@@ -19,18 +19,17 @@ export async function showIndividualPlayerPanel(player, target, backCallback) {
     const dim = target.dimension.id.split(":").pop().replace(/^\w/, c => c.toUpperCase())
 
     const form = new ActionFormData()
-        .title(`§e§l${target.name} Panel`)
-        .body(`§aId : §f${target.id}\n§aAdmin : §f${isAdmin ? "Yes" : "No"}\n§aGamemode : §f${target.getGameMode()}\n§aMoney : §f$${money.toLocaleString()}\n§aOwned Homes : §f${homes}\n§aPosition : §f${Math.floor(pos.x)}, ${Math.floor(pos.y)}, ${Math.floor(pos.z)}\n§aDimension : §f${dim}`)
-        .button("§aSet Money")
-        .button("§aTeleport")
-        .button("§cDisable TPA")
-        .button("§cMute")
-        .button("§0List Homes")
-        .button("§eKick")
-        .button("§cBan")
-        .button("§6Check Inventory")
-        .button("§7Check Lands")
-        .button("§c<= BACK")
+        .title(`\xA7e\xA7l${target.name} Panel`)
+        .body(`\xA7aId : \xA7f${target.id}\n\xA7aAdmin : \xA7f${isAdmin ? "Yes" : "No"}\n\xA7aGamemode : \xA7f${target.getGameMode()}\n\xA7aMoney : \xA7f$${money.toLocaleString()}\n\xA7aOwned Homes : \xA7f${homes}\n\xA7aPosition : \xA7f${Math.floor(pos.x)}, ${Math.floor(pos.y)}, ${Math.floor(pos.z)}\n\xA7aDimension : \xA7f${dim}`)
+        .button("\xA7aSet Money")
+        .button("\xA7aTeleport")
+        .button("\xA7cDisable TPA")
+        .button("\xA7cMute")
+        .button("\xA70List Homes")
+        .button("\xA7eKick")
+        .button("\xA7cBan")
+        .button("\xA76Check Inventory")
+        .button("\xA7c<= BACK")
 
     const res = await form.show(player)
     if (res.canceled) return
@@ -41,7 +40,7 @@ export async function showIndividualPlayerPanel(player, target, backCallback) {
         case 0: await showSetMoneyUI(player, target, refresh); break
         case 1: 
             player.teleport(target.location, { dimension: target.dimension })
-            player.sendMessage(`§a§l» §fTeleported to §e${target.name}§f.`)
+            player.sendMessage(`\xA7a\xA7l» \xA7fTeleported to \xA7e${target.name}\xA7f.`)
             await refresh(); break
         case 2: handleTpaToggle(player, target, PlayerStore); await refresh(); break
         case 3: await showMuteUI(player, target, refresh); break
@@ -49,7 +48,6 @@ export async function showIndividualPlayerPanel(player, target, backCallback) {
         case 5: await showKickUI(player, target, refresh); break
         case 6: await showBanUI(player, target, refresh); break
         case 7: await showInventoryUI(player, target); break
-        case 8: player.sendMessage("§7Lands check coming soon..."); await refresh(); break
-        case 9: await backCallback(); break
+        case 8: await backCallback(); break
     }
 }

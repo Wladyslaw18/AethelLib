@@ -3,7 +3,7 @@ import { Kernel } from "../../../core/Kernel.js"
 
 export async function showKickUI(player, target, backCallback) {
     const form = new ModalFormData()
-        .title("§e§lKick Player")
+        .title("\xA7e\xA7lKick Player")
         // @ts-ignore
         .textField("Reason:", "No reason provided")
 
@@ -14,9 +14,9 @@ export async function showKickUI(player, target, backCallback) {
     Kernel.system.run(() => {
         try {
             target.runCommand(`kick "${target.name}" ${reason}`)
-            player.sendMessage(`§a§l» §fKicked §e${target.name} §ffor: §e${reason}§f.`)
+            player.sendMessage(`\xA7a\xA7l» \xA7fKicked \xA7e${target.name} \xA7ffor: \xA7e${reason}\xA7f.`)
         } catch (error) {
-            player.sendMessage("§cFailed to kick player.")
+            player.sendMessage("\xA7cFailed to kick player.")
         }
     })
     backCallback()
@@ -25,7 +25,7 @@ export async function showKickUI(player, target, backCallback) {
 export async function showBanUI(player, target, backCallback) {
     const BanManager = Kernel.get("banManager")
     const form = new ModalFormData()
-        .title("§e§lBan Player")
+        .title("\xA7e\xA7lBan Player")
         // @ts-ignore
         .textField("Reason:", "No reason provided")
 
@@ -35,7 +35,7 @@ export async function showBanUI(player, target, backCallback) {
     const reason = String(res.formValues[0] || "No reason provided")
     if (BanManager) {
         BanManager.ban(target, reason, player.name)
-        player.sendMessage(`§a§l» §fBanned §e${target.name} §ffor: §e${reason}§f.`)
+        player.sendMessage(`\xA7a\xA7l» \xA7fBanned \xA7e${target.name} \xA7ffor: \xA7e${reason}\xA7f.`)
     }
     backCallback()
 }
@@ -43,7 +43,7 @@ export async function showBanUI(player, target, backCallback) {
 export async function showMuteUI(player, target, backCallback) {
     const MuteStore = Kernel.get("muteStore")
     const form = new ModalFormData()
-        .title("§e§lMute Player")
+        .title("\xA7e\xA7lMute Player")
         // @ts-ignore
         .textField("Duration:", "e.g. 10m, 1h, or permanent", "permanent")
 
@@ -53,7 +53,7 @@ export async function showMuteUI(player, target, backCallback) {
     const duration = String(res.formValues[0] || "permanent")
     if (MuteStore) {
         await MuteStore.mute(target, duration)
-        player.sendMessage(`§a§l» §fMuted §e${target.name} §ffor §e${duration}§f.`)
+        player.sendMessage(`\xA7a\xA7l» \xA7fMuted \xA7e${target.name} \xA7ffor \xA7e${duration}\xA7f.`)
     }
     backCallback()
 }

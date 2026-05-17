@@ -1,61 +1,76 @@
-/**
- * Tempban Command - Temporarily ban a player
- */
-
 import { system, world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
+// ----------------------------------------------------------------------------
+// | object: TempbanCommand                                                   |
+// | command definition for temporarily banning a player from the server.     |
+// | interfaces with the admin service to persist the ban record.             |
+// ----------------------------------------------------------------------------
 export const TempbanCommand = {
+    // internal name.
     name: "tempban",
+    // human-readable description.
     description: "Temporarily ban a player",
+    // syntax guide.
     usage: "/ae:tempban <playerName> <duration> [reason]",
+    // required permission node.
     permission: "essentials.admin.ban",
+    // command category.
     category: "admin",
+    
+    // native parameter definitions for the command parser.
     parameters: [
         { name: "player", type: "player", optional: false  },
         { name: "duration", type: "string", optional: true  },
         { name: "reason",   type: "string", optional: true  }
     ],
 
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | processes the temporary ban request.                                     |
+    // ----------------------------------------------------------------------------
     execute(_data, player, args) {
+        // syntax check.
         if (args.length < 2) {
-            player.sendMessage("§c§l» §7Usage: /ae:tempban <player> <duration> [reason]")
-            player.sendMessage("§7Examples: /ae:tempban Wladyslaw18 1d Spamming")
+            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:tempban <player> <duration> [reason]")
+            player.sendMessage("\xA77Examples: /ae:tempban Wladyslaw18 1d Spamming")
             return
         }
 
+        // resolve the target player.
         const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args)
 
+        // ensure the target is online.
         if (!target) {
-            player.sendMessage(`§c§l» §7Player '${args[0]}' not found or is offline.`)
+            player.sendMessage(`\xA7c\xA7l» \xA77Player '${args[0]}' not found or is offline.`)
             return
         }
 
+        // extract duration and reason from the arguments.
         const duration = args[consumedArgs]
         const reason = args.slice(consumedArgs + 1).join(" ") || "No reason provided"
 
         if (!duration) {
-            player.sendMessage("§c§l» §7Please provide a duration (e.g. 1h, 1d, 1w).")
+            player.sendMessage("\xA7c\xA7l» \xA77Please provide a duration (e.g. 1h, 1d, 1w).")
             return
         }
 
-
-        // Check permissions (Hierarchy Check)
+        // step 1: hierarchy check.
         const PermissionManager = Kernel.get("permissions")
-        if (!PermissionManager.canActOn(player, target)) {
-            player.sendMessage("§cYou do not have enough power to ban this player.")
+        if (PermissionManager && !PermissionManager.canActOn(player, target)) {
+            player.sendMessage("\xA7cYou do not have enough power to ban this player.")
             return
         }
 
+        // step 2: parse the time token.
         const banDuration = parseDuration(duration)
         if (banDuration === null) {
-            player.sendMessage(`§c§l» §7Invalid duration: '${duration}'`)
+            player.sendMessage(`\xA7c\xA7l» \xA77Invalid duration: '${duration}'`)
             return
         }
 
-
-        // Perform tempban
+        // step 3: build the ban metadata record.
         const banData = {
             playerId: target.id,
             playerName: target.name,
@@ -68,46 +83,50 @@ export const TempbanCommand = {
             temp: true
         }
 
-        const BanManager = Kernel.get("admin")
+        // step 4: commit to the ban manager.
+        const BanManager = Kernel.get("banManager")
         if (BanManager.addBan(banData)) {
-            // Kick player immediately
+            // step 5: disconnect the player immediately.
             Kernel.system.run(() => {
                 try {
-                    // INDUSTRIAL_TERMINATION_PROTOCOL
-                    // We use system.runCommand to ensure the kick executes with elevated administrative permissions.
-                    Kernel.system.runCommand(`kick \"${target.name}\" §c§l[TEMPORARY BAN]\n§eReason: ${reason}`)
-
+                    // we use the dimension runCommand as a reliable way to kick.
+                    Kernel.world.getDimension("overworld").runCommand(`kick \"${target.name}\" \xA7c\xA7l[TEMPORARY BAN]\n\xA7eReason: ${reason}`)
                 } catch (error) {
                     console.error(`Failed to kick tempbanned player ${target.name}: ${error}`)
                 }
             })
 
-            // Announce tempban
+            // step 6: notify other staff members.
             const banMessage = formatBanMessage(banData)
-            const PermissionManager = Kernel.get("permissions")
             Kernel.world.getAllPlayers().forEach(p => {
                 if (PermissionManager.hasPermission(p, "essentials.admin.notify") || p.id === player.id) {
                     p.sendMessage(banMessage)
                 }
             })
 
-            player.sendMessage(`§a§l» §fPlayer '${target.name}' tempbanned for §e${formatTimeRemaining(banDuration)}`)
+            // confirm to the admin.
+            player.sendMessage(`\xA7a\xA7l» \xA7fPlayer '${target.name}' tempbanned for \xA7e${formatTimeRemaining(banDuration)}`)
         } else {
-            player.sendMessage("§c§l» §7Failed to add tempban")
+            // fail if the database rejected the record.
+            player.sendMessage("\xA7c\xA7l» \xA77Failed to add tempban")
         }
-
     }
 }
 
+// ----------------------------------------------------------------------------
+// | function: parseDuration                                                  |
+// | converts temporal tokens (h, d, w) into millisecond offsets.             |
+// ----------------------------------------------------------------------------
 function parseDuration(duration) {
     const durationLower = duration.toLowerCase()
-
+    // regex for number + unit character.
     const match = durationLower.match(/^(\d+)([hdw])$/)
     if (!match) return null
 
     const amount = parseInt(match[1])
     const unit = match[2]
 
+    // unit multipliers for time calculation.
     const multipliers = {
         'h': 60 * 60 * 1000,    // hours
         'd': 24 * 60 * 60 * 1000, // days  
@@ -117,17 +136,19 @@ function parseDuration(duration) {
     return amount * (multipliers[unit] || 0)
 }
 
-function getBans() {
-    const BanManager = Kernel.get("admin")
-    return BanManager.getBans()
-}
-
+// ----------------------------------------------------------------------------
+// | function: formatBanMessage                                               |
+// | builds the pretty-printed announcement string for the server logs.       |
+// ----------------------------------------------------------------------------
 function formatBanMessage(banData) {
     const durationText = formatTimeRemaining(banData.duration)
-
-    return `§6§l[§eTEMPBAN§6§l] §r${banData.playerName} §7was tempbanned by §e${banData.bannedBy}§7\n§7Duration: §e${durationText}§7\n§7Reason: §f${banData.reason}`
+    return `\xA76\xA7l[\xA7eTEMPBAN\xA76\xA7l] \xA7r${banData.playerName} \xA77was tempbanned by \xA7e${banData.bannedBy}\xA77\n\xA77Duration: \xA7e${durationText}\xA77\n\xA77Reason: \xA7f${banData.reason}`
 }
 
+// ----------------------------------------------------------------------------
+// | function: formatTimeRemaining                                            |
+// | converts millisecond deltas into human-readable strings.                 |
+// ----------------------------------------------------------------------------
 function formatTimeRemaining(milliseconds) {
     if (milliseconds <= 0) return "Expired"
 
@@ -143,5 +164,3 @@ function formatTimeRemaining(milliseconds) {
         return `${minutes}m`
     }
 }
-
-

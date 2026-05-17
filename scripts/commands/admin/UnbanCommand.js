@@ -1,60 +1,70 @@
 import { world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 
-/*
- * Unban Command
- * ----------------------------------------------------------------------------
- * Handles removing players from the ban list.
- */
-
+// ----------------------------------------------------------------------------
+// | object: UnbanCommand                                                     |
+// | command definition for removing a player from the global blacklist.        |
+// | searches the persistent database for matching names and purges them.      |
+// ----------------------------------------------------------------------------
 export const UnbanCommand = {
+    // internal name.
     name: "unban",
+    // human-readable description.
     description: "Remove a player from the ban list",
-
+    // syntax guide.
     usage: "/ae:unban <player_identifier>",
+    // required permission node.
     permission: "essentials.admin.ban",
+    // command category.
     category: "Admin",
+    
+    // native parameter definitions.
     parameters: [
         { name: "playerName", type: "string", optional: true }
     ],
 
-    /* 
-     * VECTOR_EXECUTION_PIPELINE
-     */
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | processes the unban request.                                             |
+    // ----------------------------------------------------------------------------
     execute(_data, player, args) {
+        // syntax check.
         if (args.length < 1) {
-            player.sendMessage("§c§l» §7Usage: /ae:unban <playerName>");
-            player.sendMessage("§e§l» §fTip: §7Use the exact name the player was banned under.");
+            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:unban <playerName>");
+            player.sendMessage("\xA7e\xA7l» \xA7fTip: \xA77Use the exact name the player was banned under.");
             return
         }
 
+        // input normalization.
         const playerName = args[0]
         
         try {
+            // fetch the current list of banned players.
             const bans = getBans()
+            // search for a record with a matching name (case-insensitive).
             const banIndex = bans.findIndex(ban => ban.playerName && ban.playerName.toLowerCase() === playerName.toLowerCase())
             
+            // if no record found, stop.
             if (banIndex === -1) {
-                player.sendMessage(`§c§l» §7No ban record found for '${playerName}'.`);
+                player.sendMessage(`\xA7c\xA7l» \xA77No ban record found for '${playerName}'.`);
                 return
             }
 
-
-            /* 
-             * REGISTRY_DE-REGISTRATION
-             */
+            // step 1: record removal.
+            // remove the specific entry from the array.
             bans.splice(banIndex, 1)
+            // push the updated list back to the database.
             const Database = Kernel.get("database")
             Database.set("ae:bans", bans)
             
-            player.sendMessage(`§a§l» §fPlayer '${playerName}' has been unbanned.`);
+            // confirm to the admin.
+            player.sendMessage(`\xA7a\xA7l» \xA7fPlayer '${playerName}' has been unbanned.`);
 
-            
-            /* 
-             * BROADCAST_NOTIFICATION
-             */
-            const unbanMessage = `§6§l[§eUNBAN§6§l] §r${playerName} §7was unbanned by §e${player.name}`;
+            // step 2: notification broadcast.
+            // build an announcement message.
+            const unbanMessage = `\xA76\xA7l[\xA7eUNBAN\xA76\xA7l] \xA7r${playerName} \xA77was unbanned by \xA7e${player.name}`;
 
+            // alert other staff members about the unban.
             const PermissionManager = Kernel.get("permissions")
             Kernel.world.getAllPlayers().forEach(p => {
                 if (PermissionManager.hasPermission(p, "essentials.admin.notify") || p.id === player.id) {
@@ -63,16 +73,17 @@ export const UnbanCommand = {
             })
             
         } catch (error) {
+            // log any crashes during the data manipulation.
             console.error(`[UnbanCommand] DE-REGISTRATION_CRASH for ${playerName}: ${error}`)
-            player.sendMessage("§c§l» §7Failed to unban player.");
-
+            player.sendMessage("\xA7c\xA7l» \xA77Failed to unban player.");
         }
     }
 }
 
-/* 
- * BLACKLIST_QUERY_PROTOCOL
- */
+// ----------------------------------------------------------------------------
+// | function: getBans                                                        |
+// | internal helper to fetch the ban array from world storage.               |
+// ----------------------------------------------------------------------------
 function getBans() {
     try {
         const Database = Kernel.get("database")
