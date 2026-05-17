@@ -1,16 +1,13 @@
 import { PermissionManager } from "../../core/permissions/PermissionManager.js"
 
-/*
- * COMMAND_LOGIC_CONTRACT
- * ----------------------------------------------------------------------------
- * The abstract foundation for every industrial command module. Provides 
- * standardized getters for registry integration and utility methods for 
- * feedback orchestration.
- *
- * PHILOSOPHY: If a command does not extend this class, it is dead-on-arrival 
- * and will be rejected by the CommandRegistry during the bootstrap sequence.
- */
+// ----------------------------------------------------------------------------
+// | class: BaseCommand                                                       |
+// | the abstract foundation for every industrial command module. provides     |
+// | standardized structures for registry integration and utility methods for   |
+// | feedback orchestration.                                                  |
+// ----------------------------------------------------------------------------
 class BaseCommand {
+    // private configuration nodes.
     #name
     #description
     #usage
@@ -18,10 +15,10 @@ class BaseCommand {
     #category
     #aliases
 
-    /*
-     * COMMAND_CONSTRUCTOR
-     * @param {Object} config - The industrial manifest for this command.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: constructor                                                      |
+    // | initializes the command manifest from the configuration object.           |
+    // ----------------------------------------------------------------------------
     constructor(config) {
         this.#name = config.name
         this.#description = config.description
@@ -31,65 +28,67 @@ class BaseCommand {
         this.#aliases = config.aliases || []
     }
 
-    /* PRIMARY_IDENTIFIER_GETTER */
+    // primary identifier getter.
     get name() {
         return this.#name
     }
 
-    /* MANUAL_DESCRIPTION_GETTER */
+    // human-readable description getter.
     get description() {
         return this.#description
     }
 
-    /* SYNTAX_HINT_GETTER */
+    // syntax guide getter.
     get usage() {
         return this.#usage
     }
 
-    /* AUTH_NODE_IDENTIFIER_GETTER */
+    // required authorization node getter.
     get permission() {
         return this.#permission
     }
 
-    /* REGISTRY_CATEGORY_GETTER */
+    // registry classification getter.
     get category() {
         return this.#category
     }
 
-    /* SHORT_HAND_POINTER_GETTER */
+    // short-hand pointer getter.
     get aliases() {
         return this.#aliases
     }
 
-    /*
-     * EXECUTION_LOGIC_GATE
-     * Must be overridden by the child class. This is where the actual 
-     * game-state mutation happens. 
-     */
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | abstract logic gate. must be overridden by the child implementation.      |
+    // ----------------------------------------------------------------------------
     async execute(_data, _player, _args) {
         throw new Error(`[BaseCommand] EXECUTION_FAULT: '${this.#name}' has no implemented logic.`);
     }
 
-    /*
-     * AUTH_RESOLUTION_PROTOCOL
-     * Queries the PermissionManager to verify if the actor possesses 
-     * the required clearance levels to invoke this logic-gate.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: hasPermission                                                    |
+    // | queries the PermissionManager to verify if the actor possesses            |
+    // | the required clearance levels to invoke this logic-gate.                 |
+    // ----------------------------------------------------------------------------
     hasPermission(player) {
+        // if no permission node is defined, grant universal access.
         if (!this.#permission) return true
         
         try {
+            // resolve the permission status via the singleton instance.
             return PermissionManager.getInstance().hasPermission(player, this.#permission)
         } catch (error) {
+            // log security failures to the console for audit.
             console.error(`[BaseCommand] PERM_CHECK_CRASH for '${this.#name}': ${error}`)
             return false
         }
     }
 
-    /*
-     * FEEDBACK_DELIVERY_PROTOCOL
-     * Raw message relay to the player's chat buffer.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: sendMessage                                                      |
+    // | raw message relay to the player's chat buffer with error handling.        |
+    // ----------------------------------------------------------------------------
     sendMessage(player, message) {
         if (!player || !message) return
 
@@ -100,28 +99,29 @@ class BaseCommand {
         }
     }
 
-    /* ERROR_FEEDBACK_VECTOR */
+    // standardized error feedback.
     sendError(player, message) {
-        this.sendMessage(player, `§c[Error] ${message}`)
+        this.sendMessage(player, `\xA7c\xA7l[Error] \xA77${message}`)
     }
 
-    /* SUCCESS_FEEDBACK_VECTOR */
+    // standardized success feedback.
     sendSuccess(player, message) {
-        this.sendMessage(player, `§a[Success] ${message}`)
+        this.sendMessage(player, `\xA7a\xA7l[Success] \xA7f${message}`)
     }
 
-    /* USAGE_FEEDBACK_VECTOR */
+    // standardized syntax hint.
     sendUsage(player) {
-        this.sendMessage(player, `§7Syntax: §e${this.#usage}`)
+        this.sendMessage(player, `\xA7e\xA7l[Usage] \xA77Syntax: \xA7f${this.#usage}`)
     }
 
-    /*
-     * PARAMETER_VALIDATION_ENGINE
-     * Checks if the argument count falls within the expected bounds.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: validateArgs                                                     |
+    // | simple validation engine for checking argument count bounds.              |
+    // ----------------------------------------------------------------------------
     validateArgs(args, minArgs = 0, maxArgs = Infinity) {
         if (!Array.isArray(args)) return false
         
+        // filter out empty or whitespace tokens.
         const argCount = args.filter(arg => arg && arg.trim()).length
         return argCount >= minArgs && argCount <= maxArgs
     }

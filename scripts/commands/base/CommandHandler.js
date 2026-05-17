@@ -136,13 +136,13 @@ export const CommandHandler = {
             const command = CommandRegistry.get(commandName)
 
             if (!command) {
-                player.sendMessage(`§c[Error] Unknown identifier: §e${commandName}`)
+                player.sendMessage(`\xA7c[Error] Unknown identifier: \xA7e${commandName}`)
                 this._recordCommandStats(commandName, false, Date.now() - startTime)
                 return
             }
 
             if (command.permission && !this._hasPermission(player, command.permission)) {
-                player.sendMessage(`§c[Security] Access denied for command: §e${commandName}`)
+                player.sendMessage(`\xA7c[Security] Access denied for command: \xA7e${commandName}`)
                 this._recordCommandStats(commandName, false, Date.now() - startTime, "no_permission")
                 return
             }
@@ -153,7 +153,7 @@ export const CommandHandler = {
 
         } catch (error) {
             console.error(`[CommandHandler] EXECUTION_CRASH [${commandName}]: ${error}`)
-            player.sendMessage(`§c[Fatal] Execution pipeline failure: §e${error.message}`)
+            player.sendMessage(`\xA7c[Fatal] Execution pipeline failure: \xA7e${error.message}`)
             this._recordCommandStats(commandName, false, Date.now() - startTime, "error")
         }
     },

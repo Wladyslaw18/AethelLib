@@ -6,29 +6,29 @@ export async function showHomeListUI(player, target, backCallback) {
     const homes = HomeStore ? HomeStore.getHomes(target) : []
 
     if (homes.length === 0) {
-        player.sendMessage(`§c§l» §e${target.name} §7has no homes.`)
+        player.sendMessage(`\xA7c\xA7l» \xA7e${target.name} \xA77has no homes.`)
         return backCallback()
     }
 
     const form = new ActionFormData()
-        .title(`§e§lHomes: ${target.name}`)
+        .title(`\xA7e\xA7lHomes: ${target.name}`)
         .body(`Total Assets: ${homes.length}`)
 
     homes.forEach(h => {
-        form.button(`§e${h.name}\n§7${Math.floor(h.x)}, ${Math.floor(h.y)}, ${Math.floor(h.z)}`)
+        form.button(`\xA7e${h.name}\n\xA77${Math.floor(h.x)}, ${Math.floor(h.y)}, ${Math.floor(h.z)}`)
     })
-    form.button("§c<= BACK")
+    form.button("\xA7c<= BACK")
 
     const res = await form.show(player)
     if (res.canceled || res.selection === homes.length) return backCallback()
 
     const selectedHome = homes[res.selection]
     player.teleport(selectedHome, { dimension: target.dimension })
-    player.sendMessage(`§a§l» §fTeleported to §e${target.name}'s §fhome: §e${selectedHome.name}§f.`)
+    player.sendMessage(`\xA7a\xA7l» \xA7fTeleported to \xA7e${target.name}'s \xA7fhome: \xA7e${selectedHome.name}\xA7f.`)
 }
 
 export function handleTpaToggle(player, target, PlayerStore) {
     const currentTpa = PlayerStore.get(target, "settings:tpa") !== false
     PlayerStore.set(target, "settings:tpa", !currentTpa)
-    player.sendMessage(`§a§l» §fTPA for §e${target.name}§f is now ${!currentTpa ? "§aEnabled" : "§cDisabled"}§f.`)
+    player.sendMessage(`\xA7a\xA7l» \xA7fTPA for \xA7e${target.name}\xA7f is now ${!currentTpa ? "\xA7aEnabled" : "\xA7cDisabled"}\xA7f.`)
 }
