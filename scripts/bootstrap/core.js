@@ -57,7 +57,7 @@ export function init() {
     // Social & Permissions
     Kernel.register("ranks",       RankSystem)
     Kernel.register("chat",        ChatSystem)
-    Kernel.register("admin",       BanManager)
+    Kernel.register("banManager",  BanManager)
     Kernel.register("permissions", PermissionManagerInstance)
     Kernel.register("formatter",   RankFormatter)
     Kernel.register("muteStore",   MuteStore)
