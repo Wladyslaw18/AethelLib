@@ -1,4 +1,4 @@
-# AethelLib: The Industrial Backbone
+# AethelLib:
 
 AethelLib is a hard-coded shield for people who want to build things that don't crash the server every time a player joins. It’s a stable foundation that handles the messy data-cleanup so you don't have to.
 
