@@ -1,4 +1,4 @@
-# ⚜ &#xFE0E; AethelLib
+# ⚜&#xFE0E; AethelLib
 
 > *"Built at 3am. Tested in production. Regretted nothing."*
 
