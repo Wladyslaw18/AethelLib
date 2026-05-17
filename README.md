@@ -100,7 +100,7 @@ Kernel.get("commandRegistry").register({
   permission: "essentials.basic",
   category: "utility",
   execute(_data, player, _args) {
-    player.sendMessage("PONG 🏓");
+    player.sendMessage("PONG");
   }
 });
 ```
