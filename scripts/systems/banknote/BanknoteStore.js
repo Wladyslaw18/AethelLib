@@ -46,27 +46,27 @@ export class BanknoteStore {
         const time = new Date(banknote.timestamp).toLocaleTimeString()
         
         return [
-            `§6Value: §e${this.formatMoney(banknote.amount)}`,
-            `§7Created: ${date} ${time}`,
-            `§7By: §f${banknote.creator}`,
-            `§8ID: ${banknote.id}`,
-            `§7§oRight-click to redeem`
+            `\xA76Value: \xA7e${this.formatMoney(banknote.amount)}`,
+            `\xA77Created: ${date} ${time}`,
+            `\xA77By: \xA7f${banknote.creator}`,
+            `\xA78ID: ${banknote.id}`,
+            `\xA77\xA7oRight-click to redeem`
         ]
     }
 
     static formatMoney(amount) {
-        return `§6$§e${amount.toLocaleString()}`
+        return `\xA76$\xA7e${amount.toLocaleString()}`
     }
 
     static getBanknoteName(amount) {
-        if (amount >= 1000000) return `§6§lBanknote §e§l${(amount / 1000000).toFixed(1)}M`
-        if (amount >= 1000) return `§6§lBanknote §e§l${(amount / 1000).toFixed(1)}K`
-        return `§6§lBanknote §e§l${amount}`
+        if (amount >= 1000000) return `\xA76\xA7lBanknote \xA7e\xA7l${(amount / 1000000).toFixed(1)}M`
+        if (amount >= 1000) return `\xA76\xA7lBanknote \xA7e\xA7l${(amount / 1000).toFixed(1)}K`
+        return `\xA76\xA7lBanknote \xA7e\xA7l${amount}`
     }
 
     static isBanknoteItem(item) {
         if (!item || item.typeId !== this.getBanknoteId()) return false
-        if (!item.nameTag || !item.nameTag.startsWith("§6§lBanknote")) return false
+        if (!item.nameTag || !item.nameTag.startsWith("\xA76\xA7lBanknote")) return false
         if (!item.getLore() || item.getLore().length === 0) return false
         return true
     }
@@ -79,8 +79,8 @@ export class BanknoteStore {
 
         if (!noteId) {
             const lore = item.getLore()
-            const idLine = lore?.find(line => line.startsWith("§8ID: "))
-            if (idLine) noteId = idLine.replace("§8ID: ", "")
+            const idLine = lore?.find(line => line.startsWith("\xA78ID: "))
+            if (idLine) noteId = idLine.replace("\xA78ID: ", "")
         }
         
         if (!noteId) return null

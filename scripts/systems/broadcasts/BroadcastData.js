@@ -14,8 +14,8 @@ const RARE_POOL = []
 
 // Legendary messages (2% chance) - POLISH_PEAK_MANIFEST
 const LEGENDARY_POOL = [
-    "§6§lAethelgrad Decree§r §7- §6Silny nie ten, kto krzyczy - lecz ten, kto trwa.",
-    "§6§lAethelgrad Decree§r §7- §cKorona ciezka jest tylko dla tego, kto ja nosi."
+    "\xA76\xA7lAethelgrad Decree\xA7r \xA77- \xA76Silny nie ten, kto krzyczy - lecz ten, kto trwa.",
+    "\xA76\xA7lAethelgrad Decree\xA7r \xA77- \xA7cKorona ciezka jest tylko dla tego, kto ja nosi."
 ]
 
 // Rarity weights for random selection

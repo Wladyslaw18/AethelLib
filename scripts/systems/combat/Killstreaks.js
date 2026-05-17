@@ -51,7 +51,7 @@ function handleKill(killerId, victimId) {
         const killer = Kernel.world.getAllPlayers().find(p => p.id === killerId)
         const victim = Kernel.world.getAllPlayers().find(p => p.id === victimId)
         if (killer && victim) {
-            Kernel.world.sendMessage(`§7[War_Cry] §e${killer.name} §7terminated §e${victim.name}§7's §c${victimStreak} §7momentum-streak!`)
+            Kernel.world.sendMessage(`\xA77[War_Cry] \xA7e${killer.name} \xA77terminated \xA7e${victim.name}\xA77's \xA7c${victimStreak} \xA77momentum-streak!`)
         }
     }
 
@@ -82,23 +82,23 @@ function broadcastMilestone(playerId, streak) {
     let rarity, color, message
     if (streak >= 50) {
         rarity = "ULTRA_LEGENDARY"
-        color = "§6§l"
+        color = "\xA76\xA7l"
         message = "is a god of the industrial waste!"
     } else if (streak >= 25) {
         rarity = "LEGENDARY"
-        color = "§d"
+        color = "\xA7d"
         message = "is manifesting extreme combat-dominance!"
     } else if (streak >= 15) {
         rarity = "ELITE"
-        color = "§e"
+        color = "\xA7e"
         message = "is saturating the engagement-buffer!"
     } else {
         rarity = "STABILIZED"
-        color = "§a"
+        color = "\xA7a"
         message = "has achieved a momentum-milestone."
     }
 
-    const broadcast = `${color}[${rarity}] §f${player.name} ${message} (Streak: ${streak})`
+    const broadcast = `${color}[${rarity}] \xA7f${player.name} ${message} (Streak: ${streak})`
     Kernel.world.getAllPlayers().forEach(p => p.sendMessage(broadcast))
 }
 

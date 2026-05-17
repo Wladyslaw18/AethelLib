@@ -33,10 +33,10 @@ export function init() {
 
             Kernel.system.run(() => {
                 if (hurtEntity.isValid && hurtEntity.typeId === "minecraft:player") {
-                    /** @type {import("@minecraft/server").Player} */ (hurtEntity).onScreenDisplay.setActionBar("§c§l» §eIn Combat! §cDo not leave! §l«")
+                    /** @type {import("@minecraft/server").Player} */ (hurtEntity).onScreenDisplay.setActionBar("\xA7c\xA7l» \xA7eIn Combat! \xA7cDo not leave! \xA7l«")
                 }
                 if (damagingEntity?.isValid && damagingEntity.typeId === "minecraft:player") {
-                    /** @type {import("@minecraft/server").Player} */ (damagingEntity).onScreenDisplay.setActionBar("§c§l» §eIn Combat! §cDo not leave! §l«")
+                    /** @type {import("@minecraft/server").Player} */ (damagingEntity).onScreenDisplay.setActionBar("\xA7c\xA7l» \xA7eIn Combat! \xA7cDo not leave! \xA7l«")
                 }
             })
 
@@ -85,7 +85,7 @@ export function init() {
                     player.kill()
 
                     PlayerStore.set(player, "deathDebt", false)
-                    player.sendMessage("§c§l» §eCombat Logging Detected! §7Your items have been removed.");
+                    player.sendMessage("\xA7c\xA7l» \xA7eCombat Logging Detected! \xA77Your items have been removed.");
 
                 } catch (error) {
                     console.error(`[CombatIntegrity] PENALTY_ORCHESTRATION_FAILURE for ${player.id}:`, error)
