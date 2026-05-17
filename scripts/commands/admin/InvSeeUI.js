@@ -6,7 +6,7 @@ import { Lang } from "../../ui/Lang.js"
  * INDUSTRIAL_INVENTORY_AUDIT_V3
  * ----------------------------------------------------------------------------
  * A high-performance grid-based UI for inventory manipulation. 
- * Interfaces with the AethelLib Resource Pack [invUI.png] via the §a§e§l prefix.
+ * Interfaces with the AethelLib Resource Pack [invUI.png] via the \xA7a\xA7e\xA7l prefix.
  * 
  * GRID_LAYOUT [9x5]:
  * [0-4] Armor & Offhand | [5-7] Empty | [8] GIVE_VECTOR
@@ -24,14 +24,14 @@ export async function showInventoryUI(viewer, target) {
     }
 
     const form = new ActionFormData()
-        .title(Lang.GRID_L + "§0" + target.name + "'s Inventory")
-        .body(`§7Auditing player assets...`)
+        .title(Lang.GRID_L + "\xA70" + target.name + "'s Inventory")
+        .body(`\xA77Auditing player assets...`)
 
     // 1. ARMOR SLOTS (0-4)
     const armorSlots = [EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet, EquipmentSlot.Offhand]
     for (const slot of armorSlots) {
         const item = equip?.getEquipment(slot)
-        form.button(item ? `§f${item.amount}x` : "§8Empty", item ? Lang.getTexture(item.typeId) : "textures/ui/empty_armor_slot_" + slot.toLowerCase())
+        form.button(item ? `\xA7f${item.amount}x` : "\xA78Empty", item ? Lang.getTexture(item.typeId) : "textures/ui/empty_armor_slot_" + slot.toLowerCase())
     }
 
     // 2. EMPTY FILLER (5-7)
@@ -40,20 +40,20 @@ export async function showInventoryUI(viewer, target) {
     }
 
     // 3. GIVE BUTTON (8)
-    form.button("§a§lGIVE\n§8Asset Transfer", "textures/ui/plus")
+    form.button("\xA7a\xA7lGIVE\n\xA78Asset Transfer", "textures/ui/plus")
 
     // 4. MAIN INVENTORY (9-35)
     // Minecraft inventory indices: 9-35 are the main rows.
     for (let i = 9; i <= 35; i++) {
         const item = inv.container.getItem(i)
-        form.button(item ? `§f${item.amount}x` : " ", item ? Lang.getTexture(item.typeId) : "textures/ui/blank")
+        form.button(item ? `\xA7f${item.amount}x` : " ", item ? Lang.getTexture(item.typeId) : "textures/ui/blank")
     }
 
     // 5. HOTBAR (36-44)
     // Minecraft inventory indices: 0-8 are the hotbar.
     for (let i = 0; i < 9; i++) {
         const item = inv.container.getItem(i)
-        form.button(item ? `§f${item.amount}x` : " ", item ? Lang.getTexture(item.typeId) : "textures/ui/blank")
+        form.button(item ? `\xA7f${item.amount}x` : " ", item ? Lang.getTexture(item.typeId) : "textures/ui/blank")
     }
 
     const res = await form.show(viewer)
@@ -89,11 +89,11 @@ export async function showInventoryUI(viewer, target) {
 
 async function showItemActionMenu(viewer, target, item, type, slot) {
     const form = new ActionFormData()
-        .title("§6§lAsset Action")
-        .body(`§7Item: §e${item.typeId}\n§7Amount: §f${item.amount}\n§8Select protocol.`)
-        .button("§a§lTAKE\n§8Move to your inventory", "textures/ui/realms_slot_check")
-        .button("§c§lPURGE\n§8Delete asset", "textures/ui/trash_default")
-        .button("§7§lBACK", "textures/ui/cancel")
+        .title("\xA76\xA7lAsset Action")
+        .body(`\xA77Item: \xA7e${item.typeId}\n\xA77Amount: \xA7f${item.amount}\n\xA78Select protocol.`)
+        .button("\xA7a\xA7lTAKE\n\xA78Move to your inventory", "textures/ui/realms_slot_check")
+        .button("\xA7c\xA7lPURGE\n\xA78Delete asset", "textures/ui/trash_default")
+        .button("\xA77\xA7lBACK", "textures/ui/cancel")
 
     const res = await form.show(viewer)
     if (res.canceled || res.selection === 2) return
@@ -136,8 +136,8 @@ async function showGiveMenu(viewer, target) {
     if (!viewerInv) return
 
     const form = new ActionFormData()
-        .title("§6§lSelect Asset to Give")
-        .body(`§7Transferring to §e${target.name}§7.`)
+        .title("\xA76\xA7lSelect Asset to Give")
+        .body(`\xA77Transferring to \xA7e${target.name}\xA77.`)
 
     const items = []
     for (let i = 0; i < viewerInv.size; i++) {
@@ -151,7 +151,7 @@ async function showGiveMenu(viewer, target) {
     }
 
     items.forEach(data => {
-        form.button(`§f${data.item.typeId.replace("minecraft:", "")}\n§7Amount: ${data.item.amount}`, Lang.getTexture(data.item.typeId))
+        form.button(`\xA7f${data.item.typeId.replace("minecraft:", "")}\n\xA77Amount: ${data.item.amount}`, Lang.getTexture(data.item.typeId))
     })
 
     const res = await form.show(viewer)
@@ -170,6 +170,6 @@ async function showGiveMenu(viewer, target) {
 
         viewerInv.setItem(selected.slot, undefined)
         viewer.sendMessage(Lang.SUCCESS + `Transferred ${selected.item.amount}x ${selected.item.typeId} to ${target.name}.`);
-        target.sendMessage(Lang.GOLD + `§e${viewer.name} §7gave you §f${selected.item.amount}x ${selected.item.typeId}§7.`);
+        target.sendMessage(Lang.GOLD + `\xA7e${viewer.name} \xA77gave you \xA7f${selected.item.amount}x ${selected.item.typeId}\xA77.`);
     })
 }

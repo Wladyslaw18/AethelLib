@@ -27,13 +27,13 @@ export const RankAdminCommand = {
      */
     async execute(_data, player, args) {
         if (args.length < 1) {
-            player.sendMessage("§c§l» §7Usage: /ae:rankadmin <subcommand>");
-            player.sendMessage("§8- create <tag> <name> <order> <color>");
-            player.sendMessage("§8- delete <tag>");
-            player.sendMessage("§8- add <player> <tag>");
-            player.sendMessage("§8- remove <player> <tag>");
-            player.sendMessage("§8- edit <tag> <field> <value>");
-            player.sendMessage("§8- list | info <tag>");
+            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:rankadmin <subcommand>");
+            player.sendMessage("\xA78- create <tag> <name> <order> <color>");
+            player.sendMessage("\xA78- delete <tag>");
+            player.sendMessage("\xA78- add <player> <tag>");
+            player.sendMessage("\xA78- remove <player> <tag>");
+            player.sendMessage("\xA78- edit <tag> <field> <value>");
+            player.sendMessage("\xA78- list | info <tag>");
             return
         }
 
@@ -63,7 +63,7 @@ export const RankAdminCommand = {
                 await handleInfo(player, args.slice(1))
                 break
             default:
-                player.sendMessage(`§c§l» §7Unknown subcommand: '${subcommand}'`);
+                player.sendMessage(`\xA7c\xA7l» \xA77Unknown subcommand: '${subcommand}'`);
         }
 
     }
@@ -74,7 +74,7 @@ export const RankAdminCommand = {
  */
 async function handleCreate(player, args) {
     if (args.length < 4) {
-        player.sendMessage("§c§l» §7Usage: /ae:rankadmin create <tag> <name> <order> <color>");
+        player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:rankadmin create <tag> <name> <order> <color>");
         return
     }
 
@@ -82,20 +82,20 @@ async function handleCreate(player, args) {
     const [tag, displayName, orderStr, colorCode] = args
 
     if (!/^[a-zA-Z0-9_]+$/.test(tag)) {
-        player.sendMessage("§c§l» §7Rank tag must be alphanumeric.");
+        player.sendMessage("\xA7c\xA7l» \xA77Rank tag must be alphanumeric.");
         return
     }
 
 
     const order = parseInt(orderStr)
     if (isNaN(order)) {
-        player.sendMessage("§c§l» §7Order must be a number.");
+        player.sendMessage("\xA7c\xA7l» \xA77Order must be a number.");
         return
     }
 
 
     if (RankSystem.getRank(tag)) {
-        player.sendMessage(`§c§l» §7Rank '${tag}' already exists.`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Rank '${tag}' already exists.`);
         return
     }
 
@@ -112,9 +112,9 @@ async function handleCreate(player, args) {
 
     const success = RankSystem.createRank(tag, rankData)
     if (success) {
-        player.sendMessage(`§a§l» §fRank §e${tag}§f has been created.`);
+        player.sendMessage(`\xA7a\xA7l» \xA7fRank \xA7e${tag}\xA7f has been created.`);
     } else {
-        player.sendMessage("§c§l» §7Failed to create rank.");
+        player.sendMessage("\xA7c\xA7l» \xA77Failed to create rank.");
     }
 }
 
@@ -124,7 +124,7 @@ async function handleCreate(player, args) {
  */
 async function handleDelete(player, args) {
     if (args.length < 1) {
-        player.sendMessage("§c§l» §7Usage: /ae:rankadmin delete <tag>");
+        player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:rankadmin delete <tag>");
         return
     }
 
@@ -132,14 +132,14 @@ async function handleDelete(player, args) {
     const tag = args[0]
 
     if (!RankSystem.getRank(tag)) {
-        player.sendMessage(`§c§l» §7Rank '${tag}' not found.`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Rank '${tag}' not found.`);
         return
     }
 
 
     const success = RankSystem.deleteRank(tag)
     if (success) {
-        player.sendMessage(`§a§l» §fRank §e${tag}§f has been deleted.`);
+        player.sendMessage(`\xA7a\xA7l» \xA7fRank \xA7e${tag}\xA7f has been deleted.`);
         
         world.getAllPlayers().forEach(p => {
             if (p.hasTag(tag)) {
@@ -147,7 +147,7 @@ async function handleDelete(player, args) {
             }
         })
     } else {
-        player.sendMessage("§c§l» §7Failed to delete rank.");
+        player.sendMessage("\xA7c\xA7l» \xA77Failed to delete rank.");
     }
 }
 
@@ -157,7 +157,7 @@ async function handleDelete(player, args) {
  */
 async function handleAdd(player, args) {
     if (args.length < 2) {
-        player.sendMessage("§c§l» §7Usage: /ae:rankadmin add <player> <tag>");
+        player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:rankadmin add <player> <tag>");
         return
     }
 
@@ -165,21 +165,21 @@ async function handleAdd(player, args) {
     const [playerName, tag] = args
 
     if (!RankSystem.getRank(tag)) {
-        player.sendMessage(`§c§l» §7Rank '${tag}' not found.`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Rank '${tag}' not found.`);
         return
     }
 
 
     const target = world.getAllPlayers().find(p => p.name === playerName)
     if (!target) {
-        player.sendMessage(`§c§l» §7Player '${playerName}' not found.`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Player '${playerName}' not found.`);
         return
     }
 
 
     target.addTag(tag)
-    player.sendMessage(`§a§l» §fRank §e${tag}§f added to §e${target.name}§f.`);
-    target.sendMessage(`§a§l» §fYour rank was updated: You are now §e${tag}§f.`);
+    player.sendMessage(`\xA7a\xA7l» \xA7fRank \xA7e${tag}\xA7f added to \xA7e${target.name}\xA7f.`);
+    target.sendMessage(`\xA7a\xA7l» \xA7fYour rank was updated: You are now \xA7e${tag}\xA7f.`);
 }
 
 
@@ -188,7 +188,7 @@ async function handleAdd(player, args) {
  */
 async function handleRemove(player, args) {
     if (args.length < 2) {
-        player.sendMessage("§c§l» §7Usage: /ae:rankadmin remove <player> <tag>");
+        player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:rankadmin remove <player> <tag>");
         return
     }
 
@@ -202,8 +202,8 @@ async function handleRemove(player, args) {
     }
 
     target.removeTag(tag)
-    player.sendMessage(`§a§l» §fRank §e${tag}§f removed from §e${target.name}§f.`);
-    target.sendMessage(`§a§l» §fYour rank was updated: You no longer have the rank §e${tag}§f.`);
+    player.sendMessage(`\xA7a\xA7l» \xA7fRank \xA7e${tag}\xA7f removed from \xA7e${target.name}\xA7f.`);
+    target.sendMessage(`\xA7a\xA7l» \xA7fYour rank was updated: You no longer have the rank \xA7e${tag}\xA7f.`);
 }
 
 
@@ -212,8 +212,8 @@ async function handleRemove(player, args) {
  */
 async function handleEdit(player, args) {
     if (args.length < 3) {
-        player.sendMessage("§c§l» §7Usage: /ae:rankadmin edit <tag> <field> <value>");
-        player.sendMessage("§8- Fields: name, color, order");
+        player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:rankadmin edit <tag> <field> <value>");
+        player.sendMessage("\xA78- Fields: name, color, order");
         return
     }
 
@@ -221,14 +221,14 @@ async function handleEdit(player, args) {
     const [tag, field, value] = args
     const allowedFields = ["name", "color", "order"]
     if (!allowedFields.includes(field)) {
-        player.sendMessage(`§c§l» §7Invalid field: '${field}'`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Invalid field: '${field}'`);
         return
     }
 
 
     const rank = RankSystem.getRank(tag)
     if (!rank) {
-        player.sendMessage(`§c§l» §7Rank '${tag}' not found.`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Rank '${tag}' not found.`);
         return
     }
 
@@ -247,7 +247,7 @@ async function handleEdit(player, args) {
         case "order":
             const order = parseInt(value)
             if (isNaN(order)) {
-                player.sendMessage("§c§l» §7Order must be a number.");
+                player.sendMessage("\xA7c\xA7l» \xA77Order must be a number.");
                 return
             }
             updatedRank.order = order
@@ -257,9 +257,9 @@ async function handleEdit(player, args) {
 
     const success = RankSystem.updateRank(tag, updatedRank)
     if (success) {
-        player.sendMessage(`§a§l» §fRank field §e${field}§f updated for §e${tag}§f.`);
+        player.sendMessage(`\xA7a\xA7l» \xA7fRank field \xA7e${field}\xA7f updated for \xA7e${tag}\xA7f.`);
     } else {
-        player.sendMessage("§c§l» §7Failed to update rank.");
+        player.sendMessage("\xA7c\xA7l» \xA77Failed to update rank.");
     }
 }
 
@@ -271,15 +271,15 @@ async function handleList(player) {
     const ranks = RankSystem.getAllRanks()
     
     if (Object.keys(ranks).length === 0) {
-        player.sendMessage("§c§l» §7No ranks found.");
+        player.sendMessage("\xA7c\xA7l» \xA77No ranks found.");
         return
     }
 
 
     player.sendMessage(" ")
-    player.sendMessage("§6§lServer Ranks")
+    player.sendMessage("\xA76\xA7lServer Ranks")
     Object.entries(ranks).forEach(([tag, rank]) => {
-        player.sendMessage(`§7- ${tag}: ${rank.colorText}${rank.name} §8(Order: ${rank.order})`)
+        player.sendMessage(`\xA77- ${tag}: ${rank.colorText}${rank.name} \xA78(Order: ${rank.order})`)
     })
     player.sendMessage(" ")
 }
@@ -290,7 +290,7 @@ async function handleList(player) {
  */
 async function handleInfo(player, args) {
     if (args.length < 1) {
-        player.sendMessage("§c§l» §7Usage: /ae:rankadmin info <tag>");
+        player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:rankadmin info <tag>");
         return
     }
 
@@ -299,17 +299,17 @@ async function handleInfo(player, args) {
     const rank = RankSystem.getRank(tag)
 
     if (!rank) {
-        player.sendMessage(`§c§l» §7Rank '${tag}' not found.`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Rank '${tag}' not found.`);
         return
     }
 
 
     player.sendMessage(" ")
-    player.sendMessage(`§6§lRank Info: §f${tag}`)
-    player.sendMessage(`§7Display: ${rank.colorText}${rank.name}`)
-    player.sendMessage(`§7Order: §e${rank.order}`)
-    player.sendMessage(`§7Color: §e${rank.colorText}`)
-    player.sendMessage(`§7Permissions: §f${JSON.stringify(rank.permissions, null, 2)}`)
+    player.sendMessage(`\xA76\xA7lRank Info: \xA7f${tag}`)
+    player.sendMessage(`\xA77Display: ${rank.colorText}${rank.name}`)
+    player.sendMessage(`\xA77Order: \xA7e${rank.order}`)
+    player.sendMessage(`\xA77Color: \xA7e${rank.colorText}`)
+    player.sendMessage(`\xA77Permissions: \xA7f${JSON.stringify(rank.permissions, null, 2)}`)
     player.sendMessage(" ")
 }
 
