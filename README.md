@@ -1,80 +1,155 @@
-# AethelLib:
+# ⚜ AethelLib
 
-AethelLib is a hard-coded shield for people who want to build things that don't crash the server every time a player joins. It’s a stable foundation that handles the messy data-cleanup so you don't have to.
+> *"Built at 3am. Tested in production. Regretted nothing."*
+
+AethelLib is a hard-coded shield for people who want to build things that **don't crash the server every time a player joins.** It's a stable foundation that handles the messy data-cleanup so you don't have to.
+
+I wrote this because I was tired. Tired of Map leaks. Tired of the Database choking the engine at peak load. Tired of Mojang breaking the API every update and watching six months of work become a runtime error.
+
+So I built the last framework I'll ever need for Bedrock. And now it's yours.
+
+---
 
 ## 🚀 WHY WASTE TIME?
 
-- **Don't Reinvent the Wheel**: I spent the sleepless nights making sure the Map lookups don't grow forever and the Database doesn't choke the engine. Just plug in and play. 
-- **Fork It**: Don't like my logic? Take it. Rip it apart. Make it faster.
-- **Expand It**: The Kernel is a modular dock. You can add your own systems in seconds without touching my core files.
-- **Learn From It**: See how we handle sharding and the Ghost Interpreter. Use it to level up your own scripts.
+- **Don't Reinvent the Wheel** — I spent the sleepless nights so you don't have to. The Map lookups don't grow forever. The Database won't choke the engine. The cache evicts itself. Just plug in and play.
+- **Fork It** — Don't like my logic? Take it. Rip it apart. Make it faster. I won't cry. (I will cry. Please credit me.)
+- **Expand It** — The Kernel is a modular dock. Add your own systems in seconds without touching my core files. The plugin protocol exists specifically so your merge conflicts are *your* problem, not mine.
+- **Learn From It** — See how we handle sharding, the Ghost Interpreter, and the 3-phase boot sequence. Use it to level up your own scripts. Or just copy-paste it. I don't judge.
 
-##  THE ARCHITECTURE
+---
 
-We use the Stable Proxy Pattern. You talk to the Kernel; the Kernel talks to Minecraft. When Minecraft’s API changes (and it will), you only fix the Kernel. Your game logic stays 100% the same.
+## 🧱 WAIT — NEW HERE?
+
+Never written a Bedrock addon before? That's fine. Here's all you need to know:
+
+> Minecraft Bedrock lets you write **JavaScript** to control the game server. Events, players, items, economy — all of it. AethelLib is the toolkit that makes that NOT a nightmare.
+
+**Before you touch anything, you need:**
+- A **Minecraft Bedrock Dedicated Server** (BDS) set up and running
+- **Node.js** (for tooling and the deploy scripts)
+- Basic JavaScript knowledge — if you know what a `class` is, you're fine
+- A high tolerance for Mojang breaking things (this is non-negotiable)
+
+Once you have that? Clone the repo, drop it in your server's `behavior_packs` folder, and you're docked.
+
+---
+
+## 🏗️ THE ARCHITECTURE
+
+We use the **Stable Proxy Pattern.**
+
+```
+YOUR CODE  →  Kernel  →  Minecraft API
+```
+
+You talk to the Kernel. The Kernel talks to Minecraft. When Minecraft's API changes — *and it will, it always does, I've seen things* — you only fix the Kernel. Your game logic stays 100% the same.
+
+The boot sequence runs in **3 phases** so nothing blows up during startup:
+
+| Phase | File | What happens |
+|---|---|---|
+| **Phase 0** | `early.js` | Registries only. No heavy deps. No circular imports. |
+| **Phase 1** | `core.js` | All services registered into the Kernel. |
+| **Phase 2** | `services.js` | Background workers, staggered every 100 ticks to protect TPS. |
+
+Why staggered? Because I learned the hard way what happens when you boot 12 systems simultaneously on server start. The server did not enjoy it. The players did not enjoy it. I did not enjoy it.
+
+---
 
 ## 🛠️ HOW TO USE IT
 
 ### 1. Dock Your Logic
 
-Got a custom system? Don't just dump it in main.js. Dock it so it's globally accessible.
+Got a custom system? **Don't dump it in `main.js`.** I will find you. Dock it so it's globally accessible and doesn't become someone else's circular dependency at 2am.
 
 ```javascript
 import { Kernel } from "./core/Kernel.js";
 
 class MyEpicSystem {
   constructor() {
-    this.v = "1.0.0";
+    this.version = "1.0.0";
   }
+
   doCoolStuff() {
-    /* Logic goes here */
+    /* your logic here */
   }
 }
 
-// Register it once
+// Register it once — Kernel holds the reference forever
 Kernel.register("epic", new MyEpicSystem());
 
-// Access it anywhere in your pack
+// Access it from anywhere in your pack. No imports. No coupling.
 const epic = Kernel.get("epic");
 epic.doCoolStuff();
 ```
 
+> ⚠️ `Kernel.get()` returns `null` if the service doesn't exist. Check for it. I'm not responsible for your null pointer exceptions.
+
 ### 2. Inject Commands
 
-Real commands with auto-complete and namespaces. No more messy chat-listener hacks.
+Real commands with auto-complete and namespaces. No more chat-listener hacks that break every update.
 
 ```javascript
 import { Kernel } from "./core/Kernel.js";
 
-Kernel.get("commandRegistry").register("ping", {
+Kernel.get("commandRegistry").register({
   name: "ping",
   description: "Check if the heartbeat is alive",
-  execute: (player) => player.sendMessage("PONG"),
+  usage: "/ae:ping",
+  permission: "essentials.basic",
+  category: "utility",
+  execute(_data, player, _args) {
+    player.sendMessage("PONG 🏓");
+  }
 });
 ```
 
-##  THE PLUGIN PROTOCOL (DON'T TOUCH THE CORE)
+Commands auto-register into the Ghost Interpreter, which handles parsing, permission checks, and namespacing. You write the logic. The Kernel handles the rest.
 
-You don't want to dock stuff in the main core or kernel files? No issue. Follow the **Industrial Isolation Protocol**:
+---
 
-1.  **Create your Base**: Go to the `scripts/plugins/` folder and create a dedicated folder for your plugin.
-2.  **Logic Separation**: Create a loader file (e.g., `MyCustomPlugin.js`) inside your folder. This file should handle all your imports and system registrations, similar to how `main.js` handles the core.
-3.  **Unique Signature**: Ensure your plugin name and file names are unique. If you conflict with an existing module, the Kernel might reject your boot-sequence.
-4.  **Register the Vector**: Add your plugin's path and a dynamic import to `scripts/plugins/PluginLoader.js`.
+## 🔌 THE PLUGIN PROTOCOL *(Don't Touch The Core)*
 
-By using the plugin system, you ensure that your logic survives AethelLib core updates without you ever having to resolve merge conflicts in the kernel. Keep the core clean, keep the plugins dirty. 🛠️⛓️
+You don't want to dock stuff directly in the kernel files? Smart. Follow the **Industrial Isolation Protocol:**
+
+1. **Create Your Base** — Go to `scripts/plugins/` and create a dedicated folder for your plugin.
+2. **Separate Your Logic** — Create a loader file (e.g., `MyPlugin.js`) inside your folder. This handles your imports and registrations — same pattern as `main.js` but for your stuff only.
+3. **Unique Signature** — Make sure your plugin name is unique. If you conflict with an existing module, the Kernel will reject your boot-sequence. Loudly. In the console. With your name on it.
+4. **Register the Vector** — Add a dynamic import for your loader to `scripts/plugins/PluginLoader.js`.
+
+```javascript
+// PluginLoader.js — add your line here
+await import("./MyPlugin/MyPlugin.js")
+```
+
+**Why bother?** Because when AethelLib updates, your plugin survives. Zero merge conflicts in the kernel. Keep the core clean, keep the plugins dirty. 🛠️⛓️
+
+---
 
 ## 📜 LICENSE (LGPL v3.0)
 
-- **Your Logic = Private**: Link your own top-secret, closed-source code to AethelLib. Keep your secrets.
-- **The Core = Public**: If you optimize the Kernel or fix a bug in the Database, you MUST share that. Keep the backbone strong for the community. 👍
+- **Your Logic = Private** — Link your own top-secret, closed-source addon to AethelLib. Keep your secrets. We don't care.
+- **The Core = Public** — If you optimize the Kernel or fix a bug in the Database, you **MUST** share that back. The backbone stays strong for everyone. 👍
 
-## THE RULES OF THE FORGE
+---
 
-1.  **Keep it Tiny**: If a file is over 120 lines, refactor it. Or don't. I'm a rule, not your dad. (But seriously, your future self will find you and he will be angry).
-2.  **Zero-Bypass**: Use the Kernel methods. Going rogue is fun until the engine updates and your script becomes a literal industrial paperweight.
-3.  **Clean Your Trash**: Use the sharded DB. If the Watchdog kills the server because your buffers are bloated, I'm not helping you. I warned you.
-4.  **The Vibe Check**: If it works, it's "Industrial Peak." If it crashes, it’s an "Advanced Feature Request."
-5.  **Pure Command Supremacy**: UI is for the weak. (Actually, it’s just because I suck at building UIs). Stick to the command nexus for true industrial power.
+## ⚒️ THE RULES OF THE FORGE
 
-**AethelLib: Built so you can actually enjoy modding (while breaking things).**
+These aren't suggestions. They're hard-won lessons written in server crashes and lost player data.
+
+1. **Keep it Tiny** — Files over 120 lines get refactored. Or don't. I'm a rule, not your dad. (But seriously — your future self will find you, and he will be exhausted and angry.)
+
+2. **Zero-Bypass** — Use the Kernel methods. Going rogue is fun until the engine updates and your clever hack becomes a paperweight. The Kernel exists to absorb that pain. Let it.
+
+3. **Clean Your Trash** — Use the sharded DB. Use the cache. If the Watchdog kills the server because your buffers are bloated, I am not helping you. I warned you. It's right here. You're reading it.
+
+4. **The Vibe Check** — If it works, it's *"Industrial Peak."* If it crashes, it's an *"Advanced Feature Request."* There is no in-between.
+
+5. **Pure Command Supremacy** — UI is for the weak. (It's actually because I'm bad at building UIs. But also the commands are cleaner. Both things are true.)
+
+---
+
+**AethelLib: Built so you can actually enjoy modding. While breaking things. While crying a little.**
+
+*— Wladyslaw18, somewhere at 3am, probably*
