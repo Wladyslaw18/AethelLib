@@ -9,7 +9,7 @@ import { MINECRAFT_ITEMS } from "../../data/minecraft-items.js"
 
 export class SellStore {
     static formatMoney(amount) {
-        return `§6$§f${amount.toLocaleString()}`
+        return `\xA76$\xA7f${amount.toLocaleString()}`
     }
 
     /* 
@@ -103,7 +103,7 @@ export class SellStore {
 
         return {
             success: true,
-            message: `§a§l» §fSold §e${quantity}x ${item.name} §ffor §a$${totalValue.toLocaleString()}§f.`,
+            message: `\xA7a\xA7l» \xA7fSold \xA7e${quantity}x ${item.name} \xA7ffor \xA7a$${totalValue.toLocaleString()}\xA7f.`,
             item: item,
 
             quantity: quantity,
@@ -159,7 +159,7 @@ export class SellStore {
      * EMERGENCY_ASSET_RESTORATION
      */
     static givePlayerItems(player, itemId, quantity) {
-        player.sendMessage(`§a§l» §fRefunded §e${quantity}x ${itemId}§f.`);
+        player.sendMessage(`\xA7a\xA7l» \xA7fRefunded \xA7e${quantity}x ${itemId}\xA7f.`);
         return true
     }
 

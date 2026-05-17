@@ -66,7 +66,7 @@ export function init() {
         const chunkKey = ClaimStore.locationToChunkKey(event.block.location)
         if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
             event.cancel = true
-            player.onScreenDisplay.setActionBar("§c§l» §7You cannot build here!");
+            player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77You cannot build here!");
         }
 
     })
@@ -86,7 +86,7 @@ export function init() {
              const chunkKey = ClaimStore.locationToChunkKey(block.location)
              if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
                  event.cancel = true
-                 player.onScreenDisplay.setActionBar("§c§l» §7You cannot build here!");
+                 player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77You cannot build here!");
              }
 
         }
@@ -106,7 +106,7 @@ export function init() {
 
         if (!ClaimStore.hasPermission(chunkKey, player.id, requiredPermission)) {
             event.cancel = true
-            player.onScreenDisplay.setActionBar("§c§l» §7You cannot interact with this!");
+            player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77You cannot interact with this!");
         }
 
     })
@@ -123,7 +123,7 @@ export function init() {
         const chunkKey = ClaimStore.locationToChunkKey(entity.location)
         if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.MOB_INTERACT)) {
             event.cancel = true
-            player.onScreenDisplay.setActionBar("§c§l» §7You cannot interact with mobs here!");
+            player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77You cannot interact with mobs here!");
         }
 
     })
@@ -148,7 +148,7 @@ export function createClaim(player, location, radius = 1) {
             ).join(',')
             
             if (ClaimStore.getClaim(chunkKey)) {
-                player.sendMessage("§c§l» §7This area is already claimed!");
+                player.sendMessage("\xA7c\xA7l» \xA77This area is already claimed!");
                 return false
             }
 
@@ -169,7 +169,7 @@ export function createClaim(player, location, radius = 1) {
         }
     }
 
-    player.sendMessage(`§a§l» §fLand claimed! §e(Radius: ${radius} chunks)§f.`);
+    player.sendMessage(`\xA7a\xA7l» \xA7fLand claimed! \xA7e(Radius: ${radius} chunks)\xA7f.`);
 
     return true
 }
@@ -183,13 +183,13 @@ export function removeClaim(player, location) {
     const playerId = player.id
 
     if (!ClaimStore.isOwner(chunkKey, playerId)) {
-        player.sendMessage("§c§l» §7You do not own this claim!");
+        player.sendMessage("\xA7c\xA7l» \xA77You do not own this claim!");
         return false
     }
 
 
     ClaimStore.removeClaim(chunkKey)
-    player.sendMessage("§a§l» §fLand unclaimed.");
+    player.sendMessage("\xA7a\xA7l» \xA7fLand unclaimed.");
 
     return true
 }
@@ -200,7 +200,7 @@ export function removeClaim(player, location) {
 export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD) {
     const target = Kernel.world.getAllPlayers().find(p => p.name === targetName)
     if (!target) {
-        player.sendMessage(`§c§l» §7Player '${targetName}' not found.`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found.`);
         return
     }
 
@@ -208,7 +208,7 @@ export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD)
     const ClaimStore = Kernel.get("claimStore")
     const playerClaims = ClaimStore.getPlayerClaims(player.id)
     if (playerClaims.length === 0) {
-        player.sendMessage("§c§l» §7You don't have any claims.");
+        player.sendMessage("\xA7c\xA7l» \xA77You don't have any claims.");
         return
     }
 
@@ -217,7 +217,7 @@ export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD)
         ClaimStore.addTrusted(claim.chunkKey, player.id, target.id, permissions)
     }
 
-    player.sendMessage(`§a§l» §e${targetName} §fhas been trusted.`);
+    player.sendMessage(`\xA7a\xA7l» \xA7e${targetName} \xA7fhas been trusted.`);
 
 }
 
@@ -227,7 +227,7 @@ export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD)
 export function untrustPlayer(player, targetName) {
     const target = Kernel.world.getAllPlayers().find(p => p.name === targetName)
     if (!target) {
-        player.sendMessage(`§c§l» §7Player '${targetName}' not found.`);
+        player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found.`);
         return
     }
 
@@ -238,7 +238,7 @@ export function untrustPlayer(player, targetName) {
         ClaimStore.removeTrusted(claim.chunkKey, target.id)
     }
 
-    player.sendMessage(`§a§l» §e${targetName} §fhas been untrusted.`);
+    player.sendMessage(`\xA7a\xA7l» \xA7e${targetName} \xA7fhas been untrusted.`);
 
 }
 

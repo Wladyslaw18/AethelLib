@@ -13,7 +13,7 @@ import { SignalBus } from "../../core/signalbus/SignalBus.js"
  */
 
 const OBJECTIVE_ID = "money"
-const DISPLAY_NAME = "§6LIQUIDITY"
+const DISPLAY_NAME = "\xA76LIQUIDITY"
 
 /* 
  * SYSTEM_BOOTSTRAP_PROTOCOL
