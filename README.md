@@ -57,7 +57,7 @@ Why staggered? Because I learned the hard way what happens when you boot 12 syst
 
 ---
 
-## 🛠️ HOW TO USE IT
+## &#x262D; HOW TO USE IT
 
 ### 1. Dock Your Logic
 
@@ -84,7 +84,7 @@ const epic = Kernel.get("epic");
 epic.doCoolStuff();
 ```
 
-> ⚠️ `Kernel.get()` returns `null` if the service doesn't exist. Check for it. I'm not responsible for your null pointer exceptions.
+> ⚡︎ `Kernel.get()` returns `null` if the service doesn't exist. Check for it. I'm not responsible for your null pointer exceptions.
 
 ### 2. Inject Commands
 
@@ -109,7 +109,7 @@ Commands auto-register into the Ghost Interpreter, which handles parsing, permis
 
 ---
 
-## 🔌 THE PLUGIN PROTOCOL *(Don't Touch The Core)*
+## &#x2756 THE PLUGIN PROTOCOL *(Don't Touch The Core)*
 
 You don't want to dock stuff directly in the kernel files? Smart. Follow the **Industrial Isolation Protocol:**
 
@@ -127,14 +127,14 @@ await import("./MyPlugin/MyPlugin.js")
 
 ---
 
-## 📜 LICENSE (LGPL v3.0)
+## &#x2630; LICENSE (LGPL v3.0)
 
 - **Your Logic = Private** — Link your own top-secret, closed-source addon to AethelLib. Keep your secrets. We don't care.
 - **The Core = Public** — If you optimize the Kernel or fix a bug in the Database, you **MUST** share that back. The backbone stays strong for everyone. 👍
 
 ---
 
-## ⚒️ THE RULES OF THE FORGE
+## &#x2699;&#xFE0E; THE RULES OF THE FORGE
 
 These aren't suggestions. They're hard-won lessons written in server crashes and lost player data.
 
