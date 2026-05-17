@@ -18,13 +18,13 @@ export async function showWarpUI(player) {
     const form = new ActionFormData()
         .title(Lang.GOLD + "WAYPOINTS")
         .body(warpNames.length > 0 
-            ? `§7Available Waypoints: §e${warpNames.length}`
-            : "§cNO WAYPOINTS CONFIGURED.")
+            ? `\xA77Available Waypoints: \xA7e${warpNames.length}`
+            : "\xA7cNO WAYPOINTS CONFIGURED.")
 
-    form.button("§c§l[BACK]", "textures/ui/refresh")
+    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
 
     for (const name of warpNames) {
-        form.button(`§f§l${name.toUpperCase()}\n§8Public waypoint`, "textures/items/ender_eye")
+        form.button(`\xA7f\xA7l${name.toUpperCase()}\n\xA78Public waypoint`, "textures/items/ender_eye")
     }
 
     const res = await UIUtils.showForm(player, form)

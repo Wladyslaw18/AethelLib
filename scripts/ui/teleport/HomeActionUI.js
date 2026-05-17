@@ -51,8 +51,8 @@ export async function showDeleteHomeUI(player) {
         .title(Lang.ERROR + "DELETE HOME")
         .body("Select node to purge.")
 
-    homeNames.forEach(name => form.button(`§c§l${name.toUpperCase()}`, "textures/ui/cancel"))
-    form.button("§c§l[BACK]", "textures/ui/refresh")
+    homeNames.forEach(name => form.button(`\xA7c\xA7l${name.toUpperCase()}`, "textures/ui/cancel"))
+    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === homeNames.length) {

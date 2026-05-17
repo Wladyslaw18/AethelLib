@@ -14,7 +14,7 @@ export async function showHomeMenu(player) {
         .button(Lang.UI.HOMES_LIST, "textures/items/compass_item")
         .button(Lang.UI.HOMES_CREATE, "textures/items/map_empty")
         .button(Lang.UI.HOMES_DELETE, "textures/ui/cancel")
-        .button("§c§l[BACK]", "textures/ui/refresh")
+        .button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === 3) {

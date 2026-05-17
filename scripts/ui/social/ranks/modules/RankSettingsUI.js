@@ -13,8 +13,8 @@ export async function showBasicSettings(player, rankTag, backCallback) {
         .title("Edit Rank")
         .textField("Ranks Display Text:", "e.g. test111", { defaultValue: String(rank.name || "") })
         .textField("Ranks Order:", "e.g. 10", { defaultValue: String(rank.order || 0) })
-        .textField("Ranks Name Color:", "Example:", { defaultValue: String(rank.colorName || "§f") })
-        .textField("Ranks Message Color:", "Example:", { defaultValue: String(rank.colorText || "§f") })
+        .textField("Ranks Name Color:", "Example:", { defaultValue: String(rank.colorName || "\xA7f") })
+        .textField("Ranks Message Color:", "Example:", { defaultValue: String(rank.colorText || "\xA7f") })
         .toggle("Hide Ranks", { defaultValue: rank.hideRanks || false })
 
     const res = await UIUtils.showForm(player, form)
@@ -27,6 +27,6 @@ export async function showBasicSettings(player, rankTag, backCallback) {
     rank.hideRanks = res.formValues[4]
 
     RankSystem.updateRank(rankTag, rank)
-    player.sendMessage(`§aUpdated basic settings for rank: ${rankTag}`)
+    player.sendMessage(`\xA7aUpdated basic settings for rank: ${rankTag}`)
     backCallback()
 }

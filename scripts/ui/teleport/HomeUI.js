@@ -18,14 +18,14 @@ export async function showHomeUI(player) {
     const form = new ActionFormData()
         .title(Lang.UI.HOMES_TITLE)
         .body(homeNames.length > 0
-            ? `§7Active Anchors: §e${homeNames.length}`
-            : "§cNO HOMES FOUND.")
+            ? `\xA77Active Anchors: \xA7e${homeNames.length}`
+            : "\xA7cNO HOMES FOUND.")
 
-    form.button("§c§l[BACK]", "textures/ui/refresh")
+    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
 
     for (const name of homeNames) {
         const home = homes[name]
-        form.button(`§f§l${name.toUpperCase()}\n§8COORD: ${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}`, "textures/items/map_filled")
+        form.button(`\xA7f\xA7l${name.toUpperCase()}\n\xA78COORD: ${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}`, "textures/items/map_filled")
     }
 
     const response = await UIUtils.showForm(player, form)
@@ -47,10 +47,10 @@ export async function showHomeUI(player) {
 async function showHomeActions(player, name, home) {
     const form = new ActionFormData()
         .title(Lang.GOLD + "DETAILS: " + name.toUpperCase())
-        .body(`§7Target: §e${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}\n§7Dim: §e${home.dimension}`)
-        .button("§a§lTELEPORT\n§8Relocate to anchor", "textures/items/ender_pearl")
-        .button("§c§lDELETE\n§8Remove anchor", "textures/ui/cancel")
-        .button("§7§l[BACK]", "textures/ui/refresh")
+        .body(`\xA77Target: \xA7e${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}\n\xA77Dim: \xA7e${home.dimension}`)
+        .button("\xA7a\xA7lTELEPORT\n\xA78Relocate to anchor", "textures/items/ender_pearl")
+        .button("\xA7c\xA7lDELETE\n\xA78Remove anchor", "textures/ui/cancel")
+        .button("\xA77\xA7l[BACK]", "textures/ui/refresh")
 
     const response = await UIUtils.showForm(player, form)
     if (response.canceled) return
