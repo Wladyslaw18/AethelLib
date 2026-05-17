@@ -1,48 +1,53 @@
-/*
- * CACHE_ORCHESTRATOR_V1
- * ----------------------------------------------------------------------------
- * Centralized memory buffering system. Implements TTL (Time-To-Live) and 
- * LRU (Least-Recently-Used) eviction strategies to prevent heap exhaustion. 
- *
- * PHILOSOPHY: Database IO is expensive. In-memory Map lookups are cheap. 
- * This module ensures that hot-data stays in the buffer while cold-data 
- * is aggressively purged to maintain O(1) access time.
- */
-
+// ----------------------------------------------------------------------------
+// | class: CacheManager                                                      |
+// | a centralized memory buffering system.                                   |
+// | keeps hot data in-memory so we don't have to keep hitting the slow disk. |
+// | implements TTL (expiration) and LRU (size limit) eviction.               |
+// ----------------------------------------------------------------------------
 export class CacheManager {
+    // ----------------------------------------------------------------------------
+    // | static properties                                                        |
+    // | global registry for all cache instances.                                  |
+    // ----------------------------------------------------------------------------
+    
+    // holds the actual cache metadata (the maps, settings, stats).
     static #caches = new Map()
+    // handle for the global cleanup timer that sweeps all caches.
     static #globalCleanupInterval = null
     
-    /*
-     * CACHE_INSTANCE_FACTORY
-     * ----------------------------------------------------------------------------
-     * Spawns a new isolated cache buffer with dedicated TTL and size limits. 
-     * Includes an internal interval worker for targeted memory cleanup.
-     *
-     * @param {string} name - The unique buffer identifier.
-     * @param {Object} options - TTL, maxSize, and cleanupInterval parameters.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: createCache                                                      |
+    // | spawns a new isolated cache buffer with its own settings.                |
+    // | sets up a background worker for that specific cache.                     |
+    // ----------------------------------------------------------------------------
     static createCache(name, options = {}) {
+        // the actual storage map.
         const cache = new Map()
-        const accessOrder = new Map() // LRU_ACCESS_STAMP_MAP
-        const ttl = options.ttl || 5000 // 5s baseline
+        // tracks when each key was last used for the LRU eviction policy.
+        const accessOrder = new Map() 
+        // how long data stays valid (default 5 seconds).
+        const ttl = options.ttl || 5000 
+        // maximum number of items allowed in the map.
         const maxSize = options.maxSize || 1000
-        const cleanupInterval = options.cleanupInterval || 60000 // 1m baseline
+        // how often the background cleanup runs (default 1 minute).
+        const cleanupInterval = options.cleanupInterval || 60000 
         
-        /* 
-         * INTERNAL_CLEANUP_WORKER
-         * Periodically triggers the #cleanupCache routine to purge expired 
-         * entries and enforce LRU limits.
-         */
+        // ----------------------------------------------------------------------------
+        // | background cleanup                                                       |
+        // | periodically clears out expired stuff and enforces size limits.           |
+        // ----------------------------------------------------------------------------
         const cleanup = setInterval(() => {
+            // call the internal cleanup helper.
             this.#cleanupCache(cache, accessOrder, ttl, maxSize)
         }, cleanupInterval)
         
+        // save the metadata in our global registry.
         this.#caches.set(name, { 
             cache, 
             accessOrder, 
             cleanup, 
             options: { ttl, maxSize, cleanupInterval },
+            // keep track of how well the cache is performing.
             stats: {
                 hits: 0,
                 misses: 0,
@@ -52,56 +57,68 @@ export class CacheManager {
             }
         })
         
+        // make sure the global cleanup worker is running.
         this.#startGlobalCleanup()
         
+        // return the public interface for this cache.
         return {
-            /* 
-             * BUFFER_QUERY_VECTOR
-             * Fetches an entry from the map. Updates the access-stamp for 
-             * LRU tracking. If the entry is expired, it's purged instantly 
-             * to prevent zombie-data leakage.
-             */
+            // ----------------------------------------------------------------------------
+            // | get                                                                      |
+            // | fetch a value. updates LRU stamp. deletes if expired.                    |
+            // ----------------------------------------------------------------------------
             get: (key) => {
+                // get the metadata for this cache.
                 const cacheMeta = this.#caches.get(name)
                 if (!cacheMeta) return null
                 
+                // try to find the entry.
                 const entry = cacheMeta.cache.get(key)
+                // check if it exists and hasn't expired yet.
                 if (entry && Date.now() - entry.timestamp <= ttl) {
+                    // update the access time so it doesn't get evicted by LRU.
                     cacheMeta.accessOrder.set(key, Date.now())
+                    // increment hit counter.
                     cacheMeta.stats.hits++
                     return entry.value
                 }
                 
+                // if it exists but is expired, nuke it now.
                 if (entry) {
                     cacheMeta.cache.delete(key)
                     cacheMeta.accessOrder.delete(key)
                 }
                 
+                // increment miss counter.
                 cacheMeta.stats.misses++
                 return null
             },
             
-            /* 
-             * BUFFER_INJECTION_VECTOR
-             * Commits a value to the map. Triggers #evictLRU if the 
-             * maxSize limit is reached.
-             */
+            // ----------------------------------------------------------------------------
+            // | set                                                                      |
+            // | adds a value. kicks out the oldest item if the cache is full.            |
+            // ----------------------------------------------------------------------------
             set: (key, value) => {
                 const cacheMeta = this.#caches.get(name)
                 if (!cacheMeta) return
                 
+                // check if we're at the limit and adding a NEW key.
                 if (cacheMeta.cache.size >= maxSize && !cacheMeta.cache.has(key)) {
+                    // kick out the least recently used item.
                     this.#evictLRU(cacheMeta.cache, cacheMeta.accessOrder, 1)
                 }
                 
+                // save the value with the current timestamp.
                 cacheMeta.cache.set(key, { 
                     value, 
                     timestamp: Date.now() 
                 })
+                // update the access order.
                 cacheMeta.accessOrder.set(key, Date.now())
+                // increment set counter.
                 cacheMeta.stats.sets++
             },
             
+            // remove a specific key.
             delete: (key) => {
                 const cacheMeta = this.#caches.get(name)
                 if (!cacheMeta) return false
@@ -116,6 +133,7 @@ export class CacheManager {
                 return deleted
             },
             
+            // wipe everything.
             clear: () => {
                 const cacheMeta = this.#caches.get(name)
                 if (!cacheMeta) return
@@ -124,18 +142,19 @@ export class CacheManager {
                 cacheMeta.accessOrder.clear()
             },
             
-            /* 
-             * REGEX_INVALIDATION_VECTOR
-             * Bulk-purges entries whose keys match the provided pattern. 
-             * Useful for clearing related sub-keys (e.g., 'player_stats_*').
-             */
+            // ----------------------------------------------------------------------------
+            // | invalidate                                                               |
+            // | clear all keys that match a specific regex pattern.                      |
+            // ----------------------------------------------------------------------------
             invalidate: (pattern) => {
                 const cacheMeta = this.#caches.get(name)
                 if (!cacheMeta) return 0
                 
+                // convert string to regex if needed.
                 const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern)
                 let deleted = 0
                 
+                // loop through every key. slow but effective.
                 for (const [key] of cacheMeta.cache) {
                     if (regex.test(key)) {
                         cacheMeta.cache.delete(key)
@@ -148,6 +167,7 @@ export class CacheManager {
                 return deleted
             },
             
+            // get performance metrics.
             getStats: () => {
                 const cacheMeta = this.#caches.get(name)
                 if (!cacheMeta) return null
@@ -161,10 +181,12 @@ export class CacheManager {
                     size: cacheMeta.cache.size,
                     maxSize,
                     hitRate,
+                    // guess how much memory we're using.
                     memoryUsage: this.#estimateMemoryUsage(cacheMeta.cache)
                 }
             },
             
+            // check if a key exists and is valid.
             has: (key) => {
                 const cacheMeta = this.#caches.get(name)
                 if (!cacheMeta) return false
@@ -173,6 +195,7 @@ export class CacheManager {
                 return !!(entry && Date.now() - entry.timestamp <= ttl)
             },
             
+            // get list of all keys.
             keys: () => {
                 const cacheMeta = this.#caches.get(name)
                 if (!cacheMeta) return []
@@ -180,6 +203,7 @@ export class CacheManager {
                 return Array.from(cacheMeta.cache.keys())
             },
             
+            // current size.
             size: () => {
                 const cacheMeta = this.#caches.get(name)
                 return cacheMeta ? cacheMeta.cache.size : 0
@@ -187,16 +211,16 @@ export class CacheManager {
         }
     }
     
-    /*
-     * CACHE_SANITIZATION_PROTOCOL
-     * ----------------------------------------------------------------------------
-     * Aggressively sweeps the map for expired entries. If the map is still 
-     * over capacity, it triggers an LRU eviction to reach 80% capacity.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: #cleanupCache                                                    |
+    // | internal helper to sweep a specific cache for expired data.              |
+    // | also forces the cache down to 80% size if it's over the limit.           |
+    // ----------------------------------------------------------------------------
     static #cleanupCache(cache, accessOrder, ttl, maxSize) {
         const now = Date.now()
         let cleaned = 0
         
+        // delete anything that passed its expiration date.
         for (const [key, entry] of cache) {
             if (now - entry.timestamp > ttl) {
                 cache.delete(key)
@@ -205,7 +229,9 @@ export class CacheManager {
             }
         }
         
+        // if we're still over the limit, kick out the oldest stuff.
         if (cache.size > maxSize) {
+            // target 80% capacity to avoid immediate re-cleanup.
             const toRemove = cache.size - Math.floor(maxSize * 0.8)
             cleaned += this.#evictLRU(cache, accessOrder, toRemove)
         }
@@ -213,17 +239,17 @@ export class CacheManager {
         return cleaned
     }
     
-    /*
-     * LRU_EVICTION_VECTOR
-     * ----------------------------------------------------------------------------
-     * Identifies the oldest accessed entries and terminates them to 
-     * free up heap space.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: #evictLRU                                                        |
+    // | internal helper to kick out the 'count' oldest items.                    |
+    // ----------------------------------------------------------------------------
     static #evictLRU(cache, accessOrder, count) {
+        // sort by access timestamp (ascending).
         const entries = Array.from(accessOrder.entries())
-            .sort((a, b) => a[1] - b[1]) // STAMP_COMPARISON
+            .sort((a, b) => a[1] - b[1]) 
             .slice(0, count)
         
+        // delete the losers.
         entries.forEach(([key]) => {
             cache.delete(key)
             accessOrder.delete(key)
@@ -232,24 +258,25 @@ export class CacheManager {
         return entries.length
     }
     
-    /*
-     * HEAP_USAGE_ESTIMATOR
-     * ----------------------------------------------------------------------------
-     * Calculates the approximate byte-count of the cached data. 
-     * Essential for monitoring for database-bloat or memory-leaks.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: #estimateMemoryUsage                                             |
+    // | rough guess of memory usage in bytes.                                    |
+    // ----------------------------------------------------------------------------
     static #estimateMemoryUsage(cache) {
-        return cache.size * 128 // FAST_ESTIMATION
+        // assume ~128 bytes per entry on average. probably wrong.
+        return cache.size * 128 
     }
     
+    // start the 5-minute global cleanup interval.
     static #startGlobalCleanup() {
         if (this.#globalCleanupInterval) return
         
         this.#globalCleanupInterval = setInterval(() => {
             this.#globalCleanup()
-        }, 300000) // 5m Interval
+        }, 300000) 
     }
     
+    // loop through every cache and trigger a cleanup.
     static #globalCleanup() {
         let totalCleaned = 0
         
@@ -268,10 +295,11 @@ export class CacheManager {
         }
         
         if (totalCleaned > 0) {
-            console.log(`[CacheManager] GLOBAL_PURGE: Removed ${totalCleaned} zombie entries.`);
+            console.log(`[CacheManager] Global cleanup: removed ${totalCleaned} entries.`);
         }
     }
     
+    // get stats for all caches combined.
     static getGlobalStats() {
         const stats = {
             totalCaches: this.#caches.size,
@@ -313,6 +341,7 @@ export class CacheManager {
         return stats
     }
     
+    // delete a specific cache instance.
     static destroyCache(name) {
         const cacheMeta = this.#caches.get(name)
         if (!cacheMeta) return false
@@ -325,6 +354,7 @@ export class CacheManager {
         return true
     }
     
+    // wipe everything from the registry.
     static destroyAll() {
         for (const [_name, cacheMeta] of this.#caches) {
             clearInterval(cacheMeta.cleanup)
@@ -340,41 +370,53 @@ export class CacheManager {
         this.#caches.clear()
     }
     
+    // get names of all active caches.
     static getCacheNames() {
         return Array.from(this.#caches.keys())
     }
     
+    // check if a cache exists.
     static hasCache(name) {
         return this.#caches.has(name)
     }
 }
 
-/* 
- * INDUSTRIAL_CACHE_DOCKING
- * ----------------------------------------------------------------------------
- * Pre-configured buffers for high-frequency sub-systems. 
- * Optimized for specific TTL and size requirements.
- */
+// ----------------------------------------------------------------------------
+// | default caches                                                           |
+// | pre-configured buffers for core systems.                                  |
+// ----------------------------------------------------------------------------
+
+// small cache for player metadata.
 export const PlayerCache = CacheManager.createCache("players", { 
     ttl: 5000, 
     maxSize: 500, 
     cleanupInterval: 30000 
 })
 
+// cache for shop prices.
 export const ShopCache = CacheManager.createCache("shop", { 
     ttl: 30000, 
     maxSize: 50, 
     cleanupInterval: 60000 
 })
 
+// cache for rank metadata.
 export const RankCache = CacheManager.createCache("ranks", { 
     ttl: 60000, 
     maxSize: 10, 
     cleanupInterval: 120000 
 })
 
+// large cache for permission nodes.
 export const PermissionCache = CacheManager.createCache("permissions", { 
     ttl: 5000, 
     maxSize: 1000, 
     cleanupInterval: 30000 
+})
+
+// large cache for /reply command targets.
+export const ReplyCache = CacheManager.createCache("replies", {
+    ttl: 300000, // 5m TTL
+    maxSize: 2000,
+    cleanupInterval: 60000
 })

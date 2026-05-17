@@ -3,28 +3,41 @@ import * as mcui from "@minecraft/server-ui";
 import { TickScheduler } from "./scheduler/TickScheduler.js";
 import { SignalBus } from "./signalbus/SignalBus.js";
 
-/**
- * Central kernel that manages services and proxies native Minecraft APIs.
- * This keeps the rest of the codebase stable if the native API changes.
- */
+// ----------------------------------------------------------------------------
+// | class: Kernel                                                            |
+// | the central nervous system. if this fails, we all go home.               |
+// | handles service registration, plugin lifecycles, and native api proxies. |
+// ----------------------------------------------------------------------------
 export class Kernel {
-    // Stores registered system instances
+    // ----------------------------------------------------------------------------
+    // | static properties                                                        |
+    // | just some maps to keep track of stuff. standard boilerplate.             |
+    // ----------------------------------------------------------------------------
+    
+    // holds the actual system instances (economy, db, etc)
     static #systems = new Map();
-    // Stores registered external plugins
+    // holds metadata for external plugins
     static #plugins = new Map();
-    // Stores cross-plugin service providers
+    // holds services that plugins want to share with each other
     static #serviceProviders = new Map();
 
-    /**
-     * Proxies for native Minecraft objects
-     */
+    // ----------------------------------------------------------------------------
+    // | native proxies                                                           |
+    // | wrapping these so we don't have to import @minecraft/server everywhere.  |
+    // | also makes it easier to mock things if we ever get unit tests (doubt).   |
+    // ----------------------------------------------------------------------------
+    
+    // the world object. basically everything that exists.
     static get world() { return mc.world; }
+    // the system object. handles ticks and run loops.
     static get system() { return mc.system; }
+    // helper to see how many services are currently alive.
     static get size() { return this.#systems.size; }
 
-    /**
-     * Proxies for common Minecraft types
-     */
+    // ----------------------------------------------------------------------------
+    // | type proxies                                                             |
+    // | because typing out mc.ItemStack 100 times is a waste of life.            |
+    // ----------------------------------------------------------------------------
     static get ItemStack() { return mc.ItemStack; }
     static get EntityComponentTypes() { return mc.EntityComponentTypes; }
     static get SignSide() { return mc.SignSide; }
@@ -32,37 +45,43 @@ export class Kernel {
     static get CustomCommandParamType() { return mc.CustomCommandParamType; }
     static get CommandPermissionLevel() { return mc.CommandPermissionLevel; }
 
-    /**
-     * Proxies for UI forms
-     */
+    // ----------------------------------------------------------------------------
+    // | ui proxies                                                               |
+    // | server-ui forms. standard stuff for player interaction.                  |
+    // ----------------------------------------------------------------------------
     static get ActionFormData() { return mcui.ActionFormData; }
     static get ModalFormData() { return mcui.ModalFormData; }
     static get MessageFormData() { return mcui.MessageFormData; }
 
-    /**
-     * Register a new service or system
-     */
+    // ----------------------------------------------------------------------------
+    // | method: register                                                         |
+    // | put a service into the kernel. don't register the same id twice.         |
+    // ----------------------------------------------------------------------------
     static register(id, instance) {
+        // check if we're about to overwrite something important
         if (this.#systems.has(id)) {
             console.warn(`[Kernel] Service collision: identifier '${id}' is already registered. Overwriting.`);
         }
+        // slap it in the map
         this.#systems.set(id, instance);
+        // let the console know we did something
         console.log("[Kernel] Service registered: " + id);
     }
 
-    /**
-     * Register an external plugin or sub-mod (V3 Orchestrator Standard)
-     * @param {Object} manifest - { id, name, version, dependencies: [] }
-     * @param {Function|Object} logic - Callback or object with onInit/onEnable
-     */
+    // ----------------------------------------------------------------------------
+    // | method: registerPlugin                                                   |
+    // | the entrance for external mods. gives them a sandbox to play in.         |
+    // | tracks their commands and listeners so we can kill them if needed.        |
+    // ----------------------------------------------------------------------------
     static registerPlugin(manifest, logic) {
+        // basic validation. if they didn't give us an id, we're done here.
         if (!manifest.id || !logic) {
-            console.error("[Kernel] Invalid plugin registration: Missing ID or Logic.");
+            console.error("[Kernel] Missing ID or Logic for plugin.");
             return;
         }
 
-        // 🛡️ ISOLATED PLUGIN SANDBOX
-        // Tracks everything this plugin does so we can nuke it if it unloads
+        // we need to track everything the plugin does. 
+        // if the plugin unloads, we need to nuke all its residue.
         const pluginState = {
             id: manifest.id,
             activeCommands:[],
@@ -70,152 +89,196 @@ export class Kernel {
             activeListeners:[]
         };
 
+        // this is the object we hand to the plugin. 
+        // it's their only way to talk to the kernel safely.
         const context = {
             id: manifest.id,
             name: manifest.name || manifest.id,
             version: manifest.version,
             
-            // Scoped Command Registration
+            // register a command under the plugin's name.
             registerCommand: (command) => {
+                // get the global registry
                 const registry = this.get("commandRegistry");
                 if (!registry) return console.error(`[${manifest.id}] Failed to register command: Registry not found.`);
+                // add it to the registry
                 registry.register(command);
+                // track it so we can unregister it later
                 pluginState.activeCommands.push(command.name);
             },
 
-            // Scoped Schedulers (Auto-cleans on disable)
+            // set an interval that auto-cleans on plugin shutdown.
             setInterval: (callback, ticks) => {
+                // schedule the tick task
                 const id = TickScheduler.schedule(callback, ticks, { name: `${manifest.id}_interval` });
+                // keep the id for the cleanup crew
                 pluginState.activeIntervals.push(id);
                 return id;
             },
 
-            // Scoped Event Bus (Auto-unsubscribes)
+            // listen for signals. also auto-cleans.
             onSignal: (event, callback) => {
+                // subscribe to the signal bus
                 const unsubscribe = SignalBus.on(event, callback);
+                // keep the unsubscribe function
                 pluginState.activeListeners.push(unsubscribe);
             },
 
+            // find a service.
             getService: (id) => this.get(id) || this.#serviceProviders.get(id),
             
+            // share a service with other plugins.
             exposeService: (id, instance) => {
+                // put it in the public provider map
                 this.#serviceProviders.set(id, instance);
                 console.log(`[Kernel] Service Exposed: ${id} by ${manifest.id}`);
             },
 
-            log: (msg) => console.log(`§8[§b${manifest.id}§8] §f${msg}`),
-            error: (msg) => console.error(`§8[§c${manifest.id}§8] §cERROR: ${msg}`)
+            // standard logging that includes the plugin id.
+            log: (msg) => console.log(`\xA78[\xA7b${manifest.id}\xA78] \xA7f${msg}`),
+            error: (msg) => console.error(`\xA78[\xA7c${manifest.id}\xA78] \xA7cERROR: ${msg}`)
         };
 
+        // save the plugin data in our master map.
         this.#plugins.set(manifest.id, { manifest, logic, context, state: "STAGED", tracker: pluginState });
         console.log(`[Kernel] Plugin staged: ${manifest.id} v${manifest.version}`);
     }
 
-    // 🔥 NEW: HOT-RELOAD / DISABLE PROTOCOL
+    // ----------------------------------------------------------------------------
+    // | method: unloadPlugin                                                     |
+    // | the decommission sequence. wipes a plugin from existence.                |
+    // | clears its intervals, listeners, and commands.                           |
+    // ----------------------------------------------------------------------------
     static unloadPlugin(id) {
+        // find the plugin in the map
         const plugin = this.#plugins.get(id);
         if (!plugin) return;
 
-        plugin.context.log("Initiating decommission sequence...");
+        // start the shutdown log
+        plugin.context.log("unloading...");
 
-        // 1. Run plugin's custom shutdown logic
+        // if the plugin has custom shutdown logic, run it now.
         if (typeof plugin.logic.onDisable === "function") {
             plugin.logic.onDisable(plugin.context);
         }
 
-        // 2. Nuke tracked tasks
+        // clear all the tick intervals they scheduled.
         if (plugin.tracker && plugin.tracker.activeIntervals) {
             plugin.tracker.activeIntervals.forEach(taskId => TickScheduler.cancel(taskId));
         }
         
-        // 3. Nuke tracked event listeners
+        // nuke all the event listeners they registered.
         if (plugin.tracker && plugin.tracker.activeListeners) {
             plugin.tracker.activeListeners.forEach(unsub => unsub());
         }
 
-        // 4. Unregister commands
+        // unregister all their commands from the global registry.
         const registry = this.get("commandRegistry");
         if (registry && plugin.tracker && plugin.tracker.activeCommands) {
             plugin.tracker.activeCommands.forEach(cmd => registry.unregister(cmd));
         }
 
-        plugin.state = "DECOMMISSIONED";
+        // mark it as disabled and delete it from the active map.
+        plugin.state = "DISABLED";
         this.#plugins.delete(id);
         console.log(`[Kernel] Purged plugin: ${id}`);
     }
 
-    /**
-     * Get a registered service or service provider by its ID
-     */
+    // ----------------------------------------------------------------------------
+    // | method: get                                                              |
+    // | fetch a service by its id. checks core systems then plugins.             |
+    // ----------------------------------------------------------------------------
     static get(id) {
+        // try to find it in core systems first, then the plugin service providers.
         return this.#systems.get(id) || this.#serviceProviders.get(id);
     }
 
-    /**
-     * Check if a service or service provider is registered
-     */
+    // ----------------------------------------------------------------------------
+    // | method: has                                                              |
+    // | quick check to see if a service exists.                                  |
+    // ----------------------------------------------------------------------------
     static has(id) {
+        // check both maps.
         return this.#systems.has(id) || this.#serviceProviders.has(id);
     }
 
-    /**
-     * Initialize all registered plugins using topological ordering
-     * Resolves dependencies before execution to prevent null-pointer crashes.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: bootPlugins                                                      |
+    // | the big bang. starts every registered plugin in the right order.         |
+    // | uses a dependency sorter so we don't crash.                              |
+    // ----------------------------------------------------------------------------
     static bootPlugins() {
-        console.log("[Kernel] Initializing Industrial Orchestrator boot-sequence...");
+        console.log("[Kernel] booting plugins...");
         
+        // sort the plugins so dependencies load first.
         const sorted = this._sortPlugins();
         let successCount = 0;
 
+        // iterate through the sorted list and init each one.
         for (const id of sorted) {
             const plugin = this.#plugins.get(id);
             try {
+                // call the plugin's main logic or onInit hook.
                 if (typeof plugin.logic === "function") {
                     plugin.logic(plugin.context);
                 } else if (plugin.logic.onInit) {
                     plugin.logic.onInit(plugin.context);
                 }
                 
+                // if we got here, it's alive.
                 plugin.state = "ACTIVE";
                 successCount++;
             } catch (error) {
+                // something went wrong. kill it.
                 console.error(`[Kernel] FATAL ERROR in plugin '${id}':`, error);
                 plugin.state = "FAILED";
             }
         }
         
-        console.log(`[Kernel] V3 Boot complete. Plugins active: ${successCount}/${this.#plugins.size}`);
+        // finish up the log.
+        console.log(`[Kernel] Boot complete. Plugins: ${successCount}/${this.#plugins.size}`);
     }
 
-    /**
-     * INTERNAL: TOPOLOGICAL_SORTER
-     * ----------------------------------------------------------------------------
-     * Resolves the dependency graph to ensure correct load order.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: _sortPlugins                                                     |
+    // | internal helper to sort plugins based on their dependency list.          |
+    // | prevents circular dependencies and load-order issues.                    |
+    // ----------------------------------------------------------------------------
     static _sortPlugins() {
+        // get all the plugin ids
         const nodes = Array.from(this.#plugins.keys());
         const sorted = [];
         const visited = new Set();
         const visiting = new Set();
 
+        // recursive visit function for the graph.
         const visit = (id) => {
+            // if we're visiting it while already visiting it, we have a circle. bad.
             if (visiting.has(id)) throw new Error(`Circular dependency detected: ${id}`);
+            // already done this one.
             if (visited.has(id)) return;
 
+            // start visiting.
             visiting.add(id);
             const plugin = this.#plugins.get(id);
+            // check for dependencies in the manifest.
             if (plugin?.manifest.dependencies) {
                 for (const dep of plugin.manifest.dependencies) {
+                    // visit every dependency before we finish this one.
                     visit(dep);
                 }
             }
+            // finished visiting.
             visiting.delete(id);
+            // mark as processed.
             visited.add(id);
+            // add to the sorted list.
             sorted.push(id);
         };
 
+        // run the visit on every node.
         nodes.forEach(id => visit(id));
+        // return the result.
         return sorted;
     }
 }

@@ -1,23 +1,35 @@
-/**
- * TPA Accept Command - Accept incoming TPA request
- * Smith Forge Rule: Max 100 lines per file
- */
-
 import { Kernel } from "../../core/Kernel.js"
 
+// ----------------------------------------------------------------------------
+// | object: TPAcceptCommand                                                  |
+// | command definition for authorizing an incoming teleport handshake.         |
+// | routes the confirmation to the TPAService for final relocation.          |
+// ----------------------------------------------------------------------------
 export const TPAcceptCommand = {
+    // internal name.
     name: "tpaccept",
+    // human-readable description.
     description: "Accept incoming TPA request",
+    // syntax guide.
     usage: "/ae:tpaccept",
+    // required permission node.
     permission: "essentials.tpa",
+    // command category.
     category: "teleport",
+    // native parameter definitions (optional target for multi-request resolution).
     parameters: [
         { name: "target", type: "player", optional: true }
     ],
 
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | entry point for handshake confirmation. simply delegates to the service.  |
+    // ----------------------------------------------------------------------------
     async execute(_data, player, _args) {
+        // resolve the service and trigger the acceptance logic.
+        // the service handles identifying which request to accept and the 
+        // subsequent teleportation sequence.
         const TpaService = Kernel.get("tpaService")
         TpaService.acceptRequest(player)
     }
 }
-
