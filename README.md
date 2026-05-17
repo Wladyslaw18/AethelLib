@@ -109,7 +109,7 @@ Commands auto-register into the Ghost Interpreter, which handles parsing, permis
 
 ---
 
-## &#x2756 THE PLUGIN PROTOCOL *(Don't Touch The Core)*
+## &#x2756; THE PLUGIN PROTOCOL *(Don't Touch The Core)*
 
 You don't want to dock stuff directly in the kernel files? Smart. Follow the **Industrial Isolation Protocol:**
 
