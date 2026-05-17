@@ -6,7 +6,7 @@ export async function showChestShopPermissions(player, rankTag, backCallback) {
     const rank = RankSystem.getRank(rankTag)
     if (!rank) return
     const p = rank.permissions || {}
-    const options = ["§aAllow", "§7No action (Default)", "§cDeny"]
+    const options = ["\xA7aAllow", "\xA77No action (Default)", "\xA7cDeny"]
 
     const nodes = [
         { label: "Chest Shop Create (Selling)", key: "chestshop.create.sell" },
@@ -29,6 +29,6 @@ export async function showChestShopPermissions(player, rankTag, backCallback) {
     })
 
     RankSystem.updateRank(rankTag, rank)
-    player.sendMessage(`§aUpdated chest shop permissions for rank: ${rankTag}`)
+    player.sendMessage(`\xA7aUpdated chest shop permissions for rank: ${rankTag}`)
     backCallback()
 }

@@ -14,9 +14,9 @@ export async function showPlayersUI(player) {
         .body(Lang.format(Lang.UI.PLAYERS_BODY, { count: players.length }))
 
     players.forEach(p => {
-        form.button(`§f§l${p.name}\n§8ID: ${p.id.slice(0,8)}`, "textures/ui/multiplayer_glyph_color")
+        form.button(`\xA7f\xA7l${p.name}\n\xA78ID: ${p.id.slice(0,8)}`, "textures/ui/multiplayer_glyph_color")
     })
-    form.button("§c§l[BACK]", "textures/ui/refresh")
+    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === players.length) {

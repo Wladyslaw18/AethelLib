@@ -43,6 +43,6 @@ export async function showBasicPermissions(player, rankTag, backCallback) {
     })
 
     RankSystem.updateRank(rankTag, rank)
-    player.sendMessage(`§aUpdated basic permissions for rank: ${rankTag}`)
+    player.sendMessage(`\xA7aUpdated basic permissions for rank: ${rankTag}`)
     backCallback()
 }

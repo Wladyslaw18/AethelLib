@@ -19,26 +19,26 @@ export class RankUI {
         const form = new ModalFormData()
             .title("Add Rank")
             .textField("Rank Tag (Unique ID):", "e.g. vip")
-            .textField("Display Text:", "e.g. §b[VIP]")
+            .textField("Display Text:", "e.g. \xA7b[VIP]")
 
         const res = await UIUtils.showForm(player, form)
         if (res.canceled) return
 
         const [tag, name] = res.formValues
-        if (!tag) return player.sendMessage("§cInvalid Rank Tag.")
+        if (!tag) return player.sendMessage("\xA7cInvalid Rank Tag.")
 
-        if (RankSystem.createRank(tag, { name: name || tag, order: 0, colorText: "§f", colorName: "§f", hideRanks: false, permissions: {} })) {
-            player.sendMessage(`§aSuccessfully created rank: ${tag}`)
+        if (RankSystem.createRank(tag, { name: name || tag, order: 0, colorText: "\xA7f", colorName: "\xA7f", hideRanks: false, permissions: {} })) {
+            player.sendMessage(`\xA7aSuccessfully created rank: ${tag}`)
             this.showEditRankActions(player, tag)
         } else {
-            player.sendMessage("§cFailed to create rank. Tag may already exist.")
+            player.sendMessage("\xA7cFailed to create rank. Tag may already exist.")
         }
     }
 
     static async showEditRanks(player) {
         const ranks = RankSystem.getAllRanks()
         const rankIds = Object.keys(ranks)
-        if (rankIds.length === 0) return player.sendMessage("§cNo ranks found.")
+        if (rankIds.length === 0) return player.sendMessage("\xA7cNo ranks found.")
 
         const form = new ModalFormData()
             .title("Edit Ranks")
@@ -57,7 +57,7 @@ export class RankUI {
             .button("Admin Permission")
             .button("Land Permission")
             .button("Chest Shop Permission")
-            .button("§c<= BACK")
+            .button("\xA7c<= BACK")
 
         const res = await UIUtils.showForm(player, form)
         if (res.canceled) return

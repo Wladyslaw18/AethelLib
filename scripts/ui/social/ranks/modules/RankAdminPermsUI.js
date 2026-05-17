@@ -55,6 +55,6 @@ export async function showAdminPermissions(player, rankTag, backCallback) {
     })
 
     RankSystem.updateRank(rankTag, rank)
-    player.sendMessage(`§aUpdated admin permissions for rank: ${rankTag}`)
+    player.sendMessage(`\xA7aUpdated admin permissions for rank: ${rankTag}`)
     backCallback()
 }
