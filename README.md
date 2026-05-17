@@ -123,14 +123,14 @@ You don't want to dock stuff directly in the kernel files? Smart. Follow the **I
 await import("./MyPlugin/MyPlugin.js")
 ```
 
-**Why bother?** Because when AethelLib updates, your plugin survives. Zero merge conflicts in the kernel. Keep the core clean, keep the plugins dirty. 🛠️⛓️
+**Why bother?** Because when AethelLib updates, your plugin survives. Zero merge conflicts in the kernel. Keep the core clean, keep the plugins dirty. &#xFE0E;&#x221E;
 
 ---
 
 ## &#x2630; LICENSE (LGPL v3.0)
 
 - **Your Logic = Private** — Link your own top-secret, closed-source addon to AethelLib. Keep your secrets. We don't care.
-- **The Core = Public** — If you optimize the Kernel or fix a bug in the Database, you **MUST** share that back. The backbone stays strong for everyone. 👍
+- **The Core = Public** — If you optimize the Kernel or fix a bug in the Database, you **MUST** share that back. The backbone stays strong for everyone.&#x1F592;&#xFE0E;
 
 ---
 
