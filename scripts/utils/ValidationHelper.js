@@ -160,7 +160,7 @@ class ValidationHelper {
             return false
         }
         
-        const colorRegex = /^§[0-9a-fk-or]$/
+        const colorRegex = /^\xA7[0-9a-fk-or]$/
         return colorRegex.test(colorCode)
     }
 }
