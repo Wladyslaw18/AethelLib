@@ -16,16 +16,16 @@ export async function showShopUI(player) {
     
     const form = new Kernel.ActionFormData()
         .title(Lang.UI.SHOP_TITLE)
-        .body(`§7Account Liquidity: §a$${balance.toLocaleString()}\n§8Select category or search for assets.`)
-        .button("§6§lSEARCH\n§8Find specific asset", "textures/ui/magnifying_glass")
+        .body(`\xA77Account Liquidity: \xA7a$${balance.toLocaleString()}\n\xA78Select category or search for assets.`)
+        .button("\xA76\xA7lSEARCH\n\xA78Find specific asset", "textures/ui/magnifying_glass")
 
     categories.forEach(cat => {
-        form.button(`§l${cat.id}\n§8Industrial Asset Vector`, cat.icon)
+        form.button(`\xA7l${cat.id}\n\xA78Industrial Asset Vector`, cat.icon)
     })
 
-    form.button("§e§lSELL FROM INVENTORY\n§8Liquidate held assets", "textures/items/gold_ingot")
-    form.button("§6§lQUICK SELL\n§8Liquidate mainhand asset", "textures/items/paper")
-    form.button("§c§l[BACK]", "textures/ui/refresh")
+    form.button("\xA7e\xA7lSELL FROM INVENTORY\n\xA78Liquidate held assets", "textures/items/gold_ingot")
+    form.button("\xA76\xA7lQUICK SELL\n\xA78Liquidate mainhand asset", "textures/items/paper")
+    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) return

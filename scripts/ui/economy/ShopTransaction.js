@@ -15,8 +15,8 @@ export async function showBuyConfirmation(player, item) {
     const balance = await EconomyStore.getBalance(player)
     
     const form = new ModalFormData()
-        .title("§6Buy: " + item.name.toUpperCase())
-        .slider(`§7Select Quantity\n§8Unit Price: §a$${item.buy}\n§8Balance: §a$${balance.toLocaleString()}`, 1, 64, { valueStep: 1, defaultValue: 1 })
+        .title("\xA76Buy: " + item.name.toUpperCase())
+        .slider(`\xA77Select Quantity\n\xA78Unit Price: \xA7a$${item.buy}\n\xA78Balance: \xA7a$${balance.toLocaleString()}`, 1, 64, { valueStep: 1, defaultValue: 1 })
         .toggle("Confirm Purchase", { defaultValue: false })
 
     
@@ -32,8 +32,8 @@ export async function showBuyConfirmation(player, item) {
 
 export async function showSellConfirmation(player, item) {
     const form = new ModalFormData()
-        .title("§6Sell: " + item.name.toUpperCase())
-        .slider(`§7Select Quantity\n§8Unit Value: §c$${item.sell}`, 1, 64, { valueStep: 1, defaultValue: 1 })
+        .title("\xA76Sell: " + item.name.toUpperCase())
+        .slider(`\xA77Select Quantity\n\xA78Unit Value: \xA7c$${item.sell}`, 1, 64, { valueStep: 1, defaultValue: 1 })
         .toggle("Confirm Sale", { defaultValue: false })
 
     
@@ -52,14 +52,14 @@ export async function handleQuickSell(player) {
     const mainhand = equippable.getEquipment("Mainhand")
 
     if (!mainhand) {
-        player.sendMessage("§c§l» §7Your main hand is empty.")
+        player.sendMessage("\xA7c\xA7l» \xA77Your main hand is empty.")
         return
     }
 
 
     const shopItem = ShopStore.getItems().find(i => i.id === mainhand.typeId)
     if (!shopItem) {
-        player.sendMessage("§c§l» §7This item cannot be sold here.")
+        player.sendMessage("\xA7c\xA7l» \xA77This item cannot be sold here.")
         return
     }
 

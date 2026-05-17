@@ -16,17 +16,17 @@ export async function showClaimUI(player) {
     const claims = ClaimStore.getPlayerClaims(player.id)
 
     const form = new ActionFormData()
-        .title("§b§l🛡️ Your Claims")
+        .title("\xA7b\xA7l🛡️ Your Claims")
         .body(claims.length > 0
-            ? `§7You have §e${claims.length}§7 claim(s)\n§7Stand in a chunk and use §e!claim§7 to claim it.`
-            : "§7You have no claims.\n§7Stand in a chunk and use §e!claim§7 to claim it.")
+            ? `\xA77You have \xA7e${claims.length}\xA77 claim(s)\n\xA77Stand in a chunk and use \xA7e!claim\xA77 to claim it.`
+            : "\xA77You have no claims.\n\xA77Stand in a chunk and use \xA7e!claim\xA77 to claim it.")
 
     // Back button
-    form.button("§c← Back")
+    form.button("\xA7c← Back")
 
     // Claim buttons
     for (const claim of claims) {
-        form.button(`§b${claim.chunkKey}\n§7Trusted: ${Object.keys(claim.data?.trusted || {}).length}`)
+        form.button(`\xA7b${claim.chunkKey}\n\xA77Trusted: ${Object.keys(claim.data?.trusted || {}).length}`)
     }
 
     const response = await UIUtils.showForm(player, form)
@@ -41,7 +41,7 @@ export async function showClaimUI(player) {
     // Show claim info
     const selectedClaim = claims[response.selection - 1]
     if (selectedClaim) {
-        player.sendMessage(`§bClaim: §f${selectedClaim.chunkKey}`)
-        player.sendMessage(`§7Trusted players: §f${Object.keys(selectedClaim.data?.trusted || {}).length}`)
+        player.sendMessage(`\xA7bClaim: \xA7f${selectedClaim.chunkKey}`)
+        player.sendMessage(`\xA77Trusted players: \xA7f${Object.keys(selectedClaim.data?.trusted || {}).length}`)
     }
 }

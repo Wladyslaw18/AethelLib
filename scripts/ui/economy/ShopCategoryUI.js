@@ -12,8 +12,8 @@ export async function showCategoryUI(player, category) {
     const form = new ActionFormData()
         .title(Lang.GOLD + "SHOP: " + category)
         .body(items.length > 0 
-            ? `§7Browsing ${items.length} nodes in vector.`
-            : "§cMANIFEST DECOMMISSIONED: No items found in this vector.")
+            ? `\xA77Browsing ${items.length} nodes in vector.`
+            : "\xA7cMANIFEST DECOMMISSIONED: No items found in this vector.")
         
     if (items.length > 0) {
         // Sort items by priority (Industrial Catalog Optimization)
@@ -21,13 +21,13 @@ export async function showCategoryUI(player, category) {
         
         sortedItems.forEach(item => {
             const id = item.itemId || "minecraft:stone"
-            form.button(`§f§l${item.name}\n§aPrice: $${item.price.toLocaleString()}`, Lang.getTexture(id))
+            form.button(`\xA7f\xA7l${item.name}\n\xA7aPrice: $${item.price.toLocaleString()}`, Lang.getTexture(id))
         })
     } else {
-        form.button("§e§lREFRESH MANIFEST", "textures/ui/refresh")
+        form.button("\xA7e\xA7lREFRESH MANIFEST", "textures/ui/refresh")
     }
 
-    form.button("§c§l[BACK]", "textures/ui/refresh")
+    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     
