@@ -22,7 +22,10 @@ export class TickScheduler {
         failedTasks: 0,
         averageExecutionTime: 0
     }
-    static #executionTimes = [] // TELEMETRY_BUFFER
+    static #executionTimes = new Float32Array(500) // TELEMETRY_CIRCULAR_BUFFER
+    static #executionIndex = 0
+    static #executionCount = 0
+    static #executionSum = 0
     
     /* 
      * TASK_INJECTION_PROTOCOL
@@ -201,11 +204,18 @@ export class TickScheduler {
             this.#stats.failedTasks++
         }
         
-        this.#executionTimes.push(executionTime)
-        if (this.#executionTimes.length > 1000) this.#executionTimes = this.#executionTimes.slice(-500)
+        // update circular buffer and sum for O(1) average calculation
+        if (this.#executionCount === this.#executionTimes.length) {
+            this.#executionSum -= this.#executionTimes[this.#executionIndex]
+        } else {
+            this.#executionCount++
+        }
         
-        this.#stats.averageExecutionTime = this.#executionTimes.length > 0 ?
-            this.#executionTimes.reduce((a, b) => a + b, 0) / this.#executionTimes.length : 0
+        this.#executionTimes[this.#executionIndex] = executionTime
+        this.#executionSum += executionTime
+        this.#executionIndex = (this.#executionIndex + 1) % this.#executionTimes.length
+        
+        this.#stats.averageExecutionTime = this.#executionCount > 0 ? this.#executionSum / this.#executionCount : 0
     }
     
     /* 
@@ -228,7 +238,7 @@ export class TickScheduler {
             ...this.#stats,
             averageExecutionTime: Math.round(this.#stats.averageExecutionTime),
             running: this.#running,
-            executionTimes: this.#executionTimes.length
+            executionTimes: this.#executionCount
         }
     }
 }

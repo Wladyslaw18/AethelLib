@@ -9,25 +9,25 @@ export const KILLSTREAK_CONFIG = {
         {
             min_streak: 50,
             rarity: "Legendary",
-            color: "§6§l",
+            color: "\xA76\xA7l",
             message: "is an absolute warrior with a {streak} kill streak!"
         },
         {
             min_streak: 25,
             rarity: "Rare",
-            color: "§d",
+            color: "\xA7d",
             message: "is on fire with a {streak} kill streak!"
         },
         {
             min_streak: 15,
             rarity: "Uncommon",
-            color: "§e",
+            color: "\xA7e",
             message: "is dominating with a {streak} kill streak!"
         },
         {
             min_streak: 5,
             rarity: "Common",
-            color: "§a",
+            color: "\xA7a",
             message: "is on a {streak} kill streak!"
         }
     ]

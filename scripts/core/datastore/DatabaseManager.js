@@ -1,78 +1,104 @@
 import { Kernel } from "../Kernel.js"
 
-/**
- * Manages persistent data using dynamic properties.
- * Uses a cache-aside strategy and debounced writes to keep things fast.
- * Supports sharding for data that exceeds the 32KB limit.
- */
+// ----------------------------------------------------------------------------
+// | class: DatabaseManager                                                   |
+// | manages persistent data using bedrock's dynamic properties.              |
+// | uses a cache-aside strategy and debounced writes to keep things fast.    |
+// | handles sharding for data that exceeds the native 32KB limit.            |
+// ----------------------------------------------------------------------------
 export class DatabaseManager {
+    // ----------------------------------------------------------------------------
+    // | constructor                                                              |
+    // | setup the maps and constants. bedrock properties are limited, so we need  |
+    // | to be smart about how we store things.                                   |
+    // ----------------------------------------------------------------------------
     constructor() {
-        this.cache = new Map() // In-memory data cache
-        this.dirtyKeys = new Set() // Keys waiting to be saved
+        // in-memory data cache. avoids reading from the world every time.
+        this.cache = new Map() 
+        // keys that have been modified and need to be written to the world.
+        this.dirtyKeys = new Set() 
+        // handle for the debounce timer.
         this.writeTimeout = null
-        this.WRITE_DELAY = 5000 // Delay between writes to save performance
-        this.MAX_PROPERTY_SIZE = 30000 // Limit for a single property
+        // wait 5 seconds before flushing to disk to avoid lag spikes.
+        this.WRITE_DELAY = 5000 
+        // bedrock's limit is technically 32kb, but we leave some breathing room.
+        this.MAX_PROPERTY_SIZE = 30000 
+        // how many items to keep in a single sharded slice.
         this.SHARD_SIZE = 50 
         
+        // keeps track of sequential operations for entities to prevent race conditions.
         this.transactionQueues = new Map() 
         
+        // start the background tasks.
         this.initialize()
     }
 
-    /**
-     * Setup periodic cleanup and flush on shutdown
-     */
+    // ----------------------------------------------------------------------------
+    // | method: initialize                                                       |
+    // | setup periodic cleanup and flush on shutdown.                            |
+    // ----------------------------------------------------------------------------
     initialize() {
+        // run cleanup every 20 minutes to clear the cache.
         Kernel.system.runInterval(() => {
             this.cleanupExpiredData()
         }, 20 * 60 * 20) 
         
+        // make sure everything is saved before the server stops.
         Kernel.system.beforeEvents.shutdown.subscribe(() => {
             this.flushAll()
         })
     }
 
-    /*
-     * BUFFERED_QUERY_PIPELINE
-     * Attempts an O(1) cache-hit before falling back to the persistent 
-     * storage layer.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: get                                                              |
+    // | fetch data by key. checks cache first, then world storage.               |
+    // ----------------------------------------------------------------------------
     get(key) {
+        // check the memory buffer first. O(1) speed.
         if (this.cache.has(key)) {
             return this.cache.get(key)
         }
 
+        // if not in cache, load it from the actual world properties.
         const data = this.loadFromStorage(key)
         if (data !== null) {
+            // save it in cache so the next call is fast.
             this.cache.set(key, data)
         }
         return data
     }
 
-    /*
-     * BUFFERED_COMMIT_PROTOCOL
-     * Updates the volatile buffer and schedules a debounced persistent 
-     * write operation.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: set                                                              |
+    // | save data. updates cache and schedules a background write.               |
+    // ----------------------------------------------------------------------------
     set(key, value) {
         try {
+            // update the memory buffer immediately.
             this.cache.set(key, value)
+            // mark the key as 'dirty' so it gets flushed to disk later.
             this.dirtyKeys.add(key)
+            // schedule the write task if it isn't already running.
             this.scheduleWrite()
             return true
         } catch (error) {
+            // if we fail here, the data is only in memory and will be lost on crash.
             console.error(`[DatabaseManager] COMMIT_FAILURE for '${key}': ${error}`)
             return false
         }
     }
 
-    /*
-     * PERSISTENT_DECOMMISSION_PROTOCOL
-     */
+    // ----------------------------------------------------------------------------
+    // | method: delete                                                           |
+    // | remove data from everywhere.                                             |
+    // ----------------------------------------------------------------------------
     delete(key) {
         try {
+            // remove from memory.
             this.cache.delete(key)
+            // remove from the dirty set so we don't try to save it.
             this.dirtyKeys.delete(key)
+            // actually remove it from bedrock's world storage.
             Kernel.world.setDynamicProperty(key, undefined)
             return true
         } catch (error) {
@@ -81,20 +107,23 @@ export class DatabaseManager {
         }
     }
 
-    /*
-     * SHARDED_COLLECTION_QUERY
-     */
+    // ----------------------------------------------------------------------------
+    // | method: getSharded                                                       |
+    // | handles collections of items that are split across multiple keys.        |
+    // ----------------------------------------------------------------------------
     getSharded(collectionName, itemId = null) {
+        // if we just want one item, go get it directly.
         if (itemId) {
             return this.get(`${collectionName}:item:${itemId}`)
         }
 
+        // otherwise, load the index and fetch everything.
         const indexKey = `${collectionName}:index`
         const index = this.get(indexKey) || []
         
         const collection = []
-        for (const itemId of index) {
-            const item = this.get(`${collectionName}:item:${itemId}`)
+        for (const id of index) {
+            const item = this.get(`${collectionName}:item:${id}`)
             if (item) {
                 collection.push(item)
             }
@@ -103,16 +132,20 @@ export class DatabaseManager {
         return collection
     }
 
-    /*
-     * SHARDED_COLLECTION_COMMIT
-     */
+    // ----------------------------------------------------------------------------
+    // | method: setSharded                                                       |
+    // | saves an item into a sharded collection. updates the index too.          |
+    // ----------------------------------------------------------------------------
     setSharded(collectionName, itemId, data) {
         try {
+            // save the item itself.
             this.set(`${collectionName}:item:${itemId}`, data)
             
+            // update the collection index so we know this item exists.
             const indexKey = `${collectionName}:index`
             const index = this.get(indexKey) || []
             
+            // if it's a new item, add it to the list.
             if (!index.includes(itemId)) {
                 index.push(itemId)
                 this.set(indexKey, index)
@@ -125,29 +158,34 @@ export class DatabaseManager {
         }
     }
 
-    /*
-     * SHARDED_COLLECTION_DECOMMISSION
-     */
+    // ----------------------------------------------------------------------------
+    // | method: deleteSharded                                                    |
+    // | removes an item from a sharded collection and cleans up its residue.     |
+    // ----------------------------------------------------------------------------
     deleteSharded(collectionName, itemId) {
         try {
             const key = `${collectionName}:item:${itemId}`
             
-            // 🚨 NUKE THE ORPHANS BEFORE POINTER DELETION
+            // check if this item was sharded (split across multiple keys).
             const indexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
             if (typeof indexData === "string") {
                 try {
+                    // parse the shard index and nuke all the segments.
                     const index = JSON.parse(indexData)
                     for (let i = 0; i < index.shardCount; i++) {
                         Kernel.world.setDynamicProperty(`${key}:shard_${index.version}_${i}`, undefined)
                     }
+                    // clear the shard index itself.
                     Kernel.world.setDynamicProperty(`${key}:shard_index`, undefined)
                 } catch (e) {
                     console.error(`[DatabaseManager] ORPHAN_NUKE_FAILURE for '${key}': ${e}`)
                 }
             }
             
+            // delete the main key.
             this.delete(key)
             
+            // remove from the collection index.
             const indexKey = `${collectionName}:index`
             let index = this.get(indexKey) || []
             index = index.filter(id => id !== itemId)
@@ -160,29 +198,35 @@ export class DatabaseManager {
         }
     }
 
-    /*
-     * ATOMIC_TRANSACTION_PIPELINE
-     * Orchestrates sequential execution of operations on specific entity 
-     * identifiers to prevent state-corruption and credit-duplication.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: transaction                                                      |
+    // | forces operations to run one-by-one for a specific player.                |
+    // | prevents balance dupes and race conditions during async operations.      |
+    // ----------------------------------------------------------------------------
     async transaction(playerId, operation) {
+        // get or create a promise chain for this player.
         if (!this.transactionQueues.has(playerId)) {
             this.transactionQueues.set(playerId, Promise.resolve())
         }
 
         const queue = this.transactionQueues.get(playerId)
         
+        // append the new operation to the end of the chain.
         const newOperation = queue.then(async () => {
             try {
+                // run the actual logic.
                 return await operation()
             } catch (error) {
+                // if it fails, log it but keep the chain moving.
                 console.error(`[DatabaseManager] TRANSACTION_COLLAPSE for '${playerId}': ${error}`)
                 throw error
             }
         })
 
+        // update the queue with the new tail.
         this.transactionQueues.set(playerId, newOperation)
         
+        // when the operation finishes, check if we can clear the queue entry to save memory.
         newOperation.finally(() => {
             if (this.transactionQueues.get(playerId) === newOperation) {
                 this.transactionQueues.delete(playerId)
@@ -192,18 +236,19 @@ export class DatabaseManager {
         return newOperation
     }
 
-    /* 
-     * LOW_LEVEL_READ_PROTOCOL
-     */
+    // ----------------------------------------------------------------------------
+    // | method: loadFromStorage                                                  |
+    // | internal helper to read from the world. handles sharding detection.      |
+    // ----------------------------------------------------------------------------
     loadFromStorage(key) {
         try {
-            // Priority 1: Check for sharded pointer manifest
+            // priority 1: check if this data was split into shards.
             const indexKey = `${key}:shard_index`
             if (Kernel.world.getDynamicProperty(indexKey)) {
                 return this.loadSharded(key)
             }
 
-            // Priority 2: Standard resolution
+            // priority 2: standard single-key resolution.
             const raw = Kernel.world.getDynamicProperty(key)
             return typeof raw === "string" ? JSON.parse(raw) : null
         } catch (error) {
@@ -212,37 +257,44 @@ export class DatabaseManager {
         }
     }
 
-    /*
-     * WRITE_DEBOUNCE_SCHEDULER
-     */
+    // ----------------------------------------------------------------------------
+    // | method: scheduleWrite                                                    |
+    // | debounces write requests so we don't spam the world storage.            |
+    // ----------------------------------------------------------------------------
     scheduleWrite() {
+        // if a write is already pending, cancel it and restart the timer.
         if (this.writeTimeout) {
             Kernel.system.clearRun(this.writeTimeout)
         }
 
+        // wait for the delay before flushing.
         this.writeTimeout = Kernel.system.runTimeout(() => {
             this.flushDirty()
         }, Math.max(1, Math.floor(this.WRITE_DELAY / 50)))
     }
 
-    /*
-     * DIRTY_BUFFER_COMMIT_PROTOCOL
-     * Flushes the pending manifest to persistent storage. Triggers the 
-     * sharding-protocol if the data-payload exceeds the native threshold.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: flushDirty                                                       |
+    // | the physical write operation. moves data from memory to world.           |
+    // ----------------------------------------------------------------------------
     flushDirty() {
+        // copy the keys and clear the set so new changes can be tracked.
         const keysToWrite = Array.from(this.dirtyKeys)
         this.dirtyKeys.clear()
 
         for (const key of keysToWrite) {
+            // only write if the data actually exists in cache.
             if (this.cache.has(key)) {
                 try {
                     const data = this.cache.get(key)
                     const serialized = JSON.stringify(data)
                     
+                    // check if the string is too long for a single property.
                     if (serialized.length > this.MAX_PROPERTY_SIZE) {
+                        // use the sharding protocol to split it up.
                         this.shardAndWrite(key, data)
                     } else {
+                        // normal write.
                         Kernel.world.setDynamicProperty(key, serialized)
                     }
                 } catch (error) {
@@ -252,54 +304,58 @@ export class DatabaseManager {
         }
     }
 
-    /*
-     * MULTI-SHARD_COMMIT_PROTOCOL (ATOMIC_VERSIONING)
-     * ----------------------------------------------------------------------------
-     * Splits monolithic payloads into segmented shards. Uses a double-buffering 
-     * strategy (v1/v2) to ensure that a crash during the write-loop does not 
-     * corrupt the existing dataset. The index is updated LAST as an atomic commit.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: shardAndWrite                                                    |
+    // | the sharding protocol. splits large payloads into versions buffers.      |
+    // | uses a double-buffering strategy (v1/v2) for atomic commits.             |
+    // ----------------------------------------------------------------------------
     shardAndWrite(key, data) {
+        // serialize the data once.
         const serialized = JSON.stringify(data)
         const shards = []
         
+        // cut the string into MAX_PROPERTY_SIZE pieces.
         for (let i = 0; i < serialized.length; i += this.MAX_PROPERTY_SIZE) {
             shards.push(serialized.slice(i, i + this.MAX_PROPERTY_SIZE))
         }
 
-        // Resolve current version to determine the target buffer
+        // check which version is currently active so we can write to the other one.
         const currentIndexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
         let nextVersion = "v1"
         if (typeof currentIndexData === "string") {
             try {
                 const currentIndex = JSON.parse(currentIndexData)
                 nextVersion = currentIndex.version === "v1" ? "v2" : "v1"
-            } catch (e) { /* Fallback to v1 */ }
+            } catch (e) { /* fallback to v1 */ }
         }
 
-        // Step 1: Write all shards to the INACTIVE buffer
+        // step 1: write all segments to the inactive buffer.
+        // if the server crashes during this loop, the active version is still safe.
         for (let i = 0; i < shards.length; i++) {
             Kernel.world.setDynamicProperty(`${key}:shard_${nextVersion}_${i}`, shards[i])
         }
 
-        // Step 2: Atomic Commit - Update the index to point to the new buffer
+        // step 2: update the index to point to the new version.
+        // this is the 'atomic' part. one write switches the entire dataset.
         Kernel.world.setDynamicProperty(`${key}:shard_index`, JSON.stringify({
             shardCount: shards.length,
             timestamp: Date.now(),
             version: nextVersion
         }))
-
-        // Step 3: Cleanup (Optional/Deferred) - Prune old shards if they exist
-        // Note: In high-performance scenarios, we leave cleanup to a background task
+        
+        // step 3: we don't clean up old shards immediately to save time.
+        // they'll just sit there as zombie properties until something clears them.
         
         console.log(`[DatabaseManager] SHARDING_COMPLETE: '${key}' [${nextVersion}] split into ${shards.length} segments.`);
     }
 
-    /*
-     * SHARD_RECONSTRUCTION_PIPELINE (ATOMIC_RESOLUTION)
-     */
+    // ----------------------------------------------------------------------------
+    // | method: loadSharded                                                      |
+    // | reads sharded data and reconstructs the original string.                 |
+    // ----------------------------------------------------------------------------
     loadSharded(key) {
         try {
+            // get the index metadata.
             const indexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
             if (!indexData) return null
 
@@ -309,15 +365,18 @@ export class DatabaseManager {
             const shards = []
             const version = index.version
 
+            // fetch each slice in order.
             for (let i = 0; i < index.shardCount; i++) {
                 const shard = Kernel.world.getDynamicProperty(`${key}:shard_${version}_${i}`)
+                // if any slice is missing, the whole thing is corrupt.
                 if (typeof shard !== "string") {
-                    console.error(`[DatabaseManager] CRITICAL_INTEGRITY_FAILURE: Shard ${i} [${version}] missing or invalid for '${key}'`)
+                    console.error(`[DatabaseManager] CRITICAL_INTEGRITY_FAILURE: Shard ${i} [${version}] missing for '${key}'`)
                     return null
                 }
                 shards.push(shard)
             }
 
+            // join the shards and parse the json.
             return JSON.parse(shards.join(''))
         } catch (error) {
             console.error(`[DatabaseManager] SHARD_LOAD_FAILURE for '${key}': ${error}`)
@@ -325,38 +384,42 @@ export class DatabaseManager {
         }
     }
 
-    /*
-     * EMERGENCY_FLUSH_PROTOCOL
-     */
+    // ----------------------------------------------------------------------------
+    // | method: flushAll                                                         |
+    // | immediate write of all dirty keys. used during shutdown.                 |
+    // ----------------------------------------------------------------------------
     flushAll() {
         this.flushDirty()
     }
 
-    /*
-     * MAINTENANCE_CLEANUP_PROTOCOL
-     * Prunes the volatile access-buffer to maintain a healthy memory-heap.
-     */
+    // ----------------------------------------------------------------------------
+    // | method: cleanupExpiredData                                               |
+    // | purges the memory cache to prevent the heap from exploding.              |
+    // | keeps dirty keys so we don't lose unsaved changes.                       |
+    // ----------------------------------------------------------------------------
     cleanupExpiredData() {
+        // if the cache is getting too big (1000 entries).
         if (this.cache.size > 1000) {
-            const entries = Array.from(this.cache.entries())
-            const toKeep = new Map()
-
-            // Keep the most recent 500
-            for (const [key, value] of entries.slice(-500)) {
-                toKeep.set(key, value)
-            }
-
-            // Must keep dirty keys
-            for (const [key, value] of entries) {
-                if (this.dirtyKeys.has(key)) {
-                    toKeep.set(key, value)
+            // iterate and delete old entries directly to avoid massive array copies.
+            // we keep anything that is dirty (unsaved) regardless of age.
+            let count = 0;
+            const targetSize = 500;
+            const toDelete = this.cache.size - targetSize;
+            
+            for (const [key, _value] of this.cache) {
+                if (count >= toDelete) break;
+                if (!this.dirtyKeys.has(key)) {
+                    this.cache.delete(key);
+                    count++;
                 }
             }
-
-            this.cache = toKeep
         }
     }
 
+    // ----------------------------------------------------------------------------
+    // | method: getStats                                                         |
+    // | monitoring helper.                                                       |
+    // ----------------------------------------------------------------------------
     getStats() {
         return {
             cacheSize: this.cache.size,
@@ -366,6 +429,5 @@ export class DatabaseManager {
     }
 }
 
+// export the singleton instance.
 export const Database = new DatabaseManager()
-
-

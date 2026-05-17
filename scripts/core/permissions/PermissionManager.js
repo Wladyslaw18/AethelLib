@@ -45,8 +45,8 @@ export class PermissionManager {
                 tag, 
                 data.order || 0, 
                 data.name || tag, 
-                data.colorName || "§7", 
-                data.colorText || "§7"
+                data.colorName || "\xA77", 
+                data.colorText || "\xA77"
             )
 
             if (data.permissions) {
