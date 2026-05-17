@@ -5,28 +5,42 @@ import { init as initCore } from "./bootstrap/core.js"
 import { init as initCommands } from "./bootstrap/commands.js"
 import { loadPlugins } from "./plugins/PluginLoader.js"
 
-/**
- * Main Initialization Entry Point
- * Orchestrates the boot sequence of core systems and command registries.
- */
+// ----------------------------------------------------------------------------
+// | entry point: main.js                                                     |
+// | the first file executed by the bedrock script engine.                    |
+// | coordinates the initialization sequence for the entire library.          |
+// ----------------------------------------------------------------------------
 
-// Phase 0: Early Stage
-// Registers registries and command managers to catch startup events
+// ----------------------------------------------------------------------------
+// | synchronous initialization (stage 0)                                     |
+// | these run immediately before the first tick.                             |
+// | used to set up global variables and register command definitions.        |
+// ----------------------------------------------------------------------------
+
+// stage 0.1: register basic registries (services, events).
 initEarly()
+// stage 0.2: register command definitions so the autocomplete works.
 initCommands()
 
+// ----------------------------------------------------------------------------
+// | asynchronous boot sequence                                               |
+// | runs inside a system.run loop to ensure we have access to the world      |
+// | and other engine features that aren't ready at instant-zero.             |
+// ----------------------------------------------------------------------------
 system.run(async () => {
-    // Phase 1: Core Boot
-    // Initialize data stores, services, and core logic
+    // stage 1: core boot.
+    // initializes managers (database, cache, etc) and sets up event listeners.
     initCore()
 
-    // Phase 2: Plugin Induction
-    // Load plugin files dynamically
+    // stage 2: plugins.
+    // scans the plugin directory and imports each module.
+    // this is async because it uses dynamic imports.
     await loadPlugins()
 
-    // Phase 3: System Finalization
-    // Execute plugin initialization logic
+    // stage 3: finalize.
+    // trigger the 'onBoot' function for every loaded plugin.
     Kernel.bootPlugins()
 
-    console.log("[AethelLib] AethelNexus Core Active | Industrial Architecture Online");
+    // and we're done. hopefully nothing crashed.
+    console.log("[AethelLib] systems active.");
 })

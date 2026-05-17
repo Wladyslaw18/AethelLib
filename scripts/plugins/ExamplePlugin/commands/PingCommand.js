@@ -10,6 +10,6 @@ export const PingCommand = {
     category: "EXAMPLE",
     
     execute(data, player, args) {
-        player.sendMessage("§aPONG §7| §fAethelNexus Testing Server");
+        player.sendMessage("\xA7aPONG \xA77| \xA7fAethelNexus Testing Server");
     }
 };

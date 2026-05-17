@@ -104,7 +104,7 @@ function checkPlayerBan(player) {
                 "STATUS: PERMANENT"
                 
             Kernel.system.run(() => {
-                player.kick(`§c§lYou are banned!\n§eReason: ${activeBan.reason}\n§7${durationText}`)
+                player.kick(`\xA7c\xA7lYou are banned!\n\xA7eReason: ${activeBan.reason}\n\xA77${durationText}`)
             })
 
         }

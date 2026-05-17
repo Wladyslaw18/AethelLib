@@ -1,154 +1,169 @@
 import { Kernel } from "../core/Kernel.js"
 import { SignSide } from "@minecraft/server"
 
-/*
- * Chest Shop System
- * ----------------------------------------------------------------------------
- * Handles creating and using chest shops (signs attached to chests).
- */
+// ----------------------------------------------------------------------------
+// | ChestShopHandler                                                         |
+// | coordinates the interaction between physical blocks and commerce data.    |
+// | handles sign placement, right-click transactions, and security locks.     |
+// ----------------------------------------------------------------------------
 
-
+// these are the magic strings players write on the first line of a sign.
 const SHOP_HEADERS = ["[buy]", "[sell]"]
 
-/*
- * EVENT_SUBSCRIPTION_SEQUENCE
- * ----------------------------------------------------------------------------
- * Registers the handler hooks into the world event bus. We monitor 
- * block placement (setup), block interaction (transaction), and block 
- * destruction (security).
- */
+// ----------------------------------------------------------------------------
+// | function: init                                                           |
+// | registers all the world event listeners for the shop system.              |
+// ----------------------------------------------------------------------------
 export function init() {
-    /* 
-     * SIGN_PLACEMENT_SENSOR
-     * Detects when a player places a sign and attempts to parse the header. 
-     * We use a 5-tick deferred scan to allow the client to finish writing 
-     * the sign text to the block component.
-     */
+    // ----------------------------------------------------------------------------
+    // | playerPlaceBlock listener                                                |
+    // | triggers when someone puts down a sign.                                  |
+    // ----------------------------------------------------------------------------
     Kernel.world.afterEvents.playerPlaceBlock.subscribe((event) => {
         const block = event.block
         const player = event.player
         if (!block || !player) return
 
+        // only care if the block is some kind of sign.
         const typeId = block.typeId
         if (!typeId.includes("sign")) return
 
+        // we have to wait a few ticks because the sign text isn't updated 
+        // until the player closes the native text-entry UI.
         Kernel.system.runTimeout(() => {
+            // check if the block is still there.
             if (!block.isValid) return
             try {
+                // get the sign component to read the text.
                 const signComponent = block.getComponent("minecraft:sign")
                 if (!signComponent) return
 
+                // check the front side of the sign.
                 const frontText = signComponent.getText(SignSide.Front)
                 if (frontText === undefined || frontText === null) return
 
+                // get the very first line of text.
                 const firstLine = String(frontText).split("\n")[0]?.toLowerCase()?.trim()
+                // if it's not a shop header, ignore it.
                 if (!firstLine || !SHOP_HEADERS.includes(firstLine)) return
 
+                // determine if this is a procurement (buy) or liquidation (sell) node.
                 const shopType = firstLine === "[buy]" ? "buy" : "sell"
+                // look for a container (chest/barrel) adjacent to this sign.
                 const chest = getChestAround(block)
 
                 if (!chest) {
-                    player.sendMessage("§c§l» §7No chest found next to the sign!");
+                    player.sendMessage("\xA7c\xA7l» \xA77No chest found next to the sign!");
                     return
                 }
+                
+                // check if the player has permission to build here.
                 const ClaimService = Kernel.get("claimService")
                 if (ClaimService && !ClaimService.canAccess(player, chest.location)) {
-                    player.sendMessage("§c§l» §7You do not have permission to link to this chest.");
+                    player.sendMessage("\xA7c\xA7l» \xA77You do not have permission to link to this chest.");
                     return
                 }
 
-
+                // check if this chest is already being used by another shop.
                 const ChestShopStore = Kernel.get("chestShopStore")
                 const existing = ChestShopStore.findShopByChestLocation(chest.location)
                 if (existing) {
-                    player.sendMessage("§c§l» §7This chest is already being used for a shop.");
+                    player.sendMessage("\xA7c\xA7l» \xA77This chest is already being used for a shop.");
                     return
                 }
 
-
+                // everything looks good. show the configuration UI to the player.
                 showSetupUI(player, shopType, block.location, chest.location)
 
             } catch (error) {
+                // catch any weird engine crashes.
                 console.error(`[ChestShopHandler] SIGN_SCAN_FAILURE: ${error}`)
             }
         }, 5)
     })
 
-    /* 
-     * TRANSACTION_INTERACTION_GATE
-     * Catches players right-clicking on shop signs. We cancel the 
-     * native sign-edit event and trigger the transaction pipeline.
-     */
+    // ----------------------------------------------------------------------------
+    // | playerInteractWithBlock listener                                         |
+    // | triggers when someone right-clicks a shop sign.                          |
+    // ----------------------------------------------------------------------------
     Kernel.world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
         const block = event.block
         const player = event.player
         if (!block || !player) return
 
+        // if it's not a sign, we don't care.
         if (!block.typeId.includes("sign")) return
 
         const ChestShopStore = Kernel.get("chestShopStore")
+        // check if this specific sign is registered as a shop.
         const shop = ChestShopStore.getShop(block.location)
         if (!shop) return
 
-        event.cancel = true // TERMINATE_NATIVE_UI
+        // cancel the native event so the player doesn't open the 'edit sign' UI.
+        event.cancel = true 
 
+        // don't let owners buy from themselves. 
         if (shop.ownerId === player.id) {
-            player.sendMessage("§a§l» §fYou own this shop.");
+            player.sendMessage("\xA7a\xA7l» \xA7fYou own this shop.");
             return
         }
 
-
+        // kick off the transaction pipeline on the next tick.
         Kernel.system.run(() => {
             processTransaction(player, shop)
         })
     })
 
-    /* 
-     * STRUCTURAL_INTEGRITY_PROTOCOLS
-     * Prevents non-authorized entities from destroying shop nodes or 
-     * their linked storage containers. 
-     */
+    // ----------------------------------------------------------------------------
+    // | playerBreakBlock listener                                                |
+    // | handles security. only owners and admins can break shops.                |
+    // ----------------------------------------------------------------------------
     Kernel.world.beforeEvents.playerBreakBlock.subscribe((event) => {
         const block = event.block
         const player = event.player
         if (!block || !player) return
 
+        // admins can break anything.
         if (player.hasTag("Admin") || player.hasTag("admin") || player.hasTag("AE")) return
 
         const ChestShopStore = Kernel.get("chestShopStore")
+        
+        // if they are breaking a sign.
         if (block.typeId.includes("sign")) {
             const shop = ChestShopStore.getShop(block.location)
+            // if it's a shop and they don't own it, block them.
             if (shop && shop.ownerId !== player.id) {
                 event.cancel = true
-                player.onScreenDisplay.setActionBar("§c§l» §7This shop belongs to someone else!");
+                player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77This shop belongs to someone else!");
                 return
             }
 
+            // if it is their shop, unregister it from the database.
             if (shop && shop.ownerId === player.id) {
                 ChestShopStore.removeShop(block.location)
-                Kernel.system.run(() => player.sendMessage("§a§l» §fShop removed."));
+                Kernel.system.run(() => player.sendMessage("\xA7a\xA7l» \xA7fShop removed."));
             }
 
             return
         }
 
+        // if they are breaking a container (chest/barrel).
         const linkedShop = ChestShopStore.findShopByChestLocation(block.location)
+        // if this container is linked to a shop they don't own, block them.
         if (linkedShop && linkedShop.ownerId !== player.id) {
             event.cancel = true
-            player.onScreenDisplay.setActionBar("§c§l» §7This chest is linked to a shop!");
+            player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77This chest is linked to a shop!");
         }
-
-
     })
 
     console.log("[ChestShopHandler] TRANSACTIONAL_PIPELINE_ONLINE");
 }
 
-/* 
- * CARDINAL_ADJACENCY_SCANNER
- * Iterates through the 6 cardinal directions to find a valid container. 
- * Essential for linking the sign to the inventory buffer.
- */
+// ----------------------------------------------------------------------------
+// | getChestAround                                                           |
+// | scans the 6 adjacent blocks (up, down, north, south, east, west)          |
+// | to find a container that can hold items.                                 |
+// ----------------------------------------------------------------------------
 function getChestAround(block) {
     const offsets = [
         { x: 1, y: 0, z: 0 }, { x: -1, y: 0, z: 0 },
@@ -156,79 +171,79 @@ function getChestAround(block) {
         { x: 0, y: 0, z: 1 }, { x: 0, y: 0, z: -1 }
     ]
 
+    // list of supported container types.
     const containerTypes = ["chest", "barrel", "trapped_chest", "shulker"]
 
     for (const offset of offsets) {
         try {
+            // avoid y-limit crashes.
             const ny = block.y + offset.y;
             if (ny < -64 || ny > 320) continue;
             
             const neighbor = block.offset(offset)
+            // check if the neighbor exists and matches one of our container types.
             if (neighbor && containerTypes.some(t => neighbor.typeId.includes(t))) {
                 return neighbor
             }
         } catch {
-            // SPATIAL_OVERFLOW
+            // catch spatial overflow errors.
         }
     }
     return null
 }
 
-/*
- * TRANSACTION_PROCESSING_PIPELINE
- * Bridges the gap between the event hook and the sub-system logic. 
- * Validates container availability and routes to either handleBuy 
- * or handleSell based on the sign metadata.
- */
+// ----------------------------------------------------------------------------
+// | processTransaction                                                       |
+// | high-level coordinator for buying/selling.                                |
+// | validates that the physical chest still exists before starting.           |
+// ----------------------------------------------------------------------------
 async function processTransaction(buyer, shop) {
     try {
         const dim = buyer.dimension
+        // find the chest in the world using the coordinates stored in the shop data.
         const chestBlock = dim.getBlock(shop.chestLocation)
         if (!chestBlock) {
-            buyer.sendMessage("§c§l» §7The shop's chest is missing!");
+            buyer.sendMessage("\xA7c\xA7l» \xA77The shop's chest is missing!");
             return
         }
 
-
+        // try to get the inventory component.
         const container = chestBlock.getComponent("minecraft:inventory")?.container
         if (!container) {
-            buyer.sendMessage("§c§l» §7Could not open the shop's chest.");
+            buyer.sendMessage("\xA7c\xA7l» \xA77Could not open the shop's chest.");
             return
         }
 
-
+        // route the transaction based on the shop type.
         if (shop.type === "buy") {
             await handleBuy(buyer, shop, container)
         } else {
             await handleSell(buyer, shop, container)
         }
     } catch (error) {
+        // if anything crashes, log it and tell the player.
         console.error(`[ChestShopHandler] TRANSACTION_CRASH: ${error}`)
-        buyer.sendMessage("§c§l» §7Something went wrong with the transaction.");
+        buyer.sendMessage("\xA7c\xA7l» \xA77Something went wrong with the transaction.");
     }
-
 }
 
-/*
- * INBOUND_TRANSACTION_HANDLER (BUY)
- * ----------------------------------------------------------------------------
- * 1. Calculate total liquidity requirement.
- * 2. Verify stock levels in the container buffer.
- * 3. Execute credit deduction via Economy service.
- * 4. Transfer item stack from container to buyer inventory.
- * 5. Credit the shop owner's balance.
- */
+// ----------------------------------------------------------------------------
+// | handleBuy                                                                |
+// | logic for when a player buys an item from a chest shop.                  |
+// ----------------------------------------------------------------------------
 async function handleBuy(buyer, shop, container) {
+    // calculate total bill.
     const totalCost = shop.price * shop.quantity
     const EconomyStore = Kernel.get("economy")
     const balance = EconomyStore.getBalance(buyer)
 
+    // step 1: check if the buyer is broke.
     if (balance < totalCost) {
-        buyer.sendMessage("§c§l» §7You don't have enough money!");
+        buyer.sendMessage("\xA7c\xA7l» \xA77You don't have enough money!");
         return
     }
 
-
+    // step 2: scan the chest to see if it actually has enough items.
     let stockCount = 0
     for (let i = 0; i < container.size; i++) {
         const item = container.getItem(i)
@@ -238,49 +253,57 @@ async function handleBuy(buyer, shop, container) {
     }
 
     if (stockCount < shop.quantity) {
-        buyer.sendMessage("§c§l» §7This shop is out of stock!");
+        buyer.sendMessage("\xA7c\xA7l» \xA77This shop is out of stock!");
         return
     }
 
-
+    // step 3: take the money first (pessimistic lock).
     const success = await EconomyStore.removeMoney(buyer, totalCost)
     if (!success) {
-        buyer.sendMessage("§c§l» §7Failed to process payment.");
+        buyer.sendMessage("\xA7c\xA7l» \xA77Failed to process payment.");
         return
     }
 
-
+    // step 4: try to give the item to the buyer.
     const { ItemStack } = await import("@minecraft/server")
     const itemStack = new ItemStack(shop.itemId, shop.quantity)
     const buyerInv = buyer.getComponent("minecraft:inventory")?.container
     if (!buyerInv) return;
 
-    // 2. Attempt delivery. Bedrock addItem returns the LEFTOVER stack if inventory is full!
+    // Bedrock addItem returns any leftover items if the inventory is full.
     const leftover = buyerInv.addItem(itemStack);
 
     if (leftover) {
-        // 🚨 INVENTORY FULL - EMERGENCY REFUND PROTOCOL
+        // if they had no room for some or all of the items.
+        // we refund the difference.
         const failedAmount = leftover.amount;
         const costPerItem = shop.price;
         const refundAmount = failedAmount * costPerItem;
 
         await EconomyStore.addMoney(buyer, refundAmount);
-        buyer.sendMessage(`§c§l» §7Inventory full! Refunded §e$${refundAmount}§7 for ${failedAmount} items.`);
+        buyer.sendMessage(`\xA7c\xA7l» \xA77Inventory full! Refunded \xA7e$${refundAmount}\xA77 for ${failedAmount} items.`);
         
-        // Adjust shop quantity so we only deduct what was actually delivered
-        shop.quantity -= failedAmount;
-        if (shop.quantity <= 0) return; // Completely failed
+        // adjust the amount we are actually going to take from the shop chest.
+        const actualDelivered = shop.quantity - failedAmount;
+        
+        // if NOTHING was delivered, we're done here.
+        if (actualDelivered <= 0) return;
+        
+        // temporarily update the shop object for the removal logic below.
+        shop.quantity = actualDelivered;
     }
 
-    // 3. Deduct ONLY what was successfully given from the chest
+    // step 5: deduct the items from the shop's chest.
     let remaining = shop.quantity;
     for (let i = 0; i < container.size && remaining > 0; i++) {
         const item = container.getItem(i);
         if (item && item.typeId === shop.itemId) {
             const take = Math.min(item.amount, remaining);
             if (take >= item.amount) {
+                // if we're taking the whole stack, clear the slot.
                 container.setItem(i, undefined);
             } else {
+                // otherwise just reduce the count.
                 item.amount -= take;
                 container.setItem(i, item);
             }
@@ -288,29 +311,27 @@ async function handleBuy(buyer, shop, container) {
         }
     }
 
+    // step 6: pay the shop owner.
     const owner = Kernel.world.getAllPlayers().find(p => p.id === shop.ownerId)
     if (owner) {
-        const EconomyStore = Kernel.get("economy")
+        // they get the full amount (we don't take a cut yet).
         await EconomyStore.addMoney(owner, totalCost)
-        owner.sendMessage(`§a§l» §fSold §e${shop.quantity}x ${shop.itemId} §fto §e${buyer.name}§f. Profit: §a$${totalCost}§f.`);
+        owner.sendMessage(`\xA7a\xA7l» \xA7fSold \xA7e${shop.quantity}x ${shop.itemId} \xA7fto \xA7e${buyer.name}\xA7f. Profit: \xA7a$${totalCost}\xA7f.`);
     }
 
-    buyer.sendMessage(`§a§l» §fPurchased §e${shop.quantity}x ${shop.itemId} §ffor §a$${totalCost}§f.`);
-
+    // tell the buyer it worked.
+    buyer.sendMessage(`\xA7a\xA7l» \xA7fPurchased \xA7e${shop.quantity}x ${shop.itemId} \xA7ffor \xA7a$${totalCost}\xA7f.`);
 }
 
-/*
- * OUTBOUND_TRANSACTION_HANDLER (SELL)
- * ----------------------------------------------------------------------------
- * 1. Verify seller has sufficient item stock in their inventory.
- * 2. Calculate payment requirements.
- * 3. Add credits to the seller's balance.
- * 4. Transfer item stack from seller to shop container.
- */
+// ----------------------------------------------------------------------------
+// | handleSell                                                               |
+// | logic for when a player sells an item TO a chest shop.                   |
+// ----------------------------------------------------------------------------
 async function handleSell(seller, shop, container) {
     const sellerInv = seller.getComponent("minecraft:inventory")?.container
     if (!sellerInv) return
 
+    // step 1: check if the seller actually has the items they claim to have.
     let sellerStock = 0
     for (let i = 0; i < sellerInv.size; i++) {
         const item = sellerInv.getItem(i)
@@ -320,24 +341,26 @@ async function handleSell(seller, shop, container) {
     }
 
     if (sellerStock < shop.quantity) {
-        seller.sendMessage("§c§l» §7You don't have enough items to sell!");
+        seller.sendMessage("\xA7c\xA7l» \xA77You don't have enough items to sell!");
         return
     }
 
-
+    // step 2: give them the credits.
     const totalPay = shop.price * shop.quantity
     const EconomyStore = Kernel.get("economy")
     const success = await EconomyStore.addMoney(seller, totalPay)
     if (!success) {
-        seller.sendMessage("§c§l» §7Failed to process payment.");
+        seller.sendMessage("\xA7c\xA7l» \xA77Failed to process payment.");
         return
     }
 
-
+    // step 3: move items from seller to the shop chest.
     const { ItemStack } = await import("@minecraft/server")
     const itemStack = new ItemStack(shop.itemId, shop.quantity)
+    // put it in the chest.
     container.addItem(itemStack)
 
+    // remove it from the seller's pockets.
     let remaining = shop.quantity
     for (let i = 0; i < sellerInv.size && remaining > 0; i++) {
         const item = sellerInv.getItem(i)
@@ -353,40 +376,41 @@ async function handleSell(seller, shop, container) {
         }
     }
 
-    seller.sendMessage(`§a§l» §fSold §e${shop.quantity}x ${shop.itemId} §ffor §a$${totalPay}§f.`);
-
+    // tell the seller it worked.
+    seller.sendMessage(`\xA7a\xA7l» \xA7fSold \xA7e${shop.quantity}x ${shop.itemId} \xA7ffor \xA7a$${totalPay}\xA7f.`);
 }
 
-/*
- * COMMERCE_NODE_CONFIGURATION_UI
- * ----------------------------------------------------------------------------
- * Spawns a modal form to define the parameters of a new commerce node. 
- * Includes validation for ItemID syntax.
- */
+// ----------------------------------------------------------------------------
+// | showSetupUI                                                              |
+// | opens a modal form for the player to configure their new shop.           |
+// ----------------------------------------------------------------------------
 async function showSetupUI(player, shopType, signLocation, chestLocation) {
     const { ModalFormData } = await import("@minecraft/server-ui")
 
+    // build the form.
     const form = new ModalFormData()
-        .title("§6Shop Setup")
+        .title("\xA76Shop Setup")
         .textField("Item ID (e.g. minecraft:diamond)", "minecraft:diamond")
         .slider("Price per Unit", 1, 10000, { defaultValue: 1, valueStep: 1 })
         .slider("Quantity per Trade", 1, 64, { defaultValue: 1, valueStep: 1 })
 
-
-
+    // show the form to the player.
     const response = await form.show(player)
+    // if they closed it, stop.
     if (response.canceled) return
 
+    // parse the inputs.
     const itemId = String(response.formValues[0] || "").trim()
     const price = Number(response.formValues[1])
     const quantity = Number(response.formValues[2])
 
+    // basic validation.
     if (!itemId || !itemId.includes(":")) {
-        player.sendMessage("§c§l» §7Invalid Item ID. Example: 'minecraft:diamond'.");
+        player.sendMessage("\xA7c\xA7l» \xA77Invalid Item ID. Example: 'minecraft:diamond'.");
         return
     }
 
-
+    // register the shop in the database.
     const ChestShopStore = Kernel.get("chestShopStore")
     const success = ChestShopStore.createShop({
         ownerId: player.id,
@@ -400,9 +424,8 @@ async function showSetupUI(player, shopType, signLocation, chestLocation) {
     })
 
     if (success) {
-        player.sendMessage(`§a§l» §fShop created successfully!`);
+        player.sendMessage(`\xA7a\xA7l» \xA7fShop created successfully!`);
     } else {
-        player.sendMessage("§c§l» §7Failed to create shop.");
+        player.sendMessage("\xA7c\xA7l» \xA77Failed to create shop.");
     }
-
 }

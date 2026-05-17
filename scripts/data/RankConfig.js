@@ -9,7 +9,7 @@ export const DEFAULT_RANKS = [
         name: "",
         order: 0,
         color: "gray",
-        chatColor: "§7",
+        chatColor: "\xA77",
         permissions: {
             "home.limit": 3,
             "home.cooldown": 30, 

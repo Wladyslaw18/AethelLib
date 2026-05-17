@@ -8,7 +8,7 @@ import { Kernel } from "../../core/Kernel.js"
  */
 export class AuctionStore {
     static formatMoney(amount) {
-        return `§6$§f${amount.toLocaleString()}`
+        return `\xA76$\xA7f${amount.toLocaleString()}`
     }
 
     /* 
