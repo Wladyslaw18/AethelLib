@@ -1,18 +1,24 @@
 import { world } from "@minecraft/server"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
+import { ReplyCache } from "../../core/cache/CacheManager.js"
 
-/*
- * IDENTITY_MESSAGING_BRIDGE
- */
-
-const lastMessage = new Map() // INTERACTION_HANDSHAKE_BUFFER
-
+// ----------------------------------------------------------------------------
+// | object: MessageCommand                                                   |
+// | command definition for the primary P2P encrypted (private) social bridge. |
+// | uses the ReplyCache to track conversation threads for the /reply vector. |
+// ----------------------------------------------------------------------------
 export const MessageCommand = {
+    // internal name.
     name: "message",
+    // human-readable description.
     description: "Send a private message to a player.",
+    // syntax guide.
     usage: "/ae:message <player> <message>",
+    // required permission node.
     permission: "essentials.message",
+    // command category.
     category: "Social",
+    // native parameter definitions (greedy word slots to capture full messages).
     parameters: [
         { name: "player", type: "player", optional: false  },
         { name: "word1",  type: "string", optional: true  },
@@ -23,98 +29,125 @@ export const MessageCommand = {
         { name: "word6",  type: "string", optional: true  }
     ],
 
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | the social transmission pipeline. handles resolution, caching, and       |
+    // | delivery confirmation.                                                   |
+    // ----------------------------------------------------------------------------
     async execute(_data, player, args) {
+        // syntax validation.
         if (args.length < 2) {
-            player.sendMessage("§c§l» §7Usage: /ae:message <player> <message>");
-            player.sendMessage("§e§l» §fTip: §7You can use /ae:reply to respond.");
+            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:message <player> <message>");
+            player.sendMessage("\xA7e\xA7l» \xA7fTip: \xA77You can use /ae:reply to respond.");
             return
         }
 
-
+        // resolve the target player object. handles names with spaces.
         const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args)
 
+        // check if target is online.
         if (!target) {
-            player.sendMessage(`§c§l» §7Player '${args[0]}' not found.`);
+            player.sendMessage(`\xA7c\xA7l» \xA77Player '${args[0]}' not found.`);
             return
         }
 
-
+        // extract the actual message content.
         const message = args.slice(consumedArgs).join(" ")
         if (!message) {
-            player.sendMessage("§c§l» §7Message cannot be empty.");
+            player.sendMessage("\xA7c\xA7l» \xA77Message cannot be empty.");
             return
         }
 
-
+        // check for self-messaging (redundant but kept for protocol).
         if (target.id === player.id) {
-            player.sendMessage("§c§l» §7You can't message yourself.");
+            player.sendMessage("\xA7c\xA7l» \xA77You can't message yourself.");
             return
         }
 
+        // step 1: thread caching.
+        // update the reply pointers for both parties so they can use /reply.
+        ReplyCache.set(target.id, player.id)
+        ReplyCache.set(player.id, target.id) 
 
-        lastMessage.set(target.id, player.id)
-        lastMessage.set(player.id, target.id) // Dual-link for easier replying
-
-        if (lastMessage.size > 2000) {
-            let i = 0;
-            for (const key of lastMessage.keys()) {
-                lastMessage.delete(key);
-                if (++i > 500) break;
-            }
-        }
-
+        // step 2: secure transmission.
         const formattedMessage = formatMessage(player, target, message)
+        // deliver to the receiver.
         target.sendMessage(formattedMessage.to)
+        // confirm to the sender.
         player.sendMessage(formattedMessage.from)
     }
 }
 
+// ----------------------------------------------------------------------------
+// | object: ReplyCommand                                                     |
+// | convenience vector for responding to the last active conversation thread. |
+// ----------------------------------------------------------------------------
 export const ReplyCommand = {
+    // internal name.
     name: "reply",
+    // human-readable description.
     description: "Reply to the last player who messaged you.",
+    // syntax guide.
     usage: "/ae:reply <message>",
-
+    // permission node (matches messaging).
     permission: "essentials.message",
+    // command category.
     category: "Social",
 
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | pulls the last sender from the cache and routes a new message to them.   |
+    // ----------------------------------------------------------------------------
     execute(_data, player, args) {
+        // basic input check.
         if (args.length === 0) {
-            player.sendMessage("§c§l» §7Usage: /ae:reply <message>");
+            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:reply <message>");
             return
         }
-
 
         const message = args.join(" ")
-        const lastSenderId = lastMessage.get(player.id)
+        // retrieve the last interlocutor from the cache.
+        const lastSenderId = ReplyCache.get(player.id)
 
+        // if the cache is empty (no recent messages).
         if (!lastSenderId) {
-            player.sendMessage("§c§l» §7You have no one to reply to.");
+            player.sendMessage("\xA7c\xA7l» \xA77You have no one to reply to.");
             return
         }
 
-
+        // find the player object.
         const lastSender = [...world.getAllPlayers()].find(p => p.id === lastSenderId)
         if (!lastSender) {
-            player.sendMessage("§c§l» §7That player is now offline.");
-            lastMessage.delete(player.id)
+            // if they left since the last message.
+            player.sendMessage("\xA7c\xA7l» \xA77That player is now offline.");
+            // purge the dead cache entry.
+            ReplyCache.delete(player.id)
             return
         }
 
+        // refresh the reply thread on their end.
+        ReplyCache.set(lastSender.id, player.id)
 
-        lastMessage.set(lastSender.id, player.id)
-
+        // route the response.
         const formattedMessage = formatMessage(player, lastSender, message)
         lastSender.sendMessage(formattedMessage.to)
         player.sendMessage(formattedMessage.from)
     }
 }
 
+// ----------------------------------------------------------------------------
+// | function: formatMessage                                                  |
+// | internal formatter for P2P social data. adds temporal metadata and       |
+// | directional labels.                                                      |
+// ----------------------------------------------------------------------------
 function formatMessage(sender, receiver, message) {
+    // resolve current engine time.
     const timestamp = new Date().toLocaleTimeString()
     
     return {
-        to: `§8[${timestamp}] §dFROM §e${sender.name}§8: §f${message}`,
-        from: `§8[${timestamp}] §dTO §e${receiver.name}§8: §f${message}`
+        // message as seen by the recipient.
+        to: `\xA78[${timestamp}] \xA7dFROM \xA7e${sender.name}\xA78: \xA7f${message}`,
+        // message as seen by the sender.
+        from: `\xA78[${timestamp}] \xA7dTO \xA7e${receiver.name}\xA78: \xA7f${message}`
     }
 }
-
