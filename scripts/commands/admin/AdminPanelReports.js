@@ -11,18 +11,18 @@ import { showAdminPanel } from "./AdminPanelMain.js"
 export async function showReports(player) {
     const PermissionManager = Kernel.get("permissions")
     if (!PermissionManager.hasPermission(player, "essentials.admin")) {
-        player.sendMessage("§cNo permission.")
+        player.sendMessage("\xA7cNo permission.")
         return
     }
     const form = new ActionFormData()
-        .title("§6§lReports & Logs")
+        .title("\xA76\xA7lReports & Logs")
         .body("Select a report or log category")
-        .button("§aView Reports")
-        .button("§bView Logs")
-        .button("§cPlayer History")
-        .button("§eEconomy Logs")
-        .button("§fChat Logs")
-        .button("§cBack")
+        .button("\xA7aView Reports")
+        .button("\xA7bView Logs")
+        .button("\xA7cPlayer History")
+        .button("\xA7eEconomy Logs")
+        .button("\xA7fChat Logs")
+        .button("\xA7cBack")
 
     const res = await form.show(player)
     if (res.canceled) return
@@ -32,18 +32,18 @@ export async function showReports(player) {
             await showReportsList(player)
             break
         case 1:
-            player.sendMessage("§7Logs interface coming soon...")
+            player.sendMessage("\xA77Logs interface coming soon...")
             await showReports(player)
             break
         case 2:
             await showPlayerHistory(player)
             break
         case 3:
-            player.sendMessage("§7Economy logs interface coming soon...")
+            player.sendMessage("\xA77Economy logs interface coming soon...")
             await showReports(player)
             break
         case 4:
-            player.sendMessage("§7Chat logs interface coming soon...")
+            player.sendMessage("\xA77Chat logs interface coming soon...")
             await showReports(player)
             break
         case 5:
@@ -54,10 +54,10 @@ export async function showReports(player) {
 
 async function showReportsList(player) {
     const form = new ActionFormData()
-        .title("§6§lPlayer Reports")
+        .title("\xA76\xA7lPlayer Reports")
         .body("Select a report to view details")
-        .button("§aNo active reports found")
-        .button("§cBack")
+        .button("\xA7aNo active reports found")
+        .button("\xA7cBack")
 
     const res = await form.show(player)
     if (res.canceled || res.selection === 1) {
@@ -66,17 +66,17 @@ async function showReportsList(player) {
     }
 
     if (res.selection === 0) {
-        player.sendMessage("§7No active reports found")
+        player.sendMessage("\xA77No active reports found")
         await showReports(player)
     }
 }
 
 async function showPlayerHistory(player) {
     const form = new ActionFormData()
-        .title("§6§lPlayer History")
+        .title("\xA76\xA7lPlayer History")
         .body("Select a player to view history")
-        .button("§7No players online")
-        .button("§cBack")
+        .button("\xA77No players online")
+        .button("\xA7cBack")
 
     const res = await form.show(player)
     if (res.canceled || res.selection === 1) {
@@ -85,7 +85,7 @@ async function showPlayerHistory(player) {
     }
 
     if (res.selection === 0) {
-        player.sendMessage("§7Player history interface coming soon...")
+        player.sendMessage("\xA77Player history interface coming soon...")
         await showReports(player)
     }
 }

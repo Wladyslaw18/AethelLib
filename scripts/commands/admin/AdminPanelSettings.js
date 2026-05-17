@@ -11,14 +11,14 @@ import { UIUtils } from "../../ui/UIUtils.js"
 export async function showServerSettings(player) {
     const PermissionManager = Kernel.get("permissions")
     if (!PermissionManager.hasPermission(player, "essentials.admin")) {
-        player.sendMessage("§cNo permission.")
+        player.sendMessage("\xA7cNo permission.")
         return
     }
 
     const settings = SettingsStore.getAll()
 
     const form = new ModalFormData()
-        .title("§e§lSettings Panel")
+        .title("\xA7e\xA7lSettings Panel")
         .textField("starterMoney\nSet Player Starter Money", "100", { defaultValue: String(settings.starterMoney || "100") })
         .textField("maxMoney\nSet Max Money", "1e+32", { defaultValue: String(settings.maxMoney || "1e+32") })
         .textField("commandPrefix\nPrefix for Command", "-", { defaultValue: String(settings.commandPrefix || "-") })
@@ -80,6 +80,6 @@ export async function showServerSettings(player) {
     }
 
     SettingsStore.updateAll(newSettings)
-    player.sendMessage("§a§l» §fSettings updated successfully.")
+    player.sendMessage("\xA7a\xA7l» \xA7fSettings updated successfully.")
     await showAdminPanel(player)
 }
