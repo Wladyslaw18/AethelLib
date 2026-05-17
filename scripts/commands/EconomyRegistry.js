@@ -5,13 +5,27 @@ import { ShopCommand } from "./shop/ShopCommand.js"
 import { SellCommand } from "./sell/SellCommand.js"
 import { AuctionCommand } from "./auction/AuctionCommand.js"
 
+// ----------------------------------------------------------------------------
+// | object: EconomyRegistry                                                  |
+// | handles registration for all financial and commerce-related commands.    |
+// ----------------------------------------------------------------------------
 export const EconomyRegistry = {
+    // ----------------------------------------------------------------------------
+    // | method: register                                                         |
+    // | pushes command definitions into the core registry.                       |
+    // ----------------------------------------------------------------------------
     register(Registry) {
+        // check current balance.
         Registry.register("money", MoneyCommand)
+        // transfer funds to another player.
         Registry.register("pay", PayCommand)
+        // show the richest players leaderboard.
         Registry.register("topmoney", TopMoneyCommand)
+        // open the global virtual shop.
         Registry.register("shop", ShopCommand)
+        // liquidate inventory for credits.
         Registry.register("sell", SellCommand)
+        // interact with the player-to-player auction house.
         Registry.register("auction", AuctionCommand)
     }
 }
