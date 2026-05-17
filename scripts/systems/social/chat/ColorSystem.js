@@ -8,14 +8,14 @@ import { ActionFormData } from "@minecraft/server-ui"
 
 export class ColorSystem {
     static COLORS = {
-        "black": "§0", "dark_blue": "§1", "dark_green": "§2",
-        "dark_aqua": "§3", "dark_red": "§4", "dark_purple": "§5",
-        "gold": "§6", "gray": "§7", "dark_gray": "§8",
-        "blue": "§9", "green": "§a", "aqua": "§b",
-        "red": "§c", "light_purple": "§d", "yellow": "§e",
-        "white": "§f", "rainbow": "§k", "bold": "§l",
-        "strikethrough": "§m", "underline": "§n", "italic": "§o",
-        "reset": "§r"
+        "black": "\xA70", "dark_blue": "\xA71", "dark_green": "\xA72",
+        "dark_aqua": "\xA73", "dark_red": "\xA74", "dark_purple": "\xA75",
+        "gold": "\xA76", "gray": "\xA77", "dark_gray": "\xA78",
+        "blue": "\xA79", "green": "\xA7a", "aqua": "\xA7b",
+        "red": "\xA7c", "light_purple": "\xA7d", "yellow": "\xA7e",
+        "white": "\xA7f", "rainbow": "\xA7k", "bold": "\xA7l",
+        "strikethrough": "\xA7m", "underline": "\xA7n", "italic": "\xA7o",
+        "reset": "\xA7r"
     }
     
     static COLOR_PERMISSIONS = {
@@ -101,10 +101,10 @@ export class ColorSystem {
      * @returns {string} Formatted message
      */
     static formatWithColor(message, colorCode) {
-        if (colorCode === "§k") { // Rainbow effect
+        if (colorCode === "\xA7k") { // Rainbow effect
             return this.createRainbowText(message)
         }
-        return `${colorCode}${message}§r`
+        return `${colorCode}${message}\xA7r`
     }
     
     /**
@@ -113,7 +113,7 @@ export class ColorSystem {
      * @returns {string} Rainbow formatted message
      */
     static createRainbowText(message) {
-        const rainbowColors = ["§c", "§6", "§e", "§a", "§b", "§9", "§d"]
+        const rainbowColors = ["\xA7c", "\xA76", "\xA7e", "\xA7a", "\xA7b", "\xA79", "\xA7d"]
         let result = ""
         
         const truncated = message.substring(0, 200);
@@ -122,7 +122,7 @@ export class ColorSystem {
             result += rainbowColors[colorIndex] + truncated[i]
         }
         
-        return result + "§r"
+        return result + "\xA7r"
     }
     
     /**
@@ -136,7 +136,7 @@ export class ColorSystem {
         const rankPrefix = this.getRankPrefix(player)
         
         const formattedMessage = this.formatWithColor(message, playerColor)
-        return `${rankPrefix} ${playerColor}${player.name}§f: ${formattedMessage}`
+        return `${rankPrefix} ${playerColor}${player.name}\xA7f: ${formattedMessage}`
     }
     
     /**
@@ -149,10 +149,10 @@ export class ColorSystem {
         const highestRank = PermissionManager.getHighestRank(player)
         
         if (highestRank) {
-            return `${highestRank.color || "§7"}[${highestRank.name}]`
+            return `${highestRank.color || "\xA77"}[${highestRank.name}]`
         }
         
-        return "§7[Default]"
+        return "\xA77[Default]"
     }
     
     /**
@@ -163,18 +163,18 @@ export class ColorSystem {
      */
     static setPlayerColor(player, color) {
         if (!this.COLORS[color]) {
-            player.sendMessage(`§cInvalid color: §e${color}`)
+            player.sendMessage(`\xA7cInvalid color: \xA7e${color}`)
             return false
         }
         
         if (!this.canUseColor(player, color)) {
-            player.sendMessage(`§cYou cannot use color: §e${color}`)
+            player.sendMessage(`\xA7cYou cannot use color: \xA7e${color}`)
             return false
         }
         
         const PlayerStore = Kernel.get("playerStore")
         PlayerStore.set(player, "chatColor", color)
-        player.sendMessage(`§aChat color changed to ${this.COLORS[color]}${color}§a`)
+        player.sendMessage(`\xA7aChat color changed to ${this.COLORS[color]}${color}\xA7a`)
         return true
     }
     
@@ -211,18 +211,18 @@ export class ColorSystem {
         const currentColor = PlayerStore.get(player, "chatColor") || "white"
         
         const form = new ActionFormData()
-            .title("§6§lChat Color Selection")
-            .body(`§7Current color: ${this.COLORS[currentColor]}${currentColor}\n§7Select a new color:`)
+            .title("\xA76\xA7lChat Color Selection")
+            .body(`\xA77Current color: ${this.COLORS[currentColor]}${currentColor}\n\xA77Select a new color:`)
         
         // Add color buttons
         availableColors.forEach(color => {
             const isCurrent = color === currentColor
             const icon = this.getColorIcon(color)
-            const label = `${isCurrent ? "§a✓ " : "§7○ "}${this.COLORS[color]}${color}`
+            const label = `${isCurrent ? "\xA7a✓ " : "\xA77○ "}${this.COLORS[color]}${color}`
             form.button(label, icon)
         })
         
-        form.button("§cReset to Default", "textures/ui/cancel")
+        form.button("\xA7cReset to Default", "textures/ui/cancel")
         
         // @ts-ignore
         const response = await form.show(player)
@@ -232,7 +232,7 @@ export class ColorSystem {
             // Reset to default
             const PlayerStore = Kernel.get("playerStore")
             PlayerStore.delete(player, "chatColor")
-            player.sendMessage("§aChat color reset to default")
+            player.sendMessage("\xA7aChat color reset to default")
         } else if (response.selection < availableColors.length) {
             const selectedColor = availableColors[response.selection]
             this.setPlayerColor(player, selectedColor)
@@ -280,14 +280,14 @@ export class ColorSystem {
      */
     static processMessage(player, message) {
         // Check for manual color codes in message
-        const colorCodeMatch = message.match(/§([0-9a-fk-or])/g)
+        const colorCodeMatch = message.match(/\xA7([0-9a-fk-or])/g)
         
         if (colorCodeMatch) {
             // Player is trying to use manual color codes
             const PermissionManager = Kernel.get("permissions")
             if (!PermissionManager.hasPermission(player, "chat.color.manual")) {
                 // Strip color codes if not allowed
-                return message.replace(/§[0-9a-fk-or]/g, "")
+                return message.replace(/\xA7[0-9a-fk-or]/g, "")
             }
         }
         

@@ -23,7 +23,7 @@ export const TeleportService = {
         })
 
         if (!this._isLocationSafe(destination, dimensionId || player.dimension.id)) {
-            player.sendMessage("§c§l» §7Teleport failed: Destination is unsafe!")
+            player.sendMessage("\xA7c\xA7l» \xA77Teleport failed: Destination is unsafe!")
             return false
         }
 
@@ -72,7 +72,7 @@ export const TeleportService = {
         for (let i = time; i > 0; i--) {
             if (!player.isValid) return false
             
-            player.onScreenDisplay.setActionBar(`§6§l» §eTeleporting in §f${i}s§e...`);
+            player.onScreenDisplay.setActionBar(`\xA76\xA7l» \xA7eTeleporting in \xA7f${i}s\xA7e...`);
 
             
             // Wait 1 second (20 ticks)
@@ -80,13 +80,13 @@ export const TeleportService = {
 
             // Stability Checks
             if (this._hasMoved(player, startPos)) {
-                player.sendMessage("§c§l» §7Teleport cancelled: You moved!");
+                player.sendMessage("\xA7c\xA7l» \xA77Teleport cancelled: You moved!");
                 return false
             }
 
 
             if (this._isInCombat(player)) {
-                player.sendMessage("§c§l» §7Teleport cancelled: You are in combat!");
+                player.sendMessage("\xA7c\xA7l» \xA77Teleport cancelled: You are in combat!");
                 return false
             }
 

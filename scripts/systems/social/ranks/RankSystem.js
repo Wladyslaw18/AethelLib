@@ -34,8 +34,8 @@ export const RankSystem = {
                 const rankData = {
                     name: rank.name || rank.id,
                     order: rank.order || 0,
-                    colorText: rank.chatColor || "§7",
-                    colorName: rank.color || "§7",
+                    colorText: rank.chatColor || "\xA77",
+                    colorName: rank.color || "\xA77",
                     hideRanks: rank.order === 0,
                     permissions: rank.permissions || {}
                 }

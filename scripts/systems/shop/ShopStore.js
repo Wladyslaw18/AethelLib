@@ -1,148 +1,144 @@
-/*
- * INDUSTRIAL_COMMERCE_TRANSACTIONAL_ENGINE
- * ----------------------------------------------------------------------------
- * Handles the logic for item procurement and credit-balance resolution. 
- * We interface with the DatabaseManager for persistent shop-state and 
- * the Economy system for transactional integrity.
- *
- * PERFORMANCE_NOTE: We use a cached buffer for shop prices to avoid 
- * redundant database IO during high-frequency purchase requests.
- */
-
 import { Kernel } from "../../core/Kernel.js"
 import { Configuration } from "../../Configuration.js"
 import { MINECRAFT_ITEMS } from "../../data/minecraft-items.js"
 
+// ----------------------------------------------------------------------------
+// | ShopStore                                                                 |
+// | handles the server's virtual storefront.                                   |
+// | processes item purchases, price resolution, and transactional safety.     |
+// | if the player's inventory is full, we handle refunds so nobody gets scammed.|
+// ----------------------------------------------------------------------------
+
 export const ShopStore = {
-    /*
-     * SHOP_DATA_RETRIEVAL_PROTOCOL
-     * Pulls the master shop-registry from the persistent database. 
-     * Falls back to the hard-coded default manifest if the store is 
-     * uninitialized.
-     */
+    // ----------------------------------------------------------------------------
+    // | getShopData                                                              |
+    // | fetches global shop settings and pricing overrides from the database.    |
+    // ----------------------------------------------------------------------------
     getShopData() {
         const Database = Kernel.get("database")
+        // try to load the 'ae:shopData' key. if it's missing, use the default structure.
         return Database.get("ae:shopData") || this.getDefaultShopData()
     },
 
-    /*
-     * PERSISTENT_SHOP_COMMIT
-     * Flushes the current shop-buffer to the database. Essential for 
-     * saving price fluctuations and stock adjustments.
-     */
+    // ----------------------------------------------------------------------------
+    // | saveShopData                                                              |
+    // | persists shop settings to the world storage.                             |
+    // ----------------------------------------------------------------------------
     saveShopData(data) {
         const Database = Kernel.get("database")
         return Database.set("ae:shopData", data)
     },
 
-    /* 
-     * BOOTSTRAP_DATA_TEMPLATE
-     * The baseline structure for the shop engine.
-     */
+    // ----------------------------------------------------------------------------
+    // | getDefaultShopData                                                       |
+    // | returns the baseline configuration for a fresh shop.                     |
+    // ----------------------------------------------------------------------------
     getDefaultShopData() {
         return {
+            // is the shop actually open?
             enabled: true,
+            // manual price overrides.
             prices: {},
+            // track virtual stock (currently unused, but the hook is there).
             stock: {}
         }
     },
 
-    /*
-     * ATOMIC_PURCHASE_SEQUENCE
-     * Executes the commerce loop: 
-     * 1. Resolve item and price metadata.
-     * 2. Verify liquidity via Economy service.
-     * 3. Deduct credits from the balance buffer.
-     * 4. Trigger inventory-injection protocol.
-     * 5. Refund credits if the injection fails (Failsafe logic).
-     */
+    // ----------------------------------------------------------------------------
+    // | purchaseItem                                                             |
+    // | the core transactional flow for buying items.                            |
+    // | 1. resolve price.                                                        |
+    // | 2. check if the player is broke.                                         |
+    // | 3. take the money (pessimistic lock).                                    |
+    // | 4. try to give the item.                                                 |
+    // | 5. if giving the item fails, refund the money immediately.               |
+    // ----------------------------------------------------------------------------
     async purchaseItem(player, itemId, quantity) {
+        // get the economy service and database from the kernel.
         const Economy = Kernel.get("economy")
         const Database = Kernel.get("database")
         
-        // Resolve price from industrial registry or fallback to legacy manifest
+        // price resolution logic.
+        // first, check if there is a custom price set in the database for this item.
         let price = Database.get(`shop:price:${itemId}`)
         if (price === null) {
+            // if no override, check our hardcoded item data list. 
+            // if it's missing there too, default to 100 credits.
             price = MINECRAFT_ITEMS[itemId]?.price || 100
         }
         
+        // calculate the final bill.
         const totalCost = price * quantity
 
-        /* 
-         * LIQUIDITY_VERIFICATION
-         * Ensure the entity has sufficient credit allocation for the 
-         * transaction.
-         */
+        // check if the player actually has the funds.
         const balance = Economy.getBalance(player)
         if (balance < totalCost) {
+            // bail early if they can't afford it.
             return { success: false, message: `Insufficient liquidity. Required: ${this.formatMoney(totalCost)}` }
         }
 
-        /* 
-         * TRANSACTIONAL_GATEKEEPER
-         * We remove the money BEFORE delivering the goods to prevent 
-         * transaction-racing exploits.
-         */
+        // subtract the money first. this prevents players from spending the same credits twice
+        // if they try to buy something else while this is processing.
         const paymentSuccess = await Economy.removeMoney(player, totalCost)
         if (paymentSuccess) {
-            /* 
-             * INVENTORY_INJECTION_PROTOCOL
-             * Physically deliver the item stack to the player entity.
-             */
+            // try to drop the items into the player's inventory.
             const delivered = this.giveItem(player, itemId, quantity)
             
             if (delivered) {
+                // transaction complete.
                 return { 
                     success: true, 
                     message: `PROCURED: ${quantity}x ${itemId.split(":")[1].toUpperCase()} | COST: ${this.formatMoney(totalCost)}`
                 }
             } else {
-                /* 
-                 * ROLLBACK_MECHANISM
-                 * If the inventory-injection fails (likely full inventory), 
-                 * we refund the credits immediately to maintain balance 
-                 * integrity.
-                 */
+                // if we couldn't give the item (e.g. inventory overflow or engine error).
+                // we MUST give the money back. nobody likes getting scammed by a computer.
                 await Economy.addMoney(player, totalCost)
                 return { success: false, message: "Inventory buffer overflow! Credits refunded." }
             }
         }
 
+        // if the economy subtraction failed for some internal reason.
         return { success: false, message: "Transactional pipeline failure." }
     },
 
-    /*
-     * LOW_LEVEL_ITEM_DELIVERY
-     * Uses the runCommand protocol for atomic item injection.
-     * This is safer than manual container manipulation as it respects
-     * native stack-size limits and inventory overflows.
-     */
+    // ----------------------------------------------------------------------------
+    // | giveItem                                                                 |
+    // | internal helper to physically hand an item to a player.                  |
+    // | uses the native 'give' command because it handles stack limits and        |
+    // | overflow better than manual container logic.                             |
+    // ----------------------------------------------------------------------------
     giveItem(player, itemId, quantity) {
         try {
+            // execute the give command on the player.
             player.runCommand(`give @s ${itemId} ${quantity}`)
             return true
         } catch (error) {
-            console.error(`[ShopStore] INJECTION_FAILURE: ${error}`)
+            // if the command fails, log it. usually means a malformed item id.
+            console.error(`[ShopStore] failed to give item: ${error}`)
             return false
         }
     },
 
-    /* 
-     * CURRENCY_STRING_FORMATTER
-     * Maps the numeric balance to its industrial string representation.
-     */
+    // ----------------------------------------------------------------------------
+    // | formatMoney                                                              |
+    // | converts a number into a pretty string with currency symbols.            |
+    // ----------------------------------------------------------------------------
     formatMoney(amount) {
+        // use the currency symbol from configuration.
         return `${Configuration.CURRENCY_SYMBOL}${amount.toLocaleString()}`
     },
 
-    /*
-     * DYNAMIC_CATEGORY_AGGREGATOR
-     * Scans the master item manifest and builds a unique set of 
-     * category strings. O(N) complexity where N is the total item count.
-     */
+    // ----------------------------------------------------------------------------
+    // | getCategories                                                            |
+    // | extracts every unique category from our master item list.                |
+    // | used to build the category selection menu in the shop ui.                |
+    // ----------------------------------------------------------------------------
     getCategories() {
         const cats = new Set()
+        // iterate through every item and add its category to the set.
         Object.values(MINECRAFT_ITEMS).forEach(i => cats.add(i.category))
+        // convert the set to a sorted array and return it.
         return Array.from(cats).sort()
     }
 }

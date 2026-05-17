@@ -39,9 +39,9 @@ export const ChatSystem = {
                     const muteData = MuteStore.getMuteData(player)
                     if (muteData && muteData.duration > 0) {
                         const remaining = Math.ceil((muteData.duration - (Date.now() - muteData.startTime)) / 1000 / 60)
-                        player.sendMessage(`§cYou are muted. Remaining: §e${remaining}m`)
+                        player.sendMessage(`\xA7cYou are muted. Remaining: \xA7e${remaining}m`)
                     } else {
-                        player.sendMessage("§cYou are permanently muted.")
+                        player.sendMessage("\xA7cYou are permanently muted.")
                     }
                 })
                 return
@@ -57,7 +57,7 @@ export const ChatSystem = {
                 if (now - lastChat < cooldownTime) {
                     ev.cancel = true
                     const remaining = Math.ceil((cooldownTime - (now - lastChat)) / 1000)
-                    player.sendMessage(`§c§l» §7Slow down! Wait §e${remaining}s §7before chatting again.`)
+                    player.sendMessage(`\xA7c\xA7l» \xA77Slow down! Wait \xA7e${remaining}s \xA77before chatting again.`)
                     return
                 }
 
