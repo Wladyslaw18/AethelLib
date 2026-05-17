@@ -6,40 +6,40 @@
 
 export const Lang = {
     // VISUAL_TOKENS
-    PREFIX: "§6§lAethel§fLib §r§8| ",
-    GOLD: "§6§l",
-    WHITE: "§f§l",
-    GRAY: "§7",
-    DARK: "§8",
-    ERROR: "§c§l",
-    SUCCESS: "§a§l",
-    GRID_L: "§a§e§l",
-    GRID_M: "§a§e§m",
+    PREFIX: "\xA76\xA7lAethel\xA7fLib \xA7r\xA78| ",
+    GOLD: "\xA76\xA7l",
+    WHITE: "\xA7f\xA7l",
+    GRAY: "\xA77",
+    DARK: "\xA78",
+    ERROR: "\xA7c\xA7l",
+    SUCCESS: "\xA7a\xA7l",
+    GRID_L: "\xA7a\xA7e\xA7l",
+    GRID_M: "\xA7a\xA7e\xA7m",
 
     // STRINGS_MANIFEST
     UI: {
-        MENU_TITLE: "§a§e§m§0§lAethelNexus",
-        MENU_BODY: "§7System Hub\n§8Select functional vector.",
+        MENU_TITLE: "\xA7a\xA7e\xA7m\xA70\xA7lAethelNexus",
+        MENU_BODY: "\xA77System Hub\n\xA78Select functional vector.",
         
-        HOMES_TITLE: "§a§e§l§6§lHOME NODES",
-        HOMES_BODY: "§7Manage spatial anchors.",
-        HOMES_CREATE: "§a§lSET HOME\n§8Save current coords",
-        HOMES_LIST: "§e§lHOME LIST\n§8Return to anchor",
-        HOMES_DELETE: "§c§lDELETE\n§8Purge node",
+        HOMES_TITLE: "\xA7a\xA7e\xA7l\xA76\xA7lHOME NODES",
+        HOMES_BODY: "\xA77Manage spatial anchors.",
+        HOMES_CREATE: "\xA7a\xA7lSET HOME\n\xA78Save current coords",
+        HOMES_LIST: "\xA7e\xA7lHOME LIST\n\xA78Return to anchor",
+        HOMES_DELETE: "\xA7c\xA7lDELETE\n\xA78Purge node",
 
-        PLAYERS_TITLE: "§a§e§l§6§lPLAYER LIST",
-        PLAYERS_BODY: "§7Online: §e{count}\n§8Select player.",
+        PLAYERS_TITLE: "\xA7a\xA7e\xA7l\xA76\xA7lPLAYER LIST",
+        PLAYERS_BODY: "\xA77Online: \xA7e{count}\n\xA78Select player.",
         
-        PLAYER_DETAIL_TITLE: "§6§lPLAYER: {name}",
-        PLAYER_DETAIL_BODY: "§7Select protocol.",
-        PLAYER_PAY: "§a§lPAY\n§8Transfer credits",
-        PLAYER_MSG: "§b§lMESSAGE\n§8Send private data",
-        PLAYER_TP: "§d§lTPA\n§8Request teleport",
+        PLAYER_DETAIL_TITLE: "\xA76\xA7lPLAYER: {name}",
+        PLAYER_DETAIL_BODY: "\xA77Select protocol.",
+        PLAYER_PAY: "\xA7a\xA7lPAY\n\xA78Transfer credits",
+        PLAYER_MSG: "\xA7b\xA7lMESSAGE\n\xA78Send private data",
+        PLAYER_TP: "\xA7d\xA7lTPA\n\xA78Request teleport",
 
-        SHOP_TITLE: "§a§e§l§6§lSHOP",
-        SHOP_QUICK_SELL: "§e§lQUICK SELL\n§8Liquidate held asset",
+        SHOP_TITLE: "\xA7a\xA7e\xA7l\xA76\xA7lSHOP",
+        SHOP_QUICK_SELL: "\xA7e\xA7lQUICK SELL\n\xA78Liquidate held asset",
         
-        AUCTION_TITLE: "§a§e§l§6§lAUCTION HOUSE"
+        AUCTION_TITLE: "\xA7a\xA7e\xA7l\xA76\xA7lAUCTION HOUSE"
     },
 
     /**

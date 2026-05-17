@@ -23,7 +23,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "§b§lWARPS\n§8Global navigation points",
+            text: "\xA7b\xA7lWARPS\n\xA78Global navigation points",
             icon: "textures/items/ender_eye",
             action: async () => {
                 const { showWarpUI } = await import("./teleport/WarpUI.js");
@@ -31,7 +31,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "§d§lPLAYERS\n§8Interact with online players",
+            text: "\xA7d\xA7lPLAYERS\n\xA78Interact with online players",
             icon: "textures/items/totem",
             action: async () => {
                 const { showPlayersUI } = await import("./social/PlayerListUI.js");
@@ -39,7 +39,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "§6§lAUCTION HOUSE\n§8Global trade manifest",
+            text: "\xA76\xA7lAUCTION HOUSE\n\xA78Global trade manifest",
             icon: "textures/blocks/chest_front",
             action: async () => {
                 const { showAuctionUI } = await import("./auction/AuctionUI.js");
@@ -47,7 +47,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "§a§lSHOP\n§8Industrial asset exchange",
+            text: "\xA7a\xA7lSHOP\n\xA78Industrial asset exchange",
             icon: "textures/items/emerald",
             action: async () => {
                 const { showShopUI } = await import("./economy/ShopUI.js");
@@ -55,7 +55,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "§e§lQUICK SELL\n§8Liquidate currently held asset",
+            text: "\xA7e\xA7lQUICK SELL\n\xA78Liquidate currently held asset",
             icon: "textures/items/paper",
             action: async () => {
                 const { handleQuickSell } = await import("./economy/ShopTransaction.js");
@@ -63,7 +63,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "§c§l[EXIT]",
+            text: "\xA7c\xA7l[EXIT]",
             icon: "textures/ui/cancel",
             action: () => {} // NO-OP
         }

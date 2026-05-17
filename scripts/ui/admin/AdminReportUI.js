@@ -19,21 +19,21 @@ export async function showAdminReportUI(admin) {
         .sort(([, a], [, b]) => (b.timestamp || 0) - (a.timestamp || 0))
 
     const form = new ActionFormData()
-        .title("§c§l📋 Report Manager")
+        .title("\xA7c\xA7l📋 Report Manager")
         .body(reportEntries.length > 0
-            ? `§7${reportEntries.length} report(s)`
-            : "§aNo open reports! 🎉")
+            ? `\xA77${reportEntries.length} report(s)`
+            : "\xA7aNo open reports! 🎉")
 
     // Back button
-    form.button("§c← Back", "textures/ui/refresh")
+    form.button("\xA7c← Back", "textures/ui/refresh")
 
     // Report buttons
     for (const [_id, report] of reportEntries) {
         const timeAgo = getTimeAgo(report.timestamp)
-        const typeColor = report.type === "server" ? "§c" : "§e"
+        const typeColor = report.type === "server" ? "\xA7c" : "\xA7e"
         const typeLabel = report.type === "server" ? "SERVER" : "PLAYER"
         const targetLabel = report.target ? ` → ${report.target}` : ""
-        form.button(`${typeColor}[${typeLabel}] §f${report.reporter}${targetLabel}\n§8${timeAgo}`)
+        form.button(`${typeColor}[${typeLabel}] \xA7f${report.reporter}${targetLabel}\n\xA78${timeAgo}`)
     }
 
     const response = await UIUtils.showForm(admin, form)
@@ -56,21 +56,21 @@ export async function showAdminReportUI(admin) {
  */
 async function showReportDetail(admin, reportId, report) {
     const timeAgo = getTimeAgo(report.timestamp)
-    const typeLabel = report.type === "server" ? "§cServer Issue" : "§ePlayer Report"
+    const typeLabel = report.type === "server" ? "\xA7cServer Issue" : "\xA7ePlayer Report"
 
-    let body = `§6Type: ${typeLabel}\n`
-    body += `§7Reporter: §f${report.reporter}\n`
-    if (report.target) body += `§7Target: §c${report.target}\n`
-    body += `§7Time: §f${timeAgo}\n`
-    body += `§7Status: §f${report.status || "open"}\n`
-    body += `§r\n§7Message:\n§f${report.message}`
+    let body = `\xA76Type: ${typeLabel}\n`
+    body += `\xA77Reporter: \xA7f${report.reporter}\n`
+    if (report.target) body += `\xA77Target: \xA7c${report.target}\n`
+    body += `\xA77Time: \xA7f${timeAgo}\n`
+    body += `\xA77Status: \xA7f${report.status || "open"}\n`
+    body += `\xA7r\n\xA77Message:\n\xA7f${report.message}`
 
     const form = new ActionFormData()
-        .title("§c§lReport Detail")
+        .title("\xA7c\xA7lReport Detail")
         .body(body)
-        .button("§c🗑️ Delete Report", "textures/ui/cancel")
-        .button("§4🔨 Ban Target", "textures/items/iron_axe")
-        .button("§7← Back to Reports", "textures/ui/refresh")
+        .button("\xA7c🗑️ Delete Report", "textures/ui/cancel")
+        .button("\xA74🔨 Ban Target", "textures/items/iron_axe")
+        .button("\xA77← Back to Reports", "textures/ui/refresh")
 
     const response = await UIUtils.showForm(admin, form)
     if (response.canceled) return
@@ -79,21 +79,21 @@ async function showReportDetail(admin, reportId, report) {
         case 0: {
             // Delete report
             ReportStore.deleteReport(reportId)
-            admin.sendMessage(`§aReport §e${reportId.slice(0, 8)}... §adeleted.`)
+            admin.sendMessage(`\xA7aReport \xA7e${reportId.slice(0, 8)}... \xA7adeleted.`)
             Kernel.system.run(() => showAdminReportUI(admin))
             break
         }
         case 1: {
             // Ban target
             if (!report.target) {
-                admin.sendMessage("§cNo target player to ban (this is a server report).")
+                admin.sendMessage("\xA7cNo target player to ban (this is a server report).")
                 Kernel.system.run(() => showReportDetail(admin, reportId, report))
                 return
             }
 
             const target = Kernel.world.getAllPlayers().find(p => p.name === report.target)
             if (!target) {
-                admin.sendMessage(`§cPlayer '${report.target}' is not online.`)
+                admin.sendMessage(`\xA7cPlayer '${report.target}' is not online.`)
                 Kernel.system.run(() => showReportDetail(admin, reportId, report))
                 return
             }
@@ -104,12 +104,12 @@ async function showReportDetail(admin, reportId, report) {
                     const BanManager = Kernel.get("admin")
                     if (BanManager && BanManager.banPlayer) {
                         BanManager.banPlayer(target, admin, `Report: ${report.message}`)
-                        admin.sendMessage(`§a${report.target} has been banned.`)
+                        admin.sendMessage(`\xA7a${report.target} has been banned.`)
                     } else {
-                        admin.sendMessage("§cBan system unavailable.")
+                        admin.sendMessage("\xA7cBan system unavailable.")
                     }
                 } catch (error) {
-                    admin.sendMessage(`§cFailed to ban: ${error}`)
+                    admin.sendMessage(`\xA7cFailed to ban: ${error}`)
                 }
             })
 

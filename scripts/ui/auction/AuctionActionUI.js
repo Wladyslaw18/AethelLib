@@ -13,20 +13,20 @@ import { UIUtils } from "../UIUtils.js"
 export async function showAuctionDetailUI(player, auction) {
     const time = AuctionStore.getTimeRemaining(auction.endTime)
     const form = new ActionFormData()
-        .title("§6Auction Details")
+        .title("\xA76Auction Details")
 
-        .body(`§7Item: §f${auction.itemName}\n§7Qty: §e${auction.quantity}\n§7Seller: §e${auction.sellerName}\n§7Time: §6${time}\n\n§7Bid: §e$${auction.currentBid.toLocaleString()}\n§7Bidder: §b${auction.currentBidderName || "NONE"}\n§7Buy Now: §a$${auction.buyNowPrice ? auction.buyNowPrice.toLocaleString() : "DISABLED"}`)
+        .body(`\xA77Item: \xA7f${auction.itemName}\n\xA77Qty: \xA7e${auction.quantity}\n\xA77Seller: \xA7e${auction.sellerName}\n\xA77Time: \xA76${time}\n\n\xA77Bid: \xA7e$${auction.currentBid.toLocaleString()}\n\xA77Bidder: \xA7b${auction.currentBidderName || "NONE"}\n\xA77Buy Now: \xA7a$${auction.buyNowPrice ? auction.buyNowPrice.toLocaleString() : "DISABLED"}`)
 
     if (auction.status === "active") {
         if (auction.sellerId !== player.id) {
-            form.button("§e§lPLACE BID\n§8Submit a higher bid")
-            if (auction.buyNowPrice > 0) form.button("§a§lBUY NOW\n§8Buy this item instantly")
-        } else form.button("§c§lCANCEL AUCTION\n§8Remove from the auction house")
+            form.button("\xA7e\xA7lPLACE BID\n\xA78Submit a higher bid")
+            if (auction.buyNowPrice > 0) form.button("\xA7a\xA7lBUY NOW\n\xA78Buy this item instantly")
+        } else form.button("\xA7c\xA7lCANCEL AUCTION\n\xA78Remove from the auction house")
 
-    } else form.button("§6§lCLAIM ITEMS\n§8Get your items or credits back")
+    } else form.button("\xA76\xA7lCLAIM ITEMS\n\xA78Get your items or credits back")
 
 
-    form.button("§cBack", "textures/ui/refresh")
+    form.button("\xA7cBack", "textures/ui/refresh")
 
 
     const res = await UIUtils.showForm(player, form)
@@ -50,12 +50,12 @@ async function handleActionSelection(player, auction, selection) {
             if (selection === 1 && auction.buyNowPrice > 0) system.run(() => handleBuyNow(player, auction))
         } else if (selection === 0) {
             AuctionStore.deleteAuction(auction.id)
-            player.sendMessage("§a§l» §fAuction cancelled. Your item has been returned.")
+            player.sendMessage("\xA7a\xA7l» \xA7fAuction cancelled. Your item has been returned.")
         }
 
     } else if (selection === 0) {
         const result = AuctionStore.claimAsset(auction.id, player.id)
-        player.sendMessage(`§a§l» §fSuccess: ${result.message}`)
+        player.sendMessage(`\xA7a\xA7l» \xA7fSuccess: ${result.message}`)
     }
 
 }
@@ -63,7 +63,7 @@ async function handleActionSelection(player, auction, selection) {
 async function showBidUI(player, auction) {
     const minBid = auction.currentBid + Math.ceil(auction.currentBid * 0.05)
     const form = new ModalFormData()
-        .title("§6Place Bid")
+        .title("\xA76Place Bid")
 
         .textField(`Amount (Min: \u00A7e$${minBid.toLocaleString()}\u00A77):`, "0", { defaultValue: String(minBid) })
 
@@ -75,11 +75,11 @@ async function showBidUI(player, auction) {
 
 async function handleBuyNow(player, auction) {
     const confirm = new MessageFormData()
-        .title("§6Buy Now")
+        .title("\xA76Buy Now")
 
-        .body(`Confirm purchase for §a$${auction.buyNowPrice.toLocaleString()}?`)
-        .button1("§cCancel")
-        .button2("§aBuy Now")
+        .body(`Confirm purchase for \xA7a$${auction.buyNowPrice.toLocaleString()}?`)
+        .button1("\xA7cCancel")
+        .button2("\xA7aBuy Now")
 
 
     const res = await UIUtils.showForm(player, confirm)
@@ -93,13 +93,13 @@ export async function showCreateUI(player) {
     const item = equippable.getEquipment("Mainhand")
 
     if (!item) {
-        player.sendMessage("§c§l» §7You must be holding an item to list it.")
+        player.sendMessage("\xA7c\xA7l» \xA77You must be holding an item to list it.")
         return
     }
 
 
     const form = new ModalFormData()
-        .title("§6Create Auction")
+        .title("\xA76Create Auction")
 
         .toggle(`List ${item.typeId.replace("minecraft:", "").toUpperCase()} x${item.amount}?`, { defaultValue: true })
         .textField("Start Bid ($):", "100", { defaultValue: "100" })
@@ -112,14 +112,14 @@ export async function showCreateUI(player) {
     // 🔥 RE-VERIFY AFTER AWAIT!
     const currentItem = equippable.getEquipment("Mainhand");
     if (!currentItem || currentItem.typeId !== item.typeId || currentItem.amount !== item.amount) {
-        player.sendMessage("§c§l» §7Transaction aborted: Asset state changed during UI operation.");
+        player.sendMessage("\xA7c\xA7l» \xA77Transaction aborted: Asset state changed during UI operation.");
         return;
     }
 
     const [_, start, buy, dur] = res.formValues
     AuctionStore.createAuction(player.id, player.name, item.typeId, item.typeId.replace("minecraft:", "").toUpperCase(), item.amount, Number(start), Number(buy), Number(dur))
     equippable.setEquipment("Mainhand", undefined)
-    player.sendMessage("§a§l» §fItem listed successfully on the Auction House!")
+    player.sendMessage("\xA7a\xA7l» \xA7fItem listed successfully on the Auction House!")
 }
 
 
