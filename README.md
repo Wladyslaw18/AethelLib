@@ -10,7 +10,7 @@ So I built the last framework I'll ever need for Bedrock. And now it's yours.
 
 ---
 
-## 🚀 WHY WASTE TIME?
+## ✦&#xFE0E; WHY WASTE TIME?
 
 - **Don't Reinvent the Wheel** — I spent the sleepless nights so you don't have to. The Map lookups don't grow forever. The Database won't choke the engine. The cache evicts itself. Just plug in and play.
 - **Fork It** — Don't like my logic? Take it. Rip it apart. Make it faster. I won't cry. (I will cry. Please credit me.)
@@ -19,7 +19,7 @@ So I built the last framework I'll ever need for Bedrock. And now it's yours.
 
 ---
 
-## 🧱 WAIT — NEW HERE?
+## &#x2683;&#xFE0E; WAIT — NEW HERE?
 
 Never written a Bedrock addon before? That's fine. Here's all you need to know:
 
@@ -35,7 +35,7 @@ Once you have that? Clone the repo, drop it in your server's `behavior_packs` fo
 
 ---
 
-## 🏗️ THE ARCHITECTURE
+## ☨ THE ARCHITECTURE
 
 We use the **Stable Proxy Pattern.**
 
