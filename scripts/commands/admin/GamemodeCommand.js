@@ -1,82 +1,91 @@
 import { system, GameMode } from "@minecraft/server"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
-/*
- * Gamemode Command
- * ----------------------------------------------------------------------------
- * Handles changing a player's game mode.
- */
-
+// ----------------------------------------------------------------------------
+// | object: GamemodeCommand                                                  |
+// | command definition for altering a player's game state (survival/creative).|
+// ----------------------------------------------------------------------------
 export const GamemodeCommand = {
+    // internal name.
     name: "gamemode",
+    // human-readable description.
     description: "Change a player's game mode",
-
+    // syntax guide.
     usage: "/ae:gamemode <player_identifier> <mode_token>",
+    // required permission node.
     permission: "essentials.gamemode",
+    // command category.
     category: "Admin",
+    // native parameter definitions.
     parameters: [
         { name: "player", type: "player", optional: false },
         { name: "mode",   type: "string", optional: true }
     ],
 
-    /* 
-     * VECTOR_EXECUTION_PIPELINE
-     */
+    // ----------------------------------------------------------------------------
+    // | method: execute                                                          |
+    // | processes the gamemode change request.                                   |
+    // ----------------------------------------------------------------------------
     execute(_data, player, args) {
+        // basic input validation.
         if (args.length < 2) {
-            player.sendMessage("§c§l» §7Usage: /ae:gamemode <player> <mode>");
-            player.sendMessage("§8- Modes: survival, creative, adventure, spectator");
+            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:gamemode <player> <mode>");
+            player.sendMessage("\xA78- Modes: survival, creative, adventure, spectator");
             return
         }
 
-        // Resolve player — the last arg is always the mode token
-        // Strategy: try args[0] as player, args[last] as mode
+        // resolve inputs.
+        // the last argument is always the mode token (e.g. 'creative').
         const modeToken = args[args.length - 1].toLowerCase()
+        // everything before the last argument is treated as the player name (handles spaces).
         const nameArgs = args.slice(0, args.length - 1)
         const targetName = nameArgs.join(" ")
-        const target = PlayerUtils.findPlayer(targetName)
-
+        
+        // check if the requested mode is actually valid.
         if (!isValidGamemode(modeToken)) {
-            player.sendMessage(`§c§l» §7Invalid mode: '§e${modeToken}§7'. Use: survival, creative, adventure, spectator`);
+            player.sendMessage(`\xA7c\xA7l» \xA77Invalid mode: '\xA7e${modeToken}\xA77'. Use: survival, creative, adventure, spectator`);
             return
         }
 
+        // find the target player object.
+        const target = PlayerUtils.findPlayer(targetName)
         if (!target) {
-            player.sendMessage(`§c§l» §7Player '§e${targetName}§7' not found or is offline.`);
+            player.sendMessage(`\xA7c\xA7l» \xA77Player '\xA7e${targetName}\xA77' not found or is offline.`);
             return
         }
 
-
-        /* 
-         * REALITY_MUTATION_HOOK
-         */
+        // reality mutation hook.
+        // we use system.run to execute the change outside the current tick's event loop.
         system.run(() => {
             try {
+                // map the string tokens to the native engine GameMode enum.
                 const modeMap = {
-                    "survival": GameMode.survival,
-                    "creative": GameMode.creative,
-                    "adventure": GameMode.adventure,
-                    "spectator": GameMode.spectator
+                    "survival": GameMode.Survival,
+                    "creative": GameMode.Creative,
+                    "adventure": GameMode.Adventure,
+                    "spectator": GameMode.Spectator
                 }
-                target.setGameMode(modeMap[modeToken] || GameMode.survival)
                 
-                target.sendMessage(`§a§l» §fYour game mode was set to §e${modeToken}§f by §e${player.name}§f.`);
-                player.sendMessage(`§a§l» §fSet §e${target.name}§f's game mode to §e${modeToken}§f.`);
+                // execute the change on the player entity.
+                target.setGameMode(modeMap[modeToken] || GameMode.Survival)
+                
+                // notify both the target and the sender.
+                target.sendMessage(`\xA7a\xA7l» \xA7fYour game mode was set to \xA7e${modeToken}\xA7f by \xA7e${player.name}\xA7f.`);
+                player.sendMessage(`\xA7a\xA7l» \xA7fSet \xA7e${target.name}\xA7f's game mode to \xA7e${modeToken}\xA7f.`);
 
-                
             } catch (error) {
-                player.sendMessage(`§c§l» §7Failed to change game mode for '${target.name}'.`);
+                // log and notify if the change fails.
+                player.sendMessage(`\xA7c\xA7l» \xA77Failed to change game mode for '${target.name}'.`);
             }
-
         })
     }
 }
 
-/* 
- * MODE_MANIFEST_VALIDATOR
- */
+// ----------------------------------------------------------------------------
+// | function: isValidGamemode                                                |
+// | checks if the provided string is one of the 4 supported bedrock modes.   |
+// ----------------------------------------------------------------------------
 function isValidGamemode(mode) {
     const validModes = ["survival", "creative", "adventure", "spectator"]
     return validModes.includes(mode)
 }
-
