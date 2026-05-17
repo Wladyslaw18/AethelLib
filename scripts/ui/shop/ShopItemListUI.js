@@ -18,7 +18,7 @@ async function showItemList(player, category) {
         await showItemListPage(player, items, category, 0)
     } catch (error) {
         console.error(`[ShopItemListUI] MANIFEST_LOAD_FAILURE: ${error}`)
-        player.sendMessage("§cINDUSTRIAL_INTERFACE_FAILURE: UNABLE_TO_LOAD_MANIFEST")
+        player.sendMessage("\xA7cINDUSTRIAL_INTERFACE_FAILURE: UNABLE_TO_LOAD_MANIFEST")
     }
 }
 
@@ -34,21 +34,21 @@ async function showItemListPage(player, items, category, page) {
     const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE)
 
     const form = new ActionFormData()
-        .title(`§6§lMODULE: ${category.toUpperCase()}`)
-        .body(`§7Page: ${page + 1}/${totalPages || 1}\n§7Active_Assets: ${items.length}`)
+        .title(`\xA76\xA7lMODULE: ${category.toUpperCase()}`)
+        .body(`\xA77Page: ${page + 1}/${totalPages || 1}\n\xA77Active_Assets: ${items.length}`)
 
-    form.button("§c[RETURN_TO_MANIFEST_ROOT]")
+    form.button("\xA7c[RETURN_TO_MANIFEST_ROOT]")
 
     if (page > 0) {
-        form.button("§7← [PREVIOUS_BUFFER]")
+        form.button("\xA77← [PREVIOUS_BUFFER]")
     }
     if (page < totalPages - 1) {
-        form.button("§7[NEXT_BUFFER] →")
+        form.button("\xA77[NEXT_BUFFER] →")
     }
 
     for (let i = startIndex; i < endIndex; i++) {
         const item = items[i]
-        form.button(`§e${item.name}\n§7CREDITS: §a${item.price}`)
+        form.button(`\xA7e${item.name}\n\xA77CREDITS: \xA7a${item.price}`)
     }
 
     const res = await form.show(player)

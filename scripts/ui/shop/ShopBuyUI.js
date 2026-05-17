@@ -10,7 +10,7 @@ import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 export async function showBuyFlow(player, item) {
     try {
         const modal = new ModalFormData()
-            .title(`§6Purchase: ${item.displayName}`)
+            .title(`\xA76Purchase: ${item.displayName}`)
             .slider("Amount to buy:", 1, 64, { defaultValue: 1, valueStep: 1 })
 
 
@@ -22,7 +22,7 @@ export async function showBuyFlow(player, item) {
         const balance = EconomyStore.getBalance(player)
 
         if (balance < total) {
-            player.sendMessage(`§c§l» §7You don't have enough money! (§e$${total}§7)`)
+            player.sendMessage(`\xA7c\xA7l» \xA77You don't have enough money! (\xA7e$${total}\xA77)`)
             return
         }
 
@@ -34,19 +34,19 @@ export async function showBuyFlow(player, item) {
                 const { ItemStack } = await import("@minecraft/server")
                 const itemStack = new ItemStack(item.id, qty)
                 inv.addItem(itemStack)
-                player.sendMessage(`§a§l» §fPurchased §e${qty}x ${item.name} §ffor §a$${total}§f.`)
+                player.sendMessage(`\xA7a\xA7l» \xA7fPurchased \xA7e${qty}x ${item.name} \xA7ffor \xA7a$${total}\xA7f.`)
 
             } else {
                 EconomyStore.addMoney(player, total)
-                player.sendMessage("§c§l» §7Failed to access inventory. Refunded.")
+                player.sendMessage("\xA7c\xA7l» \xA77Failed to access inventory. Refunded.")
             }
         } else {
-            player.sendMessage("§c§l» §7Transaction failed.")
+            player.sendMessage("\xA7c\xA7l» \xA77Transaction failed.")
         }
 
     } catch (error) {
         console.error(`[ShopBuyUI] TRANSACTION_CRASH: ${error}`)
-        player.sendMessage("§c§l» §7Transaction failed.")
+        player.sendMessage("\xA7c\xA7l» \xA77Transaction failed.")
     }
 
 }

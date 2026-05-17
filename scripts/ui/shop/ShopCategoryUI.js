@@ -15,16 +15,16 @@ export async function showCategoryUI(player) {
     const balance = Kernel.get("economy").getBalance(player)
     
     const form = new ActionFormData()
-        .title("§0§l» §6§lCOMMERCE_ENGINE§0 «")
-        .body(`§7Interface: §eSTABLE§7\n§7Liquidity_Buffer: §6$${balance}§7\n\n§7Select industrial trade-module:`)
-        .button("§c[TERMINATE_SESSION]")
-        .button("§lCOMBAT_ORDINANCE\n§8(WEAPONS)", "textures/items/diamond_sword")
-        .button("§lPROTECTION_SUITES\n§8(ARMOR)", "textures/items/diamond_chestplate")
-        .button("§lMINING_EQUIPMENT\n§8(TOOLS)", "textures/items/diamond_pickaxe")
-        .button("§lBIOMASS_SUPPLY\n§8(FOOD)", "textures/items/apple")
-        .button("§lCONSTRUCTION_MATERIALS\n§8(BLOCKS)", "textures/items/stone_bricks")
-        .button("§lARCANE_AUGMENTATIONS\n§8(ENCHANTS)", "textures/items/book_enchanted")
-        .button("§lGLOBAL_QUERY\n§8(SEARCH)", "textures/ui/magnifying_glass")
+        .title("\xA70\xA7l» \xA76\xA7lCOMMERCE_ENGINE\xA70 «")
+        .body(`\xA77Interface: \xA7eSTABLE\xA77\n\xA77Liquidity_Buffer: \xA76$${balance}\xA77\n\n\xA77Select industrial trade-module:`)
+        .button("\xA7c[TERMINATE_SESSION]")
+        .button("\xA7lCOMBAT_ORDINANCE\n\xA78(WEAPONS)", "textures/items/diamond_sword")
+        .button("\xA7lPROTECTION_SUITES\n\xA78(ARMOR)", "textures/items/diamond_chestplate")
+        .button("\xA7lMINING_EQUIPMENT\n\xA78(TOOLS)", "textures/items/diamond_pickaxe")
+        .button("\xA7lBIOMASS_SUPPLY\n\xA78(FOOD)", "textures/items/apple")
+        .button("\xA7lCONSTRUCTION_MATERIALS\n\xA78(BLOCKS)", "textures/items/stone_bricks")
+        .button("\xA7lARCANE_AUGMENTATIONS\n\xA78(ENCHANTS)", "textures/items/book_enchanted")
+        .button("\xA7lGLOBAL_QUERY\n\xA78(SEARCH)", "textures/ui/magnifying_glass")
 
     const res = await form.show(player)
     if (res.canceled) return
@@ -51,7 +51,7 @@ export async function showSearchUI(player) {
     const { showSearchResults } = await import("./ShopSearchUI.js")
     
     const modal = new ModalFormData()
-        .title("§6INDUSTRIAL_QUERY")
+        .title("\xA76INDUSTRIAL_QUERY")
         .textField("Input entity identifier or asset name:", "e.g. diamond...")
 
     const res = await modal.show(player)

@@ -23,7 +23,7 @@ async function showSearchResults(player, query) {
         await showResultsPage(player, results, query, 0)
     } catch (error) {
         console.error(`[ShopSearchUI] QUERY_FAILURE: ${error}`)
-        player.sendMessage("§cINDUSTRIAL_INTERFACE_FAILURE: UNABLE_TO_EXECUTE_QUERY")
+        player.sendMessage("\xA7cINDUSTRIAL_INTERFACE_FAILURE: UNABLE_TO_EXECUTE_QUERY")
     }
 }
 
@@ -39,21 +39,21 @@ async function showResultsPage(player, results, query, page) {
     const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE)
 
     const form = new ActionFormData()
-        .title("§6§lQUERY_RESULTS")
-        .body(`§7Query: "${query}"\n§7Page: ${page + 1}/${totalPages || 1}\n§7Matches: ${results.length}`)
+        .title("\xA76\xA7lQUERY_RESULTS")
+        .body(`\xA77Query: "${query}"\n\xA77Page: ${page + 1}/${totalPages || 1}\n\xA77Matches: ${results.length}`)
 
-    form.button("§c[RETURN_TO_MANIFEST_ROOT]")
+    form.button("\xA7c[RETURN_TO_MANIFEST_ROOT]")
 
     if (page > 0) {
-        form.button("§7← [PREVIOUS_BUFFER]")
+        form.button("\xA77← [PREVIOUS_BUFFER]")
     }
     if (page < totalPages - 1) {
-        form.button("§7[NEXT_BUFFER] →")
+        form.button("\xA77[NEXT_BUFFER] →")
     }
 
     for (let i = startIndex; i < endIndex; i++) {
         const item = results[i]
-        form.button(`§e${item.name}\n§7CREDITS: §a${item.price}`)
+        form.button(`\xA7e${item.name}\n\xA77CREDITS: \xA7a${item.price}`)
     }
 
     const res = await form.show(player)

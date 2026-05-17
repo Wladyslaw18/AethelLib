@@ -15,7 +15,7 @@ export async function showPlayerInteractionUI(player, target) {
         .button(Lang.UI.PLAYER_PAY, "textures/items/gold_ingot")
         .button(Lang.UI.PLAYER_MSG, "textures/items/paper")
         .button(Lang.UI.PLAYER_TP, "textures/items/ender_pearl")
-        .button("§c§l[BACK]", "textures/ui/refresh")
+        .button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === 3) {

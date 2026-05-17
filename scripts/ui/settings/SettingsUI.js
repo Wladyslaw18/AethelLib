@@ -13,9 +13,9 @@ export async function showSettingsUI(player) {
     const scoreboardVisible = PlayerStore.get(player, "settings:scoreboard") !== false
 
     const form = new ModalFormData()
-        .title("§7§l⚙️ Settings")
-        .toggle("§eTPA Requests", { defaultValue: tpaEnabled })
-        .toggle("§6Scoreboard Visible", { defaultValue: scoreboardVisible })
+        .title("\xA77\xA7l⚙️ Settings")
+        .toggle("\xA7eTPA Requests", { defaultValue: tpaEnabled })
+        .toggle("\xA76Scoreboard Visible", { defaultValue: scoreboardVisible })
 
     // @ts-ignore
     const response = await form.show(player)
@@ -38,6 +38,6 @@ export async function showSettingsUI(player) {
         } catch { /* ignore */ }
     }
 
-    player.sendMessage("§aSettings saved!")
-    player.sendMessage(`§7TPA: ${newTpa ? "§aEnabled" : "§cDisabled"} §7| Scoreboard: ${newScoreboard ? "§aVisible" : "§cHidden"}`)
+    player.sendMessage("\xA7aSettings saved!")
+    player.sendMessage(`\xA77TPA: ${newTpa ? "\xA7aEnabled" : "\xA7cDisabled"} \xA77| Scoreboard: ${newScoreboard ? "\xA7aVisible" : "\xA7cHidden"}`)
 }
