@@ -1,4 +1,4 @@
-# <span style="color:#D4AF37">⚜ AethelLib Architecture ⚜</span>
+# <span style="color:#D4AF37">⚜&#xFE0E; AethelLib Architecture ⚜&#xFE0E;</span>
 
 <br>
 
