@@ -1,27 +1,30 @@
-# <span style="color:#D4AF37">⚜ AethelLib Architecture ⚜</span>
+# ⚜ AethelLib Architecture ⚜
 
-<br>
+---
 
-## <span style="color:#5D9CEC">✦ Root & Deployment Scripts ✦</span>
+## ✦ Root & Deployment Scripts ✦
 
 > 🖈 _Located at `scripts/`_
 >
 > _The root entry points, global types, and deployment utilities that orchestrate the repository._
 
-````text
+```
 AethelLib/
 ├── ⚙ main.js                          # Main entry point that initializes the kernel and modules
 ├── ⚙ Configuration.js                 # Global configuration settings and constants for the add-on
 ├── ▤ types.js                         # Shared type definitions for intellisense and codebase strictness
 
+```
+
 ---
 
-## <span style="color:#ED5565">✦ Core Kernel & Framework ✦</span>
-> 🖈 *Located at `scripts/core/` and `scripts/bootstrap/`*
->
-> *The heart of AethelLib. Handles lifecycle events, dependency injection, and core data abstractions.*
+## ✦ Core Kernel & Framework ✦
 
-```text
+> 🖈 _Located at `scripts/core/` and `scripts/bootstrap/`_
+>
+> _The heart of AethelLib. Handles lifecycle events, dependency injection, and core data abstractions._
+
+```
 core/
 ├── ⬢ Kernel.js                        # The central nervous system, manages lifecycle, services, and events
 ├── ⬢ LifecycleController.js           # Controls and sequences the server startup/shutdown phases
@@ -69,17 +72,17 @@ bootstrap/
 ├── ⚙ early.js                         # Early startup logic (runs before primary initialization)
 ├── ⚙ services.js                      # Bootstraps background services
 └── ⚙ systems.js                       # Bootstraps modular gameplay systems
-````
+```
 
 ---
 
-## <span style="color:#A0D468">✦ Game Systems & Services ✦</span>
+## ✦ Game Systems & Services ✦
 
 > 🖈 _Located at `scripts/systems/`_
 >
 > _The high-level logic covering player moderation, economy, teleportation, and game rules._
 
-```text
+```
 systems/
 ├── admin/                             # 🖿 Administration Services
 │   └── ⚙ BanManager.js                # Manages ban lists and prevents unauthorized access
@@ -153,13 +156,13 @@ systems/
 
 ---
 
-## <span style="color:#AC92EC">✦ UI Form Generators ✦</span>
+## ✦ UI Form Generators ✦
 
 > 🖈 _Located at `scripts/ui/`_
 >
 > _Client-side form generation bridging @minecraft/server-ui with AethelLib systems._
 
-```text
+```
 ui/
 ├── ⚙ Lang.js                          # Language and string registry for UI form localization
 ├── ⚙ MainGUI.js                       # The primary hub menu for players
@@ -205,13 +208,13 @@ ui/
 
 ---
 
-## <span style="color:#4FC1E9">✦ Commands Suite ✦</span>
+## ✦ Commands Suite ✦
 
 > 🖈 _Located at `scripts/commands/`_
 >
 > _User-facing chat commands bound via the CommandManager._
 
-```text
+```
 commands/
 ├── ⚙ AdminRegistry.js                 # Bootstraps admin-tier commands
 ├── ⚙ EconomyRegistry.js               # Bootstraps economic-tier commands
@@ -241,13 +244,13 @@ commands/
 
 ---
 
-## <span style="color:#FFCE54">✦ Utilities & Data ✦</span>
+## ✦ Utilities & Data ✦
 
 > 🖈 _Located at `scripts/utils/`, `scripts/data/`, and `scripts/events/`_
 >
 > _Static configurations, game event listeners, and math/formatting helpers._
 
-```text
+```
 data/
 ├── ▤ KillstreakConfig.js              # Defines kills required for rewards
 ├── ▤ minecraft-items.js               # Master metadata index of all vanilla items
@@ -269,13 +272,13 @@ utils/
 
 ---
 
-## <span style="color:#8CC152">✦ Plugins (Extension API) ✦</span>
+## ✦ Plugins (Extension API) ✦
 
 > 🖈 _Located at `scripts/plugins/`_
 >
 > _Isolated environments capable of interacting with the Kernel without modifying Core._
 
-```text
+```
 plugins/
 ├── ⚙ PluginLoader.js                  # Evaluates and securely mounts plugins on startup
 │
