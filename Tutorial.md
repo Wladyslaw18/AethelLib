@@ -1,4 +1,4 @@
-# ⚒ AethelLib — Full Tutorial
+# ⚜&#xFE0E; AethelLib — Full Tutorial
 
 > *"You installed it. Now what? This doc. Read this doc."*
 
