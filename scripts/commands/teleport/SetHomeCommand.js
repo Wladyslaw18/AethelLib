@@ -1,6 +1,6 @@
+import { Kernel } from "../../core/Kernel.js";
 import { HomeStore } from "../../systems/teleport/HomeStore.js"
 import { RankSystem } from "../../systems/social/ranks/RankSystem.js"
-import { system } from "@minecraft/server"
 
 // ----------------------------------------------------------------------------
 // | object: SetHomeCommand                                                   |
@@ -36,7 +36,7 @@ export const SetHomeCommand = {
             // dynamic import to keep the command registry lightweight.
             const { showCreateHomeUI } = await import("../../ui/teleport/HomeActionUI.js")
             // execute on next tick to avoid UI constraints.
-            system.run(() => showCreateHomeUI(player))
+            Kernel.system.run(() => showCreateHomeUI(player))
             return
         }
 

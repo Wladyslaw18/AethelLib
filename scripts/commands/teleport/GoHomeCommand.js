@@ -1,6 +1,5 @@
 import { HomeStore } from "../../systems/teleport/HomeStore.js"
 import { Kernel } from "../../core/Kernel.js"
-import { system } from "@minecraft/server"
 
 // ----------------------------------------------------------------------------
 // | variable: cooldowns                                                      |
@@ -53,8 +52,8 @@ export const GoHomeCommand = {
         const cd = Number(cdValue) * 20
         const last = cooldowns.get(player.id) ?? 0
         
-        if (system.currentTick - last < cd) {
-            const remaining = Math.ceil((cd - (system.currentTick - last)) / 20)
+        if (Kernel.system.currentTick - last < cd) {
+            const remaining = Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)
             player.sendMessage(`\xA7c\xA7l» \xA77Please wait \xA7e${remaining}s \xA77before using this again.`);
             return
         }
@@ -85,6 +84,6 @@ export const GoHomeCommand = {
         }
 
         // update the cooldown pointer.
-        cooldowns.set(player.id, system.currentTick)
+        cooldowns.set(player.id, Kernel.system.currentTick)
     }
 }
