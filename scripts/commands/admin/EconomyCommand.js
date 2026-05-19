@@ -1,4 +1,4 @@
-import { world } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 
 // ----------------------------------------------------------------------------
@@ -40,8 +40,8 @@ export const EconomyCommand = {
         const playerName = args[1]
 
         // step 1: entity resolution.
-        // locate the target player object in the current world buffer.
-        const target = world.getAllPlayers().find(p => p.name === playerName)
+        // locate the target player object in the current Kernel.world buffer.
+        const target = Kernel.world.getAllPlayers().find(p => p.name === playerName)
         if (!target) {
             player.sendMessage(`\xA7c\xA7l» \xA77Player '${playerName}' not found.`);
             return

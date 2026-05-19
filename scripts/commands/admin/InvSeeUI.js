@@ -1,5 +1,4 @@
-import { ActionFormData } from "@minecraft/server-ui"
-import { EntityComponentTypes, EquipmentSlot, system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { Lang } from "../../ui/Lang.js"
 
 /*
@@ -15,20 +14,20 @@ import { Lang } from "../../ui/Lang.js"
  */
 
 export async function showInventoryUI(viewer, target) {
-    const inv = target.getComponent(EntityComponentTypes.Inventory)
-    const equip = target.getComponent(EntityComponentTypes.Equippable)
+    const inv = target.getComponent(Kernel.EntityComponentTypes.Inventory)
+    const equip = target.getComponent(Kernel.EntityComponentTypes.Equippable)
     
     if (!inv?.container) {
         viewer.sendMessage(Lang.ERROR + "Access violation: Inventory buffer unreachable.");
         return
     }
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.GRID_L + "\xA70" + target.name + "'s Inventory")
         .body(`\xA77Auditing player assets...`)
 
     // 1. ARMOR SLOTS (0-4)
-    const armorSlots = [EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Feet, EquipmentSlot.Offhand]
+    const armorSlots = [Kernel.EquipmentSlot.Head, Kernel.EquipmentSlot.Chest, Kernel.EquipmentSlot.Legs, Kernel.EquipmentSlot.Feet, Kernel.EquipmentSlot.Offhand]
     for (const slot of armorSlots) {
         const item = equip?.getEquipment(slot)
         form.button(item ? `\xA7f${item.amount}x` : "\xA78Empty", item ? Lang.getTexture(item.typeId) : "textures/ui/empty_armor_slot_" + slot.toLowerCase())
@@ -84,11 +83,11 @@ export async function showInventoryUI(viewer, target) {
     }
     
     // Refresh UI after action
-    system.run(() => showInventoryUI(viewer, target))
+    Kernel.system.run(() => showInventoryUI(viewer, target))
 }
 
 async function showItemActionMenu(viewer, target, item, type, slot) {
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA76\xA7lAsset Action")
         .body(`\xA77Item: \xA7e${item.typeId}\n\xA77Amount: \xA7f${item.amount}\n\xA78Select protocol.`)
         .button("\xA7a\xA7lTAKE\n\xA78Move to your inventory", "textures/ui/realms_slot_check")
@@ -100,8 +99,8 @@ async function showItemActionMenu(viewer, target, item, type, slot) {
 
     if (res.selection === 0) {
         // TAKE
-        system.run(() => {
-            const viewerInv = viewer.getComponent(EntityComponentTypes.Inventory)?.container
+        Kernel.system.run(() => {
+            const viewerInv = viewer.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
             if (!viewerInv) return
             
             const leftover = viewerInv.addItem(item)
@@ -111,20 +110,20 @@ async function showItemActionMenu(viewer, target, item, type, slot) {
             }
 
             if (type === "armor") {
-                target.getComponent(EntityComponentTypes.Equippable).setEquipment(slot, undefined)
+                target.getComponent(Kernel.EntityComponentTypes.Equippable).setEquipment(slot, undefined)
             } else {
-                target.getComponent(EntityComponentTypes.Inventory).container.setItem(slot, undefined)
+                target.getComponent(Kernel.EntityComponentTypes.Inventory).container.setItem(slot, undefined)
             }
             
             viewer.sendMessage(Lang.SUCCESS + `Taken ${item.amount}x ${item.typeId} from ${target.name}.`)
         })
     } else if (res.selection === 1) {
         // PURGE
-        system.run(() => {
+        Kernel.system.run(() => {
             if (type === "armor") {
-                target.getComponent(EntityComponentTypes.Equippable).setEquipment(slot, undefined)
+                target.getComponent(Kernel.EntityComponentTypes.Equippable).setEquipment(slot, undefined)
             } else {
-                target.getComponent(EntityComponentTypes.Inventory).container.setItem(slot, undefined)
+                target.getComponent(Kernel.EntityComponentTypes.Inventory).container.setItem(slot, undefined)
             }
             viewer.sendMessage(Lang.SUCCESS + `Purged ${item.typeId} from ${target.name}.`)
         })
@@ -132,10 +131,10 @@ async function showItemActionMenu(viewer, target, item, type, slot) {
 }
 
 async function showGiveMenu(viewer, target) {
-    const viewerInv = viewer.getComponent(EntityComponentTypes.Inventory)?.container
+    const viewerInv = viewer.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
     if (!viewerInv) return
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA76\xA7lSelect Asset to Give")
         .body(`\xA77Transferring to \xA7e${target.name}\xA77.`)
 
@@ -158,8 +157,8 @@ async function showGiveMenu(viewer, target) {
     if (res.canceled) return
 
     const selected = items[res.selection]
-    system.run(() => {
-        const targetInv = target.getComponent(EntityComponentTypes.Inventory)?.container
+    Kernel.system.run(() => {
+        const targetInv = target.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
         if (!targetInv) return
 
         const leftover = targetInv.addItem(selected.item)

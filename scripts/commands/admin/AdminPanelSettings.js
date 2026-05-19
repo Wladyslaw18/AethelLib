@@ -2,7 +2,6 @@
  * Admin Panel Settings - Global system configuration
  */
 
-import { ModalFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { showAdminPanel } from "./AdminPanelMain.js"
 import { SettingsStore } from "../../core/store/SettingsStore.js"
@@ -17,7 +16,7 @@ export async function showServerSettings(player) {
 
     const settings = SettingsStore.getAll()
 
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA7e\xA7lSettings Panel")
         .textField("starterMoney\nSet Player Starter Money", "100", { defaultValue: String(settings.starterMoney || "100") })
         .textField("maxMoney\nSet Max Money", "1e+32", { defaultValue: String(settings.maxMoney || "1e+32") })

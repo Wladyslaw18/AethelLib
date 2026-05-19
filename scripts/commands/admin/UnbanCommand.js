@@ -1,4 +1,3 @@
-import { world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 
 // ----------------------------------------------------------------------------
@@ -82,7 +81,7 @@ export const UnbanCommand = {
 
 // ----------------------------------------------------------------------------
 // | function: getBans                                                        |
-// | internal helper to fetch the ban array from world storage.               |
+// | internal helper to fetch the ban array from Kernel.world storage.               |
 // ----------------------------------------------------------------------------
 function getBans() {
     try {

@@ -1,4 +1,3 @@
-import { system, world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 
 // ----------------------------------------------------------------------------
@@ -45,7 +44,7 @@ export const BanCommand = {
 
         // find the player object. they must be online to be banned by this command.
         // for offline bans, use the admin panel or a separate command.
-        const target = world.getAllPlayers().find(p => p.name.toLowerCase() === targetName.toLowerCase())
+        const target = Kernel.world.getAllPlayers().find(p => p.name.toLowerCase() === targetName.toLowerCase())
         if (!target) {
             player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found.`);
             return
@@ -81,7 +80,7 @@ export const BanCommand = {
         // step 4: commit to the database.
         if (addBan(banData)) {
             // step 5: terminate the player's session.
-            system.run(() => {
+            Kernel.system.run(() => {
                 try {
                     // execute the native kick command.
                     player.runCommand(`kick "${target.name}" \xA7c[BAN]\n\xA7eREASON: ${reason}`)
@@ -93,7 +92,7 @@ export const BanCommand = {
 
             // step 6: notify other staff members.
             const banMessage = formatBanMessage(banData)
-            world.getAllPlayers().forEach(p => {
+            Kernel.world.getAllPlayers().forEach(p => {
                 if (PermissionManager.hasPermission(p, "essentials.admin.notify") || p.id === player.id) {
                     p.sendMessage(banMessage)
                 }

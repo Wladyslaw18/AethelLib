@@ -1,5 +1,3 @@
-import { world } from "@minecraft/server"
-import { ModalFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { UIUtils } from "../../ui/UIUtils.js"
 import { SettingsStore } from "../../core/store/SettingsStore.js"
@@ -41,7 +39,7 @@ export const ResetDataCommand = {
         ]
 
         // build the selection form.
-        const form = new ModalFormData()
+        const form = new Kernel.ModalFormData()
             .title("\xA7c\xA7lRESET DATA")
             .dropdown("Choose data that you want to reset :", categories)
 

@@ -1,4 +1,4 @@
-import { EntityComponentTypes, ItemStack } from "@minecraft/server";
+import { Kernel } from "../../core/Kernel.js";
 import { ShopRegistry } from "../../systems/shop/ShopRegistry.js";
 import { ValidationHelper } from "../../utils/ValidationHelper.js";
 
@@ -30,7 +30,7 @@ export const ShopAdminCommands = [
             }
 
             // GET HELD ITEM
-            const equippable = player.getComponent(EntityComponentTypes.Equippable);
+            const equippable = player.getComponent(Kernel.EntityComponentTypes.Equippable);
             const item = equippable?.getEquipment("Mainhand");
 
             if (!item) {

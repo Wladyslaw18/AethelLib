@@ -1,4 +1,4 @@
-import { system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { showInventoryUI } from "./InvSeeUI.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
@@ -47,8 +47,8 @@ export const InvSeeCommand = {
         }
 
         // launch the UI vector.
-        // we use system.run to avoid triggering UI constraints in the same tick as the command.
-        system.run(() => {
+        // we use Kernel.system.run to avoid triggering UI constraints in the same tick as the command.
+        Kernel.system.run(() => {
             showInventoryUI(player, target)
         })
     }

@@ -1,4 +1,3 @@
-import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { showPlayerManagement } from "./AdminPanelPlayers.js"
 import { showServerSettings } from "./AdminPanelSettings.js"
@@ -53,7 +52,7 @@ export async function showAdminPanel(player) {
     const uptimeStr = `${minutes} minutes, ${seconds} seconds`
 
     // create the action form (the button menu).
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7a\xA7e\xA7m\xA7e\xA7lAdmin Panel")
         // set the main body text with the stats we gathered.
         .body(`\xA7aUsername : \xA7f${player.name}\n\xA7aServer Online : \xA7f${uptimeStr}\n\xA7aPlayers Online : \xA7f${onlinePlayers}\n\xA7aTPS : \xA7f${tps}`)

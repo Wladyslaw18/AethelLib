@@ -1,4 +1,4 @@
-import { system, GameMode } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 // ----------------------------------------------------------------------------
@@ -55,19 +55,19 @@ export const GamemodeCommand = {
         }
 
         // reality mutation hook.
-        // we use system.run to execute the change outside the current tick's event loop.
-        system.run(() => {
+        // we use Kernel.system.run to execute the change outside the current tick's event loop.
+        Kernel.system.run(() => {
             try {
-                // map the string tokens to the native engine GameMode enum.
+                // map the string tokens to the native engine Kernel.GameMode enum.
                 const modeMap = {
-                    "survival": GameMode.Survival,
-                    "creative": GameMode.Creative,
-                    "adventure": GameMode.Adventure,
-                    "spectator": GameMode.Spectator
+                    "survival": Kernel.GameMode.Survival,
+                    "creative": Kernel.GameMode.Creative,
+                    "adventure": Kernel.GameMode.Adventure,
+                    "spectator": Kernel.GameMode.Spectator
                 }
                 
                 // execute the change on the player entity.
-                target.setGameMode(modeMap[modeToken] || GameMode.Survival)
+                target.setGameMode(modeMap[modeToken] || Kernel.GameMode.Survival)
                 
                 // notify both the target and the sender.
                 target.sendMessage(`\xA7a\xA7l» \xA7fYour game mode was set to \xA7e${modeToken}\xA7f by \xA7e${player.name}\xA7f.`);

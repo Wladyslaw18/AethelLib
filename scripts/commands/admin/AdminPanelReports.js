@@ -2,7 +2,6 @@
  * Admin Panel Reports - Reports and logs sub-panel
  */
 
-import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { showAdminPanel } from "./AdminPanelMain.js"
 
@@ -14,7 +13,7 @@ export async function showReports(player) {
         player.sendMessage("\xA7cNo permission.")
         return
     }
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA76\xA7lReports & Logs")
         .body("Select a report or log category")
         .button("\xA7aView Reports")
@@ -53,7 +52,7 @@ export async function showReports(player) {
 }
 
 async function showReportsList(player) {
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA76\xA7lPlayer Reports")
         .body("Select a report to view details")
         .button("\xA7aNo active reports found")
@@ -72,7 +71,7 @@ async function showReportsList(player) {
 }
 
 async function showPlayerHistory(player) {
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA76\xA7lPlayer History")
         .body("Select a player to view history")
         .button("\xA77No players online")

@@ -1,4 +1,3 @@
-import { system, world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 

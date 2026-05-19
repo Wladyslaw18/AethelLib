@@ -1,4 +1,4 @@
-import { world } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { RankSystem } from "../../systems/social/ranks/RankSystem.js"
 
 /*
@@ -141,7 +141,7 @@ async function handleDelete(player, args) {
     if (success) {
         player.sendMessage(`\xA7a\xA7l» \xA7fRank \xA7e${tag}\xA7f has been deleted.`);
         
-        world.getAllPlayers().forEach(p => {
+        Kernel.world.getAllPlayers().forEach(p => {
             if (p.hasTag(tag)) {
                 p.removeTag(tag)
             }
@@ -170,7 +170,7 @@ async function handleAdd(player, args) {
     }
 
 
-    const target = world.getAllPlayers().find(p => p.name === playerName)
+    const target = Kernel.world.getAllPlayers().find(p => p.name === playerName)
     if (!target) {
         player.sendMessage(`\xA7c\xA7l» \xA77Player '${playerName}' not found.`);
         return
@@ -195,7 +195,7 @@ async function handleRemove(player, args) {
 
     const [playerName, tag] = args
 
-    const target = world.getAllPlayers().find(p => p.name === playerName)
+    const target = Kernel.world.getAllPlayers().find(p => p.name === playerName)
     if (!target) {
         player.sendMessage(`[Error] Entity '${playerName}' not found in active buffer.`);
         return

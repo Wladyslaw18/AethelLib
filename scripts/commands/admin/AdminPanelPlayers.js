@@ -1,4 +1,3 @@
-import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { showAdminPanel } from "./AdminPanelMain.js"
 import { showIndividualPlayerPanel } from "./player_modules/PlayerIndividualUI.js"
@@ -15,7 +14,7 @@ export async function showPlayerManagement(player) {
     }
 
     const players = Kernel.world.getAllPlayers()
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7a\xA7e\xA7l\xA7e\xA7lPlayers Panel")
         .body(`\xA7aPlayers Online : \xA7f${players.length}`)
 

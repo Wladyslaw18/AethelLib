@@ -2,7 +2,6 @@
  * Admin Panel Banned - Banned players sub-panel
  */
 
-import { ActionFormData} from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { showAdminPanel } from "./AdminPanelMain.js"
 import { UIUtils } from "../../ui/UIUtils.js"
@@ -17,7 +16,7 @@ export async function showBannedPlayers(player) {
     const BanManager = Kernel.get("banManager")
     const bans = BanManager.getBans()
     
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7a\xA7e\xA7l\xA7c\xA7lBanned Panel")
         .body(`\xA7aTotal Players Banned : \xA7f${bans.length}`)
 
@@ -42,7 +41,7 @@ export async function showBannedPlayers(player) {
 async function showBanInfoPanel(player, ban) {
     const expires = ban.expires === 0 ? "PERMANENT" : new Date(ban.expires).toLocaleString()
     
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(`\xA7c\xA7l${ban.playerName} Ban`)
         .body(`\xA7aId : \xA7f${ban.playerId}\n\xA7aReason : \xA7f${ban.reason}\n\xA7aExpires : \xA7f${expires}`)
         .button("\xA7eUnban Player", "textures/items/totem")

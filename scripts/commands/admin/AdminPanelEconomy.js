@@ -2,7 +2,6 @@
  * Admin Panel Economy - Economy control sub-panel
  */
 
-import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { showAdminPanel } from "./AdminPanelMain.js"
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
@@ -16,7 +15,7 @@ export async function showEconomyControl(player) {
         player.sendMessage("\xA7cNo permission.")
         return
     }
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7a\xA7e\xA7m\xA76\xA7lEconomy Control")
         .body("Select an economy action")
         .button("\xA7aGive Money", "textures/items/emerald")
@@ -61,7 +60,7 @@ async function showGiveMoneyInterface(player) {
         return
     }
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7a\xA7e\xA7l\xA76\xA7lGive Money")
         .body("Select a player to give money to")
 
@@ -77,7 +76,7 @@ async function showGiveMoneyInterface(player) {
 
     const target = players[res.selection]
     
-    const amountForm = new ModalFormData()
+    const amountForm = new Kernel.ModalFormData()
         .title("\xA76\xA7lGive Money")
         .textField("Amount:", "1000")
         .toggle("Confirm Give", { defaultValue: false })
@@ -108,7 +107,7 @@ async function showTakeMoneyInterface(player) {
         return
     }
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7a\xA7e\xA7l\xA76\xA7lTake Money")
         .body("Select a player to take money from")
 
@@ -124,7 +123,7 @@ async function showTakeMoneyInterface(player) {
 
     const target = players[res.selection]
     
-    const amountForm = new ModalFormData()
+    const amountForm = new Kernel.ModalFormData()
         .title("\xA76\xA7lTake Money")
         .textField("Amount:", "1000")
         .toggle("Confirm Take", { defaultValue: false })
@@ -155,7 +154,7 @@ async function showSetBalanceInterface(player) {
         return
     }
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7a\xA7e\xA7l\xA76\xA7lSet Balance")
         .body("Select a player to set balance for")
 
@@ -171,7 +170,7 @@ async function showSetBalanceInterface(player) {
 
     const target = players[res.selection]
     
-    const amountForm = new ModalFormData()
+    const amountForm = new Kernel.ModalFormData()
         .title("\xA76\xA7lSet Balance")
         .textField("New Balance:", "1000")
         .toggle("Confirm Set", { defaultValue: false })
