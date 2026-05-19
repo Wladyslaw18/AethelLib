@@ -1,10 +1,9 @@
-import { ModalFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../../core/Kernel.js"
 import { ValidationHelper } from "../../../utils/ValidationHelper.js"
 
 export async function showSetMoneyUI(player, target, backCallback) {
     const economy = Kernel.get("economy")
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA7e\xA7lSet Money")
         // @ts-ignore
         .textField("Amount:", "Enter amount")

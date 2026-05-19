@@ -1,4 +1,3 @@
-import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../../core/Kernel.js"
 
 export async function showHomeListUI(player, target, backCallback) {
@@ -10,7 +9,7 @@ export async function showHomeListUI(player, target, backCallback) {
         return backCallback()
     }
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(`\xA7e\xA7lHomes: ${target.name}`)
         .body(`Total Assets: ${homes.length}`)
 

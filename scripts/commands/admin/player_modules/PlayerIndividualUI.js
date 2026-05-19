@@ -1,4 +1,3 @@
-import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../../core/Kernel.js"
 import { showInventoryUI } from "../InvSeeUI.js"
 import { showSetMoneyUI } from "./PlayerEconomyUI.js"
@@ -18,7 +17,7 @@ export async function showIndividualPlayerPanel(player, target, backCallback) {
     const pos = target.location
     const dim = target.dimension.id.split(":").pop().replace(/^\w/, c => c.toUpperCase())
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(`\xA7e\xA7l${target.name} Panel`)
         .body(`\xA7aId : \xA7f${target.id}\n\xA7aAdmin : \xA7f${isAdmin ? "Yes" : "No"}\n\xA7aGamemode : \xA7f${target.getGameMode()}\n\xA7aMoney : \xA7f$${money.toLocaleString()}\n\xA7aOwned Homes : \xA7f${homes}\n\xA7aPosition : \xA7f${Math.floor(pos.x)}, ${Math.floor(pos.y)}, ${Math.floor(pos.z)}\n\xA7aDimension : \xA7f${dim}`)
         .button("\xA7aSet Money")

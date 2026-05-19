@@ -1,8 +1,7 @@
-import { ModalFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../../core/Kernel.js"
 
 export async function showKickUI(player, target, backCallback) {
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA7e\xA7lKick Player")
         // @ts-ignore
         .textField("Reason:", "No reason provided")
@@ -24,7 +23,7 @@ export async function showKickUI(player, target, backCallback) {
 
 export async function showBanUI(player, target, backCallback) {
     const BanManager = Kernel.get("banManager")
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA7e\xA7lBan Player")
         // @ts-ignore
         .textField("Reason:", "No reason provided")
@@ -42,7 +41,7 @@ export async function showBanUI(player, target, backCallback) {
 
 export async function showMuteUI(player, target, backCallback) {
     const MuteStore = Kernel.get("muteStore")
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA7e\xA7lMute Player")
         // @ts-ignore
         .textField("Duration:", "e.g. 10m, 1h, or permanent", "permanent")
