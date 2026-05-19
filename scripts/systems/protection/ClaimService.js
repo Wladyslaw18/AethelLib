@@ -1,5 +1,6 @@
 import { Kernel } from "../../core/Kernel.js"
-import { Configuration } from "../../Configuration.js"
+
+import { SpatialCache } from "./SpatialCache.js"
 
 /*
  * Land Protection System
@@ -18,116 +19,13 @@ const PERMISSIONS = {
     CRAFTING: 32
 }
 
-// BLOCK_CLASSIFICATION_MANIFESTS
-const CONTAINER_BLOCKS = new Set(["chest", "barrel", "trapped_chest", "shulker", "hopper", "dropper", "dispenser", "furnace", "blast_furnace", "smoker", "brewing_stand"])
-const DOOR_BLOCKS = new Set(["door", "gate", "trapdoor"])
-const REDSTONE_BLOCKS = new Set(["lever", "button", "pressure_plate", "daylight_detector", "tripwire_hook", "repeater", "comparator"])
-const CRAFTING_BLOCKS = new Set(["crafting_table", "smithing_table", "cartography_table", "loom", "stonecutter", "grindstone", "anvil", "enchanting_table"])
 
-/* 
- * AUTHORITY_BYPASS_PROBE
- */
-function isGodTag(player) {
-    const tags = player.getTags()
-    return Configuration.SUPER_ADMIN_TAGS.some(tag => tags.includes(tag))
-}
-
-/* 
- * BLOCK_CATEGORY_RESOLVER
- */
-function classifyBlock(typeId) {
-    for (const keyword of CONTAINER_BLOCKS) {
-        if (typeId.includes(keyword)) return PERMISSIONS.CONTAINERS
-    }
-    for (const keyword of DOOR_BLOCKS) {
-        if (typeId.includes(keyword)) return PERMISSIONS.DOORS
-    }
-    for (const keyword of REDSTONE_BLOCKS) {
-        if (typeId.includes(keyword)) return PERMISSIONS.REDSTONE
-    }
-    for (const keyword of CRAFTING_BLOCKS) {
-        if (typeId.includes(keyword)) return PERMISSIONS.CRAFTING
-    }
-    return 0 
-}
 
 /* 
  * SERVICE_INITIALIZATION_PROTOCOL
- * Subscribes to the world's before-events to perform real-time spatial 
- * clearance checks.
+ * Standard startup logging. Event interception is handled globally by MasterDispatcher.
  */
 export function init() {
-    /* BLOCK_DECONSTRUCTION_INTERCEPTOR */
-    Kernel.world.beforeEvents.playerBreakBlock.subscribe((event) => {
-        const player = event.player
-        if (isGodTag(player)) return
-
-        const ClaimStore = Kernel.get("claimStore")
-        const chunkKey = ClaimStore.locationToChunkKey(event.block.location)
-        if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
-            event.cancel = true
-            player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77You cannot build here!");
-        }
-
-    })
-
-    /* BLOCK_CONSTRUCTION_INTERCEPTOR */
-    // Note: playerPlaceBlock is not in beforeEvents in beta. using playerInteractWithBlock.
-    Kernel.world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
-        const player = event.player
-        if (isGodTag(player)) return
-
-        const block = event.block
-        const item = event.itemStack
-        
-        // If holding a block-like item, check BUILD permission
-        if (item && (item.typeId.includes("_block") || item.typeId.includes("stone") || item.typeId.includes("planks") || item.typeId.includes("dirt") || item.typeId.includes("log"))) {
-             const ClaimStore = Kernel.get("claimStore")
-             const chunkKey = ClaimStore.locationToChunkKey(block.location)
-             if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.BUILD)) {
-                 event.cancel = true
-                 player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77You cannot build here!");
-             }
-
-        }
-    })
-
-    /* INTERACTION_VECTOR_INTERCEPTOR */
-    Kernel.world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
-        const player = event.player
-        if (isGodTag(player)) return
-
-        const block = event.block
-        const ClaimStore = Kernel.get("claimStore")
-        const chunkKey = ClaimStore.locationToChunkKey(block.location)
-        const requiredPermission = classifyBlock(block.typeId)
-
-        if (requiredPermission === 0) return 
-
-        if (!ClaimStore.hasPermission(chunkKey, player.id, requiredPermission)) {
-            event.cancel = true
-            player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77You cannot interact with this!");
-        }
-
-    })
-
-    /* ENTITY_INTERACTION_INTERCEPTOR */
-    Kernel.world.beforeEvents.playerInteractWithEntity.subscribe((event) => {
-        const player = event.player
-        if (isGodTag(player)) return
-
-        const entity = event.target
-        if (!entity?.location) return
-
-        const ClaimStore = Kernel.get("claimStore")
-        const chunkKey = ClaimStore.locationToChunkKey(entity.location)
-        if (!ClaimStore.hasPermission(chunkKey, player.id, PERMISSIONS.MOB_INTERACT)) {
-            event.cancel = true
-            player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77You cannot interact with mobs here!");
-        }
-
-    })
-
     console.log("[Aethelgrad Essentials] Spatial Security Engine operational.");
 }
 
@@ -169,6 +67,8 @@ export function createClaim(player, location, radius = 1) {
         }
     }
 
+    // Invalidate local player cache
+    SpatialCache.invalidate(playerId);
     player.sendMessage(`\xA7a\xA7l» \xA7fLand claimed! \xA7e(Radius: ${radius} chunks)\xA7f.`);
 
     return true
@@ -187,8 +87,8 @@ export function removeClaim(player, location) {
         return false
     }
 
-
     ClaimStore.removeClaim(chunkKey)
+    SpatialCache.invalidate(playerId);
     player.sendMessage("\xA7a\xA7l» \xA7fLand unclaimed.");
 
     return true
@@ -204,7 +104,6 @@ export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD)
         return
     }
 
-
     const ClaimStore = Kernel.get("claimStore")
     const playerClaims = ClaimStore.getPlayerClaims(player.id)
     if (playerClaims.length === 0) {
@@ -212,13 +111,13 @@ export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD)
         return
     }
 
-
     for (const claim of playerClaims) {
         ClaimStore.addTrusted(claim.chunkKey, player.id, target.id, permissions)
     }
 
+    // Invalidate target player permission cache
+    SpatialCache.invalidate(target.id);
     player.sendMessage(`\xA7a\xA7l» \xA7e${targetName} \xA7fhas been trusted.`);
-
 }
 
 /* 
@@ -231,15 +130,15 @@ export function untrustPlayer(player, targetName) {
         return
     }
 
-
     const ClaimStore = Kernel.get("claimStore")
     const playerClaims = ClaimStore.getPlayerClaims(player.id)
     for (const claim of playerClaims) {
         ClaimStore.removeTrusted(claim.chunkKey, target.id)
     }
 
+    // Invalidate target player permission cache
+    SpatialCache.invalidate(target.id);
     player.sendMessage(`\xA7a\xA7l» \xA7e${targetName} \xA7fhas been untrusted.`);
-
 }
 
 export { PERMISSIONS }
