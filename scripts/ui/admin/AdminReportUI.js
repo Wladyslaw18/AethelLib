@@ -3,7 +3,6 @@
  * List, detail view, delete, ban, teleport
  */
 
-import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { ReportStore } from "../../systems/general/ReportStore.js"
 import { UIUtils } from "../UIUtils.js"
@@ -18,7 +17,7 @@ export async function showAdminReportUI(admin) {
     const reportEntries = Object.entries(reports)
         .sort(([, a], [, b]) => (b.timestamp || 0) - (a.timestamp || 0))
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7c\xA7l📋 Report Manager")
         .body(reportEntries.length > 0
             ? `\xA77${reportEntries.length} report(s)`
@@ -65,7 +64,7 @@ async function showReportDetail(admin, reportId, report) {
     body += `\xA77Status: \xA7f${report.status || "open"}\n`
     body += `\xA7r\n\xA77Message:\n\xA7f${report.message}`
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7c\xA7lReport Detail")
         .body(body)
         .button("\xA7c🗑️ Delete Report", "textures/ui/cancel")
