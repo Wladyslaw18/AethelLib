@@ -1,4 +1,3 @@
-import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 
 /*
@@ -14,7 +13,7 @@ import { Kernel } from "../../core/Kernel.js"
 export async function showCategoryUI(player) {
     const balance = Kernel.get("economy").getBalance(player)
     
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA70\xA7l» \xA76\xA7lCOMMERCE_ENGINE\xA70 «")
         .body(`\xA77Interface: \xA7eSTABLE\xA77\n\xA77Liquidity_Buffer: \xA76$${balance}\xA77\n\n\xA77Select industrial trade-module:`)
         .button("\xA7c[TERMINATE_SESSION]")
@@ -47,7 +46,7 @@ export async function showCategoryUI(player) {
  * ASSET_QUERY_INTERFACE
  */
 export async function showSearchUI(player) {
-    const { ModalFormData } = await import("@minecraft/server-ui")
+    const { ModalFormData } = Kernel
     const { showSearchResults } = await import("./ShopSearchUI.js")
     
     const modal = new ModalFormData()

@@ -1,4 +1,4 @@
-import { ActionFormData } from "@minecraft/server-ui"
+import { Kernel } from "../../core/Kernel.js";
 import { ShopStore } from "../../systems/shop/ShopStore.js"
 
 /*
@@ -38,7 +38,7 @@ async function showResultsPage(player, results, query, page) {
     const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, results.length)
     const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE)
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA76\xA7lQUERY_RESULTS")
         .body(`\xA77Query: "${query}"\n\xA77Page: ${page + 1}/${totalPages || 1}\n\xA77Matches: ${results.length}`)
 

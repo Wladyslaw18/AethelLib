@@ -1,4 +1,4 @@
-import { ModalFormData } from "@minecraft/server-ui"
+import { Kernel } from "../../core/Kernel.js";
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 
 /*
@@ -9,7 +9,7 @@ import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 
 export async function showBuyFlow(player, item) {
     try {
-        const modal = new ModalFormData()
+        const modal = new Kernel.ModalFormData()
             .title(`\xA76Purchase: ${item.displayName}`)
             .slider("Amount to buy:", 1, 64, { defaultValue: 1, valueStep: 1 })
 
@@ -29,9 +29,9 @@ export async function showBuyFlow(player, item) {
 
         const success = EconomyStore.removeMoney(player, total)
         if (success) {
-            const inv = player.getComponent("minecraft:inventory")?.container
+            const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
             if (inv) {
-                const { ItemStack } = await import("@minecraft/server")
+                const { ItemStack } = Kernel
                 const itemStack = new ItemStack(item.id, qty)
                 inv.addItem(itemStack)
                 player.sendMessage(`\xA7a\xA7l» \xA7fPurchased \xA7e${qty}x ${item.name} \xA7ffor \xA7a$${total}\xA7f.`)
@@ -50,3 +50,5 @@ export async function showBuyFlow(player, item) {
     }
 
 }
+
+
