@@ -1,4 +1,4 @@
-import { ModalFormData } from "@minecraft/server-ui"
+import { Kernel } from "../../../../core/Kernel.js";
 import { UIUtils } from "../../../UIUtils.js"
 import { RankSystem } from "../../../../systems/social/ranks/RankSystem.js"
 
@@ -17,7 +17,7 @@ export async function showLandPermissions(player, rankTag, backCallback) {
         { label: "Land Setting Command", key: "land.setting" }
     ]
 
-    const form = new ModalFormData().title("Land Permission")
+    const form = new Kernel.ModalFormData().title("Land Permission")
     nodes.forEach(node => {
         const val = p[node.key] === undefined ? 1 : p[node.key]
         form.dropdown(node.label, options, val)

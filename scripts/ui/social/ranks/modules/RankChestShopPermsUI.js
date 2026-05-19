@@ -1,4 +1,4 @@
-import { ModalFormData } from "@minecraft/server-ui"
+import { Kernel } from "../../../../core/Kernel.js";
 import { UIUtils } from "../../../UIUtils.js"
 import { RankSystem } from "../../../../systems/social/ranks/RankSystem.js"
 
@@ -15,7 +15,7 @@ export async function showChestShopPermissions(player, rankTag, backCallback) {
         { label: "Chest Shop Buy", key: "chestshop.buy" }
     ]
 
-    const form = new ModalFormData().title("Chest Shop Perm")
+    const form = new Kernel.ModalFormData().title("Chest Shop Perm")
     nodes.forEach(node => {
         const val = p[node.key] === undefined ? 1 : p[node.key]
         form.dropdown(node.label, options, val)

@@ -1,4 +1,4 @@
-import { ModalFormData } from "@minecraft/server-ui"
+import { Kernel } from "../../../../core/Kernel.js";
 import { UIUtils } from "../../../UIUtils.js"
 import { RankSystem } from "../../../../systems/social/ranks/RankSystem.js"
 
@@ -9,7 +9,7 @@ export async function showBasicSettings(player, rankTag, backCallback) {
     const rank = RankSystem.getRank(rankTag)
     if (!rank) return
 
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("Edit Rank")
         .textField("Ranks Display Text:", "e.g. test111", { defaultValue: String(rank.name || "") })
         .textField("Ranks Order:", "e.g. 10", { defaultValue: String(rank.order || 0) })

@@ -1,4 +1,4 @@
-import { ModalFormData } from "@minecraft/server-ui"
+import { Kernel } from "../../../../core/Kernel.js";
 import { UIUtils } from "../../../UIUtils.js"
 import { RankSystem } from "../../../../systems/social/ranks/RankSystem.js"
 
@@ -7,7 +7,7 @@ export async function showBasicPermissions(player, rankTag, backCallback) {
     if (!rank) return
     const p = rank.permissions || {}
 
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("Edit Ranks")
         .textField("For Permission:\nLeave blank to use default permission\n\nChat Cooldown", "Input number here", { defaultValue: String(p["cooldown.chat"] || "") })
         .textField("Back Cooldown", "Input number here", { defaultValue: String(p["cooldown.back"] || "") })

@@ -1,4 +1,4 @@
-import { ModalFormData } from "@minecraft/server-ui"
+import { Kernel } from "../../../../core/Kernel.js";
 import { UIUtils } from "../../../UIUtils.js"
 import { RankSystem } from "../../../../systems/social/ranks/RankSystem.js"
 
@@ -33,7 +33,7 @@ export async function showAdminPermissions(player, rankTag, backCallback) {
         { label: "Gamemode Adventure Command", key: "admin.gm.a" }
     ]
 
-    const form = new ModalFormData().title("Edit Ranks")
+    const form = new Kernel.ModalFormData().title("Edit Ranks")
     nodes.forEach((node, index) => {
         let label = node.label
         if (index === 0) {
