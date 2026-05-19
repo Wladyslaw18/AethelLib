@@ -1,4 +1,4 @@
-import { world, system } from "@minecraft/server"
+import { Kernel } from "../Kernel.js";
 
 /*
  * INDUSTRIAL_CLEANUP_ORCHESTRATOR
@@ -8,7 +8,7 @@ import { world, system } from "@minecraft/server"
  * data across multiple industrial sub-systems upon session termination.
  *
  * PHILOSOPHY: Stale data is technical debt. When an entity leaves the 
- * buffer, its associated state must be purged to maintain system 
+ * buffer, its associated state must be purged to maintain Kernel.system 
  * integrity.
  */
 export class CleanupService {
@@ -23,18 +23,18 @@ export class CleanupService {
      * sanitization and schedules periodic global maintenance.
      */
     initialize() {
-        world.afterEvents.playerLeave.subscribe((event) => {
+        Kernel.world.afterEvents.playerLeave.subscribe((event) => {
             this.handlePlayerLeave(event.playerId, event.playerName)
         })
 
-        system.runInterval(() => {
+        Kernel.system.runInterval(() => {
             this.performPeriodicCleanup()
         }, 5 * 60 * 20) // 5-minute industrial interval
     }
 
     /*
      * PURGE_VECTOR_REGISTRATION
-     * Injects a sub-system specific cleanup closure into the registry.
+     * Injects a sub-Kernel.system specific cleanup closure into the registry.
      */
     registerCleanupHandler(systemName, cleanupFunction) {
         this.cleanupHandlers.set(systemName, cleanupFunction)
