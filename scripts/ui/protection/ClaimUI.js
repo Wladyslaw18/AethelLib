@@ -2,7 +2,6 @@
  * Claim UI — View and manage land claims
  */
 
-import { ActionFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 import { UIUtils } from "../UIUtils.js"
 // import { PERMISSIONS } from "../../systems/protection/ClaimService.js"
@@ -15,7 +14,7 @@ export async function showClaimUI(player) {
     const ClaimStore = Kernel.get("claimStore")
     const claims = ClaimStore.getPlayerClaims(player.id)
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA7b\xA7l🛡️ Your Claims")
         .body(claims.length > 0
             ? `\xA77You have \xA7e${claims.length}\xA77 claim(s)\n\xA77Stand in a chunk and use \xA7e!claim\xA77 to claim it.`
