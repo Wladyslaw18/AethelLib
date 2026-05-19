@@ -1,4 +1,4 @@
-import { system } from "@minecraft/server"
+import { Kernel } from "../core/Kernel.js";
 import { init as FloatingTextService } from "../systems/floatingtext/FloatingTextService.js"
 import { BanknoteHandler } from "../systems/banknote/BanknoteHandler.js"
 import { init as ChestShopHandler } from "../events/ChestShopHandler.js"
@@ -11,7 +11,7 @@ import { init as ScoreboardMirror } from "../systems/economy/ScoreboardMirror.js
  * BACKGROUND_SERVICE_ORCHESTRATOR
  * ----------------------------------------------------------------------------
  * This module manages the staggered initialization of secondary background 
- * workers. We use a delayed-execution strategy (system.runTimeout) to 
+ * workers. We use a delayed-execution strategy (Kernel.system.runTimeout) to 
  * prevent a massive CPU spike during the initial server bootstrap.
  *
  * Each service is given a dedicated time-slice to initialize its internal 
@@ -36,12 +36,12 @@ export const initializeServices = () => {
      * Allocates specific tick-ranges for service initialization to 
      * maintain TPS stability during startup.
      */
-    system.runTimeout(() => FloatingTextService(), 400)   // FT_SERVICE_BOOT
-    system.runTimeout(() => ChestShopHandler(), 500)      // COMMERCE_HANDLER_BOOT
-    system.runTimeout(() => CompassHandler(), 600)        // NAVIGATION_HANDLER_BOOT
-    system.runTimeout(() => PlaceholderProvider(), 700)   // VARIABLE_REGISTRY_BOOT
-    system.runTimeout(() => PlaceholderScheduler(), 800)  // UPDATE_TICK_BOOT
-    system.runTimeout(() => ScoreboardMirror(), 900)      // DATA_MIRROR_BOOT
+    Kernel.system.runTimeout(() => FloatingTextService(), 400)   // FT_SERVICE_BOOT
+    Kernel.system.runTimeout(() => ChestShopHandler(), 500)      // COMMERCE_HANDLER_BOOT
+    Kernel.system.runTimeout(() => CompassHandler(), 600)        // NAVIGATION_HANDLER_BOOT
+    Kernel.system.runTimeout(() => PlaceholderProvider(), 700)   // VARIABLE_REGISTRY_BOOT
+    Kernel.system.runTimeout(() => PlaceholderScheduler(), 800)  // UPDATE_TICK_BOOT
+    Kernel.system.runTimeout(() => ScoreboardMirror(), 900)      // DATA_MIRROR_BOOT
 
     /*
      * IMMEDIATE_ACTION_HANDLERS
