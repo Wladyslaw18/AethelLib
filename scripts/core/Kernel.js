@@ -44,6 +44,10 @@ export class Kernel {
     static get CustomCommandStatus() { return mc.CustomCommandStatus; }
     static get CustomCommandParamType() { return mc.CustomCommandParamType; }
     static get CommandPermissionLevel() { return mc.CommandPermissionLevel; }
+    static get GameMode() { return mc.GameMode; }
+    static get EquipmentSlot() { return mc.EquipmentSlot; }
+    static get BlockPermutation() { return mc.BlockPermutation; }
+    static get BlockComponentTypes() { return mc.BlockComponentTypes; }
 
     // ----------------------------------------------------------------------------
     // | ui proxies                                                               |
