@@ -1,4 +1,4 @@
-import { Database } from "../datastore/DatabaseManager.js"
+import { JournaledDb } from "../datastore/JournaledDatabase.js"
 
 /*
  * GLOBAL_PERSISTENCE_PROXY
@@ -16,21 +16,21 @@ export const WorldStore = {
      * GLOBAL_QUERY_VECTOR
      */
     get: (key) => {
-        return Database.get(key)
+        return JournaledDb.get(key)
     },
 
     /* 
      * GLOBAL_COMMIT_VECTOR
      */
     set: (key, value) => {
-        return Database.set(key, value)
+        return JournaledDb.set(key, value)
     },
 
     /* 
      * GLOBAL_DECOMMISSION_VECTOR
      */
     delete: (key) => {
-        return Database.delete(key)
+        return JournaledDb.delete(key)
     },
 
     /* 
@@ -39,20 +39,20 @@ export const WorldStore = {
      * the retrieval of large industrial manifests.
      */
     getCollection: (collectionName, itemId = null) => {
-        return Database.getSharded(collectionName, itemId)
+        return JournaledDb.getSharded(collectionName, itemId)
     },
 
     /* 
      * SHARDED_COLLECTION_COMMIT_VECTOR
      */
     setCollection: (collectionName, itemId, data) => {
-        return Database.setSharded(collectionName, itemId, data)
+        return JournaledDb.setSharded(collectionName, itemId, data)
     },
 
     /* 
      * SHARDED_COLLECTION_DECOMMISSION_VECTOR
      */
     deleteCollection: (collectionName, itemId) => {
-        return Database.deleteSharded(collectionName, itemId)
+        return JournaledDb.deleteSharded(collectionName, itemId)
     }
 }

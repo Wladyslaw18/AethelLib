@@ -1,14 +1,14 @@
-import { world } from "@minecraft/server"
-import { Database } from "../datastore/DatabaseManager.js"
+import { Kernel } from "../Kernel.js";
+import { JournaledDb } from "../datastore/JournaledDatabase.js"
 
 /*
  * ENTITY_SPECIFIC_STORAGE_PROXY
  */
 
 // Keep name mapping synchronized for offline resolution
-world.afterEvents.playerSpawn.subscribe((ev) => {
+Kernel.world.afterEvents.playerSpawn.subscribe((ev) => {
     const { player } = ev
-    Database.set(`player:${player.id}:name`, player.name)
+    JournaledDb.set(`player:${player.id}:name`, player.name)
 })
 
 export const PlayerStore = {
@@ -20,7 +20,7 @@ export const PlayerStore = {
      */
     get: (player, key) => {
         const fullKey = `player:${player.id}:${key}`
-        return Database.get(fullKey)
+        return JournaledDb.get(fullKey)
     },
 
     /* 
@@ -28,7 +28,7 @@ export const PlayerStore = {
      */
     set: (player, key, value) => {
         const fullKey = `player:${player.id}:${key}`
-        return Database.set(fullKey, value)
+        return JournaledDb.set(fullKey, value)
     },
 
     /* 
@@ -36,7 +36,7 @@ export const PlayerStore = {
      */
     delete: (player, key) => {
         const fullKey = `player:${player.id}:${key}`
-        return Database.delete(fullKey)
+        return JournaledDb.delete(fullKey)
     },
 
     /* 
@@ -46,6 +46,6 @@ export const PlayerStore = {
      * preventing financial-buffer race conditions.
      */
     transaction: (player, operation) => {
-        return Database.transaction(player.id, operation)
+        return JournaledDb.transaction(player.id, operation)
     }
 }
