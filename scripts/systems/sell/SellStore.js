@@ -1,4 +1,4 @@
-import { world } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { MINECRAFT_ITEMS } from "../../data/minecraft-items.js"
 
 /*
@@ -116,7 +116,7 @@ export class SellStore {
      */
     static getPlayerItemCount(player, itemId) {
         try {
-            const container = player.getComponent("inventory").container
+            const container = player.getComponent(EntityComponentTypes.Inventory).container
             let count = 0
             for (let i = 0; i < container.size; i++) {
                 const item = container.getItem(i)
@@ -136,7 +136,7 @@ export class SellStore {
         try {
             if (this.getPlayerItemCount(player, itemId) < quantity) return false;
             
-            const container = player.getComponent("inventory").container
+            const container = player.getComponent(EntityComponentTypes.Inventory).container
             let remaining = quantity
             for (let i = 0; i < container.size && remaining > 0; i++) {
                 const item = container.getItem(i)
@@ -243,3 +243,5 @@ export class SellStore {
         return { totalSold, itemsSold, uniqueItems, transactions: recentTransactions.length }
     }
 }
+
+
