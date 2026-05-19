@@ -29,6 +29,9 @@ export class DatabaseManager {
         // keeps track of sequential operations for entities to prevent race conditions.
         this.transactionQueues = new Map() 
         
+        // tracks if the ghost purger is already running to prevent overlap.
+        this.isPurgingGhosts = false
+        
         // start the background tasks.
         this.initialize()
     }
@@ -282,6 +285,8 @@ export class DatabaseManager {
         const keysToWrite = Array.from(this.dirtyKeys)
         this.dirtyKeys.clear()
 
+        let shardedWriteOccurred = false
+
         for (const key of keysToWrite) {
             // only write if the data actually exists in cache.
             if (this.cache.has(key)) {
@@ -293,6 +298,7 @@ export class DatabaseManager {
                     if (serialized.length > this.MAX_PROPERTY_SIZE) {
                         // use the sharding protocol to split it up.
                         this.shardAndWrite(key, data)
+                        shardedWriteOccurred = true
                     } else {
                         // normal write.
                         Kernel.world.setDynamicProperty(key, serialized)
@@ -301,6 +307,12 @@ export class DatabaseManager {
                     console.error(`[DatabaseManager] FLUSH_FAILURE for '${key}': ${error}`)
                 }
             }
+        }
+
+        // Run ghost purge if we sharded something
+        if (shardedWriteOccurred && !this.isPurgingGhosts) {
+            this.isPurgingGhosts = true
+            Kernel.system.runJob(this.ghostCleanupGenerator())
         }
     }
 
@@ -382,6 +394,59 @@ export class DatabaseManager {
             console.error(`[DatabaseManager] SHARD_LOAD_FAILURE for '${key}': ${error}`)
             return null
         }
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: ghostCleanupGenerator                                            |
+    // | INDUSTRIAL_GHOST_PURGE_VECTOR                                            |
+    // | Scans the dynamic property registry for superseded sharded versions.     |
+    // | If a newer equivalent (v2) is confirmed in the index, the older version  |
+    // | (v1) is terminated with extreme prejudice.                               |
+    // ----------------------------------------------------------------------------
+    *ghostCleanupGenerator() {
+        const allIds = Kernel.world.getDynamicPropertyIds();
+        const processedBases = new Set();
+
+        for (let i = 0; i < allIds.length; i++) {
+            // Yield every 50 properties to keep TPS at 20.0 kinda
+            if (i % 50 === 0) yield;
+
+            const id = allIds[i];
+            if (!id.endsWith(":shard_index")) continue;
+
+            const baseKey = id.replace(":shard_index", "");
+            if (processedBases.has(baseKey)) continue;
+            processedBases.add(baseKey);
+
+            const indexRaw = Kernel.world.getDynamicProperty(id);
+            if (typeof indexRaw !== "string") continue;
+            
+            let index;
+            try {
+                index = JSON.parse(indexRaw);
+            } catch (e) {
+                continue;
+            }
+            
+            const activeVersion = index.version; // e.g., "v2"
+            if (!activeVersion) continue;
+            
+            const deadVersion = activeVersion === "v1" ? "v2" : "v1";
+
+            /* 
+             * REALITY_SWEEP
+             * Find all shards belonging to the DEAD version and nuke them.
+             */
+            const searchPattern = `${baseKey}:shard_${deadVersion}_`;
+            for (const shardId of allIds) {
+                if (shardId.startsWith(searchPattern)) {
+                    Kernel.world.setDynamicProperty(shardId, undefined);
+                    // console.log(`[GC] Terminated ghost shard: ${shardId}`);
+                }
+            }
+        }
+        console.log("[AethelOS] GHOST_PURGE_COMPLETE | Registry Stabilized.");
+        this.isPurgingGhosts = false;
     }
 
     // ----------------------------------------------------------------------------
