@@ -4,24 +4,18 @@
  * Zero-Eval, Identity Rule: UUIDs only
  * Cache-Aside: JS Map cache + debounced Dynamic Property write
  */
-
-import { world } from "@minecraft/server"
-import { FloatingTextStore } from "./FloatingTextStore.js"
+import { Kernel } from "../../core/Kernel.js";
 
 // Track spawned entities
 const spawnedEntities = new Map()
 
 /**
  * Initialize floating text service
+ * In proximity-projection architecture, we do not spawn entities on load.
+ * They are projected dynamically when players approach.
  */
 export function init() {
-    // Load existing texts on world load
-    world.afterEvents.worldLoad.subscribe(() => {
-        const entries = FloatingTextStore.getAll()
-        for (const entry of entries) {
-            spawnFloatingText(entry)
-        }
-    })
+    console.log("[FloatingTextService] Proximity Projection Engine online.");
 }
 
 /**
@@ -30,8 +24,8 @@ export function init() {
  */
 export function spawnFloatingText(entry) {
     try {
-        const dim = world.getDimension(entry.dimension)
-        const entity = dim.spawnEntity(/** @type {any} */ ("pao:floating_text"), { x: entry.x, y: entry.y, z: entry.z })
+        const dim = Kernel.world.getDimension(entry.dimension)
+        const entity = dim.spawnEntity(/** @type {any} */ ("ael:floating_text"), { x: entry.x, y: entry.y, z: entry.z })
         entity.nameTag = entry.text
         spawnedEntities.set(entry.id, entity)
     } catch (error) {
@@ -70,4 +64,3 @@ export function clearAll() {
         console.error(`Failed to clear floating texts: ${error}`)
     }
 }
-
