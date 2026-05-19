@@ -1,4 +1,4 @@
-import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
+import { Kernel } from "../../../core/Kernel.js";
 import { UIUtils } from "../../UIUtils.js"
 import { RankSystem } from "../../../systems/social/ranks/RankSystem.js"
 import { showBasicSettings } from "./modules/RankSettingsUI.js"
@@ -16,7 +16,7 @@ import { showChestShopPermissions } from "./modules/RankChestShopPermsUI.js"
 
 export class RankUI {
     static async showCreateRank(player) {
-        const form = new ModalFormData()
+        const form = new Kernel.ModalFormData()
             .title("Add Rank")
             .textField("Rank Tag (Unique ID):", "e.g. vip")
             .textField("Display Text:", "e.g. \xA7b[VIP]")
@@ -40,7 +40,7 @@ export class RankUI {
         const rankIds = Object.keys(ranks)
         if (rankIds.length === 0) return player.sendMessage("\xA7cNo ranks found.")
 
-        const form = new ModalFormData()
+        const form = new Kernel.ModalFormData()
             .title("Edit Ranks")
             .dropdown("Select Ranks", rankIds.map(id => ranks[id].name || id))
 
@@ -49,7 +49,7 @@ export class RankUI {
     }
 
     static async showEditRankActions(player, rankTag) {
-        const form = new ActionFormData()
+        const form = new Kernel.ActionFormData()
             .title("Edit Rank")
             .body("Select actions")
             .button("Basic Setting")
