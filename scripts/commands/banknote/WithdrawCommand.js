@@ -1,4 +1,4 @@
-import { system, ItemStack } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { BanknoteStore } from "../../systems/banknote/BanknoteStore.js"
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 import { ValidationHelper } from "../../utils/ValidationHelper.js"
@@ -77,8 +77,8 @@ export const WithdrawCommand = {
         }
 
         // step 4: transaction execution.
-        // we use system.run to ensure the operation is atomic and doesn't block the tick.
-        system.run(() => {
+        // we use Kernel.system.run to ensure the operation is atomic and doesn't block the tick.
+        Kernel.system.run(() => {
             try {
                 // remove digital currency first.
                 if (!EconomyStore.removeMoney(player.id, amount)) {
@@ -129,15 +129,15 @@ function createBanknotes(player, totalAmount) {
                 continue
             }
 
-            // construct the physical ItemStack.
-            const item = new ItemStack(BanknoteStore.getBanknoteId(), 1)
+            // construct the physical Kernel.ItemStack.
+            const item = new Kernel.ItemStack(BanknoteStore.getBanknoteId(), 1)
             item.nameTag = BanknoteStore.getBanknoteName(denom)
             item.setLore(BanknoteStore.getBanknoteLore(banknote))
             // bind the logical ID to the item's dynamic property for redemption validation.
             try { item.setDynamicProperty("ae:banknote_id", banknote.id) } catch (e) {}
             
             // deliver the item.
-            const container = player.getComponent("inventory").container
+            const container = player.getComponent(EntityComponentTypes.Inventory).container
             const leftover = container.addItem(item)
             
             if (leftover === undefined) {
@@ -169,7 +169,7 @@ function createBanknotes(player, totalAmount) {
 // ----------------------------------------------------------------------------
 function getAvailableInventorySlots(player) {
     try {
-        const container = player.getComponent("inventory").container
+        const container = player.getComponent(EntityComponentTypes.Inventory).container
         let available = 0
         
         for (let i = 0; i < container.size; i++) {
@@ -188,3 +188,5 @@ function getAvailableInventorySlots(player) {
         return 0
     }
 }
+
+
