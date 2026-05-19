@@ -1,4 +1,4 @@
-import { ItemStack, EntityComponentTypes } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { EconomyStore } from "./EconomyStore.js"
 import { Lang } from "../../ui/Lang.js"
 
@@ -49,17 +49,17 @@ export class ShopService {
      * INVENTORY_SYNCHRONIZATION_PRIMITIVES
      */
     static giveItem(player, itemId, amount) {
-        const inv = player.getComponent(EntityComponentTypes.Inventory).container
+        const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
         let remaining = amount
         while (remaining > 0) {
             const take = Math.min(remaining, 64)
-            inv.addItem(new ItemStack(itemId, take))
+            inv.addItem(new Kernel.ItemStack(itemId, take))
             remaining -= take
         }
     }
 
     static hasItem(player, itemId, amount) {
-        const inv = player.getComponent(EntityComponentTypes.Inventory).container
+        const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
         let count = 0
         for (let i = 0; i < inv.size; i++) {
             const item = inv.getItem(i)
@@ -69,7 +69,7 @@ export class ShopService {
     }
 
     static removeItem(player, itemId, amount) {
-        const inv = player.getComponent(EntityComponentTypes.Inventory).container
+        const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
         let remaining = amount
         for (let i = 0; i < inv.size; i++) {
             const item = inv.getItem(i)
