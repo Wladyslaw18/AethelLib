@@ -1,4 +1,4 @@
-import { world } from "@minecraft/server"
+import { Kernel } from "../core/Kernel.js";
 
 // ----------------------------------------------------------------------------
 // | PlayerUtils                                                              |
@@ -13,11 +13,11 @@ const idToNameCache = new Map()
 
 // ----------------------------------------------------------------------------
 // | lifecycle hooks                                                          |
-// | keep the cache in sync with the actual world state.                      |
+// | keep the cache in sync with the actual Kernel.world state.                      |
 // ----------------------------------------------------------------------------
 
 // add players to the cache as soon as they spawn.
-world.afterEvents.playerSpawn.subscribe((ev) => {
+Kernel.world.afterEvents.playerSpawn.subscribe((ev) => {
     const { player } = ev
     const lowerName = player.name.toLowerCase()
     nameCache.set(lowerName, player)
@@ -25,7 +25,7 @@ world.afterEvents.playerSpawn.subscribe((ev) => {
 })
 
 // remove players when they leave so we don't hold onto dead object references.
-world.afterEvents.playerLeave.subscribe((ev) => {
+Kernel.world.afterEvents.playerLeave.subscribe((ev) => {
     const { playerId } = ev
     // find the name associated with this id.
     const lowerName = idToNameCache.get(playerId)
@@ -42,7 +42,7 @@ export const PlayerUtils = {
     // | populates the cache with players already on the server (for hot reloads).|
     // ----------------------------------------------------------------------------
     init() {
-        world.getAllPlayers().forEach(p => {
+        Kernel.world.getAllPlayers().forEach(p => {
             const lowerName = p.name.toLowerCase()
             nameCache.set(lowerName, p)
             idToNameCache.set(p.id, lowerName)
@@ -84,7 +84,7 @@ export const PlayerUtils = {
 
         // step 3: fallback to partial matching.
         // if a player's name contains the search string, return them.
-        const players = world.getAllPlayers()
+        const players = Kernel.world.getAllPlayers()
         const partial = players.filter(p => p.name.toLowerCase().includes(lowerId))
         // only return if there is exactly one match. 
         // if there are multiple matches, we don't know who they want.
@@ -128,3 +128,22 @@ export const PlayerUtils = {
         return { player: longestMatch, consumedArgs: consumed }
     }
 }
+
+// ----------------------------------------------------------------------------
+// | garbage collection                                                       |
+// | periodically sweep the caches for dead entities just in case playerLeave |
+// | drops during a crash or disconnect.                                      |
+// ----------------------------------------------------------------------------
+Kernel.system.runInterval(() => {
+    for (const [lowerName, player] of nameCache.entries()) {
+        if (!player || !player.isValid()) {
+            nameCache.delete(lowerName)
+            // also sweep the id cache for this name
+            for (const [id, mappedName] of idToNameCache.entries()) {
+                if (mappedName === lowerName) {
+                    idToNameCache.delete(id)
+                }
+            }
+        }
+    }
+}, 1200) // 1200 ticks = ~60 seconds

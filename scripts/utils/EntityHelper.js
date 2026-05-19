@@ -1,4 +1,4 @@
-import { system, world } from "@minecraft/server"
+import { Kernel } from "../core/Kernel.js";
 
 /*
  * INDUSTRIAL_ENTITY_DECOMMISSIONER
@@ -49,7 +49,7 @@ export function tryRemoveEntity(entity, options = {}) {
     }
 
     if (timeout > 0) {
-        system.runTimeout(() => {
+        Kernel.system.runTimeout(() => {
             removeEntity()
         }, timeout)
         return true
@@ -81,7 +81,7 @@ export function tryRemoveEntities(entities, options = {}) {
  */
 export function removeEntitiesByType(entityType, center, radius, dimension = "overworld") {
     try {
-        const dim = world.getDimension(dimension)
+        const dim = Kernel.world.getDimension(dimension)
         const entities = dim.getEntities({
             type: entityType,
             location: center,
@@ -102,7 +102,7 @@ export function removeEntitiesByType(entityType, center, radius, dimension = "ov
  */
 export function removeHostileEntities(center, radius, dimension = "overworld") {
     try {
-        const dim = world.getDimension(dimension)
+        const dim = Kernel.world.getDimension(dimension)
         const entities = dim.getEntities({
             families: ["monster", "undead", "arthropod", "illager"],
             location: center,
@@ -123,7 +123,7 @@ export function removeHostileEntities(center, radius, dimension = "overworld") {
  */
 export function removeGroundItems(center, radius, dimension = "overworld") {
     try {
-        const dim = world.getDimension(dimension)
+        const dim = Kernel.world.getDimension(dimension)
         const entities = dim.getEntities({
             type: "minecraft:item",
             location: center,
@@ -139,7 +139,7 @@ export function removeGroundItems(center, radius, dimension = "overworld") {
 
 /* 
  * PURGE_ELIGIBILITY_GATE
- * Ensures the system does not accidentally decommission protected 
+ * Ensures the Kernel.system does not accidentally decommission protected 
  * entities or player buffers.
  */
 export function canRemoveEntity(entity) {
@@ -151,7 +151,7 @@ export function canRemoveEntity(entity) {
         return false
     }
 
-    const protectedTags = ["protected", "essential", "system"]
+    const protectedTags = ["protected", "essential", "Kernel.system"]
     return !entity.getTags().some(tag => protectedTags.includes(tag))
 }
 
@@ -183,7 +183,7 @@ export async function batchRemoveEntities(entities, batchSize = 10) {
 
     while (index < entities.length) {
         await processBatch()
-        await new Promise(resolve => system.runTimeout(() => resolve(), 1))
+        await new Promise(resolve => Kernel.system.runTimeout(() => resolve(), 1))
     }
 
     return totalRemoved
