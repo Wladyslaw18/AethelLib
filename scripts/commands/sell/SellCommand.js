@@ -1,7 +1,6 @@
-import { system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { SellStore } from "../../systems/sell/SellStore.js"
 import { MINECRAFT_ITEMS } from "../../data/minecraft-items.js"
-import { MessageFormData, ModalFormData, ActionFormData } from "@minecraft/server-ui"
 
 // ----------------------------------------------------------------------------
 // | object: SellCommand                                                      |
@@ -76,14 +75,14 @@ export const SellCommand = {
 // | visual dashboard for choosing between quick hand-selling and browsing.    |
 // ----------------------------------------------------------------------------
 function showSellMenu(player) {
-    const form = new MessageFormData()
+    const form = new Kernel.MessageFormData()
         .title("\xA76\xA7lSell Items")
         .body("\xA77Choose how you want to sell items:\n\n\xA7a• Quick Sell - Sell hand item\n\xA7a• Browse Items - Choose from inventory\n\xA7a• Search Items - Find specific items\n\xA7a• View Prices - Check sell values")
         .button1("\xA7aQuick Sell")
         .button2("\xA7bBrowse Items")
 
     // execute on next tick to satisfy engine UI constraints.
-    system.run(async () => {
+    Kernel.system.run(async () => {
         const res = await form.show(player)
         if (res.canceled) return
         if (res.selection === 0) quickSell(player)
@@ -98,7 +97,7 @@ function showSellMenu(player) {
 function quickSell(player) {
     try {
         // fetch item from current slot.
-        const selectedItem = player.getComponent("inventory").container.getItem(player.selectedSlot)
+        const selectedItem = player.getComponent(EntityComponentTypes.Inventory).container.getItem(player.selectedSlot)
         if (!selectedItem) {
             player.sendMessage("\xA7c\xA7l» \xA77No item in hand.");
             return
@@ -138,7 +137,7 @@ function quickSell(player) {
 // ----------------------------------------------------------------------------
 function showBrowseInventory(player) {
     try {
-        const inventory = player.getComponent("inventory")?.container
+        const inventory = player.getComponent(EntityComponentTypes.Inventory)?.container
         if (!inventory) {
             player.sendMessage("\xA7c\xA7l» \xA77Failed to access inventory.");
             return
@@ -170,7 +169,7 @@ function showBrowseInventory(player) {
             return
         }
 
-        const form = new ActionFormData()
+        const form = new Kernel.ActionFormData()
             .title("\xA76\xA7lSell Inventory")
             .body("Select an item to sell")
 
@@ -179,7 +178,7 @@ function showBrowseInventory(player) {
             form.button(`\xA7e${item.name} \xA77x${item.amount} \xA7a- ${SellStore.formatMoney(item.totalValue)}`)
         })
 
-        system.run(async () => {
+        Kernel.system.run(async () => {
             const res = await form.show(player)
             if (res.canceled) return
             // if an item is selected, open the quantity specification dialog.
@@ -198,7 +197,7 @@ function showBrowseInventory(player) {
 // | a detailed modal for specifying the exact quantity to liquidate.         |
 // ----------------------------------------------------------------------------
 function showSellDialog(player, item) {
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title(`\xA76\xA7lSell ${item.name}`)
         .textField("Item Name:", item.name)
         .textField("Available:", item.amount.toString())
@@ -206,7 +205,7 @@ function showSellDialog(player, item) {
         .textField("Total value:", SellStore.formatMoney(item.totalValue))
         .textField("Quantity to sell:", "Enter quantity...")
 
-    system.run(async () => {
+    Kernel.system.run(async () => {
         const res = await form.show(player)
         if (res.canceled) return
         // parse quantity from input field index 4.
@@ -248,3 +247,5 @@ function findItem(query) {
     // return the first match or null.
     return matches.length > 0 ? matches[0] : null
 }
+
+
