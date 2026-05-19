@@ -3,41 +3,20 @@ import { Kernel } from "../../core/Kernel.js"
 /*
  * INDUSTRIAL_PLACEHOLDER_ORCHESTRATOR
  * ----------------------------------------------------------------------------
- * A high-performance resolution engine for dynamic string-tokens. 
- * Orchestrates a registry of {TOKEN} -> resolver-closures to facilitate 
- * real-time data-injection into visual manifests (FloatingText, Chat).
- *
- * PHILOSOPHY: Strings must be dynamic. Use this engine to manifest 
- * real-time server telemetry and entity-state data.
+ * A high-performance resolution engine for dynamic string-tokens.
  */
 
-/** @type {Map<string, (player?: import("@minecraft/server").Player) => string>} */
-const registry = new Map() // TOKEN_RESOLVER_REGISTRY
-
-let lastTickTime = Date.now()
+const registry = new Map()
 let currentTPS = 20
 
 export const PlaceholderProvider = {
-    /* 
-     * SYSTEM_BOOTSTRAP_PROTOCOL
-     * Initializes the TPS-monitoring vector and injects built-in 
-     * placeholder-nodes into the registry.
-     */
     init() {
-        Kernel.system.runInterval(() => {
-            const now = Date.now()
-            const delta = now - lastTickTime
-            lastTickTime = now
-            currentTPS = Math.round((currentTPS * 0.8) + ((1000 / Math.max(delta, 1)) * 0.2))
-            currentTPS = Math.min(currentTPS, 20) 
-        }, 1)
-
         this.registerPlaceholder("PlayerCount", () => {
             return String(Kernel.world.getAllPlayers().length)
         })
 
         this.registerPlaceholder("TPS", () => {
-            return String(currentTPS)
+            return String(Math.round(currentTPS))
         })
 
         this.registerPlaceholder("Online", () => {
@@ -51,29 +30,25 @@ export const PlaceholderProvider = {
         this.registerPlaceholder("Money", (player) => {
             if (!player) return "0"
             const EconomyStore = Kernel.get("economy")
-            return String(EconomyStore.getBalance(player))
+            return String(EconomyStore?.getBalance(player) || 0)
         })
 
         this.registerPlaceholder("Rank", (player) => {
             if (!player) return "NON_RANKED"
             const PermissionManager = Kernel.get("permissions")
-            const rank = PermissionManager.getHighestRank(player)
+            const rank = PermissionManager?.getHighestRank(player)
             return rank?.name || "NON_RANKED"
         })
     },
 
-    /* 
-     * TOKEN_INJECTION_PROTOCOL
-     */
+    setTPS(value) {
+        currentTPS = Math.min(Math.max(0, value), 20)
+    },
+
     registerPlaceholder(key, resolver) {
         registry.set(key, resolver)
     },
 
-    /* 
-     * STRING_RESOLUTION_ENGINE
-     * Performs a regex-based scan of the input-string and resolves 
-     * recognized tokens using the registered closures.
-     */
     resolve(text, player) {
         if (!text || !text.includes("{")) return text
 
@@ -88,13 +63,11 @@ export const PlaceholderProvider = {
         })
     },
 
-    /* 
-     * REGISTRY_QUERY_VECTOR
-     */
     getPlaceholderKeys() {
         return Array.from(registry.keys())
     }
 }
+
 export function init() {
     PlaceholderProvider.init()
 }
