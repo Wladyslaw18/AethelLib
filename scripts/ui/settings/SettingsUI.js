@@ -1,4 +1,3 @@
-import { ModalFormData } from "@minecraft/server-ui"
 import { Kernel } from "../../core/Kernel.js"
 
 /**
@@ -12,7 +11,7 @@ export async function showSettingsUI(player) {
     const tpaEnabled = PlayerStore.get(player, "settings:tpa") !== false
     const scoreboardVisible = PlayerStore.get(player, "settings:scoreboard") !== false
 
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA77\xA7l⚙️ Settings")
         .toggle("\xA7eTPA Requests", { defaultValue: tpaEnabled })
         .toggle("\xA76Scoreboard Visible", { defaultValue: scoreboardVisible })
