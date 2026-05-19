@@ -2,7 +2,6 @@
  * Banknote Store - Manages physical paper money items
  */
 
-import { world, system } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 
 export class BanknoteStore {
@@ -163,7 +162,7 @@ export class BanknoteStore {
 }
 
 // Cleanup old banknotes periodically
-system.runInterval(() => {
+Kernel.system.runInterval(() => {
     BanknoteStore.cleanupOldBanknotes()
 }, 20 * 60 * 60) // Every hour
 

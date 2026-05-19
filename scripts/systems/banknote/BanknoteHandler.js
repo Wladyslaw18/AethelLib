@@ -1,15 +1,16 @@
 /**
  * Banknote Handler - Handles banknote redemption events
  */
+import { Kernel } from "../../core/Kernel.js";
 
-import { system, world } from "@minecraft/server"
+
 import { BanknoteStore } from "./BanknoteStore.js"
 import { EconomyStore } from "../economy/EconomyStore.js"
 
 export class BanknoteHandler {
     static init() {
         // Handle item use (right-click)
-        world.beforeEvents.itemUse.subscribe((event) => {
+        Kernel.world.beforeEvents.itemUse.subscribe((event) => {
             const { source: player, itemStack: item } = event
             
             // Check if it's a banknote
@@ -25,7 +26,7 @@ export class BanknoteHandler {
     }
 
     static handleRedemption(player, item) {
-        system.run(() => {
+        Kernel.system.run(() => {
             try {
                 // Extract banknote data from item
                 const banknoteData = this.extractBanknoteFromItem(item)
@@ -116,7 +117,7 @@ export class BanknoteHandler {
             button2: "\xA7cCancel"
         }
 
-        system.run(() => {
+        Kernel.system.run(() => {
             player.onFormResponse(form, (response) => {
                 if (response === 0) { // Redeem button
                     this.processRedemption(player, banknote, item)
@@ -142,7 +143,7 @@ export class BanknoteHandler {
             }
 
             // Remove the item from inventory
-            const container = player.getComponent("inventory").container
+            const container = player.getComponent(EntityComponentTypes.Inventory).container
             const slot = container.getSlot(item)
             if (slot) {
                 slot.setItem(undefined)
@@ -158,4 +159,6 @@ export class BanknoteHandler {
         }
     }
 }
+
+
 
