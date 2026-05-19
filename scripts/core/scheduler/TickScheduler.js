@@ -1,4 +1,4 @@
-import { system, world } from "@minecraft/server"
+import { Kernel } from "../Kernel.js";
 
 /*
  * INDUSTRIAL_TICK_ORCHESTRATOR
@@ -60,7 +60,7 @@ export class TickScheduler {
             running: true
         }
         
-        const ta = system.runInterval(() => {
+        const ta = Kernel.system.runInterval(() => {
             if (!this.#running || !task.running) return
             
             if (!task.options.condition()) return
@@ -112,7 +112,7 @@ export class TickScheduler {
             } catch (error) {
                 failures++
                 delay = Math.min(delay * 2, maxDelay)
-                system.runTimeout(run, Math.max(1, Math.floor(delay / 50)))
+                Kernel.system.runTimeout(run, Math.max(1, Math.floor(delay / 50)))
             }
         }
         
@@ -134,7 +134,7 @@ export class TickScheduler {
             timeout: true
         }
         
-        const ta = system.runTimeout(() => {
+        const ta = Kernel.system.runTimeout(() => {
             if (!this.#running || !task.running) return
             const startTime = Date.now()
             try {
@@ -168,7 +168,7 @@ export class TickScheduler {
         const task = this.#tasks.get(id)
         if (!task) return false
         task.running = false
-        system.clearRun(task.ta)
+        Kernel.system.clearRun(task.ta)
         this.#tasks.delete(id)
         this.#stats.activeTasks--
         this.#stats.completedTasks++
@@ -184,7 +184,7 @@ export class TickScheduler {
     static cancelAll() {
         for (const [_id, task] of this.#tasks) {
             task.running = false
-            system.clearRun(task.ta)
+            Kernel.system.clearRun(task.ta)
         }
         this.#tasks.clear()
         this.#stats.activeTasks = 0
@@ -251,7 +251,7 @@ export const CommonSchedulers = {
         return TickScheduler.schedule(callback, 20 * intervalSeconds, {
             name: "BROADCAST_VECTOR",
             maxRetries: 3,
-            condition: () => world.getAllPlayers().length > 0
+            condition: () => Kernel.world.getAllPlayers().length > 0
         })
     },
     
@@ -274,7 +274,7 @@ export const CommonSchedulers = {
     schedulePlayerUpdates: (callback, intervalSeconds = 10) => {
         return TickScheduler.schedule(callback, 20 * intervalSeconds, {
             name: "ENTITY_STATE_SYNC",
-            condition: () => world.getAllPlayers().length > 0,
+            condition: () => Kernel.world.getAllPlayers().length > 0,
             maxRetries: 2
         })
     }
