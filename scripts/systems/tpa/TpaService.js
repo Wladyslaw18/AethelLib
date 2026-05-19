@@ -39,7 +39,7 @@ export const TpaService = {
             if (TPAStore.getUIToggle(target.id)) {
                 Kernel.system.run(async () => {
                     try {
-                        const { MessageFormData } = await import("@minecraft/server-ui")
+                        const { MessageFormData } = Kernel
                         const form = new MessageFormData()
                             .title("\xA76\xA7lTeleport Request")
                             .body(`\xA7e${sender.name} \xA77wants to teleport to you.`)
