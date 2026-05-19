@@ -1,19 +1,13 @@
-/**
- * Aethelgrad Plugin Loader
- * ----------------------------------------------------------------------------
- * This file orchestrates the loading of external vectors.
- * Using dynamic imports to ensure one faulty plugin doesn't prevent 
- * the core system from booting.
- */
-
 import { PluginManager } from "../core/plugins/PluginManager.js";
 
+// master module manifest.
+// yes, it's hardcoded. no, we can't use fs.readdir in bedrock. deal with it.
 const PLUGINS = [
-    { path: "./ExamplePlugin/ExampleLoader.js", loader: () => import("./ExamplePlugin/ExampleLoader.js") }
+    { path: "CoreEconomy", loader: () => import("./CoreEconomy/index.js") },
+    { path: "BountyHunter", loader: () => import("./BountyHunter/index.js") },
+    { path: "Clans", loader: () => import("./Clans/index.js") }
 ];
 
 export async function loadPlugins() {
     await PluginManager.loadAll(PLUGINS);
 }
-
-console.log("[AethelLib] Plugin Loader initialized.");
