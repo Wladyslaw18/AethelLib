@@ -1,4 +1,3 @@
-import { world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 
@@ -41,7 +40,7 @@ export const MoneyCommand = {
         }
 
         // case 2: check if the target is online.
-        const targetPlayer = world.getAllPlayers().find(p => p.name.toLowerCase() === targetName.toLowerCase())
+        const targetPlayer = Kernel.world.getAllPlayers().find(p => p.name.toLowerCase() === targetName.toLowerCase())
         
         if (targetPlayer) {
             // fast path: pull from online cache.
@@ -51,8 +50,8 @@ export const MoneyCommand = {
             // case 3: target is offline. we have to do a slow database crawl.
             // this is expensive because dynamic properties aren't indexed.
             const Database = Kernel.get("database")
-            // get every single property key in the world (O(N) where N is property count).
-            const ids = world.getDynamicPropertyIds()
+            // get every single property key in the Kernel.world (O(N) where N is property count).
+            const ids = Kernel.world.getDynamicPropertyIds()
             // we are looking for the player's name mapping key.
             const namePattern = /^player:(.+):name$/
             let foundId = null
