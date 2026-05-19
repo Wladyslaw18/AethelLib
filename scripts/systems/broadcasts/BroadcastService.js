@@ -2,8 +2,9 @@
  * Broadcast Service - DOD Refactor with Date.now() timer
  * Performance: Check nextBroadcastTick once every 20 ticks (1s) rather than every tick
  */
+import { Kernel } from "../../core/Kernel.js";
 
-import { world } from "@minecraft/server"
+
 import { BroadcastStore } from "./BroadcastStore.js"
 import { TickScheduler } from "../../core/scheduler/TickScheduler.js"
 
@@ -59,7 +60,7 @@ export class BroadcastService {
             }
         }, 20, {
             name: "BroadcastTicker",
-            condition: () => this.#running && world.getAllPlayers().length > 0
+            condition: () => this.#running && Kernel.world.getAllPlayers().length > 0
         })
     }
 
@@ -106,7 +107,7 @@ export class BroadcastService {
         try {
             const rarity = this.#rollRarity()
             const message = this.#getRandomMessage(rarity)
-            const players = world.getAllPlayers()
+            const players = Kernel.world.getAllPlayers()
 
             // Send to all online players
             for (const player of players) {
@@ -151,7 +152,7 @@ export class BroadcastService {
     static broadcastNow(message) {
         if (!message || typeof message !== "string") return
 
-        const players = world.getAllPlayers()
+        const players = Kernel.world.getAllPlayers()
         for (const player of players) {
             try {
                 player.sendMessage(message)
@@ -170,7 +171,7 @@ export class BroadcastService {
      */
     static testBroadcast(rarity, player = null) {
         const message = this.#getRandomMessage(rarity)
-        const targetPlayers = player ? [player] : world.getAllPlayers()
+        const targetPlayers = player ? [player] : Kernel.world.getAllPlayers()
 
         for (const targetPlayer of targetPlayers) {
             try {
