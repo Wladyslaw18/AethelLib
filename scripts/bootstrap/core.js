@@ -13,6 +13,7 @@ import { PlayerStore } from "../core/store/PlayerStore.js"
 import { WorldStore } from "../core/store/WorldStore.js"
 import { RankStore } from "../systems/social/ranks/RankStore.js"
 import { StoreKeys } from "../core/store/StoreKeys.js"
+import { MessageStore } from "../core/store/MessageStore.js"
 import { PermissionManagerInstance } from "../core/permissions/PermissionManager.js"
 import { RankFormatter } from "../systems/social/ranks/RankFormatter.js"
 import { MuteStore } from "../systems/social/MuteStore.js"
@@ -29,8 +30,8 @@ import { TpaService } from "../systems/tpa/TpaService.js"
 import { TeleportService } from "../systems/teleport/TeleportService.js"
 import { PlayerUtils } from "../utils/PlayerUtils.js"
 import { ShopStore } from "../systems/economy/ShopStore.js"
-
-
+import { MasterDispatcher } from "../core/events/MasterDispatcher.js"
+import { SpatialCache } from "../systems/protection/SpatialCache.js"
 
 let initialized = false
 
@@ -61,6 +62,7 @@ export function init() {
     Kernel.register("permissions", PermissionManagerInstance)
     Kernel.register("formatter",   RankFormatter)
     Kernel.register("muteStore",   MuteStore)
+    Kernel.register("messageStore", MessageStore)
 
     // Teleportation
     Kernel.register("homeStore",   HomeStore)
@@ -77,6 +79,8 @@ export function init() {
     Kernel.register("floatingTextStore", FloatingTextStore)
 
     // Initialize systems
+    MasterDispatcher.init()
+    SpatialCache.init()
     PlayerUtils.init()
     TpaService.init()
     TeleportService.init()
