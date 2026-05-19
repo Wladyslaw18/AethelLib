@@ -158,20 +158,31 @@ function evaluateRPN(rpn) {
             if (a === undefined || b === undefined) throw new Error("Malformed expression.");
 
             // execute operation.
+            let res;
             switch (token) {
-                case '+': stack.push(a + b); break
-                case '-': stack.push(a - b); break
-                case '*': stack.push(a * b); break
+                case '+': res = a + b; break
+                case '-': res = a - b; break
+                case '*': res = a * b; break
                 case '/': 
                     // mandatory safety check.
                     if (b === 0) throw new Error("You can't divide by zero!");
-                    stack.push(a / b); 
+                    res = a / b; 
                     break
                 default: throw new Error("Unknown operator.");
             }
+            
+            if (!Number.isFinite(res)) throw new Error("Calculation resulted in infinity.");
+            if (Math.abs(res) > 1e15) throw new Error("Calculation result exceeds safe limits.");
+            
+            stack.push(res);
         }
     }
     // if the stack has exactly one item, that's our result.
     if (stack.length !== 1) throw new Error("Calculation failed.");
-    return stack[0]
+    
+    const finalResult = stack[0];
+    if (!Number.isFinite(finalResult)) throw new Error("Calculation resulted in infinity.");
+    if (Math.abs(finalResult) > 1e15) throw new Error("Calculation result exceeds safe limits.");
+    
+    return finalResult;
 }

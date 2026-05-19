@@ -1,6 +1,6 @@
-import { world } from "@minecraft/server"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 import { ReplyCache } from "../../core/cache/CacheManager.js"
+import { Kernel } from "../../core/Kernel.js"
 
 // ----------------------------------------------------------------------------
 // | object: MessageCommand                                                   |
@@ -69,6 +69,19 @@ export const MessageCommand = {
         ReplyCache.set(target.id, player.id)
         ReplyCache.set(player.id, target.id) 
 
+        // THE COMPLIANCE_INJECTION
+        const AuditLog = Kernel.get("messageStore")
+        if (AuditLog) {
+            AuditLog.logPrivateMessage({
+                sender: player.name,
+                senderId: player.id,
+                receiver: target.name,
+                receiverId: target.id,
+                content: message, // the raw evidence.
+                timestamp: Date.now()
+            })
+        }
+
         // step 2: secure transmission.
         const formattedMessage = formatMessage(player, target, message)
         // deliver to the receiver.
@@ -127,6 +140,19 @@ export const ReplyCommand = {
 
         // refresh the reply thread on their end.
         ReplyCache.set(lastSender.id, player.id)
+
+        // THE COMPLIANCE_INJECTION
+        const AuditLog = Kernel.get("messageStore")
+        if (AuditLog) {
+            AuditLog.logPrivateMessage({
+                sender: player.name,
+                senderId: player.id,
+                receiver: lastSender.name,
+                receiverId: lastSender.id,
+                content: message, // the raw evidence.
+                timestamp: Date.now()
+            })
+        }
 
         // route the response.
         const formattedMessage = formatMessage(player, lastSender, message)

@@ -1,5 +1,5 @@
+import { Kernel } from "../../core/Kernel.js";
 import { RankSystem } from "../../systems/social/ranks/RankSystem.js"
-import { system, world } from "@minecraft/server"
 import { isInCombat as isPlayerInCombat } from "../../systems/combat/CombatIntegrity.js"
 
 // ----------------------------------------------------------------------------
@@ -37,14 +37,14 @@ export const BackCommand = {
         const cd = (RankSystem.getPermission(player, "back.cooldown") ?? 5) * 20
         const last = cooldowns.get(player.id) ?? 0
         // check if enough ticks have passed since the last use.
-        if (system.currentTick - last < cd) {
-            const remaining = Math.ceil((cd - (system.currentTick - last)) / 20)
+        if (Kernel.system.currentTick - last < cd) {
+            const remaining = Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)
             player.sendMessage(`\xA7c\xA7l» \xA77Please wait \xA7e${remaining}s \xA77before using this again.`);
             return
         }
 
         // update the last-used tick.
-        cooldowns.set(player.id, system.currentTick)
+        cooldowns.set(player.id, Kernel.system.currentTick)
 
         // step 2: resolve the previous location.
         // this data is persisted in the player's private dynamic properties.
@@ -62,11 +62,11 @@ export const BackCommand = {
         }
 
         // step 4: migration execution.
-        // wrap in system.run to execute outside the command event chain.
-        system.run(() => {
+        // wrap in Kernel.system.run to execute outside the command event chain.
+        Kernel.system.run(() => {
             try {
                 // resolve the target dimension object.
-                const dimension = world.getDimension(lastLocation.dimension)
+                const dimension = Kernel.world.getDimension(lastLocation.dimension)
                 // perform the physical teleportation.
                 // add 0.5 to x/z to center the player on the block.
                 player.teleport(
@@ -99,7 +99,7 @@ function getLastLocation(player) {
 
 // ----------------------------------------------------------------------------
 // | function: isInCombat                                                     |
-// | interfaces with the combat integrity system to check threat status.      |
+// | interfaces with the combat integrity Kernel.system to check threat status.      |
 // ----------------------------------------------------------------------------
 function isInCombat(player) {
     return isPlayerInCombat(player.id)
@@ -110,7 +110,7 @@ function isInCombat(player) {
 // | listens for player spawns (e.g. after death) to capture their death      |
 // | location before it's overwritten by the new spawn point.                |
 // ----------------------------------------------------------------------------
-world.afterEvents.playerSpawn.subscribe((event) => {
+Kernel.world.afterEvents.playerSpawn.subscribe((event) => {
     // skip initial login spawn. we only care about respawns.
     if (event.initialSpawn) return
     const player = event.player

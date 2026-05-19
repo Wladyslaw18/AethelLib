@@ -1,4 +1,4 @@
-import { world, system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 
 // ----------------------------------------------------------------------------
 // | object: InfoCommand                                                      |
@@ -24,7 +24,7 @@ export const InfoCommand = {
     // ----------------------------------------------------------------------------
     execute(_data, player, _args) {
         // query the native engine for current player count.
-        const playerCount = world.getAllPlayers().length
+        const playerCount = Kernel.world.getAllPlayers().length
         // resolve human-readable uptime from the internal tick counter.
         const uptime = getUptime()
         // hardcoded version identifier (needs manual update per release).
@@ -59,7 +59,7 @@ export const InfoCommand = {
 // ----------------------------------------------------------------------------
 function getUptime() {
     // calculate total milliseconds.
-    const uptime = system.currentTick * 50
+    const uptime = Kernel.system.currentTick * 50
     // break down into days, hours, and minutes.
     const days = Math.floor(uptime / (1000 * 60 * 60 * 24))
     const hours = Math.floor((uptime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))

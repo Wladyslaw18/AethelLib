@@ -1,18 +1,18 @@
-import { system, world } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 
 // ----------------------------------------------------------------------------
 // | variable: tickTimes                                                      |
 // | a rolling buffer of millisecond timestamps from the last 20 ticks.       |
-// | used to calculate the real-world passage of time vs engine ticks.        |
+// | used to calculate the real-Kernel.world passage of time vs engine ticks.        |
 // ----------------------------------------------------------------------------
 const tickTimes = []
 
 // ----------------------------------------------------------------------------
-// | system: temporal sampling                                                 |
+// | Kernel.system: temporal sampling                                                 |
 // | pushes the current time into the buffer every single tick.               |
 // | we cap it at 21 entries to get exactly 1 second of rolling data.         |
 // ----------------------------------------------------------------------------
-system.runInterval(() => {
+Kernel.system.runInterval(() => {
     tickTimes.push(Date.now())
     if (tickTimes.length > 21) tickTimes.shift()
 }, 1)
@@ -70,7 +70,7 @@ export const TPSCommand = {
         const tps = getRealTPS()
         // color coding: Green for 18-20 (Healthy), Yellow for 12-17 (Lagging), Red for <12 (Dying).
         const tpsColor = tps >= 18 ? "\xA7a" : tps >= 12 ? "\xA7e" : "\xA7c"
-        const playerCount = world.getAllPlayers().length
+        const playerCount = Kernel.world.getAllPlayers().length
 
         player.sendMessage(" ")
         player.sendMessage("\xA76\xA7lServer Performance")
@@ -89,7 +89,7 @@ export const TPSCommand = {
 // | way to hook the allocator or we get a native API.                        |
 // ----------------------------------------------------------------------------
 function getMemoryUsage() {
-    const tick = system.currentTick
+    const tick = Kernel.system.currentTick
     if (tick % 100 === 0) return "\xA7aSTABLE"
     if (tick % 50 === 0) return "\xA7eMODERATE_LOAD"
     return "\xA7cHIGH_PRESSURE"

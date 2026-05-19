@@ -1,4 +1,3 @@
-import { world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 
 // ----------------------------------------------------------------------------
@@ -25,7 +24,7 @@ export const PlayerListCommand = {
     // ----------------------------------------------------------------------------
     execute(_data, player, _args) {
         // pull all active player objects.
-        const players = world.getAllPlayers()
+        const players = Kernel.world.getAllPlayers()
         
         // safety check for empty server (though unlikely if executing this).
         if (players.length === 0) {

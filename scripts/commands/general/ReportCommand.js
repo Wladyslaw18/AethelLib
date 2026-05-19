@@ -1,4 +1,3 @@
-import { world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 import { ReportStore } from "../../systems/general/ReportStore.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
@@ -128,7 +127,7 @@ function notifyAdmins(report) {
     const message = `\xA76\xA7l» \xA7e${reportType} \xA77from \xA7f${report.reporter}\xA77: \xA7f${report.message}`
 
     // iterate through all players and check permission nodes.
-    world.getAllPlayers().forEach(p => {
+    Kernel.world.getAllPlayers().forEach(p => {
         if (PermissionManager.hasPermission(p, "essentials.admin.notify")) {
             p.sendMessage(message)
         }
