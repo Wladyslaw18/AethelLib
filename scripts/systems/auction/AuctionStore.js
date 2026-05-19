@@ -1,4 +1,3 @@
-import { world } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 
 /*
@@ -264,7 +263,7 @@ export class AuctionStore {
         // 🔥 ACTUALLY GIVE THE ITEM!
         const player = Kernel.world.getAllPlayers().find(p => p.id === claimantId);
         if (player) {
-            const inv = player.getComponent("inventory").container;
+            const inv = player.getComponent(EntityComponentTypes.Inventory).container;
             let remaining = auction.quantity;
             while (remaining > 0) {
                 const take = Math.min(remaining, 64);
@@ -292,3 +291,5 @@ export class AuctionStore {
         return false
     }
 }
+
+
