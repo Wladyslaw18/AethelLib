@@ -1,5 +1,4 @@
-import { ModalFormData } from "@minecraft/server-ui"
-import { EntityComponentTypes, system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 import { ShopStore } from "../../systems/economy/ShopStore.js"
 import { ShopService } from "../../systems/economy/ShopService.js"
@@ -14,7 +13,7 @@ import { showShopUI } from "./ShopUI.js"
 export async function showBuyConfirmation(player, item) {
     const balance = await EconomyStore.getBalance(player)
     
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA76Buy: " + item.name.toUpperCase())
         .slider(`\xA77Select Quantity\n\xA78Unit Price: \xA7a$${item.buy}\n\xA78Balance: \xA7a$${balance.toLocaleString()}`, 1, 64, { valueStep: 1, defaultValue: 1 })
         .toggle("Confirm Purchase", { defaultValue: false })
@@ -27,11 +26,11 @@ export async function showBuyConfirmation(player, item) {
     if (!confirm) return
 
     await ShopService.buy(player, item, amount)
-    system.run(() => showShopUI(player))
+    Kernel.system.run(() => showShopUI(player))
 }
 
 export async function showSellConfirmation(player, item) {
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA76Sell: " + item.name.toUpperCase())
         .slider(`\xA77Select Quantity\n\xA78Unit Value: \xA7c$${item.sell}`, 1, 64, { valueStep: 1, defaultValue: 1 })
         .toggle("Confirm Sale", { defaultValue: false })
@@ -44,11 +43,11 @@ export async function showSellConfirmation(player, item) {
     if (!confirm) return
 
     await ShopService.sell(player, item, amount)
-    system.run(() => showShopUI(player))
+    Kernel.system.run(() => showShopUI(player))
 }
 
 export async function handleQuickSell(player) {
-    const equippable = player.getComponent(EntityComponentTypes.Equippable)
+    const equippable = player.getComponent(Kernel.EntityComponentTypes.Equippable)
     const mainhand = equippable.getEquipment("Mainhand")
 
     if (!mainhand) {
@@ -64,6 +63,6 @@ export async function handleQuickSell(player) {
     }
 
 
-    system.run(() => showSellConfirmation(player, shopItem))
+    Kernel.system.run(() => showSellConfirmation(player, shopItem))
 }
 

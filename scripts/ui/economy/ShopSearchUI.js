@@ -1,5 +1,4 @@
-import { ActionFormData, ModalFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { ShopStore } from "../../systems/economy/ShopStore.js"
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
@@ -12,13 +11,13 @@ import { showBuyConfirmation } from "./ShopTransaction.js"
  */
 
 export async function showSearchUI(player) {
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title(Lang.GOLD + "SEARCH SHOP")
         .textField("Enter item name:", "e.g. Diamond", { defaultValue: "" })
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {
-        system.run(() => showShopUI(player))
+        Kernel.system.run(() => showShopUI(player))
         return
     }
 
@@ -28,11 +27,11 @@ export async function showSearchUI(player) {
 
     if (results.length === 0) {
         player.sendMessage(Lang.ERROR + "NO ASSETS FOUND: Query returned zero nodes.")
-        system.run(() => showShopUI(player))
+        Kernel.system.run(() => showShopUI(player))
         return
     }
 
-    const resultForm = new ActionFormData()
+    const resultForm = new Kernel.ActionFormData()
         .title(Lang.GOLD + "RESULTS: " + query.toUpperCase())
         .body(`\u00A77Found ${results.length} matches in manifest.`)
 
@@ -43,10 +42,10 @@ export async function showSearchUI(player) {
 
     const res2 = await UIUtils.showForm(player, resultForm)
     if (res2.canceled || res2.selection === results.length) {
-        system.run(() => showShopUI(player))
+        Kernel.system.run(() => showShopUI(player))
         return
     }
 
     const selected = results[res2.selection]
-    system.run(() => showBuyConfirmation(player, selected))
+    Kernel.system.run(() => showBuyConfirmation(player, selected))
 }

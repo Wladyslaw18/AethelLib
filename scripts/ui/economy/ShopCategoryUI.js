@@ -1,5 +1,4 @@
-import { ActionFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { ShopRegistry } from "../../systems/shop/ShopRegistry.js"
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
@@ -9,7 +8,7 @@ import { showBuyConfirmation } from "./ShopTransaction.js"
 
 export async function showCategoryUI(player, category) {
     const items = await ShopRegistry.getAssetsByCategory(category)
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "SHOP: " + category)
         .body(items.length > 0 
             ? `\xA77Browsing ${items.length} nodes in vector.`
@@ -33,15 +32,15 @@ export async function showCategoryUI(player, category) {
     
     const backIndex = items.length > 0 ? items.length : 1
     if (res.canceled || res.selection === backIndex) {
-        system.run(() => showShopUI(player))
+        Kernel.system.run(() => showShopUI(player))
         return
     }
 
     if (items.length === 0 && res.selection === 0) {
-        system.run(() => showCategoryUI(player, category))
+        Kernel.system.run(() => showCategoryUI(player, category))
         return
     }
 
     const selected = items[res.selection]
-    system.run(() => showBuyConfirmation(player, { ...selected, id: selected.itemId }))
+    Kernel.system.run(() => showBuyConfirmation(player, { ...selected, id: selected.itemId }))
 }

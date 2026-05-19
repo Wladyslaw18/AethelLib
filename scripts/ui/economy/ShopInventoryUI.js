@@ -1,5 +1,4 @@
-import { ActionFormData } from "@minecraft/server-ui"
-import { system, EntityComponentTypes } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { ShopStore } from "../../systems/economy/ShopStore.js"
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
@@ -11,7 +10,7 @@ import { showSellConfirmation } from "./ShopTransaction.js"
  */
 
 export async function showInventorySellUI(player) {
-    const inv = player.getComponent(EntityComponentTypes.Inventory).container
+    const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
     const tradableItems = []
     const shopItems = ShopStore.getItems()
 
@@ -24,7 +23,7 @@ export async function showInventorySellUI(player) {
         }
     }
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "LIQUIDATION")
         .body(`\xA77Found ${tradableItems.length} tradable asset types in storage.`)
 
@@ -35,10 +34,10 @@ export async function showInventorySellUI(player) {
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === tradableItems.length) {
-        system.run(() => showShopUI(player))
+        Kernel.system.run(() => showShopUI(player))
         return
     }
 
     const selected = tradableItems[res.selection]
-    system.run(() => showSellConfirmation(player, selected))
+    Kernel.system.run(() => showSellConfirmation(player, selected))
 }
