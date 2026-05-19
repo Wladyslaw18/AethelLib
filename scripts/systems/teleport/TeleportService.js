@@ -46,6 +46,9 @@ export const TeleportService = {
     _isLocationSafe(location, dimensionId) {
         try {
             const dim = Kernel.world.getDimension(dimensionId)
+            // Explicit chunk loaded check to prevent LocationInUnloadedChunkError
+            if (!dim.isChunkLoaded(location)) return true;
+            
             const block = dim.getBlock(location)
             if (!block) return true // Chunk not loaded, assume safe or let native handle
             
