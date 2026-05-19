@@ -77,7 +77,7 @@ export function init() {
                 if (!player.isValid) return
 
                 try {
-                    const inventory = player.getComponent("minecraft:inventory")
+                    const inventory = player.getComponent(EntityComponentTypes.Inventory)
                     if (inventory?.container) {
                         inventory.container.clearAll()
                     }
@@ -126,3 +126,5 @@ export function cleanup() {
         }
     }
 }
+
+
