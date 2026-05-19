@@ -4,7 +4,6 @@
  */
 
 import { Kernel } from "../../../core/Kernel.js"
-import { ActionFormData } from "@minecraft/server-ui"
 
 export class ColorSystem {
     static COLORS = {
@@ -210,7 +209,7 @@ export class ColorSystem {
         const PlayerStore = Kernel.get("playerStore")
         const currentColor = PlayerStore.get(player, "chatColor") || "white"
         
-        const form = new ActionFormData()
+        const form = new Kernel.ActionFormData()
             .title("\xA76\xA7lChat Color Selection")
             .body(`\xA77Current color: ${this.COLORS[currentColor]}${currentColor}\n\xA77Select a new color:`)
         
