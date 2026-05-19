@@ -15,13 +15,33 @@ export const CommandBootstrap = {
     // ----------------------------------------------------------------------------
     init(Registry) {
         // register movement and spatial commands (tp, home, etc).
-        SpatialRegistry.register(Registry)
+        // if this registry catches fire, don't let it burn down the economy.
+        try {
+            SpatialRegistry.register(Registry)
+        } catch (e) {
+            console.error("[CommandBootstrap] CRITICAL_REGISTRY_CRASH [Spatial]:", e)
+        }
+
         // register money-related commands (balance, pay, etc).
-        EconomyRegistry.register(Registry)
+        try {
+            EconomyRegistry.register(Registry)
+        } catch (e) {
+            console.error("[CommandBootstrap] CRITICAL_REGISTRY_CRASH [Economy]:", e)
+        }
+
         // register staff/admin tools (mute, kick, etc).
-        AdminRegistry.register(Registry)
+        try {
+            AdminRegistry.register(Registry)
+        } catch (e) {
+            console.error("[CommandBootstrap] CRITICAL_REGISTRY_CRASH [Admin]:", e)
+        }
+
         // register miscellaneous utility commands (help, discord, etc).
-        GeneralRegistry.register(Registry)
+        try {
+            GeneralRegistry.register(Registry)
+        } catch (e) {
+            console.error("[CommandBootstrap] CRITICAL_REGISTRY_CRASH [General]:", e)
+        }
 
         // log that we finished the handshake.
         console.log("[AethelLib] command registry handshake complete.");

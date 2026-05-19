@@ -1,3 +1,5 @@
+import { system } from "@minecraft/server";
+
 // ----------------------------------------------------------------------------
 // | class: CacheManager                                                      |
 // | a centralized memory buffering system.                                   |
@@ -36,10 +38,10 @@ export class CacheManager {
         // | background cleanup                                                       |
         // | periodically clears out expired stuff and enforces size limits.           |
         // ----------------------------------------------------------------------------
-        const cleanup = setInterval(() => {
+        const cleanup = system.runInterval(() => {
             // call the internal cleanup helper.
             this.#cleanupCache(cache, accessOrder, ttl, maxSize)
-        }, cleanupInterval)
+        }, Math.floor(cleanupInterval / 50))
         
         // save the metadata in our global registry.
         this.#caches.set(name, { 
@@ -271,9 +273,9 @@ export class CacheManager {
     static #startGlobalCleanup() {
         if (this.#globalCleanupInterval) return
         
-        this.#globalCleanupInterval = setInterval(() => {
+        this.#globalCleanupInterval = system.runInterval(() => {
             this.#globalCleanup()
-        }, 300000) 
+        }, 6000) 
     }
     
     // loop through every cache and trigger a cleanup.
@@ -346,7 +348,7 @@ export class CacheManager {
         const cacheMeta = this.#caches.get(name)
         if (!cacheMeta) return false
         
-        clearInterval(cacheMeta.cleanup)
+        system.clearRun(cacheMeta.cleanup)
         cacheMeta.cache.clear()
         cacheMeta.accessOrder.clear()
         this.#caches.delete(name)
@@ -357,13 +359,13 @@ export class CacheManager {
     // wipe everything from the registry.
     static destroyAll() {
         for (const [_name, cacheMeta] of this.#caches) {
-            clearInterval(cacheMeta.cleanup)
+            system.clearRun(cacheMeta.cleanup)
             cacheMeta.cache.clear()
             cacheMeta.accessOrder.clear()
         }
         
         if (this.#globalCleanupInterval) {
-            clearInterval(this.#globalCleanupInterval)
+            system.clearRun(this.#globalCleanupInterval)
             this.#globalCleanupInterval = null
         }
         

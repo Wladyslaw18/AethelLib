@@ -13,22 +13,33 @@ export const CommandRegistry = {
      * Registers a command module.
      */
     register: (arg1, arg2) => {
-        const command = arg2 || arg1;
-        const name = arg2 ? arg1 : command.name;
+        try {
+            const command = arg2 || arg1;
+            
+            // defensive guard against broken circular imports returning undefined
+            if (!command) {
+                console.error(`[CommandRegistry] REJECTED: Command module is null or undefined. Check for broken import/export headers!`);
+                return;
+            }
 
-        if (!name || typeof command.execute !== 'function') {
-            console.error(`[CommandRegistry] REJECTED: Invalid module signature for '${name}'`);
-            return;
+            const name = arg2 ? arg1 : command.name;
+
+            if (!name || typeof command.execute !== 'function') {
+                console.error(`[CommandRegistry] REJECTED: Invalid module signature for '${name || "unnamed"}'. Missing execute() method?`);
+                return;
+            }
+
+            const lowerName = name.toLowerCase();
+
+            // Defensive check: Don't allow silent overwrites of core commands
+            if (commands.has(lowerName)) {
+                console.warn(`[CommandRegistry] COLLISION DETECTED: Command '${lowerName}' is already registered. Overwriting...`);
+            }
+
+            commands.set(lowerName, command);
+        } catch (error) {
+            console.error(`[CommandRegistry] CRITICAL_REGISTRATION_FAILURE:`, error);
         }
-
-        const lowerName = name.toLowerCase();
-
-        // Defensive check: Don't allow silent overwrites of core commands
-        if (commands.has(lowerName)) {
-            console.warn(`[CommandRegistry] COLLISION DETECTED: Command '${lowerName}' is already registered. Overwriting...`);
-        }
-
-        commands.set(lowerName, command);
     },
 
     /**

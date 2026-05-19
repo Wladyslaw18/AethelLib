@@ -102,13 +102,17 @@ export class Kernel {
             
             // register a command under the plugin's name.
             registerCommand: (command) => {
+                if (!command) {
+                    console.error(`[${manifest.id}] Failed to register command: Command object is null or undefined.`);
+                    return;
+                }
                 // get the global registry
                 const registry = this.get("commandRegistry");
                 if (!registry) return console.error(`[${manifest.id}] Failed to register command: Registry not found.`);
                 // add it to the registry
                 registry.register(command);
                 // track it so we can unregister it later
-                pluginState.activeCommands.push(command.name);
+                pluginState.activeCommands.push(command.name || "unnamed");
             },
 
             // set an interval that auto-cleans on plugin shutdown.
@@ -215,7 +219,13 @@ export class Kernel {
         console.log("[Kernel] booting plugins...");
         
         // sort the plugins so dependencies load first.
-        const sorted = this._sortPlugins();
+        let sorted = [];
+        try {
+            sorted = this._sortPlugins();
+        } catch (error) {
+            console.error(`[Kernel] DEPENDENCY_SORT_FAILED: Circular dependencies or references detected. Falling back to staging order.`, error);
+            sorted = Array.from(this.#plugins.keys());
+        }
         let successCount = 0;
 
         // iterate through the sorted list and init each one.

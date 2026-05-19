@@ -43,7 +43,14 @@ export const PluginManager = {
                 },
                 // safe core access
                 getService: (id) => Kernel.get(id),
-                registerCommand: (cmd) => Kernel.get("commandRegistry").register(cmd),
+                registerCommand: (cmd) => {
+                    const registry = Kernel.get("commandRegistry");
+                    if (!registry) {
+                        console.error(`[PluginManager] Failed to register command for '${manifest.id}': commandRegistry is offline.`);
+                        return;
+                    }
+                    registry.register(cmd);
+                },
                 log: (msg) => console.log(`[${manifest.id}] ${msg}`),
                 error: (msg) => console.error(`[${manifest.id}] ERROR: ${msg}`)
             };
@@ -68,7 +75,13 @@ export const PluginManager = {
         await Promise.all(pluginDefs.map(p => this.load(p)));
         
         console.log(`[PluginManager] Resolving dependency graph...`);
-        const sortedIds = this._resolveDependencies();
+        let sortedIds = [];
+        try {
+            sortedIds = this._resolveDependencies();
+        } catch (error) {
+            console.error(`[PluginManager] DEPENDENCY_RESOLUTION_CRASH: Graph resolution failed due to circular bounds. Falling back to raw load order.`, error);
+            sortedIds = Array.from(this._plugins.keys());
+        }
         
         let successCount = 0;
         
