@@ -16,6 +16,7 @@ import { AdminReportCommand } from "./admin/AdminReportCommand.js"
 import { BroadcastResetCommand } from "./admin/BroadcastResetCommand.js"
 import { showReports } from "./admin/AdminPanelReports.js"
 import { ShopAdminCommands } from "./admin/ShopAdminCommands.js"
+import { AuditCommand } from "./admin/AuditCommand.js"
 
 // ----------------------------------------------------------------------------
 // | object: AdminRegistry                                                    |
@@ -65,6 +66,8 @@ export const AdminRegistry = {
         Registry.register("ft", FloatingTextCommand)
         // view and manage player reports.
         Registry.register("reports", AdminReportCommand)
+        // industrial communication archive reader.
+        Registry.register("audit", AuditCommand)
         // legacy audit log viewer.
         Registry.register("log", { 
             description: "View the administrative audit log",
