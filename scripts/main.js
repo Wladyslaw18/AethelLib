@@ -1,4 +1,3 @@
-import { system } from "@minecraft/server"
 import { Kernel } from "./core/Kernel.js"
 import { init as initEarly } from "./bootstrap/early.js"
 import { init as initCore } from "./bootstrap/core.js"
@@ -24,10 +23,10 @@ initCommands()
 
 // ----------------------------------------------------------------------------
 // | asynchronous boot sequence                                               |
-// | runs inside a system.run loop to ensure we have access to the world      |
+// | runs inside a Kernel.system.run loop to ensure we have access to the world      |
 // | and other engine features that aren't ready at instant-zero.             |
 // ----------------------------------------------------------------------------
-system.run(async () => {
+Kernel.system.run(async () => {
     // stage 1: core boot.
     // initializes managers (database, cache, etc) and sets up event listeners.
     initCore()
