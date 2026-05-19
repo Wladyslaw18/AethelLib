@@ -1,5 +1,4 @@
-import { ActionFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { WarpStore } from "../../systems/teleport/WarpStore.js"
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
@@ -15,7 +14,7 @@ export async function showWarpUI(player) {
     const warps = await WarpStore.getWarps()
     const warpNames = Object.keys(warps)
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "WAYPOINTS")
         .body(warpNames.length > 0 
             ? `\xA77Available Waypoints: \xA7e${warpNames.length}`
@@ -32,7 +31,7 @@ export async function showWarpUI(player) {
 
     if (res.selection === 0) {
         const { showMainGUI } = await import("../MainGUI.js")
-        system.run(() => showMainGUI(player))
+        Kernel.system.run(() => showMainGUI(player))
         return
     }
 

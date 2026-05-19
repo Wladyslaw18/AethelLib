@@ -1,5 +1,3 @@
-import { ActionFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
 import { Kernel } from "../../core/Kernel.js"
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
@@ -15,7 +13,7 @@ export async function showHomeUI(player) {
     const homes = await HomeStore.getHomes(player)
     const homeNames = Object.keys(homes)
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.UI.HOMES_TITLE)
         .body(homeNames.length > 0
             ? `\xA77Active Anchors: \xA7e${homeNames.length}`
@@ -33,7 +31,7 @@ export async function showHomeUI(player) {
 
     if (response.selection === 0) {
         const { showMainGUI } = await import("../MainGUI.js")
-        system.run(() => showMainGUI(player))
+        Kernel.system.run(() => showMainGUI(player))
         return
     }
 
@@ -41,11 +39,11 @@ export async function showHomeUI(player) {
     const selectedName = homeNames[selectedIndex]
     if (!selectedName) return
 
-    system.run(() => showHomeActions(player, selectedName, homes[selectedName]))
+    Kernel.system.run(() => showHomeActions(player, selectedName, homes[selectedName]))
 }
 
 async function showHomeActions(player, name, home) {
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "DETAILS: " + name.toUpperCase())
         .body(`\xA77Target: \xA7e${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}\n\xA77Dim: \xA7e${home.dimension}`)
         .button("\xA7a\xA7lTELEPORT\n\xA78Relocate to anchor", "textures/items/ender_pearl")
@@ -77,11 +75,11 @@ async function showHomeActions(player, name, home) {
             player.sendMessage(success
                 ? Lang.SUCCESS + `DELETED: Anchor ${name} removed.`
                 : Lang.ERROR + "DELETE FAILURE.");
-            system.run(() => showHomeUI(player))
+            Kernel.system.run(() => showHomeUI(player))
             break
         }
         case 2: {
-            system.run(() => showHomeUI(player))
+            Kernel.system.run(() => showHomeUI(player))
             break
         }
     }

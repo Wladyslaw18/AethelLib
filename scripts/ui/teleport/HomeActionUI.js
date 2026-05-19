@@ -1,5 +1,4 @@
-import { ModalFormData, ActionFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { HomeStore } from "../../systems/teleport/HomeStore.js"
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
@@ -9,31 +8,31 @@ import { UIUtils } from "../UIUtils.js"
  */
 
 export async function showCreateHomeUI(player) {
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title(Lang.GOLD + "SET HOME")
         .textField("Anchor Name:", "e.g. Base 1", { defaultValue: "Home" })
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {
         const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-        system.run(() => showHomeMenu(player))
+        Kernel.system.run(() => showHomeMenu(player))
         return
     }
 
     const name = res.formValues[0]
     if (!name || name.trim().length === 0) {
         player.sendMessage(Lang.ERROR + "INVALID NAME: Anchor requires a label.")
-        system.run(() => showCreateHomeUI(player))
+        Kernel.system.run(() => showCreateHomeUI(player))
         return
     }
 
     const success = await HomeStore.setHome(player, name, player.location, player.dimension.id)
     player.sendMessage(success 
         ? Lang.SUCCESS + `ANCHOR SET: ${name.toUpperCase()} localized.`
-        : Lang.ERROR + "ANCHOR FAILURE: Limit reached or system error.")
+        : Lang.ERROR + "ANCHOR FAILURE: Limit reached or Kernel.system error.")
 
     const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-    system.run(() => showHomeMenu(player))
+    Kernel.system.run(() => showHomeMenu(player))
 }
 
 export async function showDeleteHomeUI(player) {
@@ -43,11 +42,11 @@ export async function showDeleteHomeUI(player) {
     if (homeNames.length === 0) {
         player.sendMessage(Lang.ERROR + "NO NODES: No anchors found.")
         const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-        system.run(() => showHomeMenu(player))
+        Kernel.system.run(() => showHomeMenu(player))
         return
     }
 
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.ERROR + "DELETE HOME")
         .body("Select node to purge.")
 
@@ -57,7 +56,7 @@ export async function showDeleteHomeUI(player) {
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === homeNames.length) {
         const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-        system.run(() => showHomeMenu(player))
+        Kernel.system.run(() => showHomeMenu(player))
         return
     }
 
@@ -68,5 +67,5 @@ export async function showDeleteHomeUI(player) {
         : Lang.ERROR + `FAILURE: Could not purge ${selected}.`)
     
     const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-    system.run(() => showHomeMenu(player))
+    Kernel.system.run(() => showHomeMenu(player))
 }

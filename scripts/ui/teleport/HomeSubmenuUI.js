@@ -1,5 +1,4 @@
-import { ActionFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
 
@@ -8,7 +7,7 @@ import { UIUtils } from "../UIUtils.js"
  */
 
 export async function showHomeMenu(player) {
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.UI.HOMES_TITLE)
         .body(Lang.UI.HOMES_BODY)
         .button(Lang.UI.HOMES_LIST, "textures/items/compass_item")
@@ -19,24 +18,24 @@ export async function showHomeMenu(player) {
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === 3) {
         const { showMainGUI } = await import("../MainGUI.js")
-        system.run(() => showMainGUI(player))
+        Kernel.system.run(() => showMainGUI(player))
         return
     }
 
     switch (res.selection) {
         case 0: {
             const { showHomeUI } = await import("./HomeUI.js")
-            system.run(() => showHomeUI(player))
+            Kernel.system.run(() => showHomeUI(player))
             break
         }
         case 1: {
             const { showCreateHomeUI } = await import("./HomeActionUI.js")
-            system.run(() => showCreateHomeUI(player))
+            Kernel.system.run(() => showCreateHomeUI(player))
             break
         }
         case 2: {
             const { showDeleteHomeUI } = await import("./HomeActionUI.js")
-            system.run(() => showDeleteHomeUI(player))
+            Kernel.system.run(() => showDeleteHomeUI(player))
             break
         }
     }
