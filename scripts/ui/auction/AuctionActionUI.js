@@ -1,6 +1,4 @@
-import { ActionFormData, ModalFormData, MessageFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
-import { EntityComponentTypes } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { AuctionStore } from "../../systems/auction/AuctionStore.js"
 import { AuctionService } from "../../systems/auction/AuctionService.js"
 
@@ -12,7 +10,7 @@ import { UIUtils } from "../UIUtils.js"
 
 export async function showAuctionDetailUI(player, auction) {
     const time = AuctionStore.getTimeRemaining(auction.endTime)
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title("\xA76Auction Details")
 
         .body(`\xA77Item: \xA7f${auction.itemName}\n\xA77Qty: \xA7e${auction.quantity}\n\xA77Seller: \xA7e${auction.sellerName}\n\xA77Time: \xA76${time}\n\n\xA77Bid: \xA7e$${auction.currentBid.toLocaleString()}\n\xA77Bidder: \xA7b${auction.currentBidderName || "NONE"}\n\xA77Buy Now: \xA7a$${auction.buyNowPrice ? auction.buyNowPrice.toLocaleString() : "DISABLED"}`)
@@ -35,7 +33,7 @@ export async function showAuctionDetailUI(player, auction) {
     const backIndex = (auction.status === "active" ? (auction.sellerId !== player.id ? (auction.buyNowPrice > 0 ? 3 : 2) : 2) : 2)
     if (res.selection === backIndex) {
         const { showBrowseUI } = await import("./AuctionBrowseUI.js")
-        system.run(() => showBrowseUI(player))
+        Kernel.system.run(() => showBrowseUI(player))
         return
     }
 
@@ -46,8 +44,8 @@ export async function showAuctionDetailUI(player, auction) {
 async function handleActionSelection(player, auction, selection) {
     if (auction.status === "active") {
         if (auction.sellerId !== player.id) {
-            if (selection === 0) system.run(() => showBidUI(player, auction))
-            if (selection === 1 && auction.buyNowPrice > 0) system.run(() => handleBuyNow(player, auction))
+            if (selection === 0) Kernel.system.run(() => showBidUI(player, auction))
+            if (selection === 1 && auction.buyNowPrice > 0) Kernel.system.run(() => handleBuyNow(player, auction))
         } else if (selection === 0) {
             AuctionStore.deleteAuction(auction.id)
             player.sendMessage("\xA7a\xA7l» \xA7fAuction cancelled. Your item has been returned.")
@@ -62,7 +60,7 @@ async function handleActionSelection(player, auction, selection) {
 
 async function showBidUI(player, auction) {
     const minBid = auction.currentBid + Math.ceil(auction.currentBid * 0.05)
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA76Place Bid")
 
         .textField(`Amount (Min: \u00A7e$${minBid.toLocaleString()}\u00A77):`, "0", { defaultValue: String(minBid) })
@@ -74,7 +72,7 @@ async function showBidUI(player, auction) {
 }
 
 async function handleBuyNow(player, auction) {
-    const confirm = new MessageFormData()
+    const confirm = new Kernel.MessageFormData()
         .title("\xA76Buy Now")
 
         .body(`Confirm purchase for \xA7a$${auction.buyNowPrice.toLocaleString()}?`)
@@ -89,7 +87,7 @@ async function handleBuyNow(player, auction) {
 }
 
 export async function showCreateUI(player) {
-    const equippable = player.getComponent(EntityComponentTypes.Equippable)
+    const equippable = player.getComponent(Kernel.EntityComponentTypes.Equippable)
     const item = equippable.getEquipment("Mainhand")
 
     if (!item) {
@@ -98,7 +96,7 @@ export async function showCreateUI(player) {
     }
 
 
-    const form = new ModalFormData()
+    const form = new Kernel.ModalFormData()
         .title("\xA76Create Auction")
 
         .toggle(`List ${item.typeId.replace("minecraft:", "").toUpperCase()} x${item.amount}?`, { defaultValue: true })

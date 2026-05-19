@@ -1,5 +1,4 @@
-import { ActionFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { AuctionStore } from "../../systems/auction/AuctionStore.js"
 import { Lang } from "../Lang.js"
 import { UIUtils } from "../UIUtils.js"
@@ -10,7 +9,7 @@ import { UIUtils } from "../UIUtils.js"
 
 export async function showBrowseUI(player) {
     const auctions = AuctionStore.getActiveAuctions()
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "BROWSE")
         .body(auctions.length === 0 ? "\xA7cNO ACTIVE LISTINGS." : "\xA77Select item to view details.")
 
@@ -24,17 +23,17 @@ export async function showBrowseUI(player) {
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === auctions.length) {
         const { showAuctionUI } = await import("./AuctionUI.js")
-        system.run(() => showAuctionUI(player))
+        Kernel.system.run(() => showAuctionUI(player))
         return
     }
 
     const { showAuctionDetailUI } = await import("./AuctionActionUI.js")
-    system.run(() => showAuctionDetailUI(player, auctions[res.selection]))
+    Kernel.system.run(() => showAuctionDetailUI(player, auctions[res.selection]))
 }
 
 export async function showMyAuctionsUI(player) {
     const auctions = AuctionStore.getPlayerAuctions(player.id)
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "MY LISTINGS")
         .body(auctions.length === 0 ? "\xA7cNO LISTINGS." : "\xA77Select to manage.")
 
@@ -47,10 +46,10 @@ export async function showMyAuctionsUI(player) {
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === auctions.length) {
         const { showAuctionUI } = await import("./AuctionUI.js")
-        system.run(() => showAuctionUI(player))
+        Kernel.system.run(() => showAuctionUI(player))
         return
     }
 
     const { showAuctionDetailUI } = await import("./AuctionActionUI.js")
-    system.run(() => showAuctionDetailUI(player, auctions[res.selection]))
+    Kernel.system.run(() => showAuctionDetailUI(player, auctions[res.selection]))
 }

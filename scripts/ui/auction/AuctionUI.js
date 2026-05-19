@@ -1,5 +1,4 @@
-import { ActionFormData } from "@minecraft/server-ui"
-import { system } from "@minecraft/server"
+import { Kernel } from "../../core/Kernel.js";
 import { AuctionStore } from "../../systems/auction/AuctionStore.js"
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
 import { Lang } from "../Lang.js"
@@ -13,7 +12,7 @@ export async function showAuctionUI(player) {
     const auctions = AuctionStore.getActiveAuctions()
     const balance = await EconomyStore.getBalance(player)
     
-    const form = new ActionFormData()
+    const form = new Kernel.ActionFormData()
         .title(Lang.UI.AUCTION_TITLE)
         .body(`\xA77Active Listings: \xA7e${auctions.length}\n\xA77Balance: \xA7a$${balance.toLocaleString()}`)
         .button("\xA76\xA7lBROWSE\n\xA78Explore active listings", "textures/items/golden_carrot")
@@ -26,24 +25,24 @@ export async function showAuctionUI(player) {
     
     if (res.selection === 3) {
         const { showMainGUI } = await import("../MainGUI.js")
-        system.run(() => showMainGUI(player))
+        Kernel.system.run(() => showMainGUI(player))
         return
     }
 
     switch (res.selection) {
         case 0: {
             const { showBrowseUI } = await import("./AuctionBrowseUI.js")
-            system.run(() => showBrowseUI(player)); 
+            Kernel.system.run(() => showBrowseUI(player)); 
             break
         }
         case 1: {
             const { showCreateUI } = await import("./AuctionActionUI.js")
-            system.run(() => showCreateUI(player)); 
+            Kernel.system.run(() => showCreateUI(player)); 
             break
         }
         case 2: {
             const { showMyAuctionsUI } = await import("./AuctionBrowseUI.js")
-            system.run(() => showMyAuctionsUI(player)); 
+            Kernel.system.run(() => showMyAuctionsUI(player)); 
             break
         }
     }
