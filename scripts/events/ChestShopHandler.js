@@ -1,5 +1,4 @@
 import { Kernel } from "../core/Kernel.js"
-import { SignSide } from "@minecraft/server"
 
 // ----------------------------------------------------------------------------
 // | ChestShopHandler                                                         |
@@ -39,7 +38,7 @@ export function init() {
                 if (!signComponent) return
 
                 // check the front side of the sign.
-                const frontText = signComponent.getText(SignSide.Front)
+                const frontText = signComponent.getText(Kernel.SignSide.Front)
                 if (frontText === undefined || frontText === null) return
 
                 // get the very first line of text.
@@ -208,7 +207,7 @@ async function processTransaction(buyer, shop) {
         }
 
         // try to get the inventory component.
-        const container = chestBlock.getComponent("minecraft:inventory")?.container
+        const container = chestBlock.getComponent(Kernel.BlockComponentTypes.Inventory)?.container
         if (!container) {
             buyer.sendMessage("\xA7c\xA7l» \xA77Could not open the shop's chest.");
             return
@@ -265,9 +264,9 @@ async function handleBuy(buyer, shop, container) {
     }
 
     // step 4: try to give the item to the buyer.
-    const { ItemStack } = await import("@minecraft/server")
+    const { ItemStack } = Kernel
     const itemStack = new ItemStack(shop.itemId, shop.quantity)
-    const buyerInv = buyer.getComponent("minecraft:inventory")?.container
+    const buyerInv = buyer.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
     if (!buyerInv) return;
 
     // Bedrock addItem returns any leftover items if the inventory is full.
@@ -328,7 +327,7 @@ async function handleBuy(buyer, shop, container) {
 // | logic for when a player sells an item TO a chest shop.                   |
 // ----------------------------------------------------------------------------
 async function handleSell(seller, shop, container) {
-    const sellerInv = seller.getComponent("minecraft:inventory")?.container
+    const sellerInv = seller.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
     if (!sellerInv) return
 
     // step 1: check if the seller actually has the items they claim to have.
@@ -355,7 +354,7 @@ async function handleSell(seller, shop, container) {
     }
 
     // step 3: move items from seller to the shop chest.
-    const { ItemStack } = await import("@minecraft/server")
+    const { ItemStack } = Kernel
     const itemStack = new ItemStack(shop.itemId, shop.quantity)
     // put it in the chest.
     container.addItem(itemStack)
@@ -385,7 +384,7 @@ async function handleSell(seller, shop, container) {
 // | opens a modal form for the player to configure their new shop.           |
 // ----------------------------------------------------------------------------
 async function showSetupUI(player, shopType, signLocation, chestLocation) {
-    const { ModalFormData } = await import("@minecraft/server-ui")
+    const { ModalFormData } = Kernel
 
     // build the form.
     const form = new ModalFormData()
@@ -429,3 +428,5 @@ async function showSetupUI(player, shopType, signLocation, chestLocation) {
         player.sendMessage("\xA7c\xA7l» \xA77Failed to create shop.");
     }
 }
+
+
