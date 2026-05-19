@@ -30,8 +30,7 @@ export const CommandHandler = {
          * Subscribes to the world.beforeEvents.chatSend event to catch 
          * potential commands before they are broadcast to other players.
          */
-        // @ts-ignore
-        const chatEvent = Kernel.world.beforeEvents.chatSend || Kernel.world.beforeEvents.chat
+        const chatEvent = Kernel.world.beforeEvents.chatSend
         if (chatEvent) {
             chatEvent.subscribe(this._handleChatCommand.bind(this))
         } else {
@@ -59,8 +58,7 @@ export const CommandHandler = {
         const CommandRegistry = Kernel.get("commandRegistry")
         const commands = CommandRegistry.getAll()
 
-        // @ts-ignore
-        const chatEvent = Kernel.world.beforeEvents.chatSend || Kernel.world.beforeEvents.chat
+        const chatEvent = Kernel.world.beforeEvents.chatSend
         if (chatEvent) {
             chatEvent.subscribe((event) => {
                 const message = event.message.trim()
