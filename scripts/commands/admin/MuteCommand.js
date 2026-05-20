@@ -1,4 +1,5 @@
 import { Kernel } from "../../core/Kernel.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 // ----------------------------------------------------------------------------
 // | object: MuteCommand                                                      |
@@ -8,26 +9,30 @@ import { Kernel } from "../../core/Kernel.js"
 export const MuteCommand = {
     name: "mute",
     description: "Mute a player's chat",
+    usage: "/ae:mute <player> [duration]",
     permission: "essentials.admin.mute",
+    category: "Admin",
+    // Intercepted by script for complex string handling.
+    native: false,
 
     // NATIVE SCHEMA DEFINITION
     params: [
-        { name: "player", type: Kernel.CustomCommandParamType.PlayerSelector, optional: false },
-        { name: "duration", type: Kernel.CustomCommandParamType.String, optional: true }
+        { name: "player", type: "player", optional: false },
+        { name: "duration", type: "string", optional: true }
     ],
 
     async execute(_data, player, args) {
-        // target is an actual rich Player object! duration is a C++ validated String!
-        const [target, durationStr = "permanent"] = args;
+        const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args);
+        const durationStr = args[consumedArgs] || "permanent";
 
         if (!target) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:mute <player> [duration]");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:mute <player> [duration]");
             return;
         }
 
         const MuteStore = Kernel.get("muteStore");
         if (!MuteStore) {
-            player.sendMessage("\xA7c\xA7l» \xA77Mute system is offline.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Mute system is offline.");
             return;
         }
 
@@ -35,13 +40,13 @@ export const MuteCommand = {
             const success = await MuteStore.mute(target, durationStr);
             if (success) {
                 const timeLabel = durationStr === "permanent" ? "permanently" : `for ${durationStr}`;
-                player.sendMessage(`\xA7a\xA7l» \xA7fPlayer \xA7e${target.name}\xA7f has been muted \xA7e${timeLabel}\xA7f.`);
-                target.sendMessage(`\xA7c\xA7l» \xA77You have been muted \xA7e${timeLabel}\xA77 by an administrator.`);
+                player.sendMessage(`\u00A7a\u00A7l» \u00A7fPlayer \u00A7e${target.name}\u00A7f has been muted \u00A7e${timeLabel}\u00A7f.`);
+                target.sendMessage(`\u00A7c\u00A7l» \u00A77You have been muted \u00A7e${timeLabel}\u00A77 by an administrator.`);
             } else {
-                player.sendMessage("\xA7c\xA7l» \xA77Failed to apply mute.");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to apply mute.");
             }
         } catch (error) {
-            player.sendMessage(`\xA7cError: ${error.message}`);
+            player.sendMessage(`\u00A7cError: ${error.message}`);
         }
     }
 }
