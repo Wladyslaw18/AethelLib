@@ -66,6 +66,18 @@ export const CommandRegistry = {
             }
 
             commands.set(lowerName, command);
+
+            // Dynamically register aliases if they are defined on the command
+            if (command.aliases && Array.isArray(command.aliases)) {
+                for (const alias of command.aliases) {
+                    const lowerAlias = alias.toLowerCase();
+                    if (!commands.has(lowerAlias)) {
+                        commands.set(lowerAlias, command);
+                    } else {
+                        console.warn(`[CommandRegistry] ALIAS COLLISION: Alias '${lowerAlias}' of command '${lowerName}' is already registered.`);
+                    }
+                }
+            }
         } catch (error) {
             console.error(`[CommandRegistry] CRITICAL_REGISTRATION_FAILURE:`, error);
         }
@@ -104,6 +116,17 @@ export const CommandRegistry = {
      * MODULE_DECOMMISSION_VECTOR
      */
     unregister: (name) => {
-        return commands.delete(name.toLowerCase());
+        const lowerName = name.toLowerCase();
+        const command = commands.get(lowerName);
+        if (command) {
+            commands.delete(lowerName);
+            if (command.aliases && Array.isArray(command.aliases)) {
+                for (const alias of command.aliases) {
+                    commands.delete(alias.toLowerCase());
+                }
+            }
+            return true;
+        }
+        return false;
     }
 };
