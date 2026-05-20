@@ -4,6 +4,7 @@ import { TopMoneyCommand } from "./economy/TopMoneyCommand.js"
 import { ShopCommand } from "./shop/ShopCommand.js"
 import { SellCommand } from "./sell/SellCommand.js"
 import { AuctionCommand } from "./auction/AuctionCommand.js"
+import { WithdrawCommand } from "./banknote/WithdrawCommand.js"
 
 // ----------------------------------------------------------------------------
 // | object: EconomyRegistry                                                  |
@@ -27,5 +28,7 @@ export const EconomyRegistry = {
         Registry.register("sell", SellCommand)
         // interact with the player-to-player auction house.
         Registry.register("auction", AuctionCommand)
+        // withdraw money into physical banknotes.
+        Registry.register("withdraw", WithdrawCommand)
     }
 }
