@@ -11,11 +11,6 @@ const nameCache = new Map()
 // helper map to find a name from a player id (used for cleanup on disconnect).
 const idToNameCache = new Map() 
 
-// ----------------------------------------------------------------------------
-// | lifecycle hooks                                                          |
-// | keep the cache in sync with the actual Kernel.world state.                      |
-// ----------------------------------------------------------------------------
-
 // add players to the cache as soon as they spawn.
 Kernel.world.afterEvents.playerSpawn.subscribe((ev) => {
     const { player } = ev
@@ -75,7 +70,6 @@ export const PlayerUtils = {
         if (nameMatch?.isValid) return nameMatch
 
         // step 2: look for an exact ID match.
-        // this is slow (O(N)) because we have to scan the id map keys.
         const foundName = [...idToNameCache.entries()].find(([id, _name]) => id === identifier)
         if (foundName) {
             const p = nameCache.get(foundName[1])
@@ -87,7 +81,6 @@ export const PlayerUtils = {
         const players = Kernel.world.getAllPlayers()
         const partial = players.filter(p => p.name.toLowerCase().includes(lowerId))
         // only return if there is exactly one match. 
-        // if there are multiple matches, we don't know who they want.
         if (partial.length === 1) return partial[0]
 
         // nobody found.
@@ -100,8 +93,7 @@ export const PlayerUtils = {
     // | increasingly longer combinations of arguments.                           |
     // ----------------------------------------------------------------------------
     resolveFromArgs(args) {
-        // no args, no player.
-        if (args.length === 0) return { player: null, consumedArgs: 0 }
+        if (!args || args.length === 0) return { player: null, consumedArgs: 0 }
 
         // if the native command parser already gave us a player object.
         if (typeof args[0] === 'object' && args[0] !== null && args[0].name) {
@@ -113,32 +105,66 @@ export const PlayerUtils = {
 
         // greedy matching. try to join as many words as possible to find a valid name.
         for (let i = 1; i <= args.length; i++) {
-            // join the first i arguments with spaces.
             const potentialName = args.slice(0, i).join(" ")
             const target = this.findPlayer(potentialName)
             
             if (target) {
-                // keep track of the longest match we found.
                 longestMatch = target
                 consumed = i
             }
         }
 
-        // return the found player and how many words of the args we used.
         return { player: longestMatch, consumedArgs: consumed }
+    },
+
+    // ----------------------------------------------------------------------------
+    // | getIdByName                                                              |
+    // | Inverse name lookup for offline/online players.                          |
+    // ----------------------------------------------------------------------------
+    getIdByName(name) {
+        if (!name) return null;
+        const lowerName = name.toLowerCase();
+        
+        // 1. Check in-memory caches for online players first
+        const onlinePlayer = nameCache.get(lowerName);
+        if (onlinePlayer?.isValid) {
+            return onlinePlayer.id;
+        }
+        
+        for (const [id, cachedName] of idToNameCache.entries()) {
+            if (cachedName === lowerName) {
+                return id;
+            }
+        }
+        
+        // 2. Scan DB for offline players (player:UUID:name)
+        try {
+            const allIds = Kernel.world.getDynamicPropertyIds();
+            for (const propId of allIds) {
+                if (propId.startsWith("player:") && propId.endsWith(":name")) {
+                    const storedName = Kernel.world.getDynamicProperty(propId);
+                    if (typeof storedName === "string" && storedName.toLowerCase() === lowerName) {
+                        const parts = propId.split(":");
+                        return parts[1]; // UUID
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`[PlayerUtils] getIdByName query failure: ${error}`);
+        }
+        
+        return null;
     }
 }
 
 // ----------------------------------------------------------------------------
 // | garbage collection                                                       |
-// | periodically sweep the caches for dead entities just in case playerLeave |
-// | drops during a crash or disconnect.                                      |
+// | periodically sweep the caches for dead entities.                         |
 // ----------------------------------------------------------------------------
 Kernel.system.runInterval(() => {
     for (const [lowerName, player] of nameCache.entries()) {
-        if (!player || !player.isValid()) {
+        if (!player || !player.isValid) {
             nameCache.delete(lowerName)
-            // also sweep the id cache for this name
             for (const [id, mappedName] of idToNameCache.entries()) {
                 if (mappedName === lowerName) {
                     idToNameCache.delete(id)
@@ -147,3 +173,4 @@ Kernel.system.runInterval(() => {
         }
     }
 }, 1200) // 1200 ticks = ~60 seconds
+
