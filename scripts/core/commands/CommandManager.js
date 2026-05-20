@@ -34,11 +34,24 @@ export const CommandManager = {
         if (!Registry || !nativeReg) return;
 
         // --- ENUM_REGISTRATION_PIPELINE ---
-        // Populate 'rank' enum from static defaults (Safe for Startup phase)
+        // Populate 'rank' enum from database store or static defaults (Safe for Startup phase)
         try {
-            const staticRanks = DEFAULT_RANKS.map(r => r.id);
-            Registry.registerEnum("rank", staticRanks);
-        } catch (e) { }
+            const RankStore = Kernel.get("rankStore");
+            let ranksList = DEFAULT_RANKS.map(r => r.id);
+            if (RankStore) {
+                const dbRanks = RankStore.getAllRanks() || {};
+                const dbRankIds = Object.keys(dbRanks);
+                if (dbRankIds.length > 0) {
+                    ranksList = dbRankIds;
+                }
+            }
+            Registry.registerEnum("rank", ranksList);
+        } catch (e) {
+            try {
+                const staticRanks = DEFAULT_RANKS.map(r => r.id);
+                Registry.registerEnum("rank", staticRanks);
+            } catch (e2) { }
+        }
 
         // Populate 'permission' enum
         Registry.registerEnum("permission", [
@@ -49,7 +62,19 @@ export const CommandManager = {
             "essentials.auction", "essentials.calculate", "essentials.report", "essentials.tps",
             "essentials.chat.color", "essentials.admin.inspect", "essentials.admin.invsee", 
             "essentials.admin.ft", "essentials.admin.reports", "essentials.admin.economy", 
-            "essentials.admin.ranks", "home.limit", "home.cooldown", "teleport.wait"
+            "essentials.admin.ranks", "home.limit", "home.cooldown", "teleport.wait",
+            // Sharded / Extended permission nodes:
+            "admin.panel", "admin.ban", "admin.broadcast", "admin.economy", "admin.floatingtext",
+            "admin.invsee", "admin.kick", "admin.landsetting", "admin.log", "admin.mute",
+            "admin.ranks", "admin.resetdata", "admin.sellsetting", "admin.setting", "admin.shopsetting",
+            "admin.warp", "admin.tp", "admin.gm.c", "admin.gm.s", "admin.gm.sp", "admin.gm.a",
+            "land.claim", "land.unclaim", "land.invite", "land.kick", "land.transfer", "land.setting",
+            "limit.land", "limit.home",
+            "chestshop.create.sell", "chestshop.create.buy", "chestshop.sell", "chestshop.buy",
+            "cooldown.chat", "cooldown.back", "cooldown.tpa", "cooldown.home", "cooldown.warp",
+            "cooldown.rtp", "cooldown.command",
+            "cost.back", "cost.tpa", "cost.home", "cost.warp", "cost.rtp",
+            "essentials.help", "essentials.info", "essentials.credit", "essentials.default"
         ]);
 
         // Sync all enums to the native C++ engine
@@ -313,11 +338,14 @@ Registry.getAll().forEach(name => {
             // If the original parameter was NOT marked optional, but the user didn't pass it (or it's undefined),
             // show the usage syntax and stop execution.
             if (paramsList) {
-                for (let i = 0; i < paramsList.length; i++) {
-                    const paramDef = paramsList[i];
-                    if (paramDef && paramDef.optional === false && cleanArgs[i] === undefined) {
-                        player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${cmd.usage || ("/" + this._primaryNS + ":" + cmd.name)}`);
-                        return;
+                const allArgsEmpty = cleanArgs.length === 0 || cleanArgs.every(arg => arg === undefined || arg === null || arg === "");
+                if (!allArgsEmpty) {
+                    for (let i = 0; i < paramsList.length; i++) {
+                        const paramDef = paramsList[i];
+                        if (paramDef && paramDef.optional === false && cleanArgs[i] === undefined) {
+                            player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${cmd.usage || ("/" + this._primaryNS + ":" + cmd.name)}`);
+                            return;
+                        }
                     }
                 }
             }
