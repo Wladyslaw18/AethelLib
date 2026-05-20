@@ -17,6 +17,13 @@ import { BroadcastResetCommand } from "./admin/BroadcastResetCommand.js"
 import { showReports } from "./admin/AdminPanelReports.js"
 import { ShopAdminCommands } from "./admin/ShopAdminCommands.js"
 import { AuditCommand } from "./admin/AuditCommand.js"
+import { WhoisCommand } from "./general/WhoisCommand.js"
+import { HealCommand } from "./admin/HealCommand.js"
+import { FeedCommand } from "./admin/FeedCommand.js"
+import { FlyCommand } from "./admin/FlyCommand.js"
+import { GodCommand } from "./admin/GodCommand.js"
+import { ClearInventoryCommand } from "./admin/ClearInventoryCommand.js"
+import { RankAdminCommand } from "./admin/RankAdminCommand.js"
 
 // ----------------------------------------------------------------------------
 // | object: AdminRegistry                                                    |
@@ -43,11 +50,40 @@ export const AdminRegistry = {
         Registry.register("ban", BanCommand)
         // change a player's gamemode (generic version).
         Registry.register("agm", GamemodeCommand)
-        // shortcut commands for specific gamemodes.
-        Registry.register("gmc", { ...GamemodeCommand, execute: (d, p, a) => GamemodeCommand.execute(d, p, [a[0] || p.name, "creative"]) })
-        Registry.register("gms", { ...GamemodeCommand, execute: (d, p, a) => GamemodeCommand.execute(d, p, [a[0] || p.name, "survival"]) })
-        Registry.register("gmsp", { ...GamemodeCommand, execute: (d, p, a) => GamemodeCommand.execute(d, p, [a[0] || p.name, "spectator"]) })
-        Registry.register("gma", { ...GamemodeCommand, execute: (d, p, a) => GamemodeCommand.execute(d, p, [a[0] || p.name, "adventure"]) })
+        
+        // --- GAMEMODE_SHORTCUT_VECTORS ---
+        // these overloads improve industrial velocity for staff.
+        // we override the parameter definition to allow 0 or 1 argument.
+        const gmShortcutParams = [{ name: "player", type: "player", optional: true }];
+        
+        Registry.register("gmc", { 
+            ...GamemodeCommand, 
+            name: "gmc",
+            description: "Switch to creative mode",
+            params: gmShortcutParams, 
+            execute: (d, p, a) => GamemodeCommand.execute(d, p, [a[0] || p, "creative"]) 
+        })
+        Registry.register("gms", { 
+            ...GamemodeCommand, 
+            name: "gms",
+            description: "Switch to survival mode",
+            params: gmShortcutParams, 
+            execute: (d, p, a) => GamemodeCommand.execute(d, p, [a[0] || p, "survival"]) 
+        })
+        Registry.register("gmsp", { 
+            ...GamemodeCommand, 
+            name: "gmsp",
+            description: "Switch to spectator mode",
+            params: gmShortcutParams, 
+            execute: (d, p, a) => GamemodeCommand.execute(d, p, [a[0] || p, "spectator"]) 
+        })
+        Registry.register("gma", { 
+            ...GamemodeCommand, 
+            name: "gma",
+            description: "Switch to adventure mode",
+            params: gmShortcutParams, 
+            execute: (d, p, a) => GamemodeCommand.execute(d, p, [a[0] || p, "adventure"]) 
+        })
         // administrative economy tools (set/add/remove money).
         Registry.register("economy", EconomyCommand)
         // block a player from typing in chat.
@@ -64,6 +100,9 @@ export const AdminRegistry = {
         Registry.register("resetdata", ResetDataCommand)
         // create and manage floating text entities.
         Registry.register("ft", FloatingTextCommand)
+        // inspect another player's details, dimensions, and coordinates.
+        Registry.register("inspect", WhoisCommand)
+        Registry.register("whois", WhoisCommand)
         // view and manage player reports.
         Registry.register("reports", AdminReportCommand)
         // industrial communication archive reader.
@@ -77,10 +116,19 @@ export const AdminRegistry = {
         // emergency broadcast system reset.
         Registry.register("bc66", BroadcastResetCommand)
 
+        // recovery vectors (essentials).
+        Registry.register("aheal", HealCommand)
+        Registry.register("afeed", FeedCommand)
+        Registry.register("afly", FlyCommand)
+        Registry.register("agod", GodCommand)
+        Registry.register("aclear", ClearInventoryCommand)
+        Registry.register("rankadmin", RankAdminCommand)
+
         // ----------------------------------------------------------------------------
         // | Rank Administration                                                      |
         // | loop through specialized rank commands and register them.                |
         // ----------------------------------------------------------------------------
+        // Note: 'editrank' has been sliced into rankperm, rankorder, rankcolor, etc.
         RankAdminCommands.forEach(cmd => {
             Registry.register(cmd.name, cmd)
         })
