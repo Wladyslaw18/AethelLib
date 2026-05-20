@@ -14,7 +14,7 @@ import { LifecycleController } from "../../core/LifecycleController.js"
  */
 export const CommandHandler = {
     _initialized: false,
-    _prefix: "/",
+    _prefix: "-",
     _slashCommands: new Map(),
     _commandStats: new Map(),
 
@@ -24,6 +24,12 @@ export const CommandHandler = {
     init() {
         if (!LifecycleController.boot("commandHandler")) return
         this._initialized = true
+
+        // Load prefix dynamically from settings
+        const SettingsStore = Kernel.get("settings")
+        if (SettingsStore) {
+            this._prefix = SettingsStore.get("commandPrefix") || "-"
+        }
 
         /* 
          * CHAT_INTERCEPTION_HOOK
@@ -44,56 +50,62 @@ export const CommandHandler = {
          */
         Kernel.system.afterEvents.scriptEventReceive.subscribe(this._handleSlashCommand.bind(this))
 
-        this._registerSlashCommands()
-
         console.log(`[CommandHandler] INTERFACE_ONLINE | Prefix: ${this._prefix}`);
-    },
-
-    /*
-     * NATIVE_REGISTRY_HANDSHAKE
-     * Attempts to register slash-commands into the native Minecraft 
-     * registry for tab-completion support.
-     */
-    _registerSlashCommands() {
-        const CommandRegistry = Kernel.get("commandRegistry")
-        const commands = CommandRegistry.getAll()
-
-        const chatEvent = Kernel.world.beforeEvents.chatSend
-        if (chatEvent) {
-            chatEvent.subscribe((event) => {
-                const message = event.message.trim()
-
-                if (message.startsWith("/")) {
-                    const [commandName] = message.slice(1).split(/\s+/)
-                    if (commands.includes(commandName)) {
-                        return // ALLOW_NATIVE_PROCESSING
-                    }
-                }
-            })
-        }
     },
 
     /*
      * CHAT_INPUT_PARSER
      * ----------------------------------------------------------------------------
      * 1. Validate prefix.
-     * 2. Cancel the event to prevent chat leakage.
-     * 3. Tokenize the input string.
-     * 4. Dispatch to execution engine.
+     * 2. Check if the command was invoked with a namespace (e.g. "/ae:home").
+     *    If namespaced and command is native: true, allow C++ engine processing.
+     * 3. Otherwise, cancel the native chat bubble, parse the name, and execute script-side.
      */
     _handleChatCommand(event) {
         const message = event.message.trim()
 
-        if (!message.startsWith(this._prefix)) return
+        // Check for our custom prefix or the native slash
+        if (!message.startsWith(this._prefix) && !message.startsWith("/")) return
 
-        event.cancel = true // TERMINATE_CHAT_BROADCAST
+        const prefix = message.startsWith("/") ? "/" : this._prefix;
+        const fullContent = message.slice(prefix.length).trim();
+        const tokens = fullContent.split(/\s+/).filter(Boolean);
+        if (tokens.length === 0) return;
 
-        const [commandName, ...args] = message.slice(this._prefix.length).trim().split(/\s+/).filter(Boolean)
-        if (!commandName) return
+        const rawName = tokens[0];
+        const args = tokens.slice(1);
 
-        Kernel.system.run(async () => {
-            await this._executeCommand(event.sender, commandName, args, "chat")
-        })
+        const CommandRegistry = Kernel.get("commandRegistry")
+        const command = CommandRegistry.get(rawName)
+
+        if (command) {
+            const isNamespaced = rawName.includes(":");
+            
+            // LOGIC GATE: If command is not native OR is not namespaced, we handle it script-side.
+            // This allows /ae:calc (non-native) and -calc to work, while /ae:home (native) 
+            // passes through to the C++ engine for high-performance parsing.
+            if (prefix === "/" && (command.native === false || !isNamespaced)) {
+                // Cancel the native bubble/parsing
+                event.cancel = true;
+
+                Kernel.system.run(async () => {
+                    const name = isNamespaced ? rawName.split(":")[1] : rawName;
+                    // For non-native commands, we pass the ENTIRE message content after the name
+                    // as the first argument to ensure no symbols/spaces are lost.
+                    const finalArgs = command.native === false ? [fullContent.slice(rawName.length).trim()] : args;
+                    await this._executeCommand(event.sender, name, finalArgs, "chat");
+                });
+                return;
+            }
+            
+            // For custom prefix commands, always handle script-side
+            if (prefix !== "/") {
+                Kernel.system.run(async () => {
+                    const name = isNamespaced ? rawName.split(":")[1] : rawName;
+                    await this._executeCommand(event.sender, name, args, "prefix");
+                });
+            }
+        }
     },
 
     /*
@@ -134,15 +146,28 @@ export const CommandHandler = {
             const command = CommandRegistry.get(commandName)
 
             if (!command) {
-                player.sendMessage(`\xA7c[Error] Unknown identifier: \xA7e${commandName}`)
+                player.sendMessage(`\u00A7c[Error] Unknown identifier: \u00A7e${commandName}`)
                 this._recordCommandStats(commandName, false, Date.now() - startTime)
                 return
             }
 
             if (command.permission && !this._hasPermission(player, command.permission)) {
-                player.sendMessage(`\xA7c[Security] Access denied for command: \xA7e${commandName}`)
+                player.sendMessage(`\u00A7c[Security] Access denied for command: \u00A7e${commandName}`)
                 this._recordCommandStats(commandName, false, Date.now() - startTime, "no_permission")
                 return
+            }
+
+            // Enterprise Safeguard: Validate that all required parameters are provided.
+            const paramsList = command.params || command.parameters;
+            if (paramsList) {
+                for (let i = 0; i < paramsList.length; i++) {
+                    const paramDef = paramsList[i];
+                    if (paramDef && paramDef.optional === false && (args[i] === undefined || args[i] === null || args[i] === "")) {
+                        player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${command.usage || ("/" + commandName)}`);
+                        this._recordCommandStats(commandName, false, Date.now() - startTime, "missing_args")
+                        return;
+                    }
+                }
             }
 
             await command.execute(null, player, args)
@@ -151,7 +176,7 @@ export const CommandHandler = {
 
         } catch (error) {
             console.error(`[CommandHandler] EXECUTION_CRASH [${commandName}]: ${error}`)
-            player.sendMessage(`\xA7c[Fatal] Execution pipeline failure: \xA7e${error.message}`)
+            player.sendMessage(`\u00A7c[Fatal] Execution pipeline failure: \u00A7e${error.message}`)
             this._recordCommandStats(commandName, false, Date.now() - startTime, "error")
         }
     },
@@ -228,10 +253,19 @@ export const CommandHandler = {
 
     async executeCommand(player, command) {
         const trimmed = command.trim()
-        const prefix = this._prefix
+        let cmdText = trimmed
+        let matched = false
 
-        if (trimmed.startsWith(prefix)) {
-            const [cmdName, ...args] = trimmed.slice(prefix.length).trim().split(/\s+/).filter(Boolean)
+        if (trimmed.startsWith(this._prefix)) {
+            cmdText = trimmed.slice(this._prefix.length)
+            matched = true
+        } else if (trimmed.startsWith("/")) {
+            cmdText = trimmed.slice(1)
+            matched = true
+        }
+
+        if (matched) {
+            const [cmdName, ...args] = cmdText.trim().split(/\s+/).filter(Boolean)
             await this._executeCommand(player, cmdName, args, "programmatic")
             return true
         }
