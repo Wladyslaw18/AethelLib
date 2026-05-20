@@ -9,17 +9,17 @@ import { UIUtils } from "../../ui/UIUtils.js"
 export async function showPlayerManagement(player) {
     const PermissionManager = Kernel.get("permissions")
     if (!PermissionManager.hasPermission(player, "essentials.admin")) {
-        player.sendMessage("\xA7cNo permission.")
+        player.sendMessage("\u00A7cNo permission.")
         return
     }
 
     const players = Kernel.world.getAllPlayers()
     const form = new Kernel.ActionFormData()
-        .title("\xA7a\xA7e\xA7l\xA7e\xA7lPlayers Panel")
-        .body(`\xA7aPlayers Online : \xA7f${players.length}`)
+        .title("\u00A7a\u00A7e\u00A7l\u00A7e\u00A7lPlayers Panel")
+        .body(`\u00A7aPlayers Online : \u00A7f${players.length}`)
 
-    players.forEach(p => form.button(`\xA7e\xA7l${p.name}`, "textures/items/totem"))
-    form.button("\xA7c<= BACK", "textures/ui/refresh")
+    players.forEach(p => form.button(`\u00A7e\u00A7l${p.name}`, "textures/items/totem"))
+    form.button("\u00A7c<= BACK", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) return
