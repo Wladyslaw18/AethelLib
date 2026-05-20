@@ -37,7 +37,7 @@ export const HelpCommand = {
             // security gate: check if the player is allowed to see this command's documentation.
             const PermissionManager = Kernel.get("permissions")
             if (command.permission && !PermissionManager.hasPermission(player, command.permission)) {
-                player.sendMessage("\xA7cYou do not have permission to view this command.");
+                player.sendMessage("\u00A7cYou do not have permission to view this command.");
                 return;
             }
             // display the deep-dive documentation for this specific command.
@@ -46,7 +46,7 @@ export const HelpCommand = {
         }
 
         // if the topic didn't match any registered command.
-        player.sendMessage(`\xA7cCommand '\xA7e${topic}\xA7c' not found.`);
+        player.sendMessage(`\u00A7cCommand '\u00A7e${topic}\u00A7c' not found.`);
     },
 
     // ----------------------------------------------------------------------------
@@ -72,8 +72,8 @@ export const HelpCommand = {
 
         // header display.
         player.sendMessage(" ")
-        player.sendMessage("\xA76\xA7lAethel\xA7fLib")
-        player.sendMessage("\xA77Commands List")
+        player.sendMessage("\u00A76\u00A7lAethel\u00A7fLib")
+        player.sendMessage("\u00A77Commands List")
         player.sendMessage(" ")
 
         // sort alphabetically and print the list.
@@ -88,12 +88,12 @@ export const HelpCommand = {
             // padding logic: calculate whitespace needed to keep descriptions aligned in a column.
             const padding = " ".repeat(Math.max(5, 22 - name.length));
             
-            player.sendMessage(`\xA76- \xA76\xA7l${firstHalf}\xA7f\xA7l${secondHalf}${padding}\xA7b\xA7o${desc}`);
+            player.sendMessage(`\u00A76- \u00A76\u00A7l${firstHalf}\u00A7f\u00A7l${secondHalf}${padding}\u00A7b\u00A7o${desc}`);
         });
 
         // footer display.
         player.sendMessage(" ")
-        player.sendMessage("\xA77Use \xA76/ae:help <command> \xA77for more info.")
+        player.sendMessage("\u00A77Use \u00A76/ae:help <command> \u00A77for more info.")
         player.sendMessage(" ")
     },
 
@@ -103,19 +103,19 @@ export const HelpCommand = {
     // ----------------------------------------------------------------------------
     _showCommandHelp(player, command) {
         player.sendMessage(" ")
-        player.sendMessage(`\xA76\xA7l» \xA7f\xA7lCOMMAND: /ae:${command.name.toUpperCase()} \xA76\xA7l«`);
-        player.sendMessage(`\xA77${command.description}`);
+        player.sendMessage(`\u00A76\u00A7l» \u00A7f\u00A7lCOMMAND: /ae:${command.name.toUpperCase()} \u00A76\u00A7l«`);
+        player.sendMessage(`\u00A77${command.description}`);
         player.sendMessage(" ")
         // show category, syntax usage, aliases, and permission node.
-        player.sendMessage(`\xA76\xA7lCategory:  \xA7f${command.category || "General"}`);
-        player.sendMessage(`\xA76\xA7lUsage:     \xA7f${command.usage || `/ae:${command.name}`}`);
+        player.sendMessage(`\u00A76\u00A7lCategory:  \u00A7f${command.category || "General"}`);
+        player.sendMessage(`\u00A76\u00A7lUsage:     \u00A7f${command.usage || `/ae:${command.name}`}`);
         
         if (command.aliases && command.aliases.length > 0) {
-            player.sendMessage(`\xA76\xA7lAliases:   \xA7f${command.aliases.join(", ")}`);
+            player.sendMessage(`\u00A76\u00A7lAliases:   \u00A7f${command.aliases.join(", ")}`);
         }
         
         if (command.permission) {
-            player.sendMessage(`\xA76\xA7lSecurity:  \xA7f${command.permission}`);
+            player.sendMessage(`\u00A76\u00A7lSecurity:  \u00A7f${command.permission}`);
         }
         
         player.sendMessage(" ")
