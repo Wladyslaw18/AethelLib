@@ -28,7 +28,7 @@ export const AdminPanelCommand = {
     // ----------------------------------------------------------------------------
     async execute(_data, player, _args) {
         // just a wrapper for the UI function.
-        await showAdminPanel(player)
+        Kernel.system.run(() => showAdminPanel(player))
     }
 }
 
@@ -53,13 +53,13 @@ export async function showAdminPanel(player) {
 
     // create the action form (the button menu).
     const form = new Kernel.ActionFormData()
-        .title("\xA7a\xA7e\xA7m\xA7e\xA7lAdmin Panel")
+        .title("\u00A7a\u00A7e\u00A7m\u00A7e\u00A7lAdmin Panel")
         // set the main body text with the stats we gathered.
-        .body(`\xA7aUsername : \xA7f${player.name}\n\xA7aServer Online : \xA7f${uptimeStr}\n\xA7aPlayers Online : \xA7f${onlinePlayers}\n\xA7aTPS : \xA7f${tps}`)
+        .body(`\u00A7aUsername : \u00A7f${player.name}\n\u00A7aServer Online : \u00A7f${uptimeStr}\n\u00A7aPlayers Online : \u00A7f${onlinePlayers}\n\u00A7aTPS : \u00A7f${tps}`)
         // add buttons for the sub-menus.
-        .button("\xA7aPlayers", "textures/items/totem")
-        .button("\xA70Settings", "textures/ui/settings_glyph_complex")
-        .button("\xA7cBanned Players", "textures/items/iron_axe")
+        .button("\u00A7aPlayers", "textures/items/totem")
+        .button("\u00A70Settings", "textures/ui/settings_glyph_complex")
+        .button("\u00A7cBanned Players", "textures/items/iron_axe")
 
     // show the form using our UI utility wrapper.
     const res = await UIUtils.showForm(player, form)
