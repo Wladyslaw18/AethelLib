@@ -1,4 +1,5 @@
 import { Kernel } from "../../../core/Kernel.js"
+import { CleanupServiceInstance } from "../../../core/services/CleanupService.js"
 
 /** @typedef {import("@minecraft/server").Player} Player */
 
@@ -15,6 +16,10 @@ export const ChatSystem = {
     init: () => {
         if (initialized) return
         initialized = true
+
+        CleanupServiceInstance.registerCleanupHandler("chat", (playerId) => {
+            chatCooldowns.delete(playerId)
+        })
 
         // @ts-ignore
         Kernel.world.beforeEvents.chatSend.subscribe((ev) => {
