@@ -13,7 +13,9 @@ import { TPACommand } from "./tpa/TPACommand.js"
 import { TPAHereCommand } from "./tpa/TPAHereCommand.js"
 import { TPAcceptCommand } from "./tpa/TPAcceptCommand.js"
 import { TPACancelCommand } from "./tpa/TPACancelCommand.js"
+import { TPAdenyCommand } from "./tpa/TPAdenyCommand.js"
 import { TPASettingCommand } from "./tpa/TPASettingCommand.js"
+import { UnblockCommand } from "./tpa/UnblockCommand.js"
 
 // ----------------------------------------------------------------------------
 // | object: SpatialRegistry                                                  |
@@ -76,5 +78,9 @@ export const SpatialRegistry = {
         Registry.register("tpacancel", TPACancelCommand)
         // toggle teleportation preferences.
         Registry.register("tpasetting", TPASettingCommand)
+        // deny an incoming request.
+        Registry.register("tpadeny", TPAdenyCommand)
+        // unblock a player from sending requests.
+        Registry.register("unblock", UnblockCommand)
     }
 }
