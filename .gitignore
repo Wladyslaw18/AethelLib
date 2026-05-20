@@ -8,6 +8,8 @@
 !entities/
 !entities/**
 !manifest.json
+!Docs/
+!Docs/**
 !pack_icon.png
 !README.md
 !LICENSE
