@@ -1,5 +1,5 @@
 import { Kernel } from "../../core/Kernel.js"
-
+import { UIUtils } from "../../ui/UIUtils.js"
 
 /*
  * TPA Service
@@ -11,16 +11,14 @@ export const TpaService = {
     /* 
      * Send TPA Request
      */
-
     async sendRequest(sender, target, type) {
         const TPAStore = Kernel.get("tpaStore")
         const TpaHandshake = Kernel.get("tpaHandshake")
 
         if (!TPAStore.isEnabled(target.id)) {
-            sender.sendMessage("\xA7c\xA7l» \xA77That player has TPA disabled.");
+            sender.sendMessage("\u00A7c\u00A7l» \u00A77That player has TPA disabled.");
             return false
         }
-
 
         const requestId = TpaHandshake.createRequest(
             sender.id,
@@ -31,24 +29,21 @@ export const TpaService = {
         )
 
         if (requestId) {
-            sender.sendMessage(`\xA7a\xA7l» \xA7fTPA request sent to \xA7e${target.name}\xA7f.`);
-            target.sendMessage(`\xA76\xA7l» \xA7e${sender.name} \xA77wants to teleport to you!`);
-            target.sendMessage(`\xA77Type \xA7f/ael:tpaccept \xA77to accept or \xA7f/ael:tpadeny \xA77to deny.`);
-
+            sender.sendMessage(`\u00A7a\u00A7l» \u00A7fTPA request sent to \u00A7e${target.name}\u00A7f.`);
+            target.sendMessage(`\u00A76\u00A7l» \u00A7e${sender.name} \u00A77wants to teleport to you!`);
+            target.sendMessage(`\u00A77Type \u00A7f/ael:tpaccept \u00A77to accept or \u00A7f/ael:tpadeny \u00A77to deny.`);
 
             if (TPAStore.getUIToggle(target.id)) {
                 Kernel.system.run(async () => {
                     try {
                         const { MessageFormData } = Kernel
                         const form = new MessageFormData()
-                            .title("\xA76\xA7lTeleport Request")
-                            .body(`\xA7e${sender.name} \xA77wants to teleport to you.`)
+                            .title("\u00A76\u00A7lTeleport Request")
+                            .body(`\u00A7e${sender.name} \u00A77wants to teleport to you.`)
+                            .button1("\u00A7aAccept")
+                            .button2("\u00A7cDeny")
 
-                            .button1("\xA7aAccept")
-                            .button2("\xA7cDeny")
-
-
-                        const res = await form.show(target)
+                        const res = await UIUtils.showForm(target, form)
                         if (!res.canceled && res.selection === 0) {
                             this.acceptRequest(target)
                         } else if (!res.canceled && res.selection === 1) {
@@ -66,28 +61,24 @@ export const TpaService = {
     /* 
      * Accept TPA Request
      */
-
     acceptRequest(player) {
         const TpaHandshake = Kernel.get("tpaHandshake")
         const request = TpaHandshake.getLatestRequestFor(player.id)
 
         if (!request) {
-            player.sendMessage("\xA7c\xA7l» \xA77You have no pending TPA requests.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You have no pending TPA requests.");
             return false
         }
 
-
-        const sender = [...Kernel.world.getAllPlayers()].find(p => p.id === request.senderId)
+        const sender = Kernel.world.getAllPlayers().find(p => p.id === request.senderId)
         if (!sender) {
-            player.sendMessage("\xA7c\xA7l» \xA77The player is now offline.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77The player is now offline.");
             TpaHandshake.removeRequest(request.id)
             return false
         }
 
-
-        player.sendMessage(`\xA7a\xA7l» \xA7fTeleporting \xA7e${request.senderName} \xA7fin 5 seconds...`);
-        sender.sendMessage(`\xA7a\xA7l» \xA7e${player.name} \xA7faccepted! Teleporting in 5 seconds...`);
-
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fTeleporting \u00A7e${request.senderName} \u00A7fin 5 seconds...`);
+        sender.sendMessage(`\u00A7a\u00A7l» \u00A7e${player.name} \u00A7faccepted! Teleporting in 5 seconds...`);
 
         const teleportService = Kernel.get("teleportService")
         const waitTime = 5 // Standard stabilization window
@@ -105,21 +96,19 @@ export const TpaService = {
     /* 
      * Deny TPA Request
      */
-
     denyRequest(player) {
         const TpaHandshake = Kernel.get("tpaHandshake")
         const request = TpaHandshake.getLatestRequestFor(player.id)
 
         if (!request) {
-            player.sendMessage("\xA7c\xA7l» \xA77You have no pending requests.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You have no pending requests.");
             return false
         }
 
+        const sender = Kernel.world.getAllPlayers().find(p => p.id === request.senderId)
+        if (sender) sender.sendMessage(`\u00A7c\u00A7l» \u00A7e${player.name} \u00A77denied your TPA request.`);
 
-        const sender = [...Kernel.world.getAllPlayers()].find(p => p.id === request.senderId)
-        if (sender) sender.sendMessage(`\xA7c\xA7l» \xA7e${player.name} \xA77denied your TPA request.`);
-
-        player.sendMessage("\xA7a\xA7l» \xA7fRequest denied.");
+        player.sendMessage("\u00A7a\u00A7l» \u00A7fRequest denied.");
 
         TpaHandshake.removeRequest(request.id)
         return true
@@ -128,7 +117,6 @@ export const TpaService = {
     /* 
      * Initialize TPA Service
      */
-
     init() {
         Kernel.system.runInterval(() => {
             const TpaHandshake = Kernel.get("tpaHandshake")
@@ -136,6 +124,5 @@ export const TpaService = {
         }, 600)
         
         console.log("[TpaService] TPA Service online.");
-
     }
 }
