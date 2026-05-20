@@ -52,14 +52,14 @@ export function init() {
                 const chest = getChestAround(block)
 
                 if (!chest) {
-                    player.sendMessage("\xA7c\xA7l» \xA77No chest found next to the sign!");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77No chest found next to the sign!");
                     return
                 }
                 
                 // check if the player has permission to build here.
                 const ClaimService = Kernel.get("claimService")
                 if (ClaimService && !ClaimService.canAccess(player, chest.location)) {
-                    player.sendMessage("\xA7c\xA7l» \xA77You do not have permission to link to this chest.");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77You do not have permission to link to this chest.");
                     return
                 }
 
@@ -67,7 +67,7 @@ export function init() {
                 const ChestShopStore = Kernel.get("chestShopStore")
                 const existing = ChestShopStore.findShopByChestLocation(chest.location)
                 if (existing) {
-                    player.sendMessage("\xA7c\xA7l» \xA77This chest is already being used for a shop.");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77This chest is already being used for a shop.");
                     return
                 }
 
@@ -103,7 +103,7 @@ export function init() {
 
         // don't let owners buy from themselves. 
         if (shop.ownerId === player.id) {
-            player.sendMessage("\xA7a\xA7l» \xA7fYou own this shop.");
+            player.sendMessage("\u00A7a\u00A7l» \u00A7fYou own this shop.");
             return
         }
 
@@ -133,14 +133,14 @@ export function init() {
             // if it's a shop and they don't own it, block them.
             if (shop && shop.ownerId !== player.id) {
                 event.cancel = true
-                player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77This shop belongs to someone else!");
+                player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77This shop belongs to someone else!");
                 return
             }
 
             // if it is their shop, unregister it from the database.
             if (shop && shop.ownerId === player.id) {
                 ChestShopStore.removeShop(block.location)
-                Kernel.system.run(() => player.sendMessage("\xA7a\xA7l» \xA7fShop removed."));
+                Kernel.system.run(() => player.sendMessage("\u00A7a\u00A7l» \u00A7fShop removed."));
             }
 
             return
@@ -151,7 +151,7 @@ export function init() {
         // if this container is linked to a shop they don't own, block them.
         if (linkedShop && linkedShop.ownerId !== player.id) {
             event.cancel = true
-            player.onScreenDisplay.setActionBar("\xA7c\xA7l» \xA77This chest is linked to a shop!");
+            player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77This chest is linked to a shop!");
         }
     })
 
@@ -202,14 +202,14 @@ async function processTransaction(buyer, shop) {
         // find the chest in the world using the coordinates stored in the shop data.
         const chestBlock = dim.getBlock(shop.chestLocation)
         if (!chestBlock) {
-            buyer.sendMessage("\xA7c\xA7l» \xA77The shop's chest is missing!");
+            buyer.sendMessage("\u00A7c\u00A7l» \u00A77The shop's chest is missing!");
             return
         }
 
         // try to get the inventory component.
         const container = chestBlock.getComponent(Kernel.BlockComponentTypes.Inventory)?.container
         if (!container) {
-            buyer.sendMessage("\xA7c\xA7l» \xA77Could not open the shop's chest.");
+            buyer.sendMessage("\u00A7c\u00A7l» \u00A77Could not open the shop's chest.");
             return
         }
 
@@ -222,7 +222,7 @@ async function processTransaction(buyer, shop) {
     } catch (error) {
         // if anything crashes, log it and tell the player.
         console.error(`[ChestShopHandler] TRANSACTION_CRASH: ${error}`)
-        buyer.sendMessage("\xA7c\xA7l» \xA77Something went wrong with the transaction.");
+        buyer.sendMessage("\u00A7c\u00A7l» \u00A77Something went wrong with the transaction.");
     }
 }
 
@@ -238,7 +238,7 @@ async function handleBuy(buyer, shop, container) {
 
     // step 1: check if the buyer is broke.
     if (balance < totalCost) {
-        buyer.sendMessage("\xA7c\xA7l» \xA77You don't have enough money!");
+        buyer.sendMessage("\u00A7c\u00A7l» \u00A77You don't have enough money!");
         return
     }
 
@@ -252,14 +252,14 @@ async function handleBuy(buyer, shop, container) {
     }
 
     if (stockCount < shop.quantity) {
-        buyer.sendMessage("\xA7c\xA7l» \xA77This shop is out of stock!");
+        buyer.sendMessage("\u00A7c\u00A7l» \u00A77This shop is out of stock!");
         return
     }
 
     // step 3: take the money first (pessimistic lock).
     const success = await EconomyStore.removeMoney(buyer, totalCost)
     if (!success) {
-        buyer.sendMessage("\xA7c\xA7l» \xA77Failed to process payment.");
+        buyer.sendMessage("\u00A7c\u00A7l» \u00A77Failed to process payment.");
         return
     }
 
@@ -280,7 +280,7 @@ async function handleBuy(buyer, shop, container) {
         const refundAmount = failedAmount * costPerItem;
 
         await EconomyStore.addMoney(buyer, refundAmount);
-        buyer.sendMessage(`\xA7c\xA7l» \xA77Inventory full! Refunded \xA7e$${refundAmount}\xA77 for ${failedAmount} items.`);
+        buyer.sendMessage(`\u00A7c\u00A7l» \u00A77Inventory full! Refunded \u00A7e$${refundAmount}\u00A77 for ${failedAmount} items.`);
         
         // adjust the amount we are actually going to take from the shop chest.
         const actualDelivered = shop.quantity - failedAmount;
@@ -315,11 +315,11 @@ async function handleBuy(buyer, shop, container) {
     if (owner) {
         // they get the full amount (we don't take a cut yet).
         await EconomyStore.addMoney(owner, totalCost)
-        owner.sendMessage(`\xA7a\xA7l» \xA7fSold \xA7e${shop.quantity}x ${shop.itemId} \xA7fto \xA7e${buyer.name}\xA7f. Profit: \xA7a$${totalCost}\xA7f.`);
+        owner.sendMessage(`\u00A7a\u00A7l» \u00A7fSold \u00A7e${shop.quantity}x ${shop.itemId} \u00A7fto \u00A7e${buyer.name}\u00A7f. Profit: \u00A7a$${totalCost}\u00A7f.`);
     }
 
     // tell the buyer it worked.
-    buyer.sendMessage(`\xA7a\xA7l» \xA7fPurchased \xA7e${shop.quantity}x ${shop.itemId} \xA7ffor \xA7a$${totalCost}\xA7f.`);
+    buyer.sendMessage(`\u00A7a\u00A7l» \u00A7fPurchased \u00A7e${shop.quantity}x ${shop.itemId} \u00A7ffor \u00A7a$${totalCost}\u00A7f.`);
 }
 
 // ----------------------------------------------------------------------------
@@ -340,7 +340,7 @@ async function handleSell(seller, shop, container) {
     }
 
     if (sellerStock < shop.quantity) {
-        seller.sendMessage("\xA7c\xA7l» \xA77You don't have enough items to sell!");
+        seller.sendMessage("\u00A7c\u00A7l» \u00A77You don't have enough items to sell!");
         return
     }
 
@@ -349,7 +349,7 @@ async function handleSell(seller, shop, container) {
     const EconomyStore = Kernel.get("economy")
     const success = await EconomyStore.addMoney(seller, totalPay)
     if (!success) {
-        seller.sendMessage("\xA7c\xA7l» \xA77Failed to process payment.");
+        seller.sendMessage("\u00A7c\u00A7l» \u00A77Failed to process payment.");
         return
     }
 
@@ -376,7 +376,7 @@ async function handleSell(seller, shop, container) {
     }
 
     // tell the seller it worked.
-    seller.sendMessage(`\xA7a\xA7l» \xA7fSold \xA7e${shop.quantity}x ${shop.itemId} \xA7ffor \xA7a$${totalPay}\xA7f.`);
+    seller.sendMessage(`\u00A7a\u00A7l» \u00A7fSold \u00A7e${shop.quantity}x ${shop.itemId} \u00A7ffor \u00A7a$${totalPay}\u00A7f.`);
 }
 
 // ----------------------------------------------------------------------------
@@ -385,16 +385,17 @@ async function handleSell(seller, shop, container) {
 // ----------------------------------------------------------------------------
 async function showSetupUI(player, shopType, signLocation, chestLocation) {
     const { ModalFormData } = Kernel
+    const { UIUtils } = await import("../ui/UIUtils.js")
 
     // build the form.
     const form = new ModalFormData()
-        .title("\xA76Shop Setup")
+        .title("\u00A76Shop Setup")
         .textField("Item ID (e.g. minecraft:diamond)", "minecraft:diamond")
-        .slider("Price per Unit", 1, 10000, { defaultValue: 1, valueStep: 1 })
-        .slider("Quantity per Trade", 1, 64, { defaultValue: 1, valueStep: 1 })
+        .slider("Price per Unit", 1, 10000, 1, 1)
+        .slider("Quantity per Trade", 1, 64, 1, 1)
 
     // show the form to the player.
-    const response = await form.show(player)
+    const response = await UIUtils.showForm(player, form)
     // if they closed it, stop.
     if (response.canceled) return
 
@@ -405,7 +406,7 @@ async function showSetupUI(player, shopType, signLocation, chestLocation) {
 
     // basic validation.
     if (!itemId || !itemId.includes(":")) {
-        player.sendMessage("\xA7c\xA7l» \xA77Invalid Item ID. Example: 'minecraft:diamond'.");
+        player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid Item ID. Example: 'minecraft:diamond'.");
         return
     }
 
@@ -423,9 +424,9 @@ async function showSetupUI(player, shopType, signLocation, chestLocation) {
     })
 
     if (success) {
-        player.sendMessage(`\xA7a\xA7l» \xA7fShop created successfully!`);
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fShop created successfully!`);
     } else {
-        player.sendMessage("\xA7c\xA7l» \xA77Failed to create shop.");
+        player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to create shop.");
     }
 }
 
