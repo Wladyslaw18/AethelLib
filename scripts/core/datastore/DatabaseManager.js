@@ -253,7 +253,13 @@ export class DatabaseManager {
 
             // priority 2: standard single-key resolution.
             const raw = Kernel.world.getDynamicProperty(key)
-            return typeof raw === "string" ? JSON.parse(raw) : null
+            if (typeof raw !== "string") return null
+            try {
+                return JSON.parse(raw)
+            } catch (err) {
+                console.error(`[DatabaseManager] JSON_PARSE_CORRUPT for '${key}': ${err}`)
+                return null
+            }
         } catch (error) {
             console.error(`[DatabaseManager] RETRIEVAL_FAILURE for '${key}': ${error}`)
             return null
@@ -324,11 +330,13 @@ export class DatabaseManager {
     shardAndWrite(key, data) {
         // serialize the data once.
         const serialized = JSON.stringify(data)
+        const chars = Array.from(serialized)
         const shards = []
+        const charLimit = Math.floor(this.MAX_PROPERTY_SIZE / 2) // safe character count for multi-byte UTF-8
         
-        // cut the string into MAX_PROPERTY_SIZE pieces.
-        for (let i = 0; i < serialized.length; i += this.MAX_PROPERTY_SIZE) {
-            shards.push(serialized.slice(i, i + this.MAX_PROPERTY_SIZE))
+        // cut the string into safe character-based pieces.
+        for (let i = 0; i < chars.length; i += charLimit) {
+            shards.push(chars.slice(i, i + charLimit).join(""))
         }
 
         // check which version is currently active so we can write to the other one.
@@ -342,21 +350,16 @@ export class DatabaseManager {
         }
 
         // step 1: write all segments to the inactive buffer.
-        // if the server crashes during this loop, the active version is still safe.
         for (let i = 0; i < shards.length; i++) {
             Kernel.world.setDynamicProperty(`${key}:shard_${nextVersion}_${i}`, shards[i])
         }
 
         // step 2: update the index to point to the new version.
-        // this is the 'atomic' part. one write switches the entire dataset.
         Kernel.world.setDynamicProperty(`${key}:shard_index`, JSON.stringify({
             shardCount: shards.length,
             timestamp: Date.now(),
             version: nextVersion
         }))
-        
-        // step 3: we don't clean up old shards immediately to save time.
-        // they'll just sit there as zombie properties until something clears them.
         
         console.log(`[DatabaseManager] SHARDING_COMPLETE: '${key}' [${nextVersion}] split into ${shards.length} segments.`);
     }
@@ -440,8 +443,18 @@ export class DatabaseManager {
             const searchPattern = `${baseKey}:shard_${deadVersion}_`;
             for (const shardId of allIds) {
                 if (shardId.startsWith(searchPattern)) {
+                    // Double check index did not change mid-yield
+                    const currentIndexRaw = Kernel.world.getDynamicProperty(id);
+                    if (typeof currentIndexRaw === "string") {
+                        try {
+                            const curIndex = JSON.parse(currentIndexRaw);
+                            if (curIndex.version === deadVersion) {
+                                // If the current active version has switched to deadVersion, DO NOT delete it!
+                                continue;
+                            }
+                        } catch {}
+                    }
                     Kernel.world.setDynamicProperty(shardId, undefined);
-                    // console.log(`[GC] Terminated ghost shard: ${shardId}`);
                 }
             }
         }
