@@ -6,12 +6,12 @@ import { MessageCommand, ReplyCommand } from "./general/MessageCommand.js"
 import { InfoCommand } from "./general/InfoCommand.js"
 import { ReportCommand } from "./general/ReportCommand.js"
 import { CreditCommand } from "./general/CreditCommand.js"
-import { WhoisCommand } from "./general/WhoisCommand.js"
 import { MenuCommand } from "./general/MenuCommand.js"
 import { BlockCommand } from "./tpa/BlockCommand.js"
 import { ColorCommand } from "./social/ColorCommand.js"
 import { RankCommand } from "./social/ranks/RankCommand.js"
 import { ClaimCommand } from "./general/ClaimCommand.js"
+import { CombatStatusCommand } from "./general/CombatStatusCommand.js"
 
 // ----------------------------------------------------------------------------
 // | object: GeneralRegistry                                                  |
@@ -50,9 +50,6 @@ export const GeneralRegistry = {
         Registry.register("report", ReportCommand)
         // credits and contributors.
         Registry.register("credit", CreditCommand)
-        // player inspection (admin version of /whois).
-        Registry.register("whois", WhoisCommand)
-        Registry.register("inspect", WhoisCommand)
         // main interaction menu.
         Registry.register("menu", MenuCommand)
         Registry.register("gui", MenuCommand)
@@ -70,5 +67,7 @@ export const GeneralRegistry = {
         // land protection and claiming.
         Registry.register("claim", ClaimCommand)
         Registry.register("land", ClaimCommand)
+        // combat status and killstreaks.
+        Registry.register("combat", CombatStatusCommand)
     }
 }
