@@ -32,8 +32,8 @@ export const TempbanCommand = {
     execute(_data, player, args) {
         // syntax check.
         if (args.length < 2) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:tempban <player> <duration> [reason]")
-            player.sendMessage("\xA77Examples: /ae:tempban Wladyslaw18 1d Spamming")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:tempban <player> <duration> [reason]")
+            player.sendMessage("\u00A77Examples: /ae:tempban Wladyslaw18 1d Spamming")
             return
         }
 
@@ -42,7 +42,7 @@ export const TempbanCommand = {
 
         // ensure the target is online.
         if (!target) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Player '${args[0]}' not found or is offline.`)
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${args[0]}' not found or is offline.`)
             return
         }
 
@@ -51,21 +51,21 @@ export const TempbanCommand = {
         const reason = args.slice(consumedArgs + 1).join(" ") || "No reason provided"
 
         if (!duration) {
-            player.sendMessage("\xA7c\xA7l» \xA77Please provide a duration (e.g. 1h, 1d, 1w).")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Please provide a duration (e.g. 1h, 1d, 1w).")
             return
         }
 
         // step 1: hierarchy check.
         const PermissionManager = Kernel.get("permissions")
         if (PermissionManager && !PermissionManager.canActOn(player, target)) {
-            player.sendMessage("\xA7cYou do not have enough power to ban this player.")
+            player.sendMessage("\u00A7cYou do not have enough power to ban this player.")
             return
         }
 
         // step 2: parse the time token.
         const banDuration = parseDuration(duration)
         if (banDuration === null) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Invalid duration: '${duration}'`)
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid duration: '${duration}'`)
             return
         }
 
@@ -89,7 +89,7 @@ export const TempbanCommand = {
             Kernel.system.run(() => {
                 try {
                     // we use the dimension runCommand as a reliable way to kick.
-                    Kernel.world.getDimension("overworld").runCommand(`kick \"${target.name}\" \xA7c\xA7l[TEMPORARY BAN]\n\xA7eReason: ${reason}`)
+                    Kernel.world.getDimension("overworld").runCommand(`kick \"${target.name}\" \u00A7c\u00A7l[TEMPORARY BAN]\n\u00A7eReason: ${reason}`)
                 } catch (error) {
                     console.error(`Failed to kick tempbanned player ${target.name}: ${error}`)
                 }
@@ -104,10 +104,10 @@ export const TempbanCommand = {
             })
 
             // confirm to the admin.
-            player.sendMessage(`\xA7a\xA7l» \xA7fPlayer '${target.name}' tempbanned for \xA7e${formatTimeRemaining(banDuration)}`)
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fPlayer '${target.name}' tempbanned for \u00A7e${formatTimeRemaining(banDuration)}`)
         } else {
             // fail if the database rejected the record.
-            player.sendMessage("\xA7c\xA7l» \xA77Failed to add tempban")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to add tempban")
         }
     }
 }
@@ -141,7 +141,7 @@ function parseDuration(duration) {
 // ----------------------------------------------------------------------------
 function formatBanMessage(banData) {
     const durationText = formatTimeRemaining(banData.duration)
-    return `\xA76\xA7l[\xA7eTEMPBAN\xA76\xA7l] \xA7r${banData.playerName} \xA77was tempbanned by \xA7e${banData.bannedBy}\xA77\n\xA77Duration: \xA7e${durationText}\xA77\n\xA77Reason: \xA7f${banData.reason}`
+    return `\u00A76\u00A7l[\u00A7eTEMPBAN\u00A76\u00A7l] \u00A7r${banData.playerName} \u00A77was tempbanned by \u00A7e${banData.bannedBy}\u00A77\n\u00A77Duration: \u00A7e${durationText}\u00A77\n\u00A77Reason: \u00A7f${banData.reason}`
 }
 
 // ----------------------------------------------------------------------------
