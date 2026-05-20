@@ -31,8 +31,8 @@ export const InvSeeCommand = {
     execute(_data, player, args) {
         // syntax check.
         if (args.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:invsee <player_name>");
-            player.sendMessage("\xA7e\xA7l» \xA7fTip: \xA77Type a player name to view their inventory.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:invsee <player_name>");
+            player.sendMessage("\u00A7e\u00A7l» \u00A7fTip: \u00A77Type a player name to view their inventory.");
             return
         }
 
@@ -42,7 +42,7 @@ export const InvSeeCommand = {
         
         // check if they are online.
         if (!target) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found.`);
             return
         }
 
