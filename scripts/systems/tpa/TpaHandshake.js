@@ -76,6 +76,19 @@ export const TpaHandshake = {
                 this.removeRequest(id)
             }
         }
+    },
+
+    /* 
+     * Cleanup player TPA handshake references when they leave
+     */
+    handlePlayerLeave(playerId) {
+        for (const [id, req] of pendingRequests.entries()) {
+            if (req.senderId === playerId || req.targetId === playerId) {
+                this.removeRequest(id)
+            }
+        }
+        targetToLatest.delete(playerId)
+        senderToLatest.delete(playerId)
     }
 }
 
