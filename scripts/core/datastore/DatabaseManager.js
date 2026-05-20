@@ -59,7 +59,11 @@ export class DatabaseManager {
     get(key) {
         // check the memory buffer first. O(1) speed.
         if (this.cache.has(key)) {
-            return this.cache.get(key)
+            const data = this.cache.get(key)
+            // Move to the end of insertion order (most recently used)
+            this.cache.delete(key)
+            this.cache.set(key, data)
+            return data
         }
 
         // if not in cache, load it from the actual world properties.
@@ -78,6 +82,10 @@ export class DatabaseManager {
     set(key, value) {
         try {
             // update the memory buffer immediately.
+            // delete first if it already exists to move it to the end of insertion order.
+            if (this.cache.has(key)) {
+                this.cache.delete(key)
+            }
             this.cache.set(key, value)
             // mark the key as 'dirty' so it gets flushed to disk later.
             this.dirtyKeys.add(key)
@@ -470,6 +478,22 @@ export class DatabaseManager {
         this.flushDirty()
     }
 
+    isProtectedKey(key) {
+        if (!key) return false
+        const lowerKey = key.toLowerCase()
+        return (
+            lowerKey.startsWith("ae:settings") ||
+            lowerKey.startsWith("settings") ||
+            lowerKey.endsWith(":index") ||
+            lowerKey.startsWith("ae:ranks") ||
+            lowerKey.startsWith("ae:warps") ||
+            lowerKey.startsWith("ae:claims") ||
+            lowerKey.includes("rank:") ||
+            lowerKey.includes("warp:") ||
+            lowerKey.includes("claim:")
+        )
+    }
+
     // ----------------------------------------------------------------------------
     // | method: cleanupExpiredData                                               |
     // | purges the memory cache to prevent the heap from exploding.              |
@@ -486,7 +510,8 @@ export class DatabaseManager {
             
             for (const [key, _value] of this.cache) {
                 if (count >= toDelete) break;
-                if (!this.dirtyKeys.has(key)) {
+                // Do not evict if it is a dirty key or a protected configuration key
+                if (!this.dirtyKeys.has(key) && !this.isProtectedKey(key)) {
                     this.cache.delete(key);
                     count++;
                 }
