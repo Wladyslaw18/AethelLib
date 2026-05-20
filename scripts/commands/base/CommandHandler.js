@@ -160,12 +160,15 @@ export const CommandHandler = {
             // Enterprise Safeguard: Validate that all required parameters are provided.
             const paramsList = command.params || command.parameters;
             if (paramsList) {
-                for (let i = 0; i < paramsList.length; i++) {
-                    const paramDef = paramsList[i];
-                    if (paramDef && paramDef.optional === false && (args[i] === undefined || args[i] === null || args[i] === "")) {
-                        player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${command.usage || ("/" + commandName)}`);
-                        this._recordCommandStats(commandName, false, Date.now() - startTime, "missing_args")
-                        return;
+                const allArgsEmpty = args.length === 0 || args.every(arg => arg === undefined || arg === null || arg === "");
+                if (!allArgsEmpty) {
+                    for (let i = 0; i < paramsList.length; i++) {
+                        const paramDef = paramsList[i];
+                        if (paramDef && paramDef.optional === false && (args[i] === undefined || args[i] === null || args[i] === "")) {
+                            player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${command.usage || ("/" + commandName)}`);
+                            this._recordCommandStats(commandName, false, Date.now() - startTime, "missing_args")
+                            return;
+                        }
                     }
                 }
             }
