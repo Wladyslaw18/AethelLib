@@ -40,13 +40,19 @@ export class PermissionManager {
 
         const allRanks = RankStore.getAllRanks()
 
+        // 1. Wipe memory of deleted/superseded ranks to synchronize layout state
+        PermissionManager.#data = new PermissionData()
+
         for (const [tag, data] of Object.entries(allRanks)) {
+            // 2. Safety guard: ignore undefined rank definitions
+            if (!data) continue
+
             PermissionManager.#data.addRank(
                 tag, 
                 data.order || 0, 
                 data.name || tag, 
-                data.colorName || "\xA77", 
-                data.colorText || "\xA77"
+                data.colorName || "\u00A77", 
+                data.colorText || "\u00A77"
             )
 
             if (data.permissions) {
@@ -71,7 +77,7 @@ export class PermissionManager {
         const cache = PermissionManager.#playerCache.get(player.id)
         if (cache && Date.now() - cache.timestamp < PermissionManager.#CACHE_TTL) {
             PermissionManager.#stats.cacheHits++
-            if (cache.isSuperAdmin) return true
+            if (cache.isSuperAdmin || cache.permissions.get("admin") === true) return true
             return cache.permissions.get(permission) ?? false
         }
         
@@ -97,6 +103,10 @@ export class PermissionManager {
             isSuperAdmin: false,
             timestamp: Date.now()
         })
+        
+        if (permissions.get("admin") === true) {
+            return true
+        }
         
         return permissions.get(permission) ?? false
     }
@@ -154,13 +164,16 @@ export class PermissionManager {
                 if (permissions.has(perm)) continue
 
                 // 3-STATE_LOGIC_RESOLUTION
-                // 0: NO_ACTION | 1: ALLOW | 2: DENY
-                if (value === 1) { // 1 IS ALLOW
+                // 1 or true IS ALLOW
+                // 2 or false IS DENY
+                // 0 or null IS NO_ACTION (inherit)
+                if (value === 1 || value === true) {
                     permissions.set(perm, true)
-                } else if (value === 2) { // 2 IS DENY
+                } else if (value === 2 || value === false) {
                     permissions.set(perm, false)
+                } else if (typeof value === 'number') {
+                    permissions.set(perm, value)
                 }
-                // If value is 0 (NO_ACTION), we skip and look for the next rank's value
             }
         }
         
@@ -168,8 +181,19 @@ export class PermissionManager {
         const memberRank = PermissionManager.#data.getRankPermissions("member")
         for (const [perm, value] of Object.entries(memberRank)) {
             if (!permissions.has(perm)) {
-                // For member rank, we treat truthy/0 as true, falsy/2 as false
-                permissions.set(perm, value === true || value === 0)
+                if (typeof value === 'number') {
+                    if (value > 2) {
+                        // Large number = numeric config (cooldown seconds, home limit, etc.) - store as-is
+                        permissions.set(perm, value)
+                    } else if (value === 1) {
+                        permissions.set(perm, true)   // 1 = Allow
+                    } else if (value === 2) {
+                        permissions.set(perm, false)  // 2 = Deny
+                    }
+                    // 0 = No Action / Inherit — don't add to the map
+                } else if (typeof value === 'boolean') {
+                    permissions.set(perm, value)
+                }
             }
         }
 
