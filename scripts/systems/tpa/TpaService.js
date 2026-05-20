@@ -1,5 +1,6 @@
 import { Kernel } from "../../core/Kernel.js"
 import { UIUtils } from "../../ui/UIUtils.js"
+import { CleanupServiceInstance } from "../../core/services/CleanupService.js"
 
 /*
  * TPA Service
@@ -122,6 +123,13 @@ export const TpaService = {
             const TpaHandshake = Kernel.get("tpaHandshake")
             if (TpaHandshake) TpaHandshake.cleanup()
         }, 600)
+
+        CleanupServiceInstance.registerCleanupHandler("tpa", (playerId) => {
+            const TpaHandshake = Kernel.get("tpaHandshake")
+            if (TpaHandshake && typeof TpaHandshake.handlePlayerLeave === "function") {
+                TpaHandshake.handlePlayerLeave(playerId)
+            }
+        })
         
         console.log("[TpaService] TPA Service online.");
     }
