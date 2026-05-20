@@ -24,7 +24,7 @@ export class ShopService {
 
         await EconomyStore.removeMoney(player, totalCost)
         this.giveItem(player, item.id, amount)
-        player.sendMessage(Lang.SUCCESS + `ACQUIRED: ${amount}x ${item.name} for \xA7a$${totalCost.toLocaleString()}.`)
+        player.sendMessage(Lang.SUCCESS + `ACQUIRED: ${amount}x ${item.name} for \u00A7a$${totalCost.toLocaleString()}.`)
         return true
     }
 
@@ -41,7 +41,7 @@ export class ShopService {
 
         this.removeItem(player, item.id, amount)
         await EconomyStore.addMoney(player, totalValue)
-        player.sendMessage(Lang.SUCCESS + `LIQUIDATED: ${amount}x ${item.name} for \xA7a$${totalValue.toLocaleString()}.`)
+        player.sendMessage(Lang.SUCCESS + `LIQUIDATED: ${amount}x ${item.name} for \u00A7a$${totalValue.toLocaleString()}.`)
         return true
     }
 

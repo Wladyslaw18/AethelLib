@@ -31,7 +31,7 @@ export const DelWarpCommand = {
         
         // syntax check.
         if (!name) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:delwarp <name>");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:delwarp <name>");
             return
         }
 
@@ -39,7 +39,7 @@ export const DelWarpCommand = {
         const exists = await WarpStore.hasWarp(name)
         
         if (!exists) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Warp \xA7e${name}\xA77 not found.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Warp \u00A7e${name}\u00A77 not found.`);
             return
         }
 
@@ -47,10 +47,10 @@ export const DelWarpCommand = {
         const success = await WarpStore.deleteWarp(name)
         
         if (success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7fWarp \xA7e${name}\xA7f has been deleted.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fWarp \u00A7e${name}\u00A7f has been deleted.`);
         } else {
             // handle rare database state conflicts.
-            player.sendMessage("\xA7c\xA7l» \xA77Failed to delete warp.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to delete warp.");
         }
     }
 }

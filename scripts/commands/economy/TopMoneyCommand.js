@@ -28,7 +28,7 @@ export const TopMoneyCommand = {
         
         // safety check for empty databases.
         if (balances.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77No balances found.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77No balances found.");
             return
         }
 
@@ -40,14 +40,14 @@ export const TopMoneyCommand = {
 
         // step 2: formatting.
         player.sendMessage(" ")
-        player.sendMessage("\xA76\xA7lRichest Players \xA78(Top 10)")
+        player.sendMessage("\u00A76\u00A7lRichest Players \u00A78(Top 10)")
 
         // loop through and print each entry.
         for (let i = 0; i < topPlayers.length; i++) {
             const entry = topPlayers[i]
             // dynamic color mapping for the top 3 spots (Gold, Silver, Bronze/White).
-            const color = i === 0 ? "\xA76\xA7l" : i === 1 ? "\xA7e\xA7l" : i === 2 ? "\xA7f\xA7l" : "\xA77"
-            player.sendMessage(`${color}${i + 1}. \xA7f${entry.name} \xA78- \xA7a$${entry.balance.toLocaleString()}`)
+            const color = i === 0 ? "\u00A76\u00A7l" : i === 1 ? "\u00A7e\u00A7l" : i === 2 ? "\u00A7f\u00A7l" : "\u00A77"
+            player.sendMessage(`${color}${i + 1}. \u00A7f${entry.name} \u00A78- \u00A7a$${entry.balance.toLocaleString()}`)
         }
         player.sendMessage(" ")
     }

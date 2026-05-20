@@ -16,16 +16,16 @@ export async function showShopUI(player) {
     
     const form = new Kernel.ActionFormData()
         .title(Lang.UI.SHOP_TITLE)
-        .body(`\xA77Account Liquidity: \xA7a$${balance.toLocaleString()}\n\xA78Select category or search for assets.`)
-        .button("\xA76\xA7lSEARCH\n\xA78Find specific asset", "textures/ui/magnifying_glass")
+        .body(`\u00A77Account Liquidity: \u00A7a$${balance.toLocaleString()}\n\u00A78Select category or search for assets.`)
+        .button("\u00A76\u00A7lSEARCH\n\u00A78Find specific asset", "textures/ui/magnifying_glass")
 
     categories.forEach(cat => {
-        form.button(`\xA7l${cat.id}\n\xA78Industrial Asset Vector`, cat.icon)
+        form.button(`\u00A7l${cat.id}\n\u00A78Industrial Asset Vector`, cat.icon)
     })
 
-    form.button("\xA7e\xA7lSELL FROM INVENTORY\n\xA78Liquidate held assets", "textures/items/gold_ingot")
-    form.button("\xA76\xA7lQUICK SELL\n\xA78Liquidate mainhand asset", "textures/items/paper")
-    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
+    form.button("\u00A7e\u00A7lSELL FROM INVENTORY\n\u00A78Liquidate held assets", "textures/items/gold_ingot")
+    form.button("\u00A76\u00A7lQUICK SELL\n\u00A78Liquidate mainhand asset", "textures/items/paper")
+    form.button("\u00A7c\u00A7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) return

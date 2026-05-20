@@ -43,13 +43,13 @@ export const SetHomeCommand = {
         // step 1: name validation.
         // only allow alphanumeric characters and underscores/hyphens.
         if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-            player.sendMessage("\xA7c\xA7l» \xA77Home name can only contain alphanumeric characters.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Home name can only contain alphanumeric characters.");
             return
         }
 
         // length constraint to prevent UI overflow or database bloat.
         if (name.length < 1 || name.length > 16) {
-            player.sendMessage("\xA7c\xA7l» \xA77Home name must be between 1-16 characters.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Home name must be between 1-16 characters.");
             return
         }
 
@@ -65,7 +65,7 @@ export const SetHomeCommand = {
 
         // stop if they are at or over the limit.
         if (homeCount >= homeLimit) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Failed to set home. Limit: \xA7e${homeCount}/${homeLimit}\xA77.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Failed to set home. Limit: \u00A7e${homeCount}/${homeLimit}\u00A77.`);
             return;
         }
 
@@ -74,10 +74,10 @@ export const SetHomeCommand = {
         const success = await HomeStore.setHome(player, name, location, dimension)
 
         if (success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7fHome \xA7e${name}\xA7f has been set.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fHome \u00A7e${name}\u00A7f has been set.`);
         } else {
             // catch-all for database errors or duplicate names (if disallowed).
-            player.sendMessage(`\xA7c\xA7l» \xA77Failed to set home.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Failed to set home.`);
         }
     }
 }

@@ -30,13 +30,13 @@ export const SpawnCommand = {
         
         // check if an admin has actually set the spawn location.
         if (!spawn) {
-            player.sendMessage("\xA7c\xA7l» \xA77Spawn has not been set yet.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Spawn has not been set yet.");
             return
         }
 
         // execute the spatial jump.
         teleportService.teleport(player, { x: spawn.x + 0.5, y: spawn.y, z: spawn.z + 0.5 }, spawn.dimension);
         // feedback to the player.
-        player.sendMessage("\xA7a\xA7l» \xA7fTeleported to spawn.");
+        player.sendMessage("\u00A7a\u00A7l» \u00A7fTeleported to spawn.");
     }
 }

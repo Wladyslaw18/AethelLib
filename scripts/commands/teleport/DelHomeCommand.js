@@ -18,7 +18,7 @@ export const DelHomeCommand = {
     category: "teleport",
     // native parameter definitions.
     parameters: [
-        { name: "homeName", type: "string", optional: false }
+        { name: "homeName", type: "string", optional: true }
     ],
 
     // ----------------------------------------------------------------------------
@@ -26,11 +26,15 @@ export const DelHomeCommand = {
     // | entry point for home removal. checks for existence before purging.       |
     // ----------------------------------------------------------------------------
     async execute(_data, player, args) {
-        const name = args[0]
+        let name = args[0]
+        if (name !== undefined && name !== null) {
+            name = String(name)
+        }
         
         // basic syntax check.
         if (!name) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:delhome <name>");
+            const { showHomeUI } = await import("../../ui/teleport/HomeUI.js")
+            Kernel.system.run(() => showHomeUI(player))
             return
         }
 
@@ -39,7 +43,7 @@ export const DelHomeCommand = {
         const exists = await HomeStore.hasHome(player, name)
         
         if (!exists) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Home \xA7e${name}\xA77 not found.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Home \u00A7e${name}\u00A77 not found.`);
             return
         }
 
@@ -49,10 +53,10 @@ export const DelHomeCommand = {
         
         if (success) {
             // notify the player of the successful purge.
-            player.sendMessage(`\xA7a\xA7l» \xA7fHome \xA7e${name}\xA7f has been deleted.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fHome \u00A7e${name}\u00A7f has been deleted.`);
         } else {
             // handle rare database lock/io failures.
-            player.sendMessage("\xA7c\xA7l» \xA77Failed to delete home.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to delete home.");
         }
     }
 }

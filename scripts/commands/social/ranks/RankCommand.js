@@ -27,7 +27,7 @@ export const RankCommand = {
 
         // if no ranks are found, trigger a fallback protocol.
         if (!ranks.length) {
-            player.sendMessage("\xA7c\xA7l» \xA77You don't have any ranks. Defaulting to Member.")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You don't have any ranks. Defaulting to Member.")
             // automatically inject the base tag.
             player.addTag("member")
             // show info for the newly assigned rank.
@@ -57,17 +57,17 @@ function showRankInfo(player, ranks) {
         const rankData = RankSystem.getRank(rankTag)
         if (!rankData) continue
 
-        message += `\n\xA7e${rankData.name} \xA77(${rankTag})`
+        message += `\n\u00A7e${rankData.name} \u00A77(${rankTag})`
 
         // if the rank has a permission bitmask/map, iterate and display it.
         if (rankData.permissions) {
-            message += "\n\xA77Permissions:"
+            message += "\n\u00A77Permissions:"
             for (const [key, value] of Object.entries(rankData.permissions)) {
                 // handle boolean toggles vs numerical limits (e.g. max homes).
                 if (typeof value === 'boolean' && value) {
-                    message += `\n  \xA7a✓ ${key}`
+                    message += `\n  \u00A7a✓ ${key}`
                 } else if (typeof value === 'number') {
-                    message += `\n  \xA7f${key}: \xA7b${value}`
+                    message += `\n  \u00A7f${key}: \u00A7b${value}`
                 }
             }
         }
@@ -75,7 +75,7 @@ function showRankInfo(player, ranks) {
 
     // output the compiled manifest.
     player.sendMessage(" ")
-    player.sendMessage("\xA76\xA7lYour Ranks")
+    player.sendMessage("\u00A76\u00A7lYour Ranks")
     player.sendMessage(message)
     player.sendMessage(" ")
 }

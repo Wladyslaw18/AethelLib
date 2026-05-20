@@ -39,7 +39,7 @@ export const RTPCommand = {
         const cd = (PermissionManager.getPermission(player, "rtp.cooldown") ?? 10) * 20
         const last = cooldowns.get(player.id) ?? 0
         if (Kernel.system.currentTick - last < cd) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Teleport on cooldown. Wait \xA7e${Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)}s\xA77.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Teleport on cooldown. Wait \u00A7e${Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)}s\u00A77.`);
             return
         }
 
@@ -50,18 +50,18 @@ export const RTPCommand = {
         const range = args[0] ? parseInt(args[0]) : 1000
         // safety constraints to prevent searching outside loaded world bounds.
         if (isNaN(range) || range < 100 || range > 10000) {
-            player.sendMessage("\xA7c\xA7l» \xA77Range must be between 100 and 10000.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Range must be between 100 and 10000.");
             return
         }
 
         // step 3: combat status check.
         if (isInCombat(player)) {
-            player.sendMessage("\xA7c\xA7l» \xA77Teleport disabled while in combat.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Teleport disabled while in combat.");
             return
         }
 
         // feedback to the player.
-        player.sendMessage("\xA76\xA7l» \xA7eFinding a safe spot...");
+        player.sendMessage("\u00A76\u00A7l» \u00A7eFinding a safe spot...");
 
         // step 4: trigger the safe search job.
         findSafeLocation(player, range)
@@ -122,7 +122,7 @@ function* rtpGenerator(player, dimension, spawnLocation, maxRange) {
                     
                     const TeleportService = Kernel.get("teleportService");
                     TeleportService.teleport(player, location, "minecraft:overworld");
-                    player.sendMessage(`\xA7a\xA7l» \xA7fTeleported to \xA7e(${x}, ${y + 1}, ${z})\xA7f!`);
+                    player.sendMessage(`\u00A7a\u00A7l» \u00A7fTeleported to \u00A7e(${x}, ${y + 1}, ${z})\u00A7f!`);
                     return; // exit generator.
                 }
             } catch (e) { 
@@ -131,7 +131,7 @@ function* rtpGenerator(player, dimension, spawnLocation, maxRange) {
         }
     }
     // if all attempts failed.
-    player.sendMessage(`\xA7c\xA7l» \xA77Could not find a safe spot. Try again.`);
+    player.sendMessage(`\u00A7c\u00A7l» \u00A77Could not find a safe spot. Try again.`);
 }
 
 // ----------------------------------------------------------------------------

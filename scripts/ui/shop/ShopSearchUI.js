@@ -1,5 +1,6 @@
 import { Kernel } from "../../core/Kernel.js";
 import { ShopStore } from "../../systems/shop/ShopStore.js"
+import { UIUtils } from "../UIUtils.js"
 
 /*
  * COMMERCE_QUERY_ORCHESTRATOR
@@ -23,7 +24,7 @@ async function showSearchResults(player, query) {
         await showResultsPage(player, results, query, 0)
     } catch (error) {
         console.error(`[ShopSearchUI] QUERY_FAILURE: ${error}`)
-        player.sendMessage("\xA7cINDUSTRIAL_INTERFACE_FAILURE: UNABLE_TO_EXECUTE_QUERY")
+        player.sendMessage("\u00A7cINDUSTRIAL_INTERFACE_FAILURE: UNABLE_TO_EXECUTE_QUERY")
     }
 }
 
@@ -39,24 +40,24 @@ async function showResultsPage(player, results, query, page) {
     const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE)
 
     const form = new Kernel.ActionFormData()
-        .title("\xA76\xA7lQUERY_RESULTS")
-        .body(`\xA77Query: "${query}"\n\xA77Page: ${page + 1}/${totalPages || 1}\n\xA77Matches: ${results.length}`)
+        .title("\u00A76\u00A7lQUERY_RESULTS")
+        .body(`\u00A77Query: "${query}"\n\u00A77Page: ${page + 1}/${totalPages || 1}\n\u00A77Matches: ${results.length}`)
 
-    form.button("\xA7c[RETURN_TO_MANIFEST_ROOT]")
+    form.button("\u00A7c[RETURN_TO_MANIFEST_ROOT]")
 
     if (page > 0) {
-        form.button("\xA77← [PREVIOUS_BUFFER]")
+        form.button("\u00A77← [PREVIOUS_BUFFER]")
     }
     if (page < totalPages - 1) {
-        form.button("\xA77[NEXT_BUFFER] →")
+        form.button("\u00A77[NEXT_BUFFER] →")
     }
 
     for (let i = startIndex; i < endIndex; i++) {
         const item = results[i]
-        form.button(`\xA7e${item.name}\n\xA77CREDITS: \xA7a${item.price}`)
+        form.button(`\u00A7e${item.name}\n\u00A77CREDITS: \u00A7a${item.price}`)
     }
 
-    const res = await form.show(player)
+    const res = await UIUtils.showForm(player, form)
     if (res.canceled) return
 
     const buttonIndex = res.selection

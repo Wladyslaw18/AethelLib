@@ -37,7 +37,7 @@ export const SellCommand = {
 
         // quantity validation.
         if (quantity <= 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77Quantity must be positive.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Quantity must be positive.");
             return
         }
 
@@ -45,7 +45,7 @@ export const SellCommand = {
         // search the industrial catalog for the target item.
         const item = findItem(itemName)
         if (!item) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Item '\xA7e${itemName}\xA77' not found in catalog.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Item '\u00A7e${itemName}\u00A77' not found in catalog.`);
             return
         }
 
@@ -53,7 +53,7 @@ export const SellCommand = {
         // verify the item has a non-zero liquidity value in the sell store.
         const sellPrice = SellStore.getSellPrice(item.id)
         if (sellPrice <= 0) {
-            player.sendMessage(`\xA7c\xA7l» \xA7e${item.name} \xA77cannot be liquidated.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A7e${item.name} \u00A77cannot be liquidated.`);
             return
         }
 
@@ -62,10 +62,10 @@ export const SellCommand = {
         const transaction = SellStore.sellItem(player, item.id, quantity)
         
         if (transaction.success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7f${transaction.message}`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7f${transaction.message}`);
         } else {
             // display error (e.g. insufficient items in inventory).
-            player.sendMessage(`\xA7c\xA7l» \xA77${transaction.message}`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77${transaction.message}`);
         }
     }
 }
@@ -76,10 +76,10 @@ export const SellCommand = {
 // ----------------------------------------------------------------------------
 function showSellMenu(player) {
     const form = new Kernel.MessageFormData()
-        .title("\xA76\xA7lSell Items")
-        .body("\xA77Choose how you want to sell items:\n\n\xA7a• Quick Sell - Sell hand item\n\xA7a• Browse Items - Choose from inventory\n\xA7a• Search Items - Find specific items\n\xA7a• View Prices - Check sell values")
-        .button1("\xA7aQuick Sell")
-        .button2("\xA7bBrowse Items")
+        .title("\u00A76\u00A7lSell Items")
+        .body("\u00A77Choose how you want to sell items:\n\n\u00A7a• Quick Sell - Sell hand item\n\u00A7a• Browse Items - Choose from inventory\n\u00A7a• Search Items - Find specific items\n\u00A7a• View Prices - Check sell values")
+        .button1("\u00A7aQuick Sell")
+        .button2("\u00A7bBrowse Items")
 
     // execute on next tick to satisfy engine UI constraints.
     Kernel.system.run(async () => {
@@ -97,23 +97,23 @@ function showSellMenu(player) {
 function quickSell(player) {
     try {
         // fetch item from current slot.
-        const selectedItem = player.getComponent(EntityComponentTypes.Inventory).container.getItem(player.selectedSlot)
+        const selectedItem = player.getComponent(Kernel.EntityComponentTypes.Inventory).container.getItem(player.selectedSlot)
         if (!selectedItem) {
-            player.sendMessage("\xA7c\xA7l» \xA77No item in hand.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77No item in hand.");
             return
         }
 
         // map to catalog definition.
         const item = MINECRAFT_ITEMS[selectedItem.typeId]
         if (!item) {
-            player.sendMessage("\xA7c\xA7l» \xA77This item cannot be sold.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77This item cannot be sold.");
             return
         }
 
         // resolve valuation.
         const sellPrice = SellStore.getSellPrice(selectedItem.typeId)
         if (sellPrice <= 0) {
-            player.sendMessage(`\xA7c\xA7l» \xA7e${item.name} \xA77cannot be sold.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A7e${item.name} \u00A77cannot be sold.`);
             return
         }
 
@@ -121,13 +121,13 @@ function quickSell(player) {
         const transaction = SellStore.sellItem(player, selectedItem.typeId, selectedItem.amount)
         
         if (transaction.success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7f${transaction.message}`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7f${transaction.message}`);
         } else {
-            player.sendMessage(`\xA7c\xA7l» \xA77${transaction.message}`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77${transaction.message}`);
         }
     } catch (error) {
         console.error(`Quick sell error: ${error}`)
-        player.sendMessage("\xA7c\xA7l» \xA77Failed to sell item.");
+        player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to sell item.");
     }
 }
 
@@ -137,9 +137,9 @@ function quickSell(player) {
 // ----------------------------------------------------------------------------
 function showBrowseInventory(player) {
     try {
-        const inventory = player.getComponent(EntityComponentTypes.Inventory)?.container
+        const inventory = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
         if (!inventory) {
-            player.sendMessage("\xA7c\xA7l» \xA77Failed to access inventory.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to access inventory.");
             return
         }
 
@@ -165,17 +165,17 @@ function showBrowseInventory(player) {
         }
 
         if (items.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77No sellable items in inventory.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77No sellable items in inventory.");
             return
         }
 
         const form = new Kernel.ActionFormData()
-            .title("\xA76\xA7lSell Inventory")
+            .title("\u00A76\u00A7lSell Inventory")
             .body("Select an item to sell")
 
         // build buttons for each unique sellable item stack.
         items.forEach(item => {
-            form.button(`\xA7e${item.name} \xA77x${item.amount} \xA7a- ${SellStore.formatMoney(item.totalValue)}`)
+            form.button(`\u00A7e${item.name} \u00A77x${item.amount} \u00A7a- ${SellStore.formatMoney(item.totalValue)}`)
         })
 
         Kernel.system.run(async () => {
@@ -188,7 +188,7 @@ function showBrowseInventory(player) {
         })
     } catch (error) {
         console.error(`Browse inventory error: ${error}`)
-        player.sendMessage("\xA7c\xA7l» \xA77Failed to open inventory.");
+        player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to open inventory.");
     }
 }
 
@@ -198,7 +198,7 @@ function showBrowseInventory(player) {
 // ----------------------------------------------------------------------------
 function showSellDialog(player, item) {
     const form = new Kernel.ModalFormData()
-        .title(`\xA76\xA7lSell ${item.name}`)
+        .title(`\u00A76\u00A7lSell ${item.name}`)
         .textField("Item Name:", item.name)
         .textField("Available:", item.amount.toString())
         .textField("Sell price:", SellStore.formatMoney(item.sellPrice))
@@ -214,12 +214,12 @@ function showSellDialog(player, item) {
             const transaction = SellStore.sellItem(player, item.id, quantity)
                     
             if (transaction.success) {
-                player.sendMessage(`\xA7a\xA7l» \xA7f${transaction.message}`);
+                player.sendMessage(`\u00A7a\u00A7l» \u00A7f${transaction.message}`);
             } else {
-                player.sendMessage(`\xA7c\xA7l» \xA77${transaction.message}`);
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77${transaction.message}`);
             }
         } else {
-            player.sendMessage("\xA7c\xA7l» \xA77Invalid quantity.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid quantity.");
         }
     })
 }

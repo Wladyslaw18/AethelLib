@@ -2,34 +2,34 @@ import { Kernel } from "../core/Kernel.js";
 
 export class UIUtils {
     /**
-     * Safely show a form with a small delay to prevent ghosting.
-     * @param {any} player 
+     * Shows a form to a player, handling busy states and retries.
+     * @param {import("@minecraft/server").Player} player 
      * @param {any} form 
-     * @param {number} delayTicks 
+     * @param {number} retries 
      * @returns {Promise<any>}
      */
-    static async showForm(player, form, delayTicks = 2) {
-        return new Promise((resolve) => {
-            Kernel.system.runTimeout(async () => {
-                try {
-                    const response = await form.show(player);
-                    
-                    // Handle "UserBusy" by retrying once after a longer delay
-                    if (response.cancelationReason === "UserBusy") {
-                        Kernel.system.runTimeout(async () => {
-                            const retryResponse = await form.show(player);
-                            resolve(retryResponse);
-                        }, 5); 
-                        return;
-                    }
-                    
-                    resolve(response);
-                } catch (error) {
-                    console.error("[UIUtils] FORM_ERROR: ", error);
-                    resolve({ canceled: true });
+    static async showForm(player, form, retries = 5) {
+        // Yield to the next tick to ensure any command/chat UI has fully closed on the client.
+        await new Promise(resolve => Kernel.system.run(resolve));
+
+        for (let i = 0; i < retries; i++) {
+            if (!player || !player.isValid) return { canceled: true };
+            try {
+                const response = await form.show(player);
+                if (response.canceled && response.cancelationReason === "UserBusy") {
+                    throw new Error("UserBusy");
                 }
-            }, delayTicks);
-        });
+                return response;
+            } catch (error) {
+                if (i === retries - 1) {
+                    console.error(`[UIUtils] Form show failed after ${retries} attempts: ${error}`);
+                    return { canceled: true };
+                }
+                // Wait 10 ticks (500ms) before retrying
+                await new Promise(resolve => Kernel.system.runTimeout(resolve, 10));
+            }
+        }
+        return { canceled: true };
     }
 
     /**
@@ -39,4 +39,5 @@ export class UIUtils {
         Kernel.system.run(() => uiFunc(player));
     }
 }
+
 

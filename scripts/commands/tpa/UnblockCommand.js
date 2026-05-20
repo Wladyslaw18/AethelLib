@@ -30,8 +30,8 @@ export const UnblockCommand = {
     async execute(_data, player, args) {
         // syntax check.
         if (args.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:unblock <player_name>")
-            player.sendMessage("\xA7e\xA7l» \xA7fTip: \xA77Unblocking allows that player to send TPA requests again.")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:unblock <player_name>")
+            player.sendMessage("\u00A7e\u00A7l» \u00A7fTip: \u00A77Unblocking allows that player to send TPA requests again.")
             return
         }
 
@@ -41,19 +41,19 @@ export const UnblockCommand = {
 
         // target must be online to retrieve their unique ID.
         if (!target) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Player '\xA7e${targetName}\xA77' not found or not online.`)
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '\u00A7e${targetName}\u00A77' not found or not online.`)
             return
         }
 
         // step 1: check if they are actually blocked.
         const blocked = TPAStore.getBlocked(player.id)
         if (!blocked.includes(target.id)) {
-            player.sendMessage(`\xA7c\xA7l» \xA77${target.name} is not in your block list.`)
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77${target.name} is not in your block list.`)
             return
         }
 
         // step 2: purge the block record.
         TPAStore.unblockPlayer(player.id, target.id)
-        player.sendMessage(`\xA7a\xA7l» \xA7fUnblocked \xA7e${target.name}\xA7f from sending you TPA requests.`)
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fUnblocked \u00A7e${target.name}\u00A7f from sending you TPA requests.`)
     }
 }

@@ -46,7 +46,7 @@ export function createClaim(player, location, radius = 1) {
             ).join(',')
             
             if (ClaimStore.getClaim(chunkKey)) {
-                player.sendMessage("\xA7c\xA7l» \xA77This area is already claimed!");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77This area is already claimed!");
                 return false
             }
 
@@ -69,7 +69,7 @@ export function createClaim(player, location, radius = 1) {
 
     // Invalidate local player cache
     SpatialCache.invalidate(playerId);
-    player.sendMessage(`\xA7a\xA7l» \xA7fLand claimed! \xA7e(Radius: ${radius} chunks)\xA7f.`);
+    player.sendMessage(`\u00A7a\u00A7l» \u00A7fLand claimed! \u00A7e(Radius: ${radius} chunks)\u00A7f.`);
 
     return true
 }
@@ -83,13 +83,13 @@ export function removeClaim(player, location) {
     const playerId = player.id
 
     if (!ClaimStore.isOwner(chunkKey, playerId)) {
-        player.sendMessage("\xA7c\xA7l» \xA77You do not own this claim!");
+        player.sendMessage("\u00A7c\u00A7l» \u00A77You do not own this claim!");
         return false
     }
 
     ClaimStore.removeClaim(chunkKey)
     SpatialCache.invalidate(playerId);
-    player.sendMessage("\xA7a\xA7l» \xA7fLand unclaimed.");
+    player.sendMessage("\u00A7a\u00A7l» \u00A7fLand unclaimed.");
 
     return true
 }
@@ -100,14 +100,14 @@ export function removeClaim(player, location) {
 export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD) {
     const target = Kernel.world.getAllPlayers().find(p => p.name === targetName)
     if (!target) {
-        player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found.`);
+        player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found.`);
         return
     }
 
     const ClaimStore = Kernel.get("claimStore")
     const playerClaims = ClaimStore.getPlayerClaims(player.id)
     if (playerClaims.length === 0) {
-        player.sendMessage("\xA7c\xA7l» \xA77You don't have any claims.");
+        player.sendMessage("\u00A7c\u00A7l» \u00A77You don't have any claims.");
         return
     }
 
@@ -117,7 +117,7 @@ export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD)
 
     // Invalidate target player permission cache
     SpatialCache.invalidate(target.id);
-    player.sendMessage(`\xA7a\xA7l» \xA7e${targetName} \xA7fhas been trusted.`);
+    player.sendMessage(`\u00A7a\u00A7l» \u00A7e${targetName} \u00A7fhas been trusted.`);
 }
 
 /* 
@@ -126,7 +126,7 @@ export function trustPlayer(player, targetName, permissions = PERMISSIONS.BUILD)
 export function untrustPlayer(player, targetName) {
     const target = Kernel.world.getAllPlayers().find(p => p.name === targetName)
     if (!target) {
-        player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found.`);
+        player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found.`);
         return
     }
 
@@ -138,7 +138,7 @@ export function untrustPlayer(player, targetName) {
 
     // Invalidate target player permission cache
     SpatialCache.invalidate(target.id);
-    player.sendMessage(`\xA7a\xA7l» \xA7e${targetName} \xA7fhas been untrusted.`);
+    player.sendMessage(`\u00A7a\u00A7l» \u00A7e${targetName} \u00A7fhas been untrusted.`);
 }
 
 export { PERMISSIONS }

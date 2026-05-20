@@ -18,15 +18,12 @@ export const MessageCommand = {
     permission: "essentials.message",
     // command category.
     category: "Social",
+    // Intercepted by script for complex string handling.
+    native: false,
     // native parameter definitions (greedy word slots to capture full messages).
     parameters: [
         { name: "player", type: "player", optional: false  },
-        { name: "word1",  type: "string", optional: true  },
-        { name: "word2",  type: "string", optional: true  },
-        { name: "word3",  type: "string", optional: true  },
-        { name: "word4",  type: "string", optional: true  },
-        { name: "word5",  type: "string", optional: true  },
-        { name: "word6",  type: "string", optional: true  }
+        { name: "message", type: "string", optional: true  }
     ],
 
     // ----------------------------------------------------------------------------
@@ -35,32 +32,29 @@ export const MessageCommand = {
     // | delivery confirmation.                                                   |
     // ----------------------------------------------------------------------------
     async execute(_data, player, args) {
-        // syntax validation.
-        if (args.length < 2) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:message <player> <message>");
-            player.sendMessage("\xA7e\xA7l» \xA7fTip: \xA77You can use /ae:reply to respond.");
-            return
-        }
-
-        // resolve the target player object. handles names with spaces.
+        // resolve the target player object.
         const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args)
 
         // check if target is online.
         if (!target) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Player '${args[0]}' not found.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player not found.`);
             return
         }
 
         // extract the actual message content.
         const message = args.slice(consumedArgs).join(" ")
         if (!message) {
-            player.sendMessage("\xA7c\xA7l» \xA77Message cannot be empty.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:message <player> <message>");
+            return
+        }
+        if (!message) {
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Message cannot be empty.");
             return
         }
 
         // check for self-messaging (redundant but kept for protocol).
         if (target.id === player.id) {
-            player.sendMessage("\xA7c\xA7l» \xA77You can't message yourself.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You can't message yourself.");
             return
         }
 
@@ -106,6 +100,8 @@ export const ReplyCommand = {
     permission: "essentials.message",
     // command category.
     category: "Social",
+    // Intercepted by script for complex string handling.
+    native: false,
 
     // ----------------------------------------------------------------------------
     // | method: execute                                                          |
@@ -114,7 +110,7 @@ export const ReplyCommand = {
     execute(_data, player, args) {
         // basic input check.
         if (args.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:reply <message>");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:reply <message>");
             return
         }
 
@@ -124,7 +120,7 @@ export const ReplyCommand = {
 
         // if the cache is empty (no recent messages).
         if (!lastSenderId) {
-            player.sendMessage("\xA7c\xA7l» \xA77You have no one to reply to.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You have no one to reply to.");
             return
         }
 
@@ -132,7 +128,7 @@ export const ReplyCommand = {
         const lastSender = [...world.getAllPlayers()].find(p => p.id === lastSenderId)
         if (!lastSender) {
             // if they left since the last message.
-            player.sendMessage("\xA7c\xA7l» \xA77That player is now offline.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77That player is now offline.");
             // purge the dead cache entry.
             ReplyCache.delete(player.id)
             return
@@ -172,8 +168,8 @@ function formatMessage(sender, receiver, message) {
     
     return {
         // message as seen by the recipient.
-        to: `\xA78[${timestamp}] \xA7dFROM \xA7e${sender.name}\xA78: \xA7f${message}`,
+        to: `\u00A78[${timestamp}] \u00A7dFROM \u00A7e${sender.name}\u00A78: \u00A7f${message}`,
         // message as seen by the sender.
-        from: `\xA78[${timestamp}] \xA7dTO \xA7e${receiver.name}\xA78: \xA7f${message}`
+        from: `\u00A78[${timestamp}] \u00A7dTO \u00A7e${receiver.name}\u00A78: \u00A7f${message}`
     }
 }

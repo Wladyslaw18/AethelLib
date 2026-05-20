@@ -32,22 +32,22 @@ export const InfoCommand = {
         
         // aesthetic output.
         player.sendMessage(" ")
-        player.sendMessage("\xA7f\xA7lAETHELGRAD \xA7r\xA77| \xA76\xA7lSERVER INFO")
-        player.sendMessage("\xA78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        player.sendMessage(`\xA77» \xA7fVersion:    \xA7b${version}`)
-        player.sendMessage(`\xA77» \xA7fUptime:     \xA7d${uptime}`)
-        player.sendMessage(`\xA77» \xA7fPlayers:    \xA73${playerCount}\xA78/\xA7320`)
-        player.sendMessage(`\xA77» \xA7fCore:       \xA7aAethelLib`)
-        player.sendMessage("\xA78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        player.sendMessage("\u00A7f\u00A7lAETHELGRAD \u00A7r\u00A77| \u00A76\u00A7lSERVER INFO")
+        player.sendMessage("\u00A78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        player.sendMessage(`\u00A77» \u00A7fVersion:    \u00A7b${version}`)
+        player.sendMessage(`\u00A77» \u00A7fUptime:     \u00A7d${uptime}`)
+        player.sendMessage(`\u00A77» \u00A7fPlayers:    \u00A73${playerCount}\u00A78/\u00A7320`)
+        player.sendMessage(`\u00A77» \u00A7fCore:       \u00A7aAethelLib`)
+        player.sendMessage("\u00A78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
         // status checklist for major engine modules.
         // currently these are static indicators as these systems are kernel-critical.
-        player.sendMessage("\xA76\xA7l[ SYSTEMS ]")
-        player.sendMessage("\xA77• \xA7fEconomy System \xA78(Active)")
-        player.sendMessage("\xA77• \xA7fTeleport System \xA78(Active)")
-        player.sendMessage("\xA77• \xA7fSocial System \xA78(Active)")
-        player.sendMessage("\xA77• \xA7fUtility System \xA78(Active)")
-        player.sendMessage("\xA78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        player.sendMessage("\u00A76\u00A7l[ SYSTEMS ]")
+        player.sendMessage("\u00A77• \u00A7fEconomy System \u00A78(Active)")
+        player.sendMessage("\u00A77• \u00A7fTeleport System \u00A78(Active)")
+        player.sendMessage("\u00A77• \u00A7fSocial System \u00A78(Active)")
+        player.sendMessage("\u00A77• \u00A7fUtility System \u00A78(Active)")
+        player.sendMessage("\u00A78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         player.sendMessage(" ")
     }
 }

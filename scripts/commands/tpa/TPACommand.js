@@ -30,7 +30,7 @@ export const TPACommand = {
     async execute(_data, player, args) {
         // basic syntax check.
         if (args.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:tpa <player_name>")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:tpa <player_name>")
             return
         }
 
@@ -40,13 +40,13 @@ export const TPACommand = {
 
         // check if target is online.
         if (!targetPlayer) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found or offline.`)
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found or offline.`)
             return
         }
 
         // check for self-request block.
         if (targetPlayer.id === player.id) {
-            player.sendMessage("\xA7c\xA7l» \xA77You cannot send a TPA request to yourself.")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot send a TPA request to yourself.")
             return
         }
 
@@ -58,7 +58,7 @@ export const TPACommand = {
         if (success) {
             // notify the sender that the request is out. 
             // the service handles notifying the receiver.
-            player.sendMessage(`\xA7a\xA7l» \xA7fTPA request sent to \xA7e${targetPlayer.name}\xA7f.`)
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fTPA request sent to \u00A7e${targetPlayer.name}\u00A7f.`)
         }
     }
 }

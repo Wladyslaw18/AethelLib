@@ -30,8 +30,8 @@ export const BlockCommand = {
     async execute(_data, player, args) {
         // syntax validation.
         if (args.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:block <player_name>")
-            player.sendMessage("\xA7e\xA7l» \xA7fTip: \xA77Blocked players cannot send you TPA requests.")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:block <player_name>")
+            player.sendMessage("\u00A7e\u00A7l» \u00A7fTip: \u00A77Blocked players cannot send you TPA requests.")
             return
         }
 
@@ -41,26 +41,26 @@ export const BlockCommand = {
 
         // check if target is online (required for ID-based blocking).
         if (!target) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found or offline.`)
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found or offline.`)
             return
         }
 
         // prevent self-blocking.
         if (target.id === player.id) {
-            player.sendMessage("\xA7c\xA7l» \xA77You cannot block yourself!")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot block yourself!")
             return
         }
 
         // step 1: check for existing block record.
         const blocked = TPAStore.getBlocked(player.id)
         if (blocked.includes(target.id)) {
-            player.sendMessage(`\xA7c\xA7l» \xA77${target.name} is already blocked.`)
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77${target.name} is already blocked.`)
             return
         }
 
         // step 2: commit the block.
         // update the persistent store with the new relationship.
         TPAStore.blockPlayer(player.id, target.id)
-        player.sendMessage(`\xA7a\xA7l» \xA7fBlocked \xA7e${target.name}\xA7f from sending you TPA requests.`)
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fBlocked \u00A7e${target.name}\u00A7f from sending you TPA requests.`)
     }
 }

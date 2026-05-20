@@ -29,10 +29,13 @@ export const WarpCommand = {
     // ----------------------------------------------------------------------------
     async execute(_data, player, args) {
         // syntax check.
-        const name = args[0]
-        if (!name || typeof name !== "string") {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:warp <warp_name>");
-            player.sendMessage("\xA7e\xA7l» \xA7fTip: \xA77Type a valid warp name to teleport.");
+        let name = args[0]
+        if (name !== undefined && name !== null) {
+            name = String(name)
+        }
+        if (!name) {
+            const { showWarpUI } = await import("../../ui/teleport/WarpUI.js")
+            Kernel.system.run(() => showWarpUI(player))
             return
         }
 
@@ -43,7 +46,7 @@ export const WarpCommand = {
 
         // check if the record exists.
         if (!warp) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Warp point '${name}' not found.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Warp point '${name}' not found.`);
             return
         }
 
@@ -51,6 +54,6 @@ export const WarpCommand = {
         // add 0.5 to x/z for block centering.
         teleportService.teleport(player, { x: warp.x + 0.5, y: warp.y, z: warp.z + 0.5 }, warp.dimension);
         // feedback to the player.
-        player.sendMessage(`\xA7a\xA7l» \xA7fTeleported to warp \xA7e${name}\xA7f.`);
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fTeleported to warp \u00A7e${name}\u00A7f.`);
     }
 }

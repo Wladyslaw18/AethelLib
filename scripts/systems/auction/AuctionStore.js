@@ -7,7 +7,7 @@ import { Kernel } from "../../core/Kernel.js"
  */
 export class AuctionStore {
     static formatMoney(amount) {
-        return `\xA76$\xA7f${amount.toLocaleString()}`
+        return `\u00A76$\u00A7f${amount.toLocaleString()}`
     }
 
     /* 
@@ -263,7 +263,7 @@ export class AuctionStore {
         // 🔥 ACTUALLY GIVE THE ITEM!
         const player = Kernel.world.getAllPlayers().find(p => p.id === claimantId);
         if (player) {
-            const inv = player.getComponent(EntityComponentTypes.Inventory).container;
+            const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory).container;
             let remaining = auction.quantity;
             while (remaining > 0) {
                 const take = Math.min(remaining, 64);

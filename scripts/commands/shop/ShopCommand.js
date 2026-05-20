@@ -24,6 +24,6 @@ export const ShopCommand = {
     execute(_data, player, _args) {
         // trigger the visual manifest spawn. 
         // the UI handles the transactional logic and asset display.
-        showShopUI(player);
+        Kernel.system.run(() => showShopUI(player));
     }
 }

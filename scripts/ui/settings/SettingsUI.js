@@ -1,4 +1,5 @@
 import { Kernel } from "../../core/Kernel.js"
+import { UIUtils } from "../UIUtils.js"
 
 /**
  * Show player settings UI
@@ -12,12 +13,11 @@ export async function showSettingsUI(player) {
     const scoreboardVisible = PlayerStore.get(player, "settings:scoreboard") !== false
 
     const form = new Kernel.ModalFormData()
-        .title("\xA77\xA7l⚙️ Settings")
-        .toggle("\xA7eTPA Requests", { defaultValue: tpaEnabled })
-        .toggle("\xA76Scoreboard Visible", { defaultValue: scoreboardVisible })
+        .title("\u00A77\u00A7l⚙️ Settings")
+        .toggle("\u00A7eTPA Requests", tpaEnabled)
+        .toggle("\u00A76Scoreboard Visible", scoreboardVisible)
 
-    // @ts-ignore
-    const response = await form.show(player)
+    const response = await UIUtils.showForm(player, form)
     if (response.canceled) return
 
     const newTpa = Boolean(response.formValues[0])
@@ -32,11 +32,13 @@ export async function showSettingsUI(player) {
         try {
             const objective = Kernel.world.scoreboard.getObjective("money")
             if (objective) {
+                // @ts-ignore
                 objective.setScore(player, 0)
             }
         } catch { /* ignore */ }
     }
 
-    player.sendMessage("\xA7aSettings saved!")
-    player.sendMessage(`\xA77TPA: ${newTpa ? "\xA7aEnabled" : "\xA7cDisabled"} \xA77| Scoreboard: ${newScoreboard ? "\xA7aVisible" : "\xA7cHidden"}`)
+    player.sendMessage("\u00A7aSettings saved!")
+    player.sendMessage(`\u00A77TPA: ${newTpa ? "\u00A7aEnabled" : "\u00A7cDisabled"} \u00A77| Scoreboard: ${newScoreboard ? "\u00A7aVisible" : "\u00A7cHidden"}`)
 }
+

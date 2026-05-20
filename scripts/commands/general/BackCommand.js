@@ -39,7 +39,7 @@ export const BackCommand = {
         // check if enough ticks have passed since the last use.
         if (Kernel.system.currentTick - last < cd) {
             const remaining = Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)
-            player.sendMessage(`\xA7c\xA7l» \xA77Please wait \xA7e${remaining}s \xA77before using this again.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Please wait \u00A7e${remaining}s \u00A77before using this again.`);
             return
         }
 
@@ -50,14 +50,14 @@ export const BackCommand = {
         // this data is persisted in the player's private dynamic properties.
         const lastLocation = getLastLocation(player)
         if (!lastLocation) {
-            player.sendMessage("\xA7c\xA7l» \xA77No previous location found.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77No previous location found.");
             return
         }
 
         // step 3: combat integrity probe.
         // prevents 'combat logging' or escaping PvP via teleportation.
         if (isInCombat(player)) {
-            player.sendMessage("\xA7c\xA7l» \xA77You cannot teleport while in combat!");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot teleport while in combat!");
             return
         }
 
@@ -73,10 +73,10 @@ export const BackCommand = {
                     { x: lastLocation.x + 0.5, y: lastLocation.y, z: lastLocation.z + 0.5 },
                     { dimension }
                 )
-                player.sendMessage("\xA7a\xA7l» \xA7fTeleported back to your previous location.");
+                player.sendMessage("\u00A7a\u00A7l» \u00A7fTeleported back to your previous location.");
             } catch (error) {
                 // if the dimension is no longer loaded or coords are invalid.
-                player.sendMessage("\xA7c\xA7l» \xA77Failed to teleport back.");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to teleport back.");
             }
         })
     }

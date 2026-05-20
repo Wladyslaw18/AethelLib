@@ -6,7 +6,7 @@ export async function showLandPermissions(player, rankTag, backCallback) {
     const rank = RankSystem.getRank(rankTag)
     if (!rank) return
     const p = rank.permissions || {}
-    const options = ["\xA7aAllow", "\xA77No action (Default)", "\xA7cDeny"]
+    const options = ["\u00A7aAllow", "\u00A77No action (Default)", "\u00A7cDeny"]
 
     const nodes = [
         { label: "Land Claim Command", key: "land.claim" },
@@ -33,6 +33,6 @@ export async function showLandPermissions(player, rankTag, backCallback) {
     rank.permissions["limit.land"] = parseInt(res.formValues[nodes.length]) || 1
 
     RankSystem.updateRank(rankTag, rank)
-    player.sendMessage(`\xA7aUpdated land permissions for rank: ${rankTag}`)
+    player.sendMessage(`\u00A7aUpdated land permissions for rank: ${rankTag}`)
     backCallback()
 }

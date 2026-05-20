@@ -17,6 +17,8 @@ export const BroadcastCommand = {
     permission: "essentials.admin",
     // organization category.
     category: "Admin",
+    // Intercepted by script for complex string handling.
+    native: false,
     // shorthand aliases.
     aliases: ["bc"],
     // parameter definitions for the native parser.
@@ -27,7 +29,9 @@ export const BroadcastCommand = {
         { name: "arg2",       type: "string", optional: true },
         { name: "arg3",       type: "string", optional: true },
         { name: "arg4",       type: "string", optional: true },
-        { name: "arg5",       type: "string", optional: true }
+        { name: "arg5",       type: "string", optional: true },
+        { name: "arg6",       type: "string", optional: true },
+        { name: "arg7",       type: "string", optional: true }
     ],
 
     // ----------------------------------------------------------------------------
@@ -90,7 +94,7 @@ export const BroadcastCommand = {
                 break
             default:
                 // unknown command.
-                player.sendMessage(`\xA7cERROR: Unknown subcommand: '${subcommand}'`);
+                player.sendMessage(`\u00A7cERROR: Unknown subcommand: '${subcommand}'`);
                 this.showHelp(player)
         }
     },
@@ -102,19 +106,19 @@ export const BroadcastCommand = {
     async handleAdd(player, args) {
         const tier = args[0]?.toLowerCase()
         // join the remaining arguments to form the message content.
-        const message = args.slice(1).join(" ")
+        const message = args.slice(1).filter(Boolean).join(" ")
 
         if (!tier || !message) {
-            player.sendMessage("\xA77Usage: /ae:bc add <tier> <content>");
+            player.sendMessage("\u00A77Usage: /ae:bc add <tier> <content>");
             return
         }
 
         // save to the persistent store.
         const success = BroadcastStore.addMessage(tier, message)
         if (success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7fMessage added to \xA7e${tier}\xA7f tier.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fMessage added to \u00A7e${tier}\u00A7f tier.`);
         } else {
-            player.sendMessage("\xA7c\xA7l» \xA77Invalid tier.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid tier.");
         }
     },
 
@@ -127,16 +131,16 @@ export const BroadcastCommand = {
         const index = parseInt(args[1])
 
         if (!tier || isNaN(index)) {
-            player.sendMessage("\xA77Usage: /ae:bc remove <tier> <index>");
+            player.sendMessage("\u00A77Usage: /ae:bc remove <tier> <index>");
             return
         }
 
         // delete from the store.
         const success = BroadcastStore.removeMessage(tier, index)
         if (success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7fMessage removed from \xA7e${tier}\xA7f tier.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fMessage removed from \u00A7e${tier}\u00A7f tier.`);
         } else {
-            player.sendMessage("\xA7c\xA7l» \xA77Invalid index.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid index.");
         }
     },
 
@@ -149,14 +153,14 @@ export const BroadcastCommand = {
 
         // enforce a 10s floor to prevent spam/lag.
         if (isNaN(seconds) || seconds < 10) {
-            player.sendMessage("\xA7c\xA7l» \xA77Minimum interval is 10s.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Minimum interval is 10s.");
             return
         }
 
         // update the store.
         const success = BroadcastStore.setInterval(seconds)
         if (success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7fBroadcast interval set to \xA7e${seconds}s\xA7f.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fBroadcast interval set to \u00A7e${seconds}s\u00A7f.`);
             // if the service is currently running, we need to push the new config live.
             if (BroadcastService.isRunning()) {
                 BroadcastService.updateConfig(BroadcastStore.getConfig())
@@ -172,7 +176,7 @@ export const BroadcastCommand = {
         // default to 'common' tier if not specified.
         const tier = args[0]?.toLowerCase() || "common"
         BroadcastService.testBroadcast(tier, player)
-        player.sendMessage(`\xA7a\xA7l» \xA7fSending \xA7e${tier}\xA7f test broadcast...`);
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fSending \u00A7e${tier}\u00A7f test broadcast...`);
     },
 
     // ----------------------------------------------------------------------------
@@ -184,13 +188,13 @@ export const BroadcastCommand = {
         const storeStats = BroadcastStore.getStats()
 
         player.sendMessage(" ")
-        player.sendMessage("\xA76\xA7lBroadcast Stats")
-        player.sendMessage(`\xA77Status: ${serviceStats.running ? "\xA7aRunning" : "\xA7cStopped"}`)
-        player.sendMessage(`\xA77Interval: \xA7e${storeStats.interval}s`)
+        player.sendMessage("\u00A76\u00A7lBroadcast Stats")
+        player.sendMessage(`\u00A77Status: ${serviceStats.running ? "\u00A7aRunning" : "\u00A7cStopped"}`)
+        player.sendMessage(`\u00A77Interval: \u00A7e${storeStats.interval}s`)
         // check how much time is left on the current timer.
-        player.sendMessage(`\xA77Next: \xA7e${BroadcastService.getTimeUntilNext()}`)
+        player.sendMessage(`\u00A77Next: \u00A7e${BroadcastService.getTimeUntilNext()}`)
         // lifetime count since last reload.
-        player.sendMessage(`\xA77Total: \xA7e${serviceStats.totalBroadcasts}`)
+        player.sendMessage(`\u00A77Total: \u00A7e${serviceStats.totalBroadcasts}`)
     },
 
     // ----------------------------------------------------------------------------
@@ -201,20 +205,20 @@ export const BroadcastCommand = {
     async handleStart(player) {
         if (BroadcastService.isRunning()) return
         BroadcastService.init()
-        player.sendMessage("\xA7a\xA7l» \xA7fBroadcast system started.");
+        player.sendMessage("\u00A7a\u00A7l» \u00A7fBroadcast system started.");
     },
 
     async handleStop(player) {
         if (!BroadcastService.isRunning()) return
         BroadcastService.stop()
-        player.sendMessage("\xA76\xA7l» \xA77Broadcast system stopped.");
+        player.sendMessage("\u00A76\u00A7l» \u00A77Broadcast system stopped.");
     },
 
     async handleReload(player) {
         // cycle the service.
         if (BroadcastService.isRunning()) BroadcastService.stop()
         BroadcastService.init()
-        player.sendMessage("\xA7a\xA7l» \xA7fBroadcast system reloaded.");
+        player.sendMessage("\u00A7a\u00A7l» \u00A7fBroadcast system reloaded.");
     },
 
     // ----------------------------------------------------------------------------
@@ -227,15 +231,15 @@ export const BroadcastCommand = {
             // list specific messages in a tier.
             const messages = BroadcastStore.getMessages(tier)
             player.sendMessage(" ")
-            player.sendMessage(`\xA76\xA7lBroadcast List: \xA7e${tier.toUpperCase()}`)
-            messages.forEach((m, i) => player.sendMessage(`\xA77[${i}] \xA7f${m}`))
+            player.sendMessage(`\u00A76\u00A7lBroadcast List: \u00A7e${tier.toUpperCase()}`)
+            messages.forEach((m, i) => player.sendMessage(`\u00A77[${i}] \u00A7f${m}`))
         } else {
             // show counts for all tiers.
             const stats = BroadcastStore.getStats()
             player.sendMessage(" ")
-            player.sendMessage("\xA76\xA7lBroadcast Summary")
+            player.sendMessage("\u00A76\u00A7lBroadcast Summary")
             for (const [t, c] of Object.entries(stats.messagesByTier)) {
-                player.sendMessage(`\xA77${t.toUpperCase()}: \xA7e${c}`)
+                player.sendMessage(`\u00A77${t.toUpperCase()}: \u00A7e${c}`)
             }
         }
     },
@@ -245,7 +249,7 @@ export const BroadcastCommand = {
         const tier = args[0]?.toLowerCase()
         if (!tier) return
         BroadcastStore.clearTier(tier)
-        player.sendMessage(`\xA7a\xA7l» \xA7fBroadcast tier \xA7e${tier}\xA7f cleared.`);
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fBroadcast tier \u00A7e${tier}\u00A7f cleared.`);
     },
 
     // ----------------------------------------------------------------------------
@@ -254,15 +258,15 @@ export const BroadcastCommand = {
     // ----------------------------------------------------------------------------
     showHelp(player) {
         player.sendMessage(" ")
-        player.sendMessage("\xA76\xA7lBroadcast Help")
-        player.sendMessage("\xA77/ae:bc add <tier> <msg>")
-        player.sendMessage("\xA77/ae:bc remove <tier> <idx>")
-        player.sendMessage("\xA77/ae:bc interval <sec>")
-        player.sendMessage("\xA77/ae:bc test [tier]")
-        player.sendMessage("\xA77/ae:bc stats")
-        player.sendMessage("\xA77/ae:bc on | off")
-        player.sendMessage("\xA77/ae:bc reload")
-        player.sendMessage("\xA77/ae:bc list [tier]")
+        player.sendMessage("\u00A76\u00A7lBroadcast Help")
+        player.sendMessage("\u00A77/ae:bc add <tier> <msg>")
+        player.sendMessage("\u00A77/ae:bc remove <tier> <idx>")
+        player.sendMessage("\u00A77/ae:bc interval <sec>")
+        player.sendMessage("\u00A77/ae:bc test [tier]")
+        player.sendMessage("\u00A77/ae:bc stats")
+        player.sendMessage("\u00A77/ae:bc on | off")
+        player.sendMessage("\u00A77/ae:bc reload")
+        player.sendMessage("\u00A77/ae:bc list [tier]")
         player.sendMessage(" ")
     }
 }

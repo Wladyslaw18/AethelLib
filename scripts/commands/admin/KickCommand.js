@@ -1,4 +1,5 @@
 import { Kernel } from "../../core/Kernel.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 // ----------------------------------------------------------------------------
 // | object: KickCommand                                                      |
@@ -11,35 +12,37 @@ export const KickCommand = {
     usage: "/ae:kick <player> [reason]",
     permission: "essentials.kick",
     category: "Admin",
+    // Intercepted by script for complex reason handling.
+    native: false,
     
     // NATIVE SCHEMA DEFINITION
     params: [
-        { name: "player", type: Kernel.CustomCommandParamType.PlayerSelector, optional: false },
-        { name: "reason", type: Kernel.CustomCommandParamType.String, optional: true }
+        { name: "player", type: "player", optional: false },
+        { name: "reason", type: "string", optional: true }
     ],
 
     execute(_data, player, args) {
-        // target is an actual rich Player object! reason is a C++ validated String!
-        const [target, reason = "No reason specified"] = args;
+        const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args);
+        const reason = args.slice(consumedArgs).join(" ") || "No reason specified";
 
         if (!target) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:kick <player> [reason]");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:kick <player> [reason]");
             return;
         }
 
         // step 1: hierarchy validation. verify target is not more powerful than sender.
         const PermissionManager = Kernel.get("permissions")
         if (PermissionManager && !PermissionManager.canActOn(player, target)) {
-            player.sendMessage("\xA7c\xA7l» \xA77Permission Denied: Target is more powerful than you.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Permission Denied: Target is more powerful than you.");
             return
         }
 
         // step 2: execute kick command on nativeOverworld. escape double quotes to avoid injections.
         Kernel.system.run(() => {
             try {
-                Kernel.world.getDimension("overworld").runCommand(`kick "${target.name}" \xA7c[KICK]\n\xA7eREASON: ${reason.replace(/"/g, "'")}`)
+                Kernel.world.getDimension("overworld").runCommand(`kick "${target.name}" \u00A7c[KICK]\n\u00A7eREASON: ${reason.replace(/"/g, "'")}`)
 
-                const kickMessage = `\xA76\xA7l[\xA7eKICK\xA76\xA7l] \xA7r${target.name} \xA77was kicked by \xA7e${player.name}\xA77\n\xA77Reason: \xA7f${reason}`
+                const kickMessage = `\u00A76\u00A7l[\u00A7eKICK\u00A76\u00A7l] \u00A7r${target.name} \u00A77was kicked by \u00A7e${player.name}\u00A77\n\u00A77Reason: \u00A7f${reason}`
 
                 // broadcast kick alert to authorized staff.
                 Kernel.world.getAllPlayers().forEach(p => {
@@ -48,11 +51,11 @@ export const KickCommand = {
                     }
                 })
 
-                player.sendMessage(`\xA7a\xA7l» \xA7f${target.name} has been kicked.`);
+                player.sendMessage(`\u00A7a\u00A7l» \u00A7f${target.name} has been kicked.`);
 
             } catch (error) {
                 console.error(`[KickCommand] TERMINATION_CRASH for ${target?.name}: ${error}`)
-                player.sendMessage(`\xA7c\xA7l» \xA77Severance failure for '${target?.name}'.`);
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77Severance failure for '${target?.name}'.`);
             }
         })
     }

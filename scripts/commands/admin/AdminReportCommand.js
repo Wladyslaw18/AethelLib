@@ -26,7 +26,7 @@ export const AdminReportCommand = {
         // step 1: permission verification.
         const PermissionManager = Kernel.get("permissions")
         if (!PermissionManager.hasPermission(player, "essentials.admin.reports")) {
-            player.sendMessage("\xA7c\xA7l» \xA77You do not have permission to view reports.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You do not have permission to view reports.");
             return
         }
 
@@ -34,6 +34,6 @@ export const AdminReportCommand = {
         // we use a dynamic import here to keep the initial command registry 
         // payload lightweight.
         const { showAdminReportUI } = await import("../../ui/admin/AdminReportUI.js")
-        await showAdminReportUI(player)
+        Kernel.system.run(() => showAdminReportUI(player))
     }
 }

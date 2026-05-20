@@ -30,7 +30,7 @@ export const TPAHereCommand = {
     async execute(_data, player, args) {
         // syntax check.
         if (args.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:tpahere <player>");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:tpahere <player>");
             return
         }
 
@@ -40,13 +40,13 @@ export const TPAHereCommand = {
 
         // check if target is online.
         if (!targetPlayer) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found.`);
             return
         }
 
         // self-request block.
         if (targetPlayer.id === player.id) {
-            player.sendMessage("\xA7c\xA7l» \xA77You cannot send a TPA request to yourself.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot send a TPA request to yourself.");
             return
         }
 
@@ -57,7 +57,7 @@ export const TPAHereCommand = {
 
         if (success) {
             // confirmation output.
-            player.sendMessage(`\xA7a\xA7l» \xA7fTPAHere request sent to \xA7e${targetPlayer.name}\xA7f.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fTPAHere request sent to \u00A7e${targetPlayer.name}\u00A7f.`);
         }
     }
 }

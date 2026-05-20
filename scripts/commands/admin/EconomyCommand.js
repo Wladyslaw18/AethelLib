@@ -32,7 +32,7 @@ export const EconomyCommand = {
     async execute(_data, player, args) {
         // syntax validation.
         if (args.length < 2) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:economy <give|take|set|reset> <player> [amount]");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:economy <give|take|set|reset> <player> [amount]");
             return
         }
 
@@ -43,7 +43,7 @@ export const EconomyCommand = {
         // locate the target player object in the current Kernel.world buffer.
         const target = Kernel.world.getAllPlayers().find(p => p.name === playerName)
         if (!target) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Player '${playerName}' not found.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${playerName}' not found.`);
             return
         }
 
@@ -66,7 +66,7 @@ export const EconomyCommand = {
                 await handleReset(player, target)
                 break
             default:
-                player.sendMessage("\xA7c\xA7l» \xA77Invalid action. Use give, take, set, or reset.");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid action. Use give, take, set, or reset.");
         }
     }
 }
@@ -79,7 +79,7 @@ async function handleGive(executor, target, amountStr) {
     const amount = Math.floor(Number(amountStr))
     // validate input amount.
     if (isNaN(amount) || amount <= 0) {
-        executor.sendMessage("\xA7c\xA7l» \xA77Please provide a valid amount.");
+        executor.sendMessage("\u00A7c\u00A7l» \u00A77Please provide a valid amount.");
         return
     }
 
@@ -87,13 +87,13 @@ async function handleGive(executor, target, amountStr) {
         // execute atomic addition in the persistent store.
         const success = await EconomyStore.addMoney(target, amount)
         if (success) {
-            executor.sendMessage(`\xA7a\xA7l» \xA7fAdded \xA7e$${amount.toLocaleString()}\xA7f to \xA7e${target.name}\xA7f's balance.`);
-            target.sendMessage("\xA7a\xA7l» \xA7fYour balance was adjusted by an admin.");
+            executor.sendMessage(`\u00A7a\u00A7l» \u00A7fAdded \u00A7e$${amount.toLocaleString()}\u00A7f to \u00A7e${target.name}\u00A7f's balance.`);
+            target.sendMessage("\u00A7a\u00A7l» \u00A7fYour balance was adjusted by an admin.");
         } else {
-            executor.sendMessage("\xA7c\xA7l» \xA77Failed to add money.");
+            executor.sendMessage("\u00A7c\u00A7l» \u00A77Failed to add money.");
         }
     } catch (error) {
-        executor.sendMessage(`\xA7c\xA7l[Critical] \xA77Transaction Crash: ${error.message}`);
+        executor.sendMessage(`\u00A7c\u00A7l[Critical] \u00A77Transaction Crash: ${error.message}`);
     }
 }
 
@@ -104,7 +104,7 @@ async function handleGive(executor, target, amountStr) {
 async function handleTake(executor, target, amountStr) {
     const amount = Math.floor(Number(amountStr))
     if (isNaN(amount) || amount <= 0) {
-        executor.sendMessage("\xA7c\xA7l» \xA77Please provide a valid amount.");
+        executor.sendMessage("\u00A7c\u00A7l» \u00A77Please provide a valid amount.");
         return
     }
 
@@ -112,13 +112,13 @@ async function handleTake(executor, target, amountStr) {
         // execute atomic deduction. fails if funds are insufficient.
         const success = await EconomyStore.removeMoney(target, amount)
         if (success) {
-            executor.sendMessage(`\xA7a\xA7l» \xA7fRemoved \xA7e$${amount.toLocaleString()}\xA7f from \xA7e${target.name}\xA7f's balance.`);
-            target.sendMessage("\xA7a\xA7l» \xA7fYour balance was adjusted by an admin.");
+            executor.sendMessage(`\u00A7a\u00A7l» \u00A7fRemoved \u00A7e$${amount.toLocaleString()}\u00A7f from \u00A7e${target.name}\u00A7f's balance.`);
+            target.sendMessage("\u00A7a\u00A7l» \u00A7fYour balance was adjusted by an admin.");
         } else {
-            executor.sendMessage("\xA7c\xA7l» \xA77Failed to remove money (Insufficient funds).");
+            executor.sendMessage("\u00A7c\u00A7l» \u00A77Failed to remove money (Insufficient funds).");
         }
     } catch (error) {
-        executor.sendMessage(`\xA7c\xA7l[Critical] \xA77Transaction Crash: ${error.message}`);
+        executor.sendMessage(`\u00A7c\u00A7l[Critical] \u00A77Transaction Crash: ${error.message}`);
     }
 }
 
@@ -129,7 +129,7 @@ async function handleTake(executor, target, amountStr) {
 async function handleSet(executor, target, amountStr) {
     const amount = Math.floor(Number(amountStr))
     if (isNaN(amount) || amount < 0) {
-        executor.sendMessage("\xA7c\xA7l» \xA77Please provide a valid amount.");
+        executor.sendMessage("\u00A7c\u00A7l» \u00A77Please provide a valid amount.");
         return
     }
 
@@ -137,13 +137,13 @@ async function handleSet(executor, target, amountStr) {
         // force state update in the store.
         const success = await EconomyStore.setBalance(target, amount)
         if (success) {
-            executor.sendMessage(`\xA7a\xA7l» \xA7fSet \xA7e${target.name}\xA7f's balance to \xA7e$${amount.toLocaleString()}\xA7f.`);
-            target.sendMessage("\xA7a\xA7l» \xA7fYour balance was adjusted by an admin.");
+            executor.sendMessage(`\u00A7a\u00A7l» \u00A7fSet \u00A7e${target.name}\u00A7f's balance to \u00A7e$${amount.toLocaleString()}\u00A7f.`);
+            target.sendMessage("\u00A7a\u00A7l» \u00A7fYour balance was adjusted by an admin.");
         } else {
-            executor.sendMessage("\xA7c\xA7l» \xA77Failed to set balance.");
+            executor.sendMessage("\u00A7c\u00A7l» \u00A77Failed to set balance.");
         }
     } catch (error) {
-        executor.sendMessage(`\xA7c\xA7l[Critical] \xA77Transaction Crash: ${error.message}`);
+        executor.sendMessage(`\u00A7c\u00A7l[Critical] \u00A77Transaction Crash: ${error.message}`);
     }
 }
 
@@ -156,12 +156,12 @@ async function handleReset(executor, target) {
         // query the store for the constant default balance.
         const success = await EconomyStore.setBalance(target, EconomyStore.DEFAULT_BALANCE)
         if (success) {
-            executor.sendMessage(`\xA7a\xA7l» \xA7fReset \xA7e${target.name}\xA7f's balance to \xA7e$${EconomyStore.DEFAULT_BALANCE.toLocaleString()}\xA7f.`);
-            target.sendMessage("\xA7a\xA7l» \xA7fYour balance was reset by an admin.");
+            executor.sendMessage(`\u00A7a\u00A7l» \u00A7fReset \u00A7e${target.name}\u00A7f's balance to \u00A7e$${EconomyStore.DEFAULT_BALANCE.toLocaleString()}\u00A7f.`);
+            target.sendMessage("\u00A7a\u00A7l» \u00A7fYour balance was reset by an admin.");
         } else {
-            executor.sendMessage("\xA7c\xA7l» \xA77Failed to reset balance.");
+            executor.sendMessage("\u00A7c\u00A7l» \u00A77Failed to reset balance.");
         }
     } catch (error) {
-        executor.sendMessage(`\xA7c\xA7l[Critical] \xA77Transaction Crash: ${error.message}`);
+        executor.sendMessage(`\u00A7c\u00A7l[Critical] \u00A77Transaction Crash: ${error.message}`);
     }
 }

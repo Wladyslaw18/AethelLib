@@ -64,7 +64,7 @@ export const ClaimCommand = {
                 break
             default:
                 // unknown subcommand.
-                player.sendMessage(`\xA7c\xA7l[Error] \xA77Unknown claim vector: '${subcommand}'`);
+                player.sendMessage(`\u00A7c\u00A7l[Error] \u00A77Unknown claim vector: '${subcommand}'`);
                 this.showHelp(player)
         }
     },
@@ -78,7 +78,7 @@ export const ClaimCommand = {
         const radius = parseInt(args[0]) || 1
         // constraint: don't let them claim the entire world at once.
         if (radius < 1 || radius > 5) {
-            player.sendMessage("\xA7c\xA7l[Error] \xA77Spatial constraint violation: Radius must be 1-5 chunks.");
+            player.sendMessage("\u00A7c\u00A7l[Error] \u00A77Spatial constraint violation: Radius must be 1-5 chunks.");
             return
         }
 
@@ -97,7 +97,7 @@ export const ClaimCommand = {
 
         // check if this acquisition would exceed their industrial limit.
         if (currentClaims + chunksToClaim > maxClaims) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Claim limit reached! You have ${currentClaims}/${maxClaims} chunks.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Claim limit reached! You have ${currentClaims}/${maxClaims} chunks.`);
             return;
         }
 
@@ -113,7 +113,7 @@ export const ClaimCommand = {
     // bridge to trust injection with permission parsing.
     handleTrust(player, args) {
         if (args.length < 1) {
-            player.sendMessage("\xA7e\xA7l[Manual] \xA77Syntax Hint: /ae:claim trust <player> [permissions]");
+            player.sendMessage("\u00A7e\u00A7l[Manual] \u00A77Syntax Hint: /ae:claim trust <player> [permissions]");
             return
         }
 
@@ -126,7 +126,7 @@ export const ClaimCommand = {
     // revoke trust.
     handleUntrust(player, args) {
         if (args.length < 1) {
-            player.sendMessage("\xA7e\xA7l[Manual] \xA77Syntax Hint: /ae:claim untrust <player>");
+            player.sendMessage("\u00A7e\u00A7l[Manual] \u00A77Syntax Hint: /ae:claim untrust <player>");
             return
         }
 
@@ -165,15 +165,15 @@ export const ClaimCommand = {
     // ----------------------------------------------------------------------------
     showHelp(player) {
         player.sendMessage(" ")
-        player.sendMessage("\xA76\xA7lCLAIM_SYSTEM_MANUAL")
-        player.sendMessage("\xA77Sub-vectors:")
-        player.sendMessage("  \xA7emenu/ui \xA77- Spawns management GUI.")
-        player.sendMessage("  \xA7ecreate [radius] \xA77- Acquires 1-5 chunks.")
-        player.sendMessage("  \xA7eremove \xA77- Decommissions current claim.")
-        player.sendMessage("  \xA7etrust <player> [perms] \xA77- Injects trust-node.")
-        player.sendMessage("  \xA7euntrust <player> \xA77- Terminating trust-node.")
+        player.sendMessage("\u00A76\u00A7lCLAIM_SYSTEM_MANUAL")
+        player.sendMessage("\u00A77Sub-vectors:")
+        player.sendMessage("  \u00A7emenu/ui \u00A77- Spawns management GUI.")
+        player.sendMessage("  \u00A7ecreate [radius] \u00A77- Acquires 1-5 chunks.")
+        player.sendMessage("  \u00A7eremove \u00A77- Decommissions current claim.")
+        player.sendMessage("  \u00A7etrust <player> [perms] \u00A77- Injects trust-node.")
+        player.sendMessage("  \u00A7euntrust <player> \u00A77- Terminating trust-node.")
         player.sendMessage(" ")
-        player.sendMessage("\xA77Node_Types: \xA7fbuild, chests, doors, containers, all")
+        player.sendMessage("\u00A77Node_Types: \u00A7fbuild, chests, doors, containers, all")
         player.sendMessage(" ")
     }
 }

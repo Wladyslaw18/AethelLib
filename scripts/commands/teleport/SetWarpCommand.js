@@ -31,20 +31,20 @@ export const SetWarpCommand = {
         
         // syntax validation.
         if (!name) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:setwarp <name>");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:setwarp <name>");
             return
         }
 
         // step 1: name validation.
         // industrial-standard alphanumeric check.
         if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-            player.sendMessage("\xA7c\xA7l» \xA77Warp name can only contain alphanumeric characters.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Warp name can only contain alphanumeric characters.");
             return
         }
 
         // prevent database bloat and UI overflow.
         if (name.length < 1 || name.length > 16) {
-            player.sendMessage("\xA7c\xA7l» \xA77Warp name must be between 1-16 characters.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Warp name must be between 1-16 characters.");
             return
         }
 
@@ -56,7 +56,7 @@ export const SetWarpCommand = {
         // we cap the total number of warps to 50 to maintain fast lookup times.
         const warps = await WarpStore.getWarps();
         if (warps.length >= 50) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Failed to set warp. Global server limit (50) reached.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Failed to set warp. Global server limit (50) reached.`);
             return;
         }
         
@@ -65,10 +65,10 @@ export const SetWarpCommand = {
         const success = await WarpStore.setWarp(name, location, dimension, player.name)
         
         if (success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7fWarp \xA7e${name}\xA7f has been created.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fWarp \u00A7e${name}\u00A7f has been created.`);
         } else {
             // handle collision with existing warp names.
-            player.sendMessage("\xA7c\xA7l» \xA77Failed to create warp. Name may be taken.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to create warp. Name may be taken.");
         }
     }
 }

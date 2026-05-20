@@ -1,18 +1,10 @@
-/**
- * Floating Text Service - Manage floating text entities
- * Smith Forge Rule: Max 100 lines per file
- * Zero-Eval, Identity Rule: UUIDs only
- * Cache-Aside: JS Map cache + debounced Dynamic Property write
- */
 import { Kernel } from "../../core/Kernel.js";
 
-// Track spawned entities
-const spawnedEntities = new Map()
+// Track spawned entities (shared with PlaceholderScheduler)
+export const activeProjections = new Map()
 
 /**
  * Initialize floating text service
- * In proximity-projection architecture, we do not spawn entities on load.
- * They are projected dynamically when players approach.
  */
 export function init() {
     console.log("[FloatingTextService] Proximity Projection Engine online.");
@@ -24,10 +16,11 @@ export function init() {
  */
 export function spawnFloatingText(entry) {
     try {
+        if (!entry.id || activeProjections.has(entry.id)) return
         const dim = Kernel.world.getDimension(entry.dimension)
         const entity = dim.spawnEntity(/** @type {any} */ ("ael:floating_text"), { x: entry.x, y: entry.y, z: entry.z })
         entity.nameTag = entry.text
-        spawnedEntities.set(entry.id, entity)
+        activeProjections.set(entry.id, entity)
     } catch (error) {
         console.error(`Failed to spawn floating text: ${error}`)
     }
@@ -39,11 +32,11 @@ export function spawnFloatingText(entry) {
  */
 export function removeFloatingText(id) {
     try {
-        const entity = spawnedEntities.get(id)
+        const entity = activeProjections.get(id)
         if (entity?.isValid) {
             entity.remove()
         }
-        spawnedEntities.delete(id)
+        activeProjections.delete(id)
     } catch (error) {
         console.error(`Failed to remove floating text: ${error}`)
     }
@@ -54,13 +47,14 @@ export function removeFloatingText(id) {
  */
 export function clearAll() {
     try {
-        for (const [_id, entity] of spawnedEntities.entries()) {
+        for (const [_id, entity] of activeProjections.entries()) {
             if (entity?.isValid) {
                 entity.remove()
             }
         }
-        spawnedEntities.clear()
+        activeProjections.clear()
     } catch (error) {
         console.error(`Failed to clear floating texts: ${error}`)
     }
 }
+

@@ -18,9 +18,11 @@ export const ReportCommand = {
     permission: "essentials.report",
     // command category.
     category: "Utility",
+    // Intercepted by script for complex string handling.
+    native: false,
     // native parameter definitions.
     parameters: [
-        { name: "target", type: "player", optional: false },
+        { name: "target", type: "string", optional: false },
         { name: "reason", type: "string", optional: true }
     ],
 
@@ -30,24 +32,29 @@ export const ReportCommand = {
     // | bug handler or a player report handler based on the first token.         |
     // ----------------------------------------------------------------------------
     execute(_data, player, args) {
-        // syntax validation.
-        if (args.length < 2) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:report <player|'server'> <reason>");
-            player.sendMessage("\xA78- Example: /ae:report PlayerX cheating");
-            player.sendMessage("\xA78- Example: /ae:report server lag issues");
+        if (args.length < 1) {
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:report <player|'server'> <reason>");
             return
         }
 
         const reportType = args[0].toLowerCase()
-        // join remaining tokens as the report description.
-        const message = args.slice(1).join(" ")
-
-        // branch based on target type.
+        
         if (reportType === "server") {
+            const message = args.slice(1).join(" ")
+            if (!message) {
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:report server <reason>");
+                return
+            }
             createServerReport(player, message)
         } else {
-            // we use the raw targetName token and resolve it inside the handler.
-            createPlayerReport(player, args[0], message) 
+            const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args)
+            const message = args.slice(consumedArgs).join(" ")
+            
+            if (!target || !message) {
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:report <player> <reason>");
+                return
+            }
+            createPlayerReport(player, target.name, message) 
         }
     }
 }
@@ -73,7 +80,7 @@ function createServerReport(player, message) {
     // alert online staff members immediately.
     notifyAdmins(report)
     
-    player.sendMessage("\xA7a\xA7l» \xA7fServer report submitted. The staff have been notified.");
+    player.sendMessage("\u00A7a\u00A7l» \u00A7fServer report submitted. The staff have been notified.");
 }
 
 // ----------------------------------------------------------------------------
@@ -85,7 +92,7 @@ function createPlayerReport(player, targetName, message) {
     const target = PlayerUtils.findPlayer(targetName)
 
     if (!target) {
-        player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found or offline.`);
+        player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found or offline.`);
         return
     }
 
@@ -105,7 +112,7 @@ function createPlayerReport(player, targetName, message) {
     ReportStore.saveReport(report)
     notifyAdmins(report)
     
-    player.sendMessage(`\xA7a\xA7l» \xA7fReport against \xA7e${target.name} \xA7fsubmitted.`);
+    player.sendMessage(`\u00A7a\u00A7l» \u00A7fReport against \u00A7e${target.name} \u00A7fsubmitted.`);
 }
 
 // ----------------------------------------------------------------------------
@@ -123,8 +130,8 @@ function generateReportId() {
 function notifyAdmins(report) {
     const PermissionManager = Kernel.get("permissions")
     // format a pretty header based on the report type.
-    const reportType = report.type === "server" ? "\xA7c[SERVER ISSUE]" : `\xA7e[PLAYER REPORT] \xA7f${report.target}`
-    const message = `\xA76\xA7l» \xA7e${reportType} \xA77from \xA7f${report.reporter}\xA77: \xA7f${report.message}`
+    const reportType = report.type === "server" ? "\u00A7c[SERVER ISSUE]" : `\u00A7e[PLAYER REPORT] \u00A7f${report.target}`
+    const message = `\u00A76\u00A7l» \u00A7e${reportType} \u00A77from \u00A7f${report.reporter}\u00A77: \u00A7f${report.message}`
 
     // iterate through all players and check permission nodes.
     Kernel.world.getAllPlayers().forEach(p => {

@@ -25,12 +25,12 @@ export async function showInventorySellUI(player) {
 
     const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "LIQUIDATION")
-        .body(`\xA77Found ${tradableItems.length} tradable asset types in storage.`)
+        .body(`\u00A77Found ${tradableItems.length} tradable asset types in storage.`)
 
     tradableItems.forEach(item => {
-        form.button(`\xA7f\xA7l${item.name.toUpperCase()} \xA77x${item.amount}\n\xA7cValue: $${item.sell * item.amount}`, Lang.getTexture(item.id))
+        form.button(`\u00A7f\u00A7l${item.name.toUpperCase()} \u00A77x${item.amount}\n\u00A7cValue: $${item.sell * item.amount}`, Lang.getTexture(item.id))
     })
-    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
+    form.button("\u00A7c\u00A7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === tradableItems.length) {

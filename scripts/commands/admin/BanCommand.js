@@ -1,4 +1,5 @@
 import { Kernel } from "../../core/Kernel.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 // ----------------------------------------------------------------------------
 // | object: BanCommand                                                       |
@@ -11,34 +12,37 @@ export const BanCommand = {
     usage: "/ae:ban <player> [duration] [reason]",
     permission: "essentials.ban",
     category: "ADMINISTRATION",
+    // Intercepted by script for complex string handling.
+    native: false,
     
     // NATIVE SCHEMA DEFINITION
     params: [
-        { name: "player", type: Kernel.CustomCommandParamType.PlayerSelector, optional: false },
-        { name: "duration", type: Kernel.CustomCommandParamType.String, optional: true },
-        { name: "reason", type: Kernel.CustomCommandParamType.String, optional: true }
+        { name: "player", type: "player", optional: false },
+        { name: "duration", type: "string", optional: true },
+        { name: "reason", type: "string", optional: true }
     ],
 
     execute(_data, player, args) {
-        // target is an actual rich Player object! no more string guessing lookup loops.
-        const [target, duration = "permanent", reason = "Breaking the rules"] = args;
+        const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args);
+        const duration = args[consumedArgs] || "permanent";
+        const reason = args.slice(consumedArgs + 1).join(" ") || "Breaking the rules";
 
         if (!target) {
-            player.sendMessage("\xA7c\xA7l» \xA77Syntax Error: Player target required.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Syntax Error: Player target required.");
             return;
         }
 
         // step 1: hierarchy check. check if target is an OP or high-clearance dev so moderators don't ban admins.
         const PermissionManager = Kernel.get("permissions")
         if (PermissionManager && !PermissionManager.canActOn(player, target)) {
-            player.sendMessage("\xA7c\xA7l» \xA77Permission Denied: Target is more powerful than you.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Permission Denied: Target is more powerful than you.");
             return
         }
 
         // step 2: parse the time string. convert '1d' or '2h' to milliseconds.
         const banDuration = parseDuration(duration)
         if (banDuration === null) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Invalid duration: '${duration}'`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid duration: '${duration}'`);
             return
         }
 
@@ -59,7 +63,7 @@ export const BanCommand = {
             // step 5: terminate their session. run kick command on system loop so it doesn't lag.
             Kernel.system.run(() => {
                 try {
-                    player.runCommand(`kick "${target.name}" \xA7c[BAN]\n\xA7eREASON: ${reason}`)
+                    Kernel.world.getDimension("overworld").runCommand(`kick "${target.name}" \u00A7c[BAN]\n\u00A7eREASON: ${reason}`)
                 } catch (error) {
                     console.error(`[BanCommand] SESSION_TERMINATION_FAILURE: ${error}`)
                 }
@@ -73,9 +77,9 @@ export const BanCommand = {
                 }
             })
 
-            player.sendMessage(`\xA7a\xA7l» \xA7f${target.name} has been banned.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7f${target.name} has been banned.`);
         } else {
-            player.sendMessage("\xA7c\xA7l» \xA77Failed to save ban record.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to save ban record.");
         }
     }
 }
@@ -122,7 +126,7 @@ function getBans() {
 
 function formatBanMessage(banData) {
     const durationText = banData.duration === 0 ? "STATUS: PERMANENT" : `DURATION: ${formatTimeRemaining(banData.expires - Date.now())}`
-    return `\xA76\xA7l[\xA7eBAN\xA76\xA7l] \xA7r\xA7e${banData.playerName} \xA77was banished by \xA7f${banData.bannedBy}\xA77\n\xA77${durationText}\n\xA77REASON: \xA7f${banData.reason}`
+    return `\u00A76\u00A7l[\u00A7eBAN\u00A76\u00A7l] \u00A7r\u00A7e${banData.playerName} \u00A77was banished by \u00A7f${banData.bannedBy}\u00A77\n\u00A77${durationText}\n\u00A77REASON: \u00A7f${banData.reason}`
 }
 
 function formatTimeRemaining(milliseconds) {

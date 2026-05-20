@@ -14,7 +14,7 @@ export async function showPlayerInteractionUI(player, target) {
         .button(Lang.UI.PLAYER_PAY, "textures/items/gold_ingot")
         .button(Lang.UI.PLAYER_MSG, "textures/items/paper")
         .button(Lang.UI.PLAYER_TP, "textures/items/ender_pearl")
-        .button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
+        .button("\u00A7c\u00A7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === 3) {
@@ -43,7 +43,7 @@ export async function showPlayerInteractionUI(player, target) {
 async function showPayUI(player, target) {
     const form = new Kernel.ModalFormData()
         .title(Lang.GOLD + "PAY")
-        .textField(`Credits to ${target.name}:`, "Amount", { defaultValue: "0" })
+        .textField(`Credits to ${target.name}:`, "Amount", "0")
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {
@@ -59,7 +59,7 @@ async function showPayUI(player, target) {
 async function showMessageUI(player, target) {
     const form = new Kernel.ModalFormData()
         .title(Lang.GOLD + "MESSAGE")
-        .textField(`To ${target.name}:`, "Message content...", { defaultValue: "" })
+        .textField(`To ${target.name}:`, "Message content...", "")
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {

@@ -9,7 +9,7 @@ import { MINECRAFT_ITEMS } from "../../data/minecraft-items.js"
 
 export class SellStore {
     static formatMoney(amount) {
-        return `\xA76$\xA7f${amount.toLocaleString()}`
+        return `\u00A76$\u00A7f${amount.toLocaleString()}`
     }
 
     /* 
@@ -103,7 +103,7 @@ export class SellStore {
 
         return {
             success: true,
-            message: `\xA7a\xA7l» \xA7fSold \xA7e${quantity}x ${item.name} \xA7ffor \xA7a$${totalValue.toLocaleString()}\xA7f.`,
+            message: `\u00A7a\u00A7l» \u00A7fSold \u00A7e${quantity}x ${item.name} \u00A7ffor \u00A7a$${totalValue.toLocaleString()}\u00A7f.`,
             item: item,
 
             quantity: quantity,
@@ -116,7 +116,7 @@ export class SellStore {
      */
     static getPlayerItemCount(player, itemId) {
         try {
-            const container = player.getComponent(EntityComponentTypes.Inventory).container
+            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
             let count = 0
             for (let i = 0; i < container.size; i++) {
                 const item = container.getItem(i)
@@ -136,7 +136,7 @@ export class SellStore {
         try {
             if (this.getPlayerItemCount(player, itemId) < quantity) return false;
             
-            const container = player.getComponent(EntityComponentTypes.Inventory).container
+            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
             let remaining = quantity
             for (let i = 0; i < container.size && remaining > 0; i++) {
                 const item = container.getItem(i)
@@ -159,7 +159,7 @@ export class SellStore {
      * EMERGENCY_ASSET_RESTORATION
      */
     static givePlayerItems(player, itemId, quantity) {
-        player.sendMessage(`\xA7a\xA7l» \xA7fRefunded \xA7e${quantity}x ${itemId}\xA7f.`);
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fRefunded \u00A7e${quantity}x ${itemId}\u00A7f.`);
         return true
     }
 

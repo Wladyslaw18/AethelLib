@@ -16,7 +16,7 @@ export const ShopAdminCommands = [
         category: "ADMIN",
         execute(_data, player, args) {
             if (args.length < 2) {
-                player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:shopadd <category> <price> [priority]");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:shopadd <category> <price> [priority]");
                 return;
             }
 
@@ -25,7 +25,7 @@ export const ShopAdminCommands = [
             const priority = parseInt(args[2]) || 99;
 
             if (isNaN(price) || price < 0) {
-                player.sendMessage("\xA7c\xA7l» \xA77Invalid price calibration.");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid price calibration.");
                 return;
             }
 
@@ -34,7 +34,7 @@ export const ShopAdminCommands = [
             const item = equippable?.getEquipment("Mainhand");
 
             if (!item) {
-                player.sendMessage("\xA7c\xA7l» \xA77No asset detected in hand buffer.");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77No asset detected in hand buffer.");
                 return;
             }
 
@@ -48,7 +48,7 @@ export const ShopAdminCommands = [
                 timestamp: Date.now()
             });
 
-            player.sendMessage(`\xA7a\xA7l» \xA7fSuccessfully registered \xA7e${itemId} \xA7fto \xA7b${category} \xA7ffor \xA7a$${price.toLocaleString()} \xA7f(Priority: ${priority}).`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully registered \u00A7e${itemId} \u00A7fto \u00A7b${category} \u00A7ffor \u00A7a$${price.toLocaleString()} \u00A7f(Priority: ${priority}).`);
         }
     },
     {
@@ -59,7 +59,7 @@ export const ShopAdminCommands = [
         category: "ADMIN",
         execute(_data, player, args) {
             if (args.length < 1) {
-                player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:shopcatmk <id> [icon] [priority]");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:shopcatmk <id> [icon] [priority]");
                 return;
             }
 
@@ -69,7 +69,7 @@ export const ShopAdminCommands = [
 
             ShopRegistry.addCategory(id, icon, priority);
 
-            player.sendMessage(`\xA7a\xA7l» \xA7fSuccessfully created category \xA7b${id} \xA7fwith icon \xA7e${icon} \xA7f(Priority: ${priority}).`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully created category \u00A7b${id} \u00A7fwith icon \u00A7e${icon} \u00A7f(Priority: ${priority}).`);
         }
     }
 ];

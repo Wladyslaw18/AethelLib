@@ -14,9 +14,9 @@ export async function showBuyConfirmation(player, item) {
     const balance = await EconomyStore.getBalance(player)
     
     const form = new Kernel.ModalFormData()
-        .title("\xA76Buy: " + item.name.toUpperCase())
-        .slider(`\xA77Select Quantity\n\xA78Unit Price: \xA7a$${item.buy}\n\xA78Balance: \xA7a$${balance.toLocaleString()}`, 1, 64, { valueStep: 1, defaultValue: 1 })
-        .toggle("Confirm Purchase", { defaultValue: false })
+        .title("\u00A76Buy: " + item.name.toUpperCase())
+        .slider(`\u00A77Select Quantity\n\u00A78Unit Price: \u00A7a$${item.buy}\n\u00A78Balance: \u00A7a$${balance.toLocaleString()}`, 1, 64, 1, 1)
+        .toggle("Confirm Purchase", false)
 
     
     const res = await UIUtils.showForm(player, form)
@@ -31,9 +31,9 @@ export async function showBuyConfirmation(player, item) {
 
 export async function showSellConfirmation(player, item) {
     const form = new Kernel.ModalFormData()
-        .title("\xA76Sell: " + item.name.toUpperCase())
-        .slider(`\xA77Select Quantity\n\xA78Unit Value: \xA7c$${item.sell}`, 1, 64, { valueStep: 1, defaultValue: 1 })
-        .toggle("Confirm Sale", { defaultValue: false })
+        .title("\u00A76Sell: " + item.name.toUpperCase())
+        .slider(`\u00A77Select Quantity\n\u00A78Unit Value: \u00A7c$${item.sell}`, 1, 64, 1, 1)
+        .toggle("Confirm Sale", false)
 
     
     const res = await UIUtils.showForm(player, form)
@@ -51,14 +51,14 @@ export async function handleQuickSell(player) {
     const mainhand = equippable.getEquipment("Mainhand")
 
     if (!mainhand) {
-        player.sendMessage("\xA7c\xA7l» \xA77Your main hand is empty.")
+        player.sendMessage("\u00A7c\u00A7l» \u00A77Your main hand is empty.")
         return
     }
 
 
     const shopItem = ShopStore.getItems().find(i => i.id === mainhand.typeId)
     if (!shopItem) {
-        player.sendMessage("\xA7c\xA7l» \xA77This item cannot be sold here.")
+        player.sendMessage("\u00A7c\u00A7l» \u00A77This item cannot be sold here.")
         return
     }
 

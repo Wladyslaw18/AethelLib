@@ -35,7 +35,7 @@ export const MoneyCommand = {
         if (!targetName) {
             // fetch from the economy store (which uses an O(1) memory cache).
             const balance = EconomyStore.getBalance(player)
-            player.sendMessage(`\xA7a\xA7l» \xA7fYour balance: \xA7e$${balance.toLocaleString()}\xA7f.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fYour balance: \u00A7e$${balance.toLocaleString()}\u00A7f.`);
             return
         }
 
@@ -45,7 +45,7 @@ export const MoneyCommand = {
         if (targetPlayer) {
             // fast path: pull from online cache.
             const balance = EconomyStore.getBalance(targetPlayer)
-            player.sendMessage(`\xA7a\xA7l» \xA7f${targetPlayer.name}'s balance: \xA7e$${balance.toLocaleString()}\xA7f.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7f${targetPlayer.name}'s balance: \u00A7e$${balance.toLocaleString()}\u00A7f.`);
         } else {
             // case 3: target is offline. we have to do a slow database crawl.
             // this is expensive because dynamic properties aren't indexed.
@@ -75,10 +75,10 @@ export const MoneyCommand = {
             if (foundId) {
                 // fetch their money key directly now that we have the id.
                 const balance = Database.get(`player:${foundId}:money`) || 0
-                player.sendMessage(`\xA7a\xA7l» \xA7f${foundName}'s balance: \xA7e$${balance.toLocaleString()}\xA7f.`);
+                player.sendMessage(`\u00A7a\u00A7l» \u00A7f${foundName}'s balance: \u00A7e$${balance.toLocaleString()}\u00A7f.`);
             } else {
                 // otherwise, they don't exist in our records.
-                player.sendMessage(`\xA7c\xA7l» \xA77Player '${targetName}' not found.`);
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found.`);
             }
         }
     }

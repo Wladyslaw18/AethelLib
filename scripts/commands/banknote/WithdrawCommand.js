@@ -24,32 +24,32 @@ export const WithdrawCommand = {
         const [amount] = args;
 
         if (amount === undefined) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:withdraw <amount>")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:withdraw <amount>")
             return
         }
         
         // step 1: industrial bound validation. no float overflow exploits today.
         if (!ValidationHelper.isValidMoney(amount)) {
-            player.sendMessage("\xA7c\xA7l» \xA77Invalid liquidity amount. Exceeds safe bounds.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid liquidity amount. Exceeds safe bounds.");
             return
         }
 
         // minimum operational boundary: withdrawals under 100 are too cheap to print.
         if (amount < 100) {
-            player.sendMessage("\xA7c\xA7l» \xA77Minimum withdrawal amount is \xA7e$100");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Minimum withdrawal amount is \u00A7e$100");
             return
         }
 
         // maximum operational boundary: printing over a mil at once breaks the economy.
         if (amount > 1000000) {
-            player.sendMessage("\xA7c\xA7l» \xA77Maximum withdrawal amount is \xA7e$1,000,000");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Maximum withdrawal amount is \u00A7e$1,000,000");
             return
         }
 
         // step 2: balance check. query persistent store to make sure they aren't broke.
         const balance = EconomyStore.getBalance(player.id)
         if (balance < amount) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Insufficient funds. You have ${BanknoteStore.formatMoney(balance)}`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Insufficient funds. You have ${BanknoteStore.formatMoney(balance)}`);
             return
         }
 
@@ -58,7 +58,7 @@ export const WithdrawCommand = {
         const availableSlots = getAvailableInventorySlots(player)
         
         if (availableSlots < requiredSlots) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Not enough inventory space. Need ${requiredSlots} slots, have ${availableSlots}`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Not enough inventory space. Need ${requiredSlots} slots, have ${availableSlots}`);
             return
         }
 
@@ -67,7 +67,7 @@ export const WithdrawCommand = {
             try {
                 // remove digital balance first.
                 if (!EconomyStore.removeMoney(player.id, amount)) {
-                    player.sendMessage("\xA7c\xA7l» \xA77Failed to withdraw money.");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to withdraw money.");
                     return
                 }
 
@@ -75,17 +75,17 @@ export const WithdrawCommand = {
                 const created = createBanknotes(player, amount)
                 
                 if (created > 0) {
-                    player.sendMessage(`\xA7a\xA7l» \xA7fSuccessfully withdrew ${BanknoteStore.formatMoney(amount)} into ${created} banknote(s)`);
-                    player.sendMessage("\xA77Right-click banknotes to redeem them");
+                    player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully withdrew ${BanknoteStore.formatMoney(amount)} into ${created} banknote(s)`);
+                    player.sendMessage("\u00A77Right-click banknotes to redeem them");
                 } else {
                     // if physical banknote injection fails, refund the digital currency. transactional safety!
                     EconomyStore.addMoney(player.id, amount)
-                    player.sendMessage("\xA7c\xA7l» \xA77Failed to create banknotes. Money refunded.");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to create banknotes. Money refunded.");
                 }
             } catch (error) {
                 // absolute fallback refund to prevent money disappearing. we don't want support tickets.
                 console.error(`Withdraw error: ${error}`)
-                player.sendMessage("\xA7c\xA7l» \xA77An error occurred during withdrawal.");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77An error occurred during withdrawal.");
                 EconomyStore.addMoney(player.id, amount)
             }
         })
@@ -132,7 +132,7 @@ function createBanknotes(player, totalAmount) {
     // refund what couldn't be printed due to space constraints.
     if (remaining > 0) {
         EconomyStore.addMoney(player.id, remaining)
-        player.sendMessage(`\xA77Could not convert ${BanknoteStore.formatMoney(remaining)} - refunded to account`);
+        player.sendMessage(`\u00A77Could not convert ${BanknoteStore.formatMoney(remaining)} - refunded to account`);
     }
 
     return created

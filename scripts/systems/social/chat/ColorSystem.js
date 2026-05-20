@@ -4,17 +4,18 @@
  */
 
 import { Kernel } from "../../../core/Kernel.js"
+import { UIUtils } from "../../../ui/UIUtils.js"
 
 export class ColorSystem {
     static COLORS = {
-        "black": "\xA70", "dark_blue": "\xA71", "dark_green": "\xA72",
-        "dark_aqua": "\xA73", "dark_red": "\xA74", "dark_purple": "\xA75",
-        "gold": "\xA76", "gray": "\xA77", "dark_gray": "\xA78",
-        "blue": "\xA79", "green": "\xA7a", "aqua": "\xA7b",
-        "red": "\xA7c", "light_purple": "\xA7d", "yellow": "\xA7e",
-        "white": "\xA7f", "rainbow": "\xA7k", "bold": "\xA7l",
-        "strikethrough": "\xA7m", "underline": "\xA7n", "italic": "\xA7o",
-        "reset": "\xA7r"
+        "black": "\u00A70", "dark_blue": "\u00A71", "dark_green": "\u00A72",
+        "dark_aqua": "\u00A73", "dark_red": "\u00A74", "dark_purple": "\u00A75",
+        "gold": "\u00A76", "gray": "\u00A77", "dark_gray": "\u00A78",
+        "blue": "\u00A79", "green": "\u00A7a", "aqua": "\u00A7b",
+        "red": "\u00A7c", "light_purple": "\u00A7d", "yellow": "\u00A7e",
+        "white": "\u00A7f", "rainbow": "\u00A7k", "bold": "\u00A7l",
+        "strikethrough": "\u00A7m", "underline": "\u00A7n", "italic": "\u00A7o",
+        "reset": "\u00A7r"
     }
     
     static COLOR_PERMISSIONS = {
@@ -100,10 +101,10 @@ export class ColorSystem {
      * @returns {string} Formatted message
      */
     static formatWithColor(message, colorCode) {
-        if (colorCode === "\xA7k") { // Rainbow effect
+        if (colorCode === "\u00A7k") { // Rainbow effect
             return this.createRainbowText(message)
         }
-        return `${colorCode}${message}\xA7r`
+        return `${colorCode}${message}\u00A7r`
     }
     
     /**
@@ -112,7 +113,7 @@ export class ColorSystem {
      * @returns {string} Rainbow formatted message
      */
     static createRainbowText(message) {
-        const rainbowColors = ["\xA7c", "\xA76", "\xA7e", "\xA7a", "\xA7b", "\xA79", "\xA7d"]
+        const rainbowColors = ["\u00A7c", "\u00A76", "\u00A7e", "\u00A7a", "\u00A7b", "\u00A79", "\u00A7d"]
         let result = ""
         
         const truncated = message.substring(0, 200);
@@ -121,7 +122,7 @@ export class ColorSystem {
             result += rainbowColors[colorIndex] + truncated[i]
         }
         
-        return result + "\xA7r"
+        return result + "\u00A7r"
     }
     
     /**
@@ -135,7 +136,7 @@ export class ColorSystem {
         const rankPrefix = this.getRankPrefix(player)
         
         const formattedMessage = this.formatWithColor(message, playerColor)
-        return `${rankPrefix} ${playerColor}${player.name}\xA7f: ${formattedMessage}`
+        return `${rankPrefix} ${playerColor}${player.name}\u00A7f: ${formattedMessage}`
     }
     
     /**
@@ -148,10 +149,10 @@ export class ColorSystem {
         const highestRank = PermissionManager.getHighestRank(player)
         
         if (highestRank) {
-            return `${highestRank.color || "\xA77"}[${highestRank.name}]`
+            return `${highestRank.color || "\u00A77"}[${highestRank.name}]`
         }
         
-        return "\xA77[Default]"
+        return "\u00A77[Default]"
     }
     
     /**
@@ -162,18 +163,18 @@ export class ColorSystem {
      */
     static setPlayerColor(player, color) {
         if (!this.COLORS[color]) {
-            player.sendMessage(`\xA7cInvalid color: \xA7e${color}`)
+            player.sendMessage(`\u00A7cInvalid color: \u00A7e${color}`)
             return false
         }
         
         if (!this.canUseColor(player, color)) {
-            player.sendMessage(`\xA7cYou cannot use color: \xA7e${color}`)
+            player.sendMessage(`\u00A7cYou cannot use color: \u00A7e${color}`)
             return false
         }
         
         const PlayerStore = Kernel.get("playerStore")
         PlayerStore.set(player, "chatColor", color)
-        player.sendMessage(`\xA7aChat color changed to ${this.COLORS[color]}${color}\xA7a`)
+        player.sendMessage(`\u00A7aChat color changed to ${this.COLORS[color]}${color}\u00A7a`)
         return true
     }
     
@@ -210,28 +211,27 @@ export class ColorSystem {
         const currentColor = PlayerStore.get(player, "chatColor") || "white"
         
         const form = new Kernel.ActionFormData()
-            .title("\xA76\xA7lChat Color Selection")
-            .body(`\xA77Current color: ${this.COLORS[currentColor]}${currentColor}\n\xA77Select a new color:`)
+            .title("\u00A76\u00A7lChat Color Selection")
+            .body(`\u00A77Current color: ${this.COLORS[currentColor]}${currentColor}\n\u00A77Select a new color:`)
         
         // Add color buttons
         availableColors.forEach(color => {
             const isCurrent = color === currentColor
             const icon = this.getColorIcon(color)
-            const label = `${isCurrent ? "\xA7a✓ " : "\xA77○ "}${this.COLORS[color]}${color}`
+            const label = `${isCurrent ? "\u00A7a✓ " : "\u00A77○ "}${this.COLORS[color]}${color}`
             form.button(label, icon)
         })
         
-        form.button("\xA7cReset to Default", "textures/ui/cancel")
+        form.button("\u00A7cReset to Default", "textures/ui/cancel")
         
-        // @ts-ignore
-        const response = await form.show(player)
+        const response = await UIUtils.showForm(player, form)
         if (response.canceled) return
         
         if (response.selection === availableColors.length) {
             // Reset to default
             const PlayerStore = Kernel.get("playerStore")
             PlayerStore.delete(player, "chatColor")
-            player.sendMessage("\xA7aChat color reset to default")
+            player.sendMessage("\u00A7aChat color reset to default")
         } else if (response.selection < availableColors.length) {
             const selectedColor = availableColors[response.selection]
             this.setPlayerColor(player, selectedColor)
@@ -279,14 +279,14 @@ export class ColorSystem {
      */
     static processMessage(player, message) {
         // Check for manual color codes in message
-        const colorCodeMatch = message.match(/\xA7([0-9a-fk-or])/g)
+        const colorCodeMatch = message.match(/\u00A7([0-9a-fk-or])/g)
         
         if (colorCodeMatch) {
             // Player is trying to use manual color codes
             const PermissionManager = Kernel.get("permissions")
             if (!PermissionManager.hasPermission(player, "chat.color.manual")) {
                 // Strip color codes if not allowed
-                return message.replace(/\xA7[0-9a-fk-or]/g, "")
+                return message.replace(/\u00A7[0-9a-fk-or]/g, "")
             }
         }
         

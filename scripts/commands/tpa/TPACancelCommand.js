@@ -33,20 +33,20 @@ export const TPACancelCommand = {
         
         // if no active requests exist.
         if (!request) {
-            player.sendMessage("\xA7c\xA7l» \xA77You have no outgoing TPA requests.")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You have no outgoing TPA requests.")
             return
         }
 
         // step 1: purge the request.
         TpaHandshake.removeRequest(request.id)
         // confirm to the sender.
-        player.sendMessage(`\xA7a\xA7l» \xA7fTPA request to \xA7e${request.targetName} \xA7fcancelled.`)
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fTPA request to \u00A7e${request.targetName} \u00A7fcancelled.`)
         
         // step 2: target notification.
         // find the target player if they are still online.
         const target = [...Kernel.world.getAllPlayers()].find(p => p.id === request.targetId)
         if (target) {
-            target.sendMessage(`\xA7c\xA7l» \xA7e${player.name} \xA77cancelled their TPA request.`)
+            target.sendMessage(`\u00A7c\u00A7l» \u00A7e${player.name} \u00A77cancelled their TPA request.`)
         }
     }
 }

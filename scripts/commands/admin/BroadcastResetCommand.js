@@ -31,7 +31,7 @@ export const BroadcastResetCommand = {
         WorldStore.set(StoreKeys.broadcastList(), [])
         
         // step 2: feedback delivery.
-        player.sendMessage("\xA7a\xA7l» \xA7fBroadcast system has been reset.");
-        player.sendMessage("\xA77All custom broadcasts have been cleared.");
+        player.sendMessage("\u00A7a\u00A7l» \u00A7fBroadcast system has been reset.");
+        player.sendMessage("\u00A77All custom broadcasts have been cleared.");
     }
 }

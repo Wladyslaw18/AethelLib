@@ -30,24 +30,24 @@ export const ListWarpCommand = {
         
         // safety check: if no public waypoints have been established.
         if (warpNames.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77No warps have been set.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77No warps have been set.");
             return
         }
 
         // header display.
         player.sendMessage(" ")
-        player.sendMessage(`\xA76\xA7lGlobal Warps \xA78(\xA7e${warpNames.length}\xA78):`)
+        player.sendMessage(`\u00A76\u00A7lGlobal Warps \u00A78(\u00A7e${warpNames.length}\u00A78):`)
 
         // step 2: iterative output.
         for (const name of warpNames) {
             const warp = warps[name]
             // format spatial coordinates.
-            const coordText = `\xA77[\xA7e${warp.x}\xA77, \xA7e${warp.y}\xA77, \xA7e${warp.z}\xA77]`
+            const coordText = `\u00A77[\u00A7e${warp.x}\u00A77, \u00A7e${warp.y}\u00A77, \u00A7e${warp.z}\u00A77]`
             // resolve dimension name.
-            const dimensionText = `\xA78(\xA7f${warp.dimension.split(':').pop()}\xA78)`
+            const dimensionText = `\u00A78(\u00A7f${warp.dimension.split(':').pop()}\u00A78)`
             // display the original creator of the warp node.
-            const creatorText = `\xA78by \xA7a${warp.creator}`
-            player.sendMessage(`\xA76- \xA7f${name} ${coordText} ${dimensionText} ${creatorText}`)
+            const creatorText = `\u00A78by \u00A7a${warp.creator}`
+            player.sendMessage(`\u00A76- \u00A7f${name} ${coordText} ${dimensionText} ${creatorText}`)
         }
         player.sendMessage(" ")
     }

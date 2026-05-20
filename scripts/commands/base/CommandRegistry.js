@@ -7,8 +7,37 @@
  */
 
 const commands = new Map(); // MASTER_COMMAND_BUFFER
+const enums = new Map(); // MASTER_ENUM_BUFFER
 
 export const CommandRegistry = {
+    /**
+     * Registers a custom command enum.
+     */
+    registerEnum: (name, values) => {
+        enums.set(name, values);
+    },
+
+    /**
+     * Gets a registered enum's values.
+     */
+    getEnum: (name) => {
+        return enums.get(name);
+    },
+
+    /**
+     * Gets all registered enum names.
+     */
+    getAllEnums: () => {
+        return Array.from(enums.keys());
+    },
+
+    /**
+     * Checks if a custom command enum is registered.
+     */
+    hasEnum: (name) => {
+        return enums.has(name);
+    },
+
     /**
      * Registers a command module.
      */
@@ -46,7 +75,11 @@ export const CommandRegistry = {
      * O(1)_QUERY_VECTOR
      */
     get: (name) => {
-        return commands.get(name.toLowerCase());
+        let cleanName = name.toLowerCase();
+        if (cleanName.includes(":")) {
+            cleanName = cleanName.split(":")[1];
+        }
+        return commands.get(cleanName);
     },
 
     /**
@@ -60,7 +93,11 @@ export const CommandRegistry = {
      * IDENTIFIER_PROBE
      */
     has: (name) => {
-        return commands.has(name.toLowerCase());
+        let cleanName = name.toLowerCase();
+        if (cleanName.includes(":")) {
+            cleanName = cleanName.split(":")[1];
+        }
+        return commands.has(cleanName);
     },
 
     /**

@@ -10,7 +10,7 @@ import { UIUtils } from "../UIUtils.js"
 export async function showCreateHomeUI(player) {
     const form = new Kernel.ModalFormData()
         .title(Lang.GOLD + "SET HOME")
-        .textField("Anchor Name:", "e.g. Base 1", { defaultValue: "Home" })
+        .textField("Anchor Name:", "e.g. Base 1", "Home")
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {
@@ -50,8 +50,8 @@ export async function showDeleteHomeUI(player) {
         .title(Lang.ERROR + "DELETE HOME")
         .body("Select node to purge.")
 
-    homeNames.forEach(name => form.button(`\xA7c\xA7l${name.toUpperCase()}`, "textures/ui/cancel"))
-    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
+    homeNames.forEach(name => form.button(`\u00A7c\u00A7l${name.toUpperCase()}`, "textures/ui/cancel"))
+    form.button("\u00A7c\u00A7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === homeNames.length) {

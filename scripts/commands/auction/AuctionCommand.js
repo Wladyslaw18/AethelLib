@@ -24,6 +24,6 @@ export const AuctionCommand = {
     execute(_data, player, _args) {
         // invoke the visual dashboard. 
         // the UI logic handles item listing, bidding, and expiration cycles.
-        showAuctionUI(player);
+        Kernel.system.run(() => showAuctionUI(player));
     }
 }

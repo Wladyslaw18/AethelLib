@@ -16,14 +16,14 @@ export async function showHomeUI(player) {
     const form = new Kernel.ActionFormData()
         .title(Lang.UI.HOMES_TITLE)
         .body(homeNames.length > 0
-            ? `\xA77Active Anchors: \xA7e${homeNames.length}`
-            : "\xA7cNO HOMES FOUND.")
+            ? `\u00A77Active Anchors: \u00A7e${homeNames.length}`
+            : "\u00A7cNO HOMES FOUND.")
 
-    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
+    form.button("\u00A7c\u00A7l[BACK]", "textures/ui/refresh")
 
     for (const name of homeNames) {
         const home = homes[name]
-        form.button(`\xA7f\xA7l${name.toUpperCase()}\n\xA78COORD: ${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}`, "textures/items/map_filled")
+        form.button(`\u00A7f\u00A7l${name.toUpperCase()}\n\u00A78COORD: ${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}`, "textures/items/map_filled")
     }
 
     const response = await UIUtils.showForm(player, form)
@@ -45,10 +45,10 @@ export async function showHomeUI(player) {
 async function showHomeActions(player, name, home) {
     const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "DETAILS: " + name.toUpperCase())
-        .body(`\xA77Target: \xA7e${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}\n\xA77Dim: \xA7e${home.dimension}`)
-        .button("\xA7a\xA7lTELEPORT\n\xA78Relocate to anchor", "textures/items/ender_pearl")
-        .button("\xA7c\xA7lDELETE\n\xA78Remove anchor", "textures/ui/cancel")
-        .button("\xA77\xA7l[BACK]", "textures/ui/refresh")
+        .body(`\u00A77Target: \u00A7e${Math.floor(home.x)}, ${Math.floor(home.y)}, ${Math.floor(home.z)}\n\u00A77Dim: \u00A7e${home.dimension}`)
+        .button("\u00A7a\u00A7lTELEPORT\n\u00A78Relocate to anchor", "textures/items/ender_pearl")
+        .button("\u00A7c\u00A7lDELETE\n\u00A78Remove anchor", "textures/ui/cancel")
+        .button("\u00A77\u00A7l[BACK]", "textures/ui/refresh")
 
     const response = await UIUtils.showForm(player, form)
     if (response.canceled) return

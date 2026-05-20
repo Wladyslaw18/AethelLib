@@ -13,7 +13,7 @@ import { showBuyConfirmation } from "./ShopTransaction.js"
 export async function showSearchUI(player) {
     const form = new Kernel.ModalFormData()
         .title(Lang.GOLD + "SEARCH SHOP")
-        .textField("Enter item name:", "e.g. Diamond", { defaultValue: "" })
+        .textField("Enter item name:", "e.g. Diamond", "")
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {

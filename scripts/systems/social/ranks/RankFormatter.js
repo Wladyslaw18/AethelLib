@@ -23,7 +23,7 @@ export const RankFormatter = {
         const PermissionManager = Kernel.get("permissions")
         const highestRank = PermissionManager.getHighestRank(player)
         if (!highestRank || !highestRank.name) return ""
-        return `${highestRank.color || "\xA77"}[${highestRank.name.toUpperCase()}] \xA7r`
+        return `${highestRank.color || "\u00A77"}[${highestRank.name.toUpperCase()}] \u00A7r`
     },
  
     /* 
@@ -42,6 +42,6 @@ export const RankFormatter = {
         const rankPrefix = RankFormatter.formatPlayerRanks(player)
         const chatColor = RankFormatter.getPlayerChatColor(player)
         const sanitizedMessage = message.replace(/\n/g, "")
-        return `${rankPrefix}${chatColor}${player.name}\xA7r: \xA7f${sanitizedMessage}`
+        return `${rankPrefix}${chatColor}${player.name}\u00A7r: \u00A7f${sanitizedMessage}`
     }
 }

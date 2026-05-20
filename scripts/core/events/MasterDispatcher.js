@@ -37,7 +37,7 @@ export const MasterDispatcher = {
             if (itemStack && (itemStack.typeId.includes("_block") || itemStack.typeId.includes("stone") || itemStack.typeId.includes("planks") || itemStack.typeId.includes("dirt") || itemStack.typeId.includes("log"))) {
                 if (!SpatialCache.canBuild(player, block.location)) {
                     ev.cancel = true;
-                    player.onScreenDisplay.setActionBar("§c§l» §7You cannot build here!");
+                    player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77You cannot build here!");
                     return;
                 }
             }
@@ -46,7 +46,7 @@ export const MasterDispatcher = {
             const required = classifyBlock(block.typeId);
             if (required !== 0 && !SpatialCache.hasPermission(player, block.location, required)) {
                 ev.cancel = true;
-                player.onScreenDisplay.setActionBar("§c§l» §7You cannot interact with this!");
+                player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77You cannot interact with this!");
                 return;
             }
 
@@ -67,7 +67,7 @@ export const MasterDispatcher = {
 
             if (!SpatialCache.canBuild(player, block.location)) {
                 ev.cancel = true;
-                player.onScreenDisplay.setActionBar("§c§l» §7You cannot build here!");
+                player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77You cannot build here!");
             }
         });
 
@@ -78,7 +78,7 @@ export const MasterDispatcher = {
 
             if (!SpatialCache.hasPermission(player, target.location, PERMISSIONS.MOB_INTERACT)) {
                 ev.cancel = true;
-                player.onScreenDisplay.setActionBar("§c§l» §7You cannot interact with mobs here!");
+                player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77You cannot interact with mobs here!");
             }
         });
     }

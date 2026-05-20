@@ -17,14 +17,12 @@ export const FloatingTextCommand = {
     permission: "essentials.admin.ft",
     // command category.
     category: "admin",
+    // Intercepted by script for complex string handling.
+    native: false,
     // native parameter definitions for the command parser.
     parameters: [
         { name: "subcommand", type: "string", optional: false },
-        { name: "word1",      type: "string", optional: true  },
-        { name: "word2",      type: "string", optional: true  },
-        { name: "word3",      type: "string", optional: true  },
-        { name: "word4",      type: "string", optional: true  },
-        { name: "word5",      type: "string", optional: true  }
+        { name: "text",       type: "string", optional: true  }
     ],
 
     // ----------------------------------------------------------------------------
@@ -37,7 +35,7 @@ export const FloatingTextCommand = {
         const sub = args[0]?.toLowerCase()
         
         if (!sub) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:ft <add|remove|clear> [text]");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:ft <add|remove|clear> [text]");
             return
         }
 
@@ -46,7 +44,7 @@ export const FloatingTextCommand = {
                 // aggregate remaining args into the display string.
                 const text = args.slice(1).join(" ")
                 if (!text) {
-                    player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:ft add <text>");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:ft add <text>");
                     return
                 }
 
@@ -63,11 +61,12 @@ export const FloatingTextCommand = {
                 // step 2: commit to persistent storage.
                 const id = FloatingTextStore.add(entry)
                 if (id) {
+                    entry.id = id
                     // step 3: manifest the entity in the world.
                     spawnFloatingText(entry)
-                    player.sendMessage(`\xA7a\xA7l» \xA7fFloating text added (ID: \xA7e${id}\xA7f).`);
+                    player.sendMessage(`\u00A7a\u00A7l» \u00A7fFloating text added (ID: \u00A7e${id}\u00A7f).`);
                 } else {
-                    player.sendMessage("\xA7c\xA7l» \xA77Failed to add floating text.");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to add floating text.");
                 }
                 break
                 
@@ -75,7 +74,7 @@ export const FloatingTextCommand = {
                 // identify the specific entity to purge.
                 const removeId = args[1]
                 if (!removeId) {
-                    player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:ft remove <id>");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:ft remove <id>");
                     return
                 }
 
@@ -84,9 +83,9 @@ export const FloatingTextCommand = {
                 if (success) {
                     // step 2: evict the entity from the world.
                     removeFloatingText(removeId)
-                    player.sendMessage("\xA7a\xA7l» \xA7fFloating text removed.");
+                    player.sendMessage("\u00A7a\u00A7l» \u00A7fFloating text removed.");
                 } else {
-                    player.sendMessage("\xA7c\xA7l» \xA77Failed to remove floating text.");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to remove floating text.");
                 }
                 break
                 
@@ -96,14 +95,14 @@ export const FloatingTextCommand = {
                 if (clearSuccess) {
                     // step 2: flush all active text entities from the world.
                     clearAll()
-                    player.sendMessage("\xA7a\xA7l» \xA7fAll floating texts cleared.");
+                    player.sendMessage("\u00A7a\u00A7l» \u00A7fAll floating texts cleared.");
                 } else {
-                    player.sendMessage("\xA7c\xA7l» \xA77Failed to clear floating texts.");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to clear floating texts.");
                 }
                 break
                 
             default:
-                player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:ft <add/remove/clear> [text]");
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:ft <add/remove/clear> [text]");
         }
     }
 }

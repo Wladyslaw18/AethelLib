@@ -59,12 +59,12 @@ class FormatHelper {
     /* 
      * ENTITY_IDENTIFIER_FORMATTER
      */
-    static formatPlayerName(name, color = "\xA7f") {
+    static formatPlayerName(name, color = "\u00A7f") {
         if (!name || typeof name !== "string") {
             return "UNKNOWN_ENTITY"
         }
         
-        return `${color}${name}\xA7r`
+        return `${color}${name}\u00A7r`
     }
 
     /* 

@@ -45,27 +45,27 @@ export class BanknoteStore {
         const time = new Date(banknote.timestamp).toLocaleTimeString()
         
         return [
-            `\xA76Value: \xA7e${this.formatMoney(banknote.amount)}`,
-            `\xA77Created: ${date} ${time}`,
-            `\xA77By: \xA7f${banknote.creator}`,
-            `\xA78ID: ${banknote.id}`,
-            `\xA77\xA7oRight-click to redeem`
+            `\u00A76Value: \u00A7e${this.formatMoney(banknote.amount)}`,
+            `\u00A77Created: ${date} ${time}`,
+            `\u00A77By: \u00A7f${banknote.creator}`,
+            `\u00A78ID: ${banknote.id}`,
+            `\u00A77\u00A7oRight-click to redeem`
         ]
     }
 
     static formatMoney(amount) {
-        return `\xA76$\xA7e${amount.toLocaleString()}`
+        return `\u00A76$\u00A7e${amount.toLocaleString()}`
     }
 
     static getBanknoteName(amount) {
-        if (amount >= 1000000) return `\xA76\xA7lBanknote \xA7e\xA7l${(amount / 1000000).toFixed(1)}M`
-        if (amount >= 1000) return `\xA76\xA7lBanknote \xA7e\xA7l${(amount / 1000).toFixed(1)}K`
-        return `\xA76\xA7lBanknote \xA7e\xA7l${amount}`
+        if (amount >= 1000000) return `\u00A76\u00A7lBanknote \u00A7e\u00A7l${(amount / 1000000).toFixed(1)}M`
+        if (amount >= 1000) return `\u00A76\u00A7lBanknote \u00A7e\u00A7l${(amount / 1000).toFixed(1)}K`
+        return `\u00A76\u00A7lBanknote \u00A7e\u00A7l${amount}`
     }
 
     static isBanknoteItem(item) {
         if (!item || item.typeId !== this.getBanknoteId()) return false
-        if (!item.nameTag || !item.nameTag.startsWith("\xA76\xA7lBanknote")) return false
+        if (!item.nameTag || !item.nameTag.startsWith("\u00A76\u00A7lBanknote")) return false
         if (!item.getLore() || item.getLore().length === 0) return false
         return true
     }
@@ -78,8 +78,8 @@ export class BanknoteStore {
 
         if (!noteId) {
             const lore = item.getLore()
-            const idLine = lore?.find(line => line.startsWith("\xA78ID: "))
-            if (idLine) noteId = idLine.replace("\xA78ID: ", "")
+            const idLine = lore?.find(line => line.startsWith("\u00A78ID: "))
+            if (idLine) noteId = idLine.replace("\u00A78ID: ", "")
         }
         
         if (!noteId) return null

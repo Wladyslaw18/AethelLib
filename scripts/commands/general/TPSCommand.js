@@ -69,15 +69,15 @@ export const TPSCommand = {
     execute(_data, player, _args) {
         const tps = getRealTPS()
         // color coding: Green for 18-20 (Healthy), Yellow for 12-17 (Lagging), Red for <12 (Dying).
-        const tpsColor = tps >= 18 ? "\xA7a" : tps >= 12 ? "\xA7e" : "\xA7c"
+        const tpsColor = tps >= 18 ? "\u00A7a" : tps >= 12 ? "\u00A7e" : "\u00A7c"
         const playerCount = Kernel.world.getAllPlayers().length
 
         player.sendMessage(" ")
-        player.sendMessage("\xA76\xA7lServer Performance")
-        player.sendMessage(`\xA77TPS: ${tpsColor}${tps} \xA7f/ 20`)
-        player.sendMessage(`\xA77Players: \xA7e${playerCount}`)
-        player.sendMessage(`\xA77Uptime: \xA7e${getUptime()}`)
-        player.sendMessage(`\xA77Memory: ${getMemoryUsage()}`)
+        player.sendMessage("\u00A76\u00A7lServer Performance")
+        player.sendMessage(`\u00A77TPS: ${tpsColor}${tps} \u00A7f/ 20`)
+        player.sendMessage(`\u00A77Players: \u00A7e${playerCount}`)
+        player.sendMessage(`\u00A77Uptime: \u00A7e${getUptime()}`)
+        player.sendMessage(`\u00A77Memory: ${getMemoryUsage()}`)
         player.sendMessage(" ")
     }
 }
@@ -90,7 +90,7 @@ export const TPSCommand = {
 // ----------------------------------------------------------------------------
 function getMemoryUsage() {
     const tick = Kernel.system.currentTick
-    if (tick % 100 === 0) return "\xA7aSTABLE"
-    if (tick % 50 === 0) return "\xA7eMODERATE_LOAD"
-    return "\xA7cHIGH_PRESSURE"
+    if (tick % 100 === 0) return "\u00A7aSTABLE"
+    if (tick % 50 === 0) return "\u00A7eMODERATE_LOAD"
+    return "\u00A7cHIGH_PRESSURE"
 }

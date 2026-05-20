@@ -11,14 +11,14 @@ export async function showBrowseUI(player) {
     const auctions = AuctionStore.getActiveAuctions()
     const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "BROWSE")
-        .body(auctions.length === 0 ? "\xA7cNO ACTIVE LISTINGS." : "\xA77Select item to view details.")
+        .body(auctions.length === 0 ? "\u00A7cNO ACTIVE LISTINGS." : "\u00A77Select item to view details.")
 
     auctions.forEach(a => {
         const time = AuctionStore.getTimeRemaining(a.endTime)
-        const price = a.buyNowPrice > 0 ? `\xA7a$${a.buyNowPrice.toLocaleString()}` : `\xA7eBid: $${a.currentBid.toLocaleString()}`
-        form.button(`\xA7f\xA7l${a.itemName.toUpperCase()} \xA77x${a.quantity}\n\xA77Seller: \xA78${a.sellerName} \xA77| ${price} \xA77| \xA76${time}`, Lang.getTexture(a.itemId))
+        const price = a.buyNowPrice > 0 ? `\u00A7a$${a.buyNowPrice.toLocaleString()}` : `\u00A7eBid: $${a.currentBid.toLocaleString()}`
+        form.button(`\u00A7f\u00A7l${a.itemName.toUpperCase()} \u00A77x${a.quantity}\n\u00A77Seller: \u00A78${a.sellerName} \u00A77| ${price} \u00A77| \u00A76${time}`, Lang.getTexture(a.itemId))
     })
-    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
+    form.button("\u00A7c\u00A7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === auctions.length) {
@@ -35,13 +35,13 @@ export async function showMyAuctionsUI(player) {
     const auctions = AuctionStore.getPlayerAuctions(player.id)
     const form = new Kernel.ActionFormData()
         .title(Lang.GOLD + "MY LISTINGS")
-        .body(auctions.length === 0 ? "\xA7cNO LISTINGS." : "\xA77Select to manage.")
+        .body(auctions.length === 0 ? "\u00A7cNO LISTINGS." : "\u00A77Select to manage.")
 
     auctions.forEach(a => {
         const status = a.status.toUpperCase()
-        form.button(`\xA7f\xA7l${a.itemName} \xA77x${a.quantity}\n\xA77Status: \xA7e${status} \xA77| \xA76${AuctionStore.getTimeRemaining(a.endTime)}`, Lang.getTexture(a.itemId))
+        form.button(`\u00A7f\u00A7l${a.itemName} \u00A77x${a.quantity}\n\u00A77Status: \u00A7e${status} \u00A77| \u00A76${AuctionStore.getTimeRemaining(a.endTime)}`, Lang.getTexture(a.itemId))
     })
-    form.button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
+    form.button("\u00A7c\u00A7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === auctions.length) {

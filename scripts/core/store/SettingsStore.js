@@ -40,6 +40,7 @@ const DEFAULT_SETTINGS = {
 const STORAGE_KEY = "ae:settings"
 
 export const SettingsStore = {
+    DEFAULT_SETTINGS,
     /**
      * Get a setting value
      * @param {keyof typeof DEFAULT_SETTINGS} key 

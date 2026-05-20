@@ -14,11 +14,11 @@ export async function showAuctionUI(player) {
     
     const form = new Kernel.ActionFormData()
         .title(Lang.UI.AUCTION_TITLE)
-        .body(`\xA77Active Listings: \xA7e${auctions.length}\n\xA77Balance: \xA7a$${balance.toLocaleString()}`)
-        .button("\xA76\xA7lBROWSE\n\xA78Explore active listings", "textures/items/golden_carrot")
-        .button("\xA7e\xA7lLIST ITEM\n\xA78Create new auction", "textures/blocks/gold_block")
-        .button("\xA7b\xA7lMY LISTINGS\n\xA78Manage active auctions", "textures/blocks/chest_front")
-        .button("\xA7c\xA7l[BACK]", "textures/ui/refresh")
+        .body(`\u00A77Active Listings: \u00A7e${auctions.length}\n\u00A77Balance: \u00A7a$${balance.toLocaleString()}`)
+        .button("\u00A76\u00A7lBROWSE\n\u00A78Explore active listings", "textures/items/golden_carrot")
+        .button("\u00A7e\u00A7lLIST ITEM\n\u00A78Create new auction", "textures/blocks/gold_block")
+        .button("\u00A7b\u00A7lMY LISTINGS\n\u00A78Manage active auctions", "textures/blocks/chest_front")
+        .button("\u00A7c\u00A7l[BACK]", "textures/ui/refresh")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) return

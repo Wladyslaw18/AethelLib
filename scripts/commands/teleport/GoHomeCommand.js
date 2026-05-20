@@ -26,7 +26,7 @@ export const GoHomeCommand = {
     category: "TELEPORTATION",
     // native parameter definitions.
     parameters: [
-        { name: "homeName", type: "string", optional: false }
+        { name: "homeName", type: "string", optional: true }
     ],
 
     // ----------------------------------------------------------------------------
@@ -38,7 +38,8 @@ export const GoHomeCommand = {
         // syntax check.
         const name = args[0]
         if (!name) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:home <home_name>");
+            const { showHomeUI } = await import("../../ui/teleport/HomeUI.js")
+            Kernel.system.run(() => showHomeUI(player))
             return
         }
 
@@ -54,7 +55,7 @@ export const GoHomeCommand = {
         
         if (Kernel.system.currentTick - last < cd) {
             const remaining = Math.ceil((cd - (Kernel.system.currentTick - last)) / 20)
-            player.sendMessage(`\xA7c\xA7l» \xA77Please wait \xA7e${remaining}s \xA77before using this again.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Please wait \u00A7e${remaining}s \u00A77before using this again.`);
             return
         }
 
@@ -62,7 +63,7 @@ export const GoHomeCommand = {
         // fetch the coordinate data from the persistent store.
         const home = await HomeStore.getHome(player, name)
         if (!home) {
-            player.sendMessage(`\xA7c\xA7l» \xA77Home '${name}' not found.`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Home '${name}' not found.`);
             return
         }
 
@@ -80,7 +81,7 @@ export const GoHomeCommand = {
         } else {
             // execute an instant jump.
             TeleportService.teleport(player, targetLocation, home.dimension);
-            player.sendMessage(`\xA7a\xA7l» \xA7fTeleported to home \xA7e${name}\xA7f.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fTeleported to home \u00A7e${name}\u00A7f.`);
         }
 
         // update the cooldown pointer.

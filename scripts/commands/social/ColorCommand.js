@@ -28,7 +28,7 @@ export const ColorCommand = {
         
         // case 1: no argument. open the visual color picker.
         if (!color) {
-            await ColorSystem.showColorSelection(player)
+            Kernel.system.run(() => ColorSystem.showColorSelection(player))
             return
         }
         
@@ -40,7 +40,7 @@ export const ColorCommand = {
             // if the color token was invalid or not unlocked by the player.
             // resolve the list of currently allowed colors for feedback.
             const availableColors = ColorSystem.getAvailableColors(player)
-            player.sendMessage(`\xA7c\xA7l» \xA77Invalid color. Available: \xA7e${availableColors.join("\xA77, \xA7e")}`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid color. Available: \u00A7e${availableColors.join("\u00A77, \u00A7e")}`);
         }
     }
 }

@@ -23,6 +23,6 @@ export const MenuCommand = {
     // ----------------------------------------------------------------------------
     execute(_data, player, _args) {
         // no parameters required. open the UI.
-        showMainGUI(player);
+        Kernel.system.run(() => showMainGUI(player));
     }
 }

@@ -33,10 +33,10 @@ export function init() {
 
             Kernel.system.run(() => {
                 if (hurtEntity.isValid && hurtEntity.typeId === "minecraft:player") {
-                    /** @type {import("@minecraft/server").Player} */ (hurtEntity).onScreenDisplay.setActionBar("\xA7c\xA7l» \xA7eIn Combat! \xA7cDo not leave! \xA7l«")
+                    /** @type {import("@minecraft/server").Player} */ (hurtEntity).onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A7eIn Combat! \u00A7cDo not leave! \u00A7l«")
                 }
                 if (damagingEntity?.isValid && damagingEntity.typeId === "minecraft:player") {
-                    /** @type {import("@minecraft/server").Player} */ (damagingEntity).onScreenDisplay.setActionBar("\xA7c\xA7l» \xA7eIn Combat! \xA7cDo not leave! \xA7l«")
+                    /** @type {import("@minecraft/server").Player} */ (damagingEntity).onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A7eIn Combat! \u00A7cDo not leave! \u00A7l«")
                 }
             })
 
@@ -77,7 +77,7 @@ export function init() {
                 if (!player.isValid) return
 
                 try {
-                    const inventory = player.getComponent(EntityComponentTypes.Inventory)
+                    const inventory = player.getComponent(Kernel.EntityComponentTypes.Inventory)
                     if (inventory?.container) {
                         inventory.container.clearAll()
                     }
@@ -85,7 +85,7 @@ export function init() {
                     player.kill()
 
                     PlayerStore.set(player, "deathDebt", false)
-                    player.sendMessage("\xA7c\xA7l» \xA7eCombat Logging Detected! \xA77Your items have been removed.");
+                    player.sendMessage("\u00A7c\u00A7l» \u00A7eCombat Logging Detected! \u00A77Your items have been removed.");
 
                 } catch (error) {
                     console.error(`[CombatIntegrity] PENALTY_ORCHESTRATION_FAILURE for ${player.id}:`, error)

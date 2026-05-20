@@ -8,7 +8,7 @@ import { Kernel } from "../../core/Kernel.js"
 
 const RANGE = 32
 const RANGE_SQ = RANGE * RANGE 
-const activeProjections = new Map() // entryId -> Entity
+import { activeProjections } from "../floatingtext/FloatingTextService.js"
 let lastUpdateTime = Date.now()
 
 export function init() {

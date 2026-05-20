@@ -24,19 +24,19 @@ export const PayCommand = {
         const [targetPlayer, amount] = args;
 
         if (!targetPlayer || amount === undefined) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:pay <player> <amount>");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:pay <player> <amount>");
             return;
         }
 
         // step 1: prevent paying yourself. if you have no friends, that's sad, but don't exploit the server trying to clone coins.
         if (targetPlayer.id === player.id) {
-            player.sendMessage("\xA7c\xA7l» \xA77You cannot pay yourself!");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot pay yourself!");
             return;
         }
 
         // step 2: validate positive amounts. zero or negative is how we get database rollbacks. nice try, script kiddies.
         if (amount <= 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77Amount must be a positive integer.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Amount must be a positive integer.");
             return;
         }
 
@@ -44,7 +44,7 @@ export const PayCommand = {
         const hasEnough = await EconomyStore.hasEnough(player, amount);
         if (!hasEnough) {
             const balance = await EconomyStore.getBalance(player);
-            player.sendMessage(`\xA7c\xA7l» \xA77Insufficient funds. Balance: \xA7a$${balance.toLocaleString()}`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Insufficient funds. Balance: \u00A7a$${balance.toLocaleString()}`);
             return;
         }
 
@@ -52,11 +52,11 @@ export const PayCommand = {
         const success = await EconomyStore.transferMoney(player, targetPlayer, amount);
 
         if (success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7fSent \xA7e$${amount.toLocaleString()}\xA7f to \xA7e${targetPlayer.name}\xA7f.`);
-            targetPlayer.sendMessage(`\xA7a\xA7l» \xA7fReceived \xA7e$${amount.toLocaleString()}\xA7f from \xA7e${player.name}\xA7f.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fSent \u00A7e$${amount.toLocaleString()}\u00A7f to \u00A7e${targetPlayer.name}\u00A7f.`);
+            targetPlayer.sendMessage(`\u00A7a\u00A7l» \u00A7fReceived \u00A7e$${amount.toLocaleString()}\u00A7f from \u00A7e${player.name}\u00A7f.`);
         } else {
             // database lock or weird engine bug. cry in a corner then tell them to try again.
-            player.sendMessage("\xA7c\xA7l» \xA77Transaction failed. Please try again later.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Transaction failed. Please try again later.");
         }
     }
 }

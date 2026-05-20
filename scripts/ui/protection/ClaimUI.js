@@ -15,17 +15,17 @@ export async function showClaimUI(player) {
     const claims = ClaimStore.getPlayerClaims(player.id)
 
     const form = new Kernel.ActionFormData()
-        .title("\xA7b\xA7l🛡️ Your Claims")
+        .title("\u00A7b\u00A7l🛡️ Your Claims")
         .body(claims.length > 0
-            ? `\xA77You have \xA7e${claims.length}\xA77 claim(s)\n\xA77Stand in a chunk and use \xA7e!claim\xA77 to claim it.`
-            : "\xA77You have no claims.\n\xA77Stand in a chunk and use \xA7e!claim\xA77 to claim it.")
+            ? `\u00A77You have \u00A7e${claims.length}\u00A77 claim(s)\n\u00A77Stand in a chunk and use \u00A7e!claim\u00A77 to claim it.`
+            : "\u00A77You have no claims.\n\u00A77Stand in a chunk and use \u00A7e!claim\u00A77 to claim it.")
 
     // Back button
-    form.button("\xA7c← Back")
+    form.button("\u00A7c← Back")
 
     // Claim buttons
     for (const claim of claims) {
-        form.button(`\xA7b${claim.chunkKey}\n\xA77Trusted: ${Object.keys(claim.data?.trusted || {}).length}`)
+        form.button(`\u00A7b${claim.chunkKey}\n\u00A77Trusted: ${Object.keys(claim.data?.trusted || {}).length}`)
     }
 
     const response = await UIUtils.showForm(player, form)
@@ -40,7 +40,7 @@ export async function showClaimUI(player) {
     // Show claim info
     const selectedClaim = claims[response.selection - 1]
     if (selectedClaim) {
-        player.sendMessage(`\xA7bClaim: \xA7f${selectedClaim.chunkKey}`)
-        player.sendMessage(`\xA77Trusted players: \xA7f${Object.keys(selectedClaim.data?.trusted || {}).length}`)
+        player.sendMessage(`\u00A7bClaim: \u00A7f${selectedClaim.chunkKey}`)
+        player.sendMessage(`\u00A77Trusted players: \u00A7f${Object.keys(selectedClaim.data?.trusted || {}).length}`)
     }
 }

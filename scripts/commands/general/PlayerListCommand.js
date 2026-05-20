@@ -28,13 +28,13 @@ export const PlayerListCommand = {
         
         // safety check for empty server (though unlikely if executing this).
         if (players.length === 0) {
-            player.sendMessage("\xA7c\xA7l» \xA77No players online.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77No players online.");
             return
         }
 
         // header display.
         player.sendMessage(" ")
-        player.sendMessage(`\xA76\xA7lOnline Players \xA77(${players.length})`)
+        player.sendMessage(`\u00A76\u00A7lOnline Players \u00A77(${players.length})`)
 
         // loop through and resolve metadata for each player.
         players.forEach(p => {
@@ -43,7 +43,7 @@ export const PlayerListCommand = {
             // resolve health/vitality status.
             const status = getPlayerStatus(p)
             // print the formatted line.
-            player.sendMessage(`\xA7a- ${p.name} \xA77[${status}\xA77] \xA78(${playtime})`)
+            player.sendMessage(`\u00A7a- ${p.name} \u00A77[${status}\u00A77] \u00A78(${playtime})`)
         })
         player.sendMessage(" ")
     }
@@ -92,10 +92,10 @@ function getPlayerStatus(player) {
     
     // map to industrial status identifiers.
     if (healthPercent >= 75) {
-        return "\xA7aHealthy"
+        return "\u00A7aHealthy"
     } else if (healthPercent >= 25) {
-        return "\xA7eHurt"
+        return "\u00A7eHurt"
     } else {
-        return "\xA7cCritical"
+        return "\u00A7cCritical"
     }
 }

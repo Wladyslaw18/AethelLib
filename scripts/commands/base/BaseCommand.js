@@ -101,17 +101,17 @@ class BaseCommand {
 
     // standardized error feedback.
     sendError(player, message) {
-        this.sendMessage(player, `\xA7c\xA7l[Error] \xA77${message}`)
+        this.sendMessage(player, `\u00A7c\u00A7l[Error] \u00A77${message}`)
     }
 
     // standardized success feedback.
     sendSuccess(player, message) {
-        this.sendMessage(player, `\xA7a\xA7l[Success] \xA7f${message}`)
+        this.sendMessage(player, `\u00A7a\u00A7l[Success] \u00A7f${message}`)
     }
 
     // standardized syntax hint.
     sendUsage(player) {
-        this.sendMessage(player, `\xA7e\xA7l[Usage] \xA77Syntax: \xA7f${this.#usage}`)
+        this.sendMessage(player, `\u00A7e\u00A7l[Usage] \u00A77Syntax: \u00A7f${this.#usage}`)
     }
 
     // ----------------------------------------------------------------------------

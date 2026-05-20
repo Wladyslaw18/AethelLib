@@ -19,33 +19,52 @@ export class RankUI {
         const form = new Kernel.ModalFormData()
             .title("Add Rank")
             .textField("Rank Tag (Unique ID):", "e.g. vip")
-            .textField("Display Text:", "e.g. \xA7b[VIP]")
+            .textField("Display Text:", "e.g. \u00A7b[VIP]")
 
         const res = await UIUtils.showForm(player, form)
         if (res.canceled) return
 
-        const [tag, name] = res.formValues
-        if (!tag) return player.sendMessage("\xA7cInvalid Rank Tag.")
+        let [tag, name] = res.formValues
+        if (!tag) return player.sendMessage("\u00A7cInvalid Rank Tag.")
+        tag = tag.trim()
 
-        if (RankSystem.createRank(tag, { name: name || tag, order: 0, colorText: "\xA7f", colorName: "\xA7f", hideRanks: false, permissions: {} })) {
-            player.sendMessage(`\xA7aSuccessfully created rank: ${tag}`)
-            this.showEditRankActions(player, tag)
+        // 1. Enforce alphanumeric character validation to prevent dynamic property key violations
+        if (!/^[a-zA-Z0-9_]+$/.test(tag)) {
+            return player.sendMessage("\u00A7cInvalid Rank Tag: Only alphanumeric characters and underscores are allowed.")
+        }
+
+        // 2. Prevent overwriting existing ranks
+        if (RankSystem.getRank(tag)) {
+            return player.sendMessage("\u00A7cFailed to create rank: Tag already exists.")
+        }
+
+        if (RankSystem.createRank(tag, { name: name || tag, order: 0, colorText: "\u00A7f", colorName: "\u00A7f", hideRanks: false, permissions: {} })) {
+            player.sendMessage(`\u00A7aSuccessfully created rank: ${tag}`)
+            // 3. Wait 5 ticks before opening the next UI to avoid native UserBusy/crashes
+            Kernel.system.runTimeout(() => {
+                this.showEditRankActions(player, tag)
+            }, 5)
         } else {
-            player.sendMessage("\xA7cFailed to create rank. Tag may already exist.")
+            player.sendMessage("\u00A7cFailed to create rank.")
         }
     }
 
     static async showEditRanks(player) {
         const ranks = RankSystem.getAllRanks()
-        const rankIds = Object.keys(ranks)
-        if (rankIds.length === 0) return player.sendMessage("\xA7cNo ranks found.")
+        // Safety guard: filter out undefined ranks to prevent TypeErrors
+        const rankIds = Object.keys(ranks).filter(id => ranks[id] !== undefined)
+        if (rankIds.length === 0) return player.sendMessage("\u00A7cNo ranks found.")
 
         const form = new Kernel.ModalFormData()
             .title("Edit Ranks")
             .dropdown("Select Ranks", rankIds.map(id => ranks[id].name || id))
 
         const res = await UIUtils.showForm(player, form)
-        if (!res.canceled) this.showEditRankActions(player, rankIds[res.formValues[0]])
+        if (!res.canceled) {
+            Kernel.system.runTimeout(() => {
+                this.showEditRankActions(player, rankIds[res.formValues[0]])
+            }, 5)
+        }
     }
 
     static async showEditRankActions(player, rankTag) {
@@ -57,19 +76,29 @@ export class RankUI {
             .button("Admin Permission")
             .button("Land Permission")
             .button("Chest Shop Permission")
-            .button("\xA7c<= BACK")
+            .button("\u00A7c<= BACK")
 
         const res = await UIUtils.showForm(player, form)
         if (res.canceled) return
 
-        const back = () => this.showEditRankActions(player, rankTag)
+        // 4. Add a tick transition delay to the back button callback
+        const back = () => {
+            Kernel.system.runTimeout(() => {
+                this.showEditRankActions(player, rankTag)
+            }, 5)
+        }
+
         switch (res.selection) {
             case 0: await showBasicSettings(player, rankTag, back); break
             case 1: await showBasicPermissions(player, rankTag, back); break
             case 2: await showAdminPermissions(player, rankTag, back); break
             case 3: await showLandPermissions(player, rankTag, back); break
             case 4: await showChestShopPermissions(player, rankTag, back); break
-            case 5: this.showEditRanks(player); break
+            case 5: 
+                Kernel.system.runTimeout(() => {
+                    this.showEditRanks(player)
+                }, 5)
+                break
         }
     }
 }

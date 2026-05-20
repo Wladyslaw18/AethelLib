@@ -21,24 +21,24 @@ export const CreditCommand = {
     // ----------------------------------------------------------------------------
     execute(_data, player, _args) {
         player.sendMessage(" ")
-        player.sendMessage("\xA76\xA7lAethel\xA7fLib \xA77- Credits")
-        player.sendMessage("\xA78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        player.sendMessage("\u00A76\u00A7lAethel\u00A7fLib \u00A77- Credits")
+        player.sendMessage("\u00A78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         player.sendMessage(" ")
         // credit to the lead architect.
-        player.sendMessage("\xA76\xA7lLead Architect")
-        player.sendMessage("\xA7f- Wladyslaw")
+        player.sendMessage("\u00A76\u00A7lLead Architect")
+        player.sendMessage("\u00A7f- Wladyslaw")
         player.sendMessage(" ")
         // list of core technical pillars.
-        player.sendMessage("\xA76\xA7lCore Systems")
-        player.sendMessage("\xA7f- Economy & Auction House")
-        player.sendMessage("\xA7f- Advanced Teleportation")
-        player.sendMessage("\xA7f- Social & Chat Security")
-        player.sendMessage("\xA7f- Administrative Tools")
+        player.sendMessage("\u00A76\u00A7lCore Systems")
+        player.sendMessage("\u00A7f- Economy & Auction House")
+        player.sendMessage("\u00A7f- Advanced Teleportation")
+        player.sendMessage("\u00A7f- Social & Chat Security")
+        player.sendMessage("\u00A7f- Administrative Tools")
         player.sendMessage(" ")
-        player.sendMessage("\xA78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        player.sendMessage("\u00A78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         // system philosophy footer.
-        player.sendMessage("\xA77Optimized for high-performance survival gameplay.")
-        player.sendMessage("\xA77Version: \xA7e1.26.20 \xA77| \xA7fClean Build")
+        player.sendMessage("\u00A77Optimized for high-performance survival gameplay.")
+        player.sendMessage("\u00A77Version: \u00A7e1.26.20 \u00A77| \u00A7fClean Build")
         player.sendMessage(" ")
     }
 }

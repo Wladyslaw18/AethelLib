@@ -11,11 +11,11 @@ export async function showBasicSettings(player, rankTag, backCallback) {
 
     const form = new Kernel.ModalFormData()
         .title("Edit Rank")
-        .textField("Ranks Display Text:", "e.g. test111", { defaultValue: String(rank.name || "") })
-        .textField("Ranks Order:", "e.g. 10", { defaultValue: String(rank.order || 0) })
-        .textField("Ranks Name Color:", "Example:", { defaultValue: String(rank.colorName || "\xA7f") })
-        .textField("Ranks Message Color:", "Example:", { defaultValue: String(rank.colorText || "\xA7f") })
-        .toggle("Hide Ranks", { defaultValue: rank.hideRanks || false })
+        .textField("Ranks Display Text:", "e.g. test111", String(rank.name || ""))
+        .textField("Ranks Order:", "e.g. 10", String(rank.order || 0))
+        .textField("Ranks Name Color:", "Example:", String(rank.colorName || "\u00A7f"))
+        .textField("Ranks Message Color:", "Example:", String(rank.colorText || "\u00A7f"))
+        .toggle("Hide Ranks", rank.hideRanks || false)
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) return backCallback()
@@ -27,6 +27,6 @@ export async function showBasicSettings(player, rankTag, backCallback) {
     rank.hideRanks = res.formValues[4]
 
     RankSystem.updateRank(rankTag, rank)
-    player.sendMessage(`\xA7aUpdated basic settings for rank: ${rankTag}`)
+    player.sendMessage(`\u00A7aUpdated basic settings for rank: ${rankTag}`)
     backCallback()
 }

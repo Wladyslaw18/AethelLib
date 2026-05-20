@@ -36,11 +36,11 @@ export const TPASettingCommand = {
             const uiEnabled = TPAStore.getUIToggle(player.id)
 
             player.sendMessage(" ")
-            player.sendMessage("\xA76\xA7lTPA Settings")
-            player.sendMessage(`\xA77Requests: ${enabled ? "\xA7aEnabled" : "\xA7cDisabled"}`)
-            player.sendMessage(`\xA77UI Pop-ups: ${uiEnabled ? "\xA7aEnabled" : "\xA7cDisabled"}`)
+            player.sendMessage("\u00A76\u00A7lTPA Settings")
+            player.sendMessage(`\u00A77Requests: ${enabled ? "\u00A7aEnabled" : "\u00A7cDisabled"}`)
+            player.sendMessage(`\u00A77UI Pop-ups: ${uiEnabled ? "\u00A7aEnabled" : "\u00A7cDisabled"}`)
             player.sendMessage(" ")
-            player.sendMessage("\xA7eUsage: /ae:tpasetting <on/off/ui>")
+            player.sendMessage("\u00A7eUsage: /ae:tpasetting <on/off/ui>")
             player.sendMessage(" ")
             return
         }
@@ -49,7 +49,7 @@ export const TPASettingCommand = {
         if (option === "ui") {
             const current = TPAStore.getUIToggle(player.id)
             TPAStore.setUIToggle(player.id, !current)
-            player.sendMessage(`\xA7a\xA7l» \xA7fUI Pop-ups ${!current ? "\xA7aEnabled" : "\xA7cDisabled"}\xA7f.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fUI Pop-ups ${!current ? "\u00A7aEnabled" : "\u00A7cDisabled"}\u00A7f.`);
             return
         }
 
@@ -59,17 +59,17 @@ export const TPASettingCommand = {
         const success = await TPAStore.setSettings(player.id, { enabled })
 
         if (success) {
-            player.sendMessage(`\xA7a\xA7l» \xA7fTPA requests ${enabled ? "\xA7aEnabled" : "\xA7cDisabled"}\xA7f.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fTPA requests ${enabled ? "\u00A7aEnabled" : "\u00A7cDisabled"}\u00A7f.`);
 
             // logic gate: if TPA was just disabled, we must flush the request queue.
             if (!enabled) {
                 // purge all pending requests targeting this player to prevent phantom pings.
                 await TPAStore.cancelAllRequestsForPlayer(player.id)
-                player.sendMessage("\xA7e\xA7l» \xA77All existing TPA requests cancelled.");
+                player.sendMessage("\u00A7e\u00A7l» \u00A77All existing TPA requests cancelled.");
             }
         } else {
             // handle rare database I/O failures.
-            player.sendMessage("\xA7c\xA7l» \xA77Failed to update TPA settings.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to update TPA settings.");
         }
     }
 }
