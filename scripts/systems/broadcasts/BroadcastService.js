@@ -94,7 +94,7 @@ export class BroadcastService {
         if (!messages || messages.length === 0) {
             // Fallback to common if tier is empty
             const commonMessages = BroadcastStore.getMessages("common")
-            return commonMessages[Math.floor(Math.random() * commonMessages.length)] || "\xA77Broadcast message unavailable"
+            return commonMessages[Math.floor(Math.random() * commonMessages.length)] || "\u00A77Broadcast message unavailable"
         }
 
         return messages[Math.floor(Math.random() * messages.length)]
@@ -175,7 +175,7 @@ export class BroadcastService {
 
         for (const targetPlayer of targetPlayers) {
             try {
-                targetPlayer.sendMessage(`\xA76[TEST] ${message}`)
+                targetPlayer.sendMessage(`\u00A76[TEST] ${message}`)
             } catch (error) {
                 console.warn(`BroadcastService: Failed to send test to ${targetPlayer.name}:`, error)
             }
