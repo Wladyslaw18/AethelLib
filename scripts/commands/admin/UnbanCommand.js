@@ -29,8 +29,8 @@ export const UnbanCommand = {
     execute(_data, player, args) {
         // syntax check.
         if (args.length < 1) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:unban <playerName>");
-            player.sendMessage("\xA7e\xA7l» \xA7fTip: \xA77Use the exact name the player was banned under.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:unban <playerName>");
+            player.sendMessage("\u00A7e\u00A7l» \u00A7fTip: \u00A77Use the exact name the player was banned under.");
             return
         }
 
@@ -45,7 +45,7 @@ export const UnbanCommand = {
             
             // if no record found, stop.
             if (banIndex === -1) {
-                player.sendMessage(`\xA7c\xA7l» \xA77No ban record found for '${playerName}'.`);
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77No ban record found for '${playerName}'.`);
                 return
             }
 
@@ -57,11 +57,11 @@ export const UnbanCommand = {
             Database.set("ae:bans", bans)
             
             // confirm to the admin.
-            player.sendMessage(`\xA7a\xA7l» \xA7fPlayer '${playerName}' has been unbanned.`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fPlayer '${playerName}' has been unbanned.`);
 
             // step 2: notification broadcast.
             // build an announcement message.
-            const unbanMessage = `\xA76\xA7l[\xA7eUNBAN\xA76\xA7l] \xA7r${playerName} \xA77was unbanned by \xA7e${player.name}`;
+            const unbanMessage = `\u00A76\u00A7l[\u00A7eUNBAN\u00A76\u00A7l] \u00A7r${playerName} \u00A77was unbanned by \u00A7e${player.name}`;
 
             // alert other staff members about the unban.
             const PermissionManager = Kernel.get("permissions")
@@ -74,7 +74,7 @@ export const UnbanCommand = {
         } catch (error) {
             // log any crashes during the data manipulation.
             console.error(`[UnbanCommand] DE-REGISTRATION_CRASH for ${playerName}: ${error}`)
-            player.sendMessage("\xA7c\xA7l» \xA77Failed to unban player.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to unban player.");
         }
     }
 }
