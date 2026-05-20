@@ -13,7 +13,7 @@ import { SignalBus } from "../../core/signalbus/SignalBus.js"
  */
 
 const OBJECTIVE_ID = "money"
-const DISPLAY_NAME = "\xA76LIQUIDITY"
+const DISPLAY_NAME = "\u00A76LIQUIDITY"
 
 /* 
  * SYSTEM_BOOTSTRAP_PROTOCOL
@@ -31,7 +31,9 @@ export function init() {
         try {
             const objective = Kernel.world.scoreboard.getObjective(OBJECTIVE_ID)
             if (objective) {
-                objective.setScore(player, Math.floor(newBalance))
+                const clamped = Math.max(-2147483648, Math.min(2147483647, Math.floor(newBalance)))
+                // @ts-ignore
+                objective.setScore(player, clamped)
             }
         } catch (error) {
             console.error(`[ScoreboardMirror] SYNC_FAILURE: ${error}`)
@@ -53,7 +55,9 @@ export function init() {
                 const balance = EconomyStore.getBalance(player)
                 const objective = Kernel.world.scoreboard.getObjective(OBJECTIVE_ID)
                 if (objective) {
-                    objective.setScore(player, Math.floor(balance))
+                    const clamped = Math.max(-2147483648, Math.min(2147483647, Math.floor(balance)))
+                    // @ts-ignore
+                    objective.setScore(player, clamped)
                 }
             } catch (error) {
                 console.error(`[ScoreboardMirror] INITIAL_SYNC_FAILURE: ${error}`)
