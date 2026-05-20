@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+import os
+import sys
+import shutil
+import zipfile
+
+# Colors
+GREEN = "\033[92m"
+WHITE = "\033[1m\033[37m"
+DARK_GRAY = "\033[90m"
+RESET = "\033[0m"
+
+def clear_screen():
+    os.system('clear' if os.name != 'nt' else 'cls')
+
+def prompt_confirm():
+    clear_screen()
+    border = "=" * 58
+    print(f"{GREEN}{border}{RESET}")
+    print(f"{GREEN}               AETHELGRAD ADDON PACKAGER (UNIX)          {RESET}")
+    print(f"{GREEN}{border}{RESET}")
+    print("  This script will:")
+    print("  1. Sync current Behavior and Resource Pack files.")
+    print("  2. Compile them into a clean .mcaddon archive.")
+    print("  3. Save AethelLib.mcaddon at the workspace root.")
+    print(f"{DARK_GRAY}----------------------------------------------------------{RESET}")
+    print(f"  Press {GREEN}[ENTER]{RESET} to execute packager | \033[91m[Ctrl+C]\033[0m to cancel")
+    print(f"{GREEN}{border}{RESET}")
+    try:
+        input()
+    except (KeyboardInterrupt, EOFError):
+        print("\n\033[91mOperation cancelled.\033[0m")
+        sys.exit(0)
+
+# allowZip64=False forces standard ZIP 2.0 format — same as 7-zip output.
+# Minecraft's importer rejects ZIP64 archives that Compress-Archive / default ZipFile produce.
+def zip_folder(folder_path, output_zip):
+    with zipfile.ZipFile(output_zip, 'w', zipfile.ZIP_DEFLATED, allowZip64=False) as zipf:
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                full_path = os.path.join(root, file)
+                rel_path = os.path.relpath(full_path, folder_path)
+                zipf.write(full_path, rel_path)
+
+def main():
+    prompt_confirm()
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(script_dir))
+    build_dir = os.path.join(project_root, "build")
+    out_file = os.path.join(project_root, "AethelLib.mcaddon")
+
+    print("[Packager] Cleaning build workspace...")
+    if os.path.exists(build_dir):
+        shutil.rmtree(build_dir)
+    if os.path.exists(out_file):
+        os.remove(out_file)
+    
+    os.makedirs(build_dir, exist_ok=True)
+
+    bp_temp = os.path.join(build_dir, "AethelLib_BP")
+    rp_temp = os.path.join(build_dir, "AethelLib_RP")
+    os.makedirs(bp_temp, exist_ok=True)
+    os.makedirs(rp_temp, exist_ok=True)
+
+    # 1. Copy Behavior Pack assets
+    print("[Packager] Copying Behavior Pack assets...")
+    bp_files = ["manifest.json", "pack_icon.png", "scripts", "entities"]
+    for item in bp_files:
+        src = os.path.join(project_root, item)
+        if os.path.exists(src):
+            dst = os.path.join(bp_temp, item)
+            if os.path.isdir(src):
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+
+    # 2. Copy Resource Pack assets
+    print("[Packager] Copying Resource Pack assets...")
+    rp_source = os.path.join(project_root, "AethelLib (RP)")
+    if os.path.exists(rp_source):
+        for item in os.listdir(rp_source):
+            src = os.path.join(rp_source, item)
+            dst = os.path.join(rp_temp, item)
+            if os.path.isdir(src):
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+
+    # 3. Create .mcpack files
+    print("[Packager] Compressing Packs...")
+    bp_zip = os.path.join(build_dir, "AethelLib_BP.mcpack")
+    rp_zip = os.path.join(build_dir, "AethelLib_RP.mcpack")
+
+    zip_folder(bp_temp, bp_zip)
+    zip_folder(rp_temp, rp_zip)
+
+    # 4. Create final .mcaddon (standard ZIP container, no ZIP64)
+    print(f"{GREEN}[Packager] Creating final AethelLib.mcaddon...{RESET}")
+    with zipfile.ZipFile(out_file, 'w', zipfile.ZIP_DEFLATED, allowZip64=False) as addon_zip:
+        addon_zip.write(bp_zip, os.path.basename(bp_zip))
+        addon_zip.write(rp_zip, os.path.basename(rp_zip))
+
+    # 5. Cleanup
+    shutil.rmtree(build_dir)
+    print(f"{GREEN}[Packager] Build successful! Addon packaged at: {out_file}{RESET}")
+
+if __name__ == "__main__":
+    main()
