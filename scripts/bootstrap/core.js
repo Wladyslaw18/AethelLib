@@ -32,6 +32,8 @@ import { PlayerUtils } from "../utils/PlayerUtils.js"
 import { ShopStore } from "../systems/economy/ShopStore.js"
 import { MasterDispatcher } from "../core/events/MasterDispatcher.js"
 import { SpatialCache } from "../systems/protection/SpatialCache.js"
+import { SettingsStore } from "../core/store/SettingsStore.js"
+import { CommandHandler } from "../commands/base/CommandHandler.js"
 
 let initialized = false
 
@@ -49,6 +51,7 @@ export function init() {
     Kernel.register("worldStore",  WorldStore)
     Kernel.register("rankStore",   RankStore)
     Kernel.register("keys",        StoreKeys)
+    Kernel.register("settings",    SettingsStore)
 
     // Economy
     Kernel.register("economy",     EconomyStore)
@@ -87,6 +90,7 @@ export function init() {
     RankSystem.init()
     ChatSystem.init()
     BanManager.init()
+    CommandHandler.init()
 
     console.log("[Kernel] Services initialized. Total: " + Kernel.size);
 }
