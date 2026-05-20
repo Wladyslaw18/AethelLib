@@ -26,7 +26,7 @@ export const RankAdminCommands = [
             { name: "displayName", type: "string", optional: true }
         ],
         async execute(data, player, args) {
-            if (!args || args.length === 0) {
+            if (!args || args.length === 0 || args[0] === undefined) {
                 Kernel.system.run(() => RankUI.showCreateRank(player))
                 return
             }
@@ -301,19 +301,59 @@ export const RankAdminCommands = [
     // Advanced permission management with LuckPerms-style syntax.
     {
         name: "editranks",
-        aliases: ["lp", "permset"],
+        aliases: ["editrank", "lp", "permset"],
         description: "Sets rank permissions with priority and value (LuckPerms style)",
-        usage: "/ae:editranks <rankTag> <permission> <priority> <1|0>",
+        usage: "/ae:editranks [rankTag] [permission] [priority] [1|0]",
         permission: "essentials.admin.ranks",
         category: "SOCIAL",
         parameters: [
-            { name: "rankTag", type: "rank", optional: false },
-            { name: "permission", type: "permission", optional: false },
-            { name: "priority", type: "int", optional: false },
-            { name: "value", type: "int", optional: false }
+            { name: "rankTag", type: "rank", optional: true },
+            { name: "permission", type: "permission", optional: true },
+            { name: "priority", type: "int", optional: true },
+            { name: "value", type: "int", optional: true }
         ],
         async execute(data, player, args) {
+            if (!args || args.length === 0 || args[0] === undefined) {
+                Kernel.system.run(() => RankUI.showEditRanks(player));
+                return;
+            }
+
             const tag = args[0];
+
+            if (args.length === 1 || args[1] === undefined) {
+                if (tag.toLowerCase() === "help") {
+                    player.sendMessage("\u00A7e=== Rank Permissions Help ===");
+                    player.sendMessage("\u00A7bUsage: /ae:editranks <rankTag> <permission> <priority> <1|0>");
+                    player.sendMessage("\u00A77Or use sharded commands:");
+                    player.sendMessage("\u00A7f- /ae:rperm <rankTag> <node> <allow|deny|inherit>");
+                    player.sendMessage("\u00A7f- /ae:rorder <rankTag> <priority>");
+                    player.sendMessage("\u00A7f- /ae:rcolor <rankTag> <chatColor> [nameColor]");
+                    player.sendMessage("\u00A7f- /ae:rname <rankTag> <displayName>");
+                    player.sendMessage("\u00A77Available permissions list:");
+                    player.sendMessage("\u00A7e- Cooldowns: \u00A7fcooldown.chat, cooldown.back, cooldown.tpa, cooldown.home, cooldown.warp, cooldown.rtp, cooldown.command");
+                    player.sendMessage("\u00A7e- Limits: \u00A7flimit.home, limit.land");
+                    player.sendMessage("\u00A7e- Costs: \u00A7fcost.back, cost.tpa, cost.home, cost.warp, cost.rtp");
+                    player.sendMessage("\u00A7e- Land: \u00A7fland.claim, land.unclaim, land.invite, land.kick, land.transfer, land.setting");
+                    player.sendMessage("\u00A7e- ChestShop: \u00A7fchestshop.create.sell, chestshop.create.buy, chestshop.sell, chestshop.buy");
+                    player.sendMessage("\u00A7e- Admin: \u00A7fadmin.panel, admin.ban, admin.broadcast, admin.economy, admin.floatingtext, admin.invsee, admin.kick, admin.landsetting, admin.log, admin.mute, admin.ranks, admin.resetdata, admin.sellsetting, admin.setting, admin.shopsetting, admin.warp, admin.tp, admin.gm.c, admin.gm.s, admin.gm.sp, admin.gm.a");
+                    player.sendMessage("\u00A7e- General: \u00A7fadmin, essentials.home, essentials.sethome, essentials.delhome, essentials.tpa, essentials.tpaccept, essentials.tpadeny, essentials.tpacancel, essentials.pay, essentials.money, essentials.withdraw, essentials.shop, essentials.sell, essentials.rtp, essentials.back, essentials.menu, essentials.auction, essentials.calculate, essentials.report, essentials.tps, essentials.chat.color, essentials.help, essentials.info, essentials.credit, essentials.default");
+                    return;
+                }
+                const rank = RankSystem.getRank(tag);
+                if (!rank) {
+                    player.sendMessage(`\u00A7cRank '${tag}' does not exist.`);
+                    return;
+                }
+                Kernel.system.run(() => RankUI.showEditRankActions(player, tag));
+                return;
+            }
+
+            if (args.length < 4 || args[1] === undefined || args[2] === undefined || args[3] === undefined) {
+                player.sendMessage(`\u00A7cInvalid arguments. Usage: /ae:editranks <rankTag> <permission> <priority> <1|0>`);
+                player.sendMessage(`\u00A77Type \u00A7e/ae:editranks help \u00A77for details.`);
+                return;
+            }
+
             const node = args[1];
             const priority = parseInt(args[2]);
             const valNum = parseInt(args[3]);
