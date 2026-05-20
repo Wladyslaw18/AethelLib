@@ -14,16 +14,11 @@ export const CalculateCommand = {
     permission: "essentials.calculate",
     // command category.
     category: "GENERAL",
-    // native parameter definitions (excess tokens to capture complex inputs).
+    // Handled by script to avoid native parsing errors.
+    native: false,
+    // parameter definitions (for help display).
     parameters: [
-        { name: "token1", type: "string", optional: true },
-        { name: "token2", type: "string", optional: true },
-        { name: "token3", type: "string", optional: true },
-        { name: "token4", type: "string", optional: true },
-        { name: "token5", type: "string", optional: true },
-        { name: "token6", type: "string", optional: true },
-        { name: "token7", type: "string", optional: true },
-        { name: "token8", type: "string", optional: true }
+        { name: "expression", type: "string", optional: false }
     ],
 
     // ----------------------------------------------------------------------------
@@ -34,18 +29,18 @@ export const CalculateCommand = {
         // combine all arguments into a single string.
         const expression = args.join(" ")
         if (!expression) {
-            player.sendMessage("\xA7c\xA7l» \xA77Syntax Error: Math expression required.");
-            player.sendMessage("\xA77Example: /ae:calculate 2 + 3 * (4 / 2)");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Syntax Error: Math expression required.");
+            player.sendMessage("\u00A77Example: /ae:calculate 2 + 3 * (4 / 2)");
             return
         }
 
         try {
             // resolve the expression result using our safe parsing pipeline.
             const result = safeMathParse(expression)
-            player.sendMessage(`\xA7a\xA7l» \xA7fResult: \xA7e${expression} = \xA7a${result.toLocaleString()}`);
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fResult: \u00A7e${expression} = \u00A7a${result.toLocaleString()}`);
         } catch (error) {
             // catch and display syntax errors or math logic failures (e.g. div by 0).
-            player.sendMessage(`\xA7c\xA7l» \xA77Error: ${error.message}`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Error: ${error.message}`);
         }
     }
 }
@@ -59,18 +54,54 @@ export const CalculateCommand = {
 // | 4. Conversion (Shunting-yard -> Reverse Polish Notation)                 |
 // | 5. Evaluation (RPN Stack calculation)                                    |
 // ----------------------------------------------------------------------------
-function safeMathParse(expression) {
-    // regex sanitization: only allow numbers, basic ops, decimals, and whitespace.
-    const clean = expression.replace(/[^0-9+\-*/().\s]/g, '')
-    // if the cleaned string differs from the input, we had illegal characters.
-    if (clean !== expression.trim()) throw new Error("Invalid characters in expression.");
+const precedence = {
+    '+': 1,
+    '-': 1,
+    '*': 2,
+    '/': 2,
+    '%': 2,
+    '^': 3,
+    'u+': 4,
+    'u-': 4
+};
 
+const associativity = {
+    '+': 'left',
+    '-': 'left',
+    '*': 'left',
+    '/': 'left',
+    '%': 'left',
+    '^': 'right',
+    'u+': 'right',
+    'u-': 'right'
+};
+
+const functions = new Set([
+    'sin', 'cos', 'tan', 'asin', 'acos', 'atan',
+    'sinh', 'cosh', 'tanh', 'sqrt', 'abs', 'log',
+    'ln', 'exp', 'floor', 'ceil', 'round', 'fact',
+    'deg', 'rad'
+]);
+const constants = {
+    'pi': Math.PI,
+    'e': Math.E
+};
+
+function isUnary(index, tokens) {
+    if (index === 0) return true;
+    const prev = tokens[index - 1];
+    return /[\+\-\*\/\%\^\(\)]/.test(prev) || functions.has(prev);
+}
+
+function safeMathParse(expression) {
+    // regex sanitization: allow numbers, words (functions/constants), standard operators, decimals, and whitespace.
+    const clean = expression.replace(/[^0-9a-zA-Z\+\-\*\/\%\^\(\)\.\s]/g, '')
+    
     // sanity check: balanced parentheses.
     let parenCount = 0
     for (const char of clean) {
         if (char === '(') parenCount++
         if (char === ')') parenCount--
-        // if we ever have more closing than opening, it's invalid.
         if (parenCount < 0) throw new Error("Unbalanced parentheses.");
     }
     if (parenCount !== 0) throw new Error("Unbalanced parentheses.");
@@ -87,23 +118,41 @@ function safeMathParse(expression) {
 // ----------------------------------------------------------------------------
 function tokenize(expr) {
     const tokens = []
-    let current = ''
-    for (let i = 0; i < expr.length; i++) {
+    let i = 0
+    while (i < expr.length) {
         const char = expr[i]
+        
         if (/\s/.test(char)) {
-            // skip whitespace but finalize current number if it exists.
-            if (current) { tokens.push(current); current = '' }
-        } else if (/[0-9.]/.test(char)) {
-            // keep building multi-digit numbers or decimals.
-            current += char
-        } else if (/[+\-*/()]/.test(char)) {
-            // finalize number before pushing the operator.
-            if (current) { tokens.push(current); current = '' }
+            i++
+            continue
+        }
+        
+        if (/[0-9.]/.test(char)) {
+            let num = ''
+            while (i < expr.length && /[0-9.]/.test(expr[i])) {
+                num += expr[i]
+                i++
+            }
+            tokens.push(num)
+            continue
+        }
+        
+        if (/[a-zA-Z]/.test(char)) {
+            let word = ''
+            while (i < expr.length && /[a-zA-Z]/.test(expr[i])) {
+                word += expr[i]
+                i++
+            }
+            tokens.push(word.toLowerCase())
+            continue
+        }
+        
+        if (/[\+\-\*\/\%\^\(\)]/.test(char)) {
             tokens.push(char)
+            i++
+            continue
         }
     }
-    // catch any trailing numbers.
-    if (current) tokens.push(current)
     return tokens
 }
 
@@ -115,29 +164,75 @@ function tokenize(expr) {
 function toRPN(tokens) {
     const output = []
     const operators = []
-    // define operator priority levels.
-    const precedence = { '+': 1, '-': 1, '*': 2, '/': 2 }
     
-    for (const token of tokens) {
+    for (let idx = 0; idx < tokens.length; idx++) {
+        const token = tokens[idx]
+        
         if (!isNaN(token)) {
             // numbers go straight to output.
             output.push(parseFloat(token))
+        } else if (constants[token] !== undefined) {
+            // constants go straight to output.
+            output.push(constants[token])
+        } else if (functions.has(token)) {
+            // functions wait on operator stack.
+            operators.push(token)
         } else if (token === '(') {
             // opening parens wait on the operator stack.
             operators.push(token)
         } else if (token === ')') {
             // closing parens pop operators until matching open paren.
-            while (operators.length && operators[operators.length - 1] !== '(') output.push(operators.pop())
-            operators.pop() 
+            while (operators.length && operators[operators.length - 1] !== '(') {
+                output.push(operators.pop())
+            }
+            if (!operators.length) throw new Error("Unbalanced parentheses.")
+            operators.pop() // pop '('
+            
+            // if the top operator is a function, pop it to output.
+            if (operators.length && functions.has(operators[operators.length - 1])) {
+                output.push(operators.pop())
+            }
         } else {
-            // handle operators based on precedence.
-            // pop higher or equal priority operators from the stack to the output.
-            while (operators.length && precedence[operators[operators.length - 1]] >= precedence[token]) output.push(operators.pop())
-            operators.push(token)
+            // operators: check if unary or binary.
+            let op = token
+            if (op === '-' && isUnary(idx, tokens)) {
+                op = 'u-'
+            } else if (op === '+' && isUnary(idx, tokens)) {
+                op = 'u+'
+            }
+            
+            if (precedence[op] === undefined) {
+                throw new Error(`Unknown token or operator: ${token}`)
+            }
+            
+            // pop higher or equal priority operators.
+            while (operators.length) {
+                const top = operators[operators.length - 1]
+                if (top === '(') break
+                
+                const topPrecedence = precedence[top] !== undefined ? precedence[top] : 5
+                const currentPrecedence = precedence[op]
+                
+                if (
+                    (associativity[op] === 'left' && topPrecedence >= currentPrecedence) ||
+                    (associativity[op] === 'right' && topPrecedence > currentPrecedence)
+                ) {
+                    output.push(operators.pop())
+                } else {
+                    break
+                }
+            }
+            operators.push(op)
         }
     }
+    
     // dump remaining operators.
-    while (operators.length) output.push(operators.pop())
+    while (operators.length) {
+        const op = operators.pop()
+        if (op === '(' || op === ')') throw new Error("Unbalanced parentheses.")
+        output.push(op)
+    }
+    
     return output
 }
 
@@ -151,38 +246,106 @@ function evaluateRPN(rpn) {
         if (typeof token === 'number') {
             // push numbers to the stack.
             stack.push(token)
-        } else {
-            // pull two values for the operator.
-            const b = stack.pop()
+        } else if (functions.has(token)) {
+            // evaluate functions.
             const a = stack.pop()
-            if (a === undefined || b === undefined) throw new Error("Malformed expression.");
-
-            // execute operation.
-            let res;
+            if (a === undefined) throw new Error("Malformed expression.")
+            
+            let res
+            const val = Number(a)
             switch (token) {
-                case '+': res = a + b; break
-                case '-': res = a - b; break
-                case '*': res = a * b; break
-                case '/': 
-                    // mandatory safety check.
-                    if (b === 0) throw new Error("You can't divide by zero!");
-                    res = a / b; 
+                case 'sin': res = Math.sin(val); break
+                case 'cos': res = Math.cos(val); break
+                case 'tan': res = Math.tan(val); break
+                case 'asin': res = Math.asin(val); break
+                case 'acos': res = Math.acos(val); break
+                case 'atan': res = Math.atan(val); break
+                case 'sinh': res = Math.sinh(val); break
+                case 'cosh': res = Math.cosh(val); break
+                case 'tanh': res = Math.tanh(val); break
+                case 'floor': res = Math.floor(val); break
+                case 'ceil': res = Math.ceil(val); break
+                case 'round': res = Math.round(val); break
+                case 'deg': res = val * 180 / Math.PI; break
+                case 'rad': res = val * Math.PI / 180; break
+                case 'fact':
+                    if (val < 0 || !Number.isInteger(val)) throw new Error("Factorial is only defined for non-negative integers.")
+                    if (val > 170) throw new Error("Factorial overflow (>170).")
+                    let f = 1
+                    for (let k = 2; k <= val; k++) f *= k
+                    res = f
                     break
-                default: throw new Error("Unknown operator.");
+                case 'sqrt':
+                    if (val < 0) throw new Error("Square root of a negative number is undefined.")
+                    res = Math.sqrt(val)
+                    break
+                case 'abs': res = Math.abs(val); break
+                case 'log':
+                    if (val <= 0) throw new Error("Logarithm of non-positive numbers is undefined.")
+                    res = Math.log10(val)
+                    break
+                case 'ln':
+                    if (val <= 0) throw new Error("Logarithm of non-positive numbers is undefined.")
+                    res = Math.log(val)
+                    break
+                case 'exp': res = Math.exp(val); break
+                default: throw new Error(`Unknown function: ${token}`)
+            }
+            if (!Number.isFinite(res)) throw new Error("Calculation resulted in infinity.")
+            stack.push(res)
+        } else {
+            // evaluate unary operators.
+            if (token === 'u-') {
+                const a = stack.pop()
+                if (a === undefined) throw new Error("Malformed expression.")
+                stack.push(-Number(a))
+                continue
+            }
+            if (token === 'u+') {
+                const a = stack.pop()
+                if (a === undefined) throw new Error("Malformed expression.")
+                stack.push(Number(a))
+                continue
             }
             
-            if (!Number.isFinite(res)) throw new Error("Calculation resulted in infinity.");
-            if (Math.abs(res) > 1e15) throw new Error("Calculation result exceeds safe limits.");
+            // evaluate binary operators.
+            const b = stack.pop()
+            const a = stack.pop()
+            if (a === undefined || b === undefined) throw new Error("Malformed expression.")
             
-            stack.push(res);
+            let res
+            const valA = Number(a)
+            const valB = Number(b)
+            switch (token) {
+                case '+': res = valA + valB; break
+                case '-': res = valA - valB; break
+                case '*': res = valA * valB; break
+                case '/':
+                    if (valB === 0) throw new Error("You can't divide by zero!")
+                    res = valA / valB
+                    break
+                case '%':
+                    if (valB === 0) throw new Error("You can't modulo by zero!")
+                    res = valA % valB
+                    break
+                case '^':
+                    res = Math.pow(valA, valB)
+                    break
+                default: throw new Error(`Unknown operator: ${token}`)
+            }
+            
+            if (!Number.isFinite(res)) throw new Error("Calculation resulted in infinity.")
+            if (Math.abs(res) > 1e15) throw new Error("Calculation result exceeds safe limits.")
+            stack.push(res)
         }
     }
+    
     // if the stack has exactly one item, that's our result.
-    if (stack.length !== 1) throw new Error("Calculation failed.");
+    if (stack.length !== 1) throw new Error("Calculation failed.")
     
     const finalResult = stack[0];
-    if (!Number.isFinite(finalResult)) throw new Error("Calculation resulted in infinity.");
-    if (Math.abs(finalResult) > 1e15) throw new Error("Calculation result exceeds safe limits.");
+    if (!Number.isFinite(finalResult)) throw new Error("Calculation resulted in infinity.")
+    if (Math.abs(finalResult) > 1e15) throw new Error("Calculation result exceeds safe limits.")
     
-    return finalResult;
+    return finalResult
 }
