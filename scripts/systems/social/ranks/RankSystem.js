@@ -30,19 +30,70 @@ export const RankSystem = {
 
         /* DATA_DRIVEN_BOOTSTRAP */
         for (const rank of DEFAULT_RANKS) {
-            if (!RankStore.getRank(rank.id)) {
-                const rankData = {
+            let rankData = RankStore.getRank(rank.id);
+            let requiresSave = false;
+
+            if (!rankData) {
+                rankData = {
                     name: rank.name || rank.id,
-                    order: rank.order || 0,
-                    colorText: rank.chatColor || "\xA77",
-                    colorName: rank.color || "\xA77",
-                    hideRanks: rank.order === 0,
+                    order: rank.id === "member" ? -999 : (rank.order || 0),
+                    colorText: rank.chatColor || "\u00A77",
+                    colorName: rank.color || "\u00A77",
+                    hideRanks: rank.id === "member",
                     permissions: rank.permissions || {}
+                };
+                requiresSave = true;
+            } else {
+                // Proactively heal existing DB configuration by merging any missing default permissions!
+                if (!rankData.permissions) {
+                    rankData.permissions = {};
                 }
-                RankStore.setRank(rank.id, rankData)
-                RankStore.addRankToList(rank.id)
+                for (const [perm, val] of Object.entries(rank.permissions || {})) {
+                    if (rankData.permissions[perm] === undefined) {
+                        rankData.permissions[perm] = val;
+                        requiresSave = true;
+                    }
+                }
+            }
+
+            if (requiresSave) {
+                RankStore.setRank(rank.id, rankData);
+                RankStore.addRankToList(rank.id);
             }
         }
+
+        // Auto-assign default 'member' rank to players on join if they don't have any rank tags
+        Kernel.world.afterEvents.playerSpawn.subscribe((ev) => {
+            const { player } = ev;
+            if (!player || !player.isValid) return;
+            
+            const allRanks = RankStore.getAllRanks() || {};
+            const rankKeys = Object.keys(allRanks);
+            const tags = player.getTags();
+            const hasRank = tags.some(tag => rankKeys.includes(tag));
+            
+            if (!hasRank) {
+                player.addTag("member");
+                console.log(`[RankSystem] Assigned default rank 'member' to joining player: ${player.name}`);
+            }
+        });
+
+        // Scan and auto-assign to online players for hot reloads
+        Kernel.system.runTimeout(() => {
+            const allRanks = RankStore.getAllRanks() || {};
+            const rankKeys = Object.keys(allRanks);
+            
+            for (const player of Kernel.world.getAllPlayers()) {
+                if (!player.isValid) continue;
+                const tags = player.getTags();
+                const hasRank = tags.some(tag => rankKeys.includes(tag));
+                
+                if (!hasRank) {
+                    player.addTag("member");
+                    console.log(`[RankSystem] Verified/Assigned default rank 'member' to online player: ${player.name}`);
+                }
+            }
+        }, 20);
 
         // Synchronize PermissionManager with the persistent store
         PermissionManager.init()
@@ -71,12 +122,12 @@ export const RankSystem = {
         }, 1200)
     },
 
-    /* 
-     * HIERARCHY_NODE_INJECTION
-     */
     createRank: (tag, rankData) => {
         const RankStore = Kernel.get("rankStore")
         if (!tag || !rankData) return false
+
+        // Safety guard: prevent overwriting existing ranks
+        if (RankStore.getRank(tag)) return false
 
         const success = RankStore.setRank(tag, rankData)
         if (success) {
