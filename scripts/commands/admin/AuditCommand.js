@@ -29,7 +29,7 @@ export const AuditCommand = {
     // ----------------------------------------------------------------------------
     async execute(_data, admin, args) {
         if (!args[0]) {
-            return admin.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:audit <playerName>")
+            return admin.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:audit <playerName>")
         }
 
         // try to find the player by name (can be offline, but PlayerUtils might only do online. let's check).
@@ -40,11 +40,11 @@ export const AuditCommand = {
         const targetName = target ? target.name : args[0]
 
         if (!targetId) {
-            return admin.sendMessage("\xA7c\xA7l» \xA77Target not found in active buffer.")
+            return admin.sendMessage("\u00A7c\u00A7l» \u00A77Target not found in active buffer.")
         }
 
         const db = Kernel.get("database")
-        if (!db) return admin.sendMessage("\xA7c\xA7l» \xA77Database core offline.")
+        if (!db) return admin.sendMessage("\u00A7c\u00A7l» \u00A77Database core offline.")
 
         // force a flush of the message store so we get the most recent messages.
         const MessageStore = Kernel.get("messageStore")
@@ -56,10 +56,10 @@ export const AuditCommand = {
         const relevantKeys = allIds.filter(id => id.startsWith("audit:msg:") && id.includes(targetId))
 
         if (relevantKeys.length === 0) {
-            return admin.sendMessage(`\xA76\xA7l» \xA77No communication records found for ${targetName}.`)
+            return admin.sendMessage(`\u00A76\u00A7l» \u00A77No communication records found for ${targetName}.`)
         }
 
-        admin.sendMessage(`\xA76\xA7l--- AUDIT LOG: ${targetName} ---`)
+        admin.sendMessage(`\u00A76\u00A7l--- AUDIT LOG: ${targetName} ---`)
 
         // compile all messages from all threads into a single chronological timeline.
         let masterTimeline = []
@@ -77,16 +77,16 @@ export const AuditCommand = {
         // keep only the last 50 total messages to avoid chat spam for the admin.
         if (masterTimeline.length > 50) {
             masterTimeline = masterTimeline.slice(-50)
-            admin.sendMessage(`\xA78\xA7o(Showing last 50 messages)`)
+            admin.sendMessage(`\u00A78\u00A7o(Showing last 50 messages)`)
         }
 
         // print them out.
         for (const msg of masterTimeline) {
             const time = new Date(msg.timestamp).toLocaleTimeString()
-            const direction = msg.senderId === targetId ? `\xA7dTO \xA7e${msg.receiver}` : `\xA7dFROM \xA7e${msg.sender}`
-            admin.sendMessage(`\xA78[${time}] ${direction}\xA78: \xA7f${msg.content}`)
+            const direction = msg.senderId === targetId ? `\u00A7dTO \u00A7e${msg.receiver}` : `\u00A7dFROM \u00A7e${msg.sender}`
+            admin.sendMessage(`\u00A78[${time}] ${direction}\u00A78: \u00A7f${msg.content}`)
         }
 
-        admin.sendMessage(`\xA76\xA7l------------------------`)
+        admin.sendMessage(`\u00A76\u00A7l------------------------`)
     }
 }
