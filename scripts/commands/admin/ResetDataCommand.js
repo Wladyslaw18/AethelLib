@@ -40,7 +40,7 @@ export const ResetDataCommand = {
 
         // build the selection form.
         const form = new Kernel.ModalFormData()
-            .title("\xA7c\xA7lRESET DATA")
+            .title("\u00A7c\u00A7lRESET DATA")
             .dropdown("Choose data that you want to reset :", categories)
 
         // show the form and wait for a response.
@@ -48,7 +48,7 @@ export const ResetDataCommand = {
         
         // handle cancellation.
         if (res.canceled) {
-            return player.sendMessage("\xA7c\xA7l» \xA77Reset data canceled.")
+            return player.sendMessage("\u00A7c\u00A7l» \u00A77Reset data canceled.")
         }
 
         // resolve the selected category string.
@@ -127,14 +127,14 @@ export const ResetDataCommand = {
 
             // notify the admin of the results.
             if (errorCount === 0) {
-                player.sendMessage(`\xA7a\xA7l» \xA7fData for \xA7e${category}\xA7f has been reset.`);
+                player.sendMessage(`\u00A7a\u00A7l» \u00A7fData for \u00A7e${category}\u00A7f has been reset.`);
             } else {
-                player.sendMessage(`\xA7e\xA7l» \xA77Reset complete with some errors.`);
+                player.sendMessage(`\u00A7e\u00A7l» \u00A77Reset complete with some errors.`);
             }
 
         } catch (error) {
             // catch any catastrophic failures in the reset pipeline.
-            player.sendMessage(`\xA7c\xA7l» \xA77Failed to reset data: ${error.message}`);
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Failed to reset data: ${error.message}`);
         }
     }
 }
