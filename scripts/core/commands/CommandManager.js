@@ -1,5 +1,7 @@
 import { Kernel } from "../Kernel.js";
 import { PlayerUtils } from "../../utils/PlayerUtils.js";
+import { Database } from "../datastore/DatabaseManager.js";
+import { DEFAULT_RANKS } from "../../data/RankConfig.js";
 
 // ----------------------------------------------------------------------------
 // | object: CommandManager                                                   |
@@ -27,52 +29,88 @@ export const CommandManager = {
     },
 
     _injectNativeRegistry(event) {
-        // get our internal command registry service.
         const Registry = Kernel.get("commandRegistry");
-        // extract the actual C++ registry off the startup event.
         const nativeReg = event.customCommandRegistry;
-        
-        // if either of these is null, we are in deep, deep trouble.
         if (!Registry || !nativeReg) return;
 
-        // loop over everything we've registered and feed it to bedrock.
-        Registry.getAll().forEach(name => {
-            const def = Registry.get(name);
-            // resolve params: we check new schema first, fallback to legacy parameters.
-            const paramsList = def.params || def.parameters;
-            
-            // force the namespace prefix (e.g. 'ae:pay').
-            let finalName = name;
-            if (!name.includes(":")) {
-                finalName = `${this._primaryNS}:${name}`;
+        // --- ENUM_REGISTRATION_PIPELINE ---
+        // Populate 'rank' enum from static defaults (Safe for Startup phase)
+        try {
+            const staticRanks = DEFAULT_RANKS.map(r => r.id);
+            Registry.registerEnum("rank", staticRanks);
+        } catch (e) { }
+
+        // Populate 'permission' enum
+        Registry.registerEnum("permission", [
+            "admin", "essentials.home", "essentials.sethome", "essentials.delhome", 
+            "essentials.tpa", "essentials.tpaccept", "essentials.tpadeny", "essentials.tpacancel",
+            "essentials.pay", "essentials.money", "essentials.withdraw", "essentials.shop",
+            "essentials.sell", "essentials.rtp", "essentials.back", "essentials.menu",
+            "essentials.auction", "essentials.calculate", "essentials.report", "essentials.tps",
+            "essentials.chat.color", "essentials.admin.inspect", "essentials.admin.invsee", 
+            "essentials.admin.ft", "essentials.admin.reports", "essentials.admin.economy", 
+            "essentials.admin.ranks", "home.limit", "home.cooldown", "teleport.wait"
+        ]);
+
+        // Sync all enums to the native C++ engine
+        Registry.getAllEnums().forEach(enumName => {
+            try {
+                const values = Registry.getEnum(enumName);
+                // CRITICAL: Namespacing is MANDATORY for custom enums in this engine version.
+                const namespacedName = enumName.includes(":") ? enumName : `${this._primaryNS}:${enumName}`;
+                nativeReg.registerEnum(namespacedName, values);
+                console.log(`[CommandManager] ENUM_SYNC: ${namespacedName} (${values.length} values)`);
+            } catch (e) {
+                console.error(`[CommandManager] ENUM_SYNC_FAILURE [${enumName}]: ${e}`);
             }
+        });
 
-            // permission is set to 'Any' because we do dynamic JS RBAC inside our callback.
-            const config = {
-                name: finalName,
-                description: def.description || "Aethelgrad Command Vector",
-                permissionLevel: Kernel.CommandPermissionLevel.Any,
-                mandatoryParameters: this._deriveParams(paramsList, false),
-                optionalParameters: this._deriveParams(paramsList, true)
-            };
+        const registeredNames = new Set();
+// --- COMMAND_REGISTRATION_PIPELINE ---
+Registry.getAll().forEach(name => {
+    const def = Registry.get(name);
+    if (!def) return;
 
-            // bedrock absolutely hates commands with zero parameters.
-            // if we have none, we slap an optional 'args' string fallback on it so it compiles.
-            if (config.mandatoryParameters.length === 0 && config.optionalParameters.length === 0) {
-                config.optionalParameters = [
-                    { name: "args", type: Kernel.CustomCommandParamType.String }
-                ];
-            }
+    // Resolve parameters
+    let paramsList = def.params || def.parameters || [];
 
-            // hand off registration to C++ engine.
-            this._registerSingle(nativeReg, config, def);
+    // --- SELECTIVE_NATIVE_AUTOCOMPLETE_STRATEGY ---
+    // For commands that are truly chaotic (symbols/infinite args), 
+    // we use Buffer Registration (10 optional strings).
+    // This tricks the native engine into letting the symbols pass to our interceptor.
+    const chaoticCommands = ["calculate", "calc"];
+    if (chaoticCommands.includes(name.toLowerCase())) {
+        paramsList = [
+            { name: "t1", type: "string", optional: true },
+            { name: "t2", type: "string", optional: true },
+            { name: "t3", type: "string", optional: true },
+            { name: "t4", type: "string", optional: true },
+            { name: "t5", type: "string", optional: true },
+            { name: "t6", type: "string", optional: true },
+            { name: "t7", type: "string", optional: true },
+            { name: "t8", type: "string", optional: true }
+        ];
+    } else if (def.native === false && paramsList.length > 5) {
+
+        paramsList = [];
+    }
+            const namespacedName = name.includes(":") ? name : `${this._primaryNS}:${name}`;
+            const lowerNS = namespacedName.toLowerCase();
             
-            // do the same for any registered aliases.
+            if (!registeredNames.has(lowerNS)) {
+                registeredNames.add(lowerNS);
+                const configs = this._generateConfigs(namespacedName, def, paramsList);
+                configs.forEach(config => this._registerSingle(nativeReg, config, def));
+            }
+            
+            // Register aliases
             if (def.aliases && Array.isArray(def.aliases)) {
                 def.aliases.forEach(alias => {
-                    const aliasName = alias.includes(":") ? alias : `${this._aliasNS}:${alias}`;
-                    if (aliasName === finalName) return;
-                    this._registerSingle(nativeReg, { ...config, name: aliasName }, def);
+                    const aliasNS = alias.includes(":") ? alias : `${this._aliasNS}:${alias}`;
+                    if (registeredNames.has(aliasNS.toLowerCase())) return;
+                    registeredNames.add(aliasNS.toLowerCase());
+                    const aliasConfigs = this._generateConfigs(aliasNS, def, paramsList);
+                    aliasConfigs.forEach(config => this._registerSingle(nativeReg, config, def));
                 });
             }
         });
@@ -82,22 +120,74 @@ export const CommandManager = {
 
     _deriveParams(params, isOptional) {
         if (!params || !Array.isArray(params)) return [];
+        const Registry = Kernel.get("commandRegistry");
         return params
             .filter(p => !!p.optional === isOptional)
-            .map(p => ({
-                name: p.name,
-                // if it's already a native CustomCommandParamType enum, use it. otherwise map legacy string.
-                type: typeof p.type === "string" ? this._mapParamType(p.type) : p.type
-            }));
+            .map(p => {
+                let pType = p.type;
+                let enumName = null;
+
+                if (typeof pType === "string") {
+                    const standardType = this._mapParamType(pType);
+                    if (standardType) {
+                        pType = standardType;
+                    } else if (Registry && Registry.hasEnum && Registry.hasEnum(pType)) {
+                        // THE "HOLY GRAIL" ENUM CONFIGURATION:
+                        enumName = pType.includes(":") ? pType : `${this._primaryNS}:${pType}`;
+                        pType = Kernel.CustomCommandParamType.Enum;
+                    } else {
+                        pType = Kernel.CustomCommandParamType.String;
+                    }
+                }
+
+                const derived = {
+                    name: p.name,
+                    type: pType
+                };
+
+                if (enumName) {
+                    // Provide both properties to satisfy different engine beta versions.
+                    derived.enumName = enumName;
+                    derived.enum = enumName;
+                }
+
+                return derived;
+            });
     },
 
     _mapParamType(type) {
         switch(type?.toLowerCase()) {
-            case "player": return Kernel.CustomCommandParamType.PlayerSelector; 
-            case "int": return Kernel.CustomCommandParamType.Integer;
-            case "string": return Kernel.CustomCommandParamType.String;
-            case "bool": return Kernel.CustomCommandParamType.Boolean;
-            default: return Kernel.CustomCommandParamType.String;
+            case "player":
+            case "playerselector":
+                return Kernel.CustomCommandParamType.PlayerSelector; 
+            case "entity":
+            case "entityselector":
+                return Kernel.CustomCommandParamType.EntitySelector;
+            case "block":
+            case "blocktype":
+                return Kernel.CustomCommandParamType.BlockType;
+            case "entitytype":
+                return Kernel.CustomCommandParamType.EntityType;
+            case "item":
+            case "itemtype":
+                return Kernel.CustomCommandParamType.ItemType;
+            case "location":
+                return Kernel.CustomCommandParamType.Location;
+            case "float":
+            case "double":
+                return Kernel.CustomCommandParamType.Float;
+            case "int":
+            case "integer":
+                return Kernel.CustomCommandParamType.Integer;
+            case "bool":
+            case "boolean":
+                return Kernel.CustomCommandParamType.Boolean;
+            case "string":
+                return Kernel.CustomCommandParamType.String;
+            case "enum":
+                return Kernel.CustomCommandParamType.Enum;
+            default:
+                return null;
         }
     },
 
@@ -124,7 +214,7 @@ export const CommandManager = {
             
             // RBAC gate: verify clearance level before letting them do anything.
             if (!this._checkAuth(player, cmd.permission)) {
-                player.sendMessage(`\xA7c\xA7l» \xA77You lack the clearance level for this vector.`);
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77You lack the clearance level for this vector.`);
                 return;
             }
 
@@ -138,40 +228,79 @@ export const CommandManager = {
                 // 20 ticks per second. basic math.
                 if (diff < cooldownSec * 20) {
                     const remaining = Math.ceil((cooldownSec * 20 - diff) / 20);
-                    player.sendMessage(`\xA7c\xA7l» \xA77Slow down! Wait \xA7e${remaining}s \xA77before using another command.`);
+                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Slow down! Wait \u00A7e${remaining}s \u00A77before using another command.`);
                     return;
                 }
                 player.setDynamicProperty("ae:last_cmd_tick", now);
             }
 
             const paramsList = cmd.params || cmd.parameters;
-            const isLegacy = !cmd.params && !!cmd.parameters; // are we dealing with legacy string-guess code?
+            const isLegacy = !cmd.params && !!cmd.parameters;
 
-            const cleanArgs = args.filter(a => a !== undefined).map((arg, index) => {
+            const cleanArgs = args.map((arg, index) => {
+                if (arg === undefined) return undefined;
+
                 const paramDef = paramsList ? paramsList[index] : null;
-                
-                // let's figure out if we're parsing a player selector.
-                const isPlayerType = paramDef && (
-                    (typeof paramDef.type === "string" && paramDef.type.toLowerCase() === "player") ||
-                    (paramDef.type === Kernel.CustomCommandParamType.PlayerSelector)
-                );
+                if (!paramDef) return arg;
 
-                if (isPlayerType) {
-                    // C++ target selectors return arrays (like Player[]). unpack the first player.
-                    const resolvedPlayer = Array.isArray(arg) ? arg[0] : arg;
-                    // if it's a legacy command, it expects a string name, not a rich object. map it back.
+                let pType = paramDef.type;
+
+                // Cast number parameters back to string if the original command parameter expects a string
+                const isOriginalString = pType === "string" || pType === Kernel.CustomCommandParamType.String;
+                if (isOriginalString && typeof arg === "number") {
+                    arg = String(arg);
+                }
+                const isPlayerSelector = pType === Kernel.CustomCommandParamType.PlayerSelector || 
+                    (typeof pType === "string" && pType.toLowerCase() === "player");
+                const isEntitySelector = pType === Kernel.CustomCommandParamType.EntitySelector || 
+                    (typeof pType === "string" && pType.toLowerCase() === "entity");
+                const isLocation = pType === Kernel.CustomCommandParamType.Location || 
+                    (typeof pType === "string" && pType.toLowerCase() === "location");
+                const isBlockType = pType === Kernel.CustomCommandParamType.BlockType || 
+                    (typeof pType === "string" && pType.toLowerCase() === "block");
+                const isEntityType = pType === Kernel.CustomCommandParamType.EntityType || 
+                    (typeof pType === "string" && pType.toLowerCase() === "entitytype");
+                const isItemType = pType === Kernel.CustomCommandParamType.ItemType || 
+                    (typeof pType === "string" && pType.toLowerCase() === "item");
+
+                // Target Selectors (unpack the array)
+                if (isPlayerSelector || isEntitySelector) {
+                    const resolved = Array.isArray(arg) ? arg[0] : arg;
                     if (isLegacy) {
-                        return resolvedPlayer?.name || String(arg);
+                        if (isPlayerSelector) {
+                            return resolved?.name || String(arg);
+                        } else {
+                            return resolved?.nameTag || resolved?.typeId || String(arg);
+                        }
                     }
-                    return resolvedPlayer;
+                    return resolved;
                 }
 
-                // numbers and booleans are passed as-is. no string guess hacks.
+                // Locations (for legacy coords, stringify to "x y z")
+                if (isLocation) {
+                    if (isLegacy) {
+                        if (arg && typeof arg === "object" && "x" in arg) {
+                            return `${Math.floor(arg.x)} ${Math.floor(arg.y)} ${Math.floor(arg.z)}`;
+                        }
+                        return String(arg);
+                    }
+                    return arg;
+                }
+
+                // Type Objects (for legacy, return the string id)
+                if (isBlockType || isEntityType || isItemType) {
+                    if (isLegacy) {
+                        return arg?.id || String(arg);
+                    }
+                    return arg;
+                }
+
+                // Numbers and booleans
                 if (typeof arg === "number" || typeof arg === "boolean") {
                     return arg;
                 }
 
-                // generic objects: resolve to names for legacy, keep rich for modern.
+                // Generic objects fallback
                 if (typeof arg === "object" && arg !== null) {
                     if (arg.name) return isLegacy ? arg.name : arg;
                     return arg;
@@ -179,6 +308,19 @@ export const CommandManager = {
 
                 return String(arg);
             });
+
+            // Automatic mandatory arguments validation.
+            // If the original parameter was NOT marked optional, but the user didn't pass it (or it's undefined),
+            // show the usage syntax and stop execution.
+            if (paramsList) {
+                for (let i = 0; i < paramsList.length; i++) {
+                    const paramDef = paramsList[i];
+                    if (paramDef && paramDef.optional === false && cleanArgs[i] === undefined) {
+                        player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${cmd.usage || ("/" + this._primaryNS + ":" + cmd.name)}`);
+                        return;
+                    }
+                }
+            }
 
             // system.run ensures we are safely locked inside the ticking thread loop.
             Kernel.system.run(() => {
@@ -190,7 +332,7 @@ export const CommandManager = {
                     }
                 } catch (execError) {
                     console.error(`[CommandManager] EXECUTION_CRASH [${cmd.name}]:`, execError);
-                    player.sendMessage(`\xA7c\xA7l» \xA77Command execution failed due to an internal error.`);
+                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Command execution failed due to an internal error.`);
                 }
             });
         } catch (dispatchError) {
@@ -211,6 +353,35 @@ export const CommandManager = {
 
     _mapPerms() {
         return Kernel.CommandPermissionLevel.Any;
+    },
+
+    _generateConfigs(finalName, def, paramsList) {
+        if (!paramsList || paramsList.length === 0) {
+            return [{
+                name: finalName,
+                description: def.description || "Aethelgrad Command Vector",
+                permissionLevel: Kernel.CommandPermissionLevel.Any,
+                mandatoryParameters: [],
+                optionalParameters: [
+                    { name: "args", type: Kernel.CustomCommandParamType.String }
+                ]
+            }];
+        }
+
+        return [this._buildConfig(finalName, def, paramsList)];
+    },
+
+    _buildConfig(finalName, def, paramsList) {
+        const mandatory = this._deriveParams(paramsList, false);
+        const optional = this._deriveParams(paramsList, true);
+
+        return {
+            name: finalName,
+            description: def.description || "Aethelgrad Command Vector",
+            permissionLevel: Kernel.CommandPermissionLevel.Any,
+            mandatoryParameters: mandatory,
+            optionalParameters: optional
+        };
     },
 
     refreshAliases() {}
