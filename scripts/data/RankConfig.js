@@ -6,10 +6,10 @@
 export const DEFAULT_RANKS = [
     {
         id: "member",
-        name: "",
-        order: 0,
+        name: "\u00A77Member",
+        order: -999,
         color: "gray",
-        chatColor: "\xA77",
+        chatColor: "\u00A77",
         permissions: {
             "home.limit": 3,
             "home.cooldown": 30, 
@@ -19,20 +19,29 @@ export const DEFAULT_RANKS = [
             "warp.cooldown": 60,
             "essentials.help": true,
             "essentials.tps": true,
-            "essentials.msg": true,
+            "essentials.message": true,
             "essentials.playerlist": true,
             "essentials.calculate": true,
             "essentials.info": true,
             "essentials.report": true,
             "essentials.credit": true,
-            "essentials.whois": true,
             "essentials.rank": true,
             "essentials.claim": true,
             "essentials.tpa": true,
             "essentials.home": true,
             "essentials.warp": true,
             "essentials.spawn": true,
-            "essentials.color": true
+            "essentials.chat.color": true,
+            "essentials.pay": true,
+            "essentials.money": true,
+            "essentials.withdraw": true,
+            "essentials.shop": true,
+            "essentials.sell": true,
+            "essentials.rtp": true,
+            "essentials.back": true,
+            "essentials.menu": true,
+            "essentials.auction": true,
+            "essentials.default": true
         }
     }
 ]
