@@ -13,7 +13,7 @@ So I built the last framework I'll ever need for Bedrock. And now it's yours.
 ## ✦&#xFE0E; WHY WASTE TIME?
 
 - **Don't Reinvent the Wheel** — I spent the sleepless nights so you don't have to. The Map lookups don't grow forever. The Database won't choke the engine. The cache evicts itself. Just plug in and play.
-- **Fork It** — Don't like my logic? Take it. Rip it apart. Make it faster. I won't cry. (I will cry. Please credit me.)
+- **Fork It** &#x262D; — Don't like my logic? Take it. Rip it apart. Make it faster. I won't cry. (I will cry. Please credit me.)
 - **Expand It** — The Kernel is a modular dock. Add your own systems in seconds without touching my core files. The plugin protocol exists specifically so your merge conflicts are *your* problem, not mine.
 - **Learn From It** — See how we handle sharding, the Ghost Interpreter, and the 3-phase boot sequence. Use it to level up your own scripts. Or just copy-paste it. I don't judge.
 
