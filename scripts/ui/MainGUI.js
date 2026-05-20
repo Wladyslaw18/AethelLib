@@ -23,7 +23,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "\xA7b\xA7lWARPS\n\xA78Global navigation points",
+            text: "\u00A7b\u00A7lWARPS\n\u00A78Global navigation points",
             icon: "textures/items/ender_eye",
             action: async () => {
                 const { showWarpUI } = await import("./teleport/WarpUI.js");
@@ -31,7 +31,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "\xA7d\xA7lPLAYERS\n\xA78Interact with online players",
+            text: "\u00A7d\u00A7lPLAYERS\n\u00A78Interact with online players",
             icon: "textures/items/totem",
             action: async () => {
                 const { showPlayersUI } = await import("./social/PlayerListUI.js");
@@ -39,7 +39,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "\xA76\xA7lAUCTION HOUSE\n\xA78Global trade manifest",
+            text: "\u00A76\u00A7lAUCTION HOUSE\n\u00A78Global trade manifest",
             icon: "textures/blocks/chest_front",
             action: async () => {
                 const { showAuctionUI } = await import("./auction/AuctionUI.js");
@@ -47,7 +47,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "\xA7a\xA7lSHOP\n\xA78Industrial asset exchange",
+            text: "\u00A7a\u00A7lSHOP\n\u00A78Industrial asset exchange",
             icon: "textures/items/emerald",
             action: async () => {
                 const { showShopUI } = await import("./economy/ShopUI.js");
@@ -55,7 +55,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "\xA7e\xA7lQUICK SELL\n\xA78Liquidate currently held asset",
+            text: "\u00A7e\u00A7lQUICK SELL\n\u00A78Liquidate currently held asset",
             icon: "textures/items/paper",
             action: async () => {
                 const { handleQuickSell } = await import("./economy/ShopTransaction.js");
@@ -63,7 +63,7 @@ export async function showMainGUI(player) {
             }
         },
         {
-            text: "\xA7c\xA7l[EXIT]",
+            text: "\u00A7c\u00A7l[EXIT]",
             icon: "textures/ui/cancel",
             action: () => {} // NO-OP
         }
