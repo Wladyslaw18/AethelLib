@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+import os
+import sys
+import json
+import shutil
+import zipfile
+
+# Colors
+YELLOW = "\033[93m"
+WHITE = "\033[1m\033[37m"
+DARK_GRAY = "\033[90m"
+RESET = "\033[0m"
+CYAN = "\033[96m"
+GREEN = "\033[92m"
+
+def clear_screen():
+    os.system('clear' if os.name != 'nt' else 'cls')
+
+def prompt_confirm():
+    clear_screen()
+    border = "=" * 58
+    print(f"{YELLOW}{border}{RESET}")
+    print(f"{YELLOW}          AETHELGRAD AUTO-RELEASE ENGINE (UNIX)          {RESET}")
+    print(f"{YELLOW}{border}{RESET}")
+    print("  This script will:")
+    print("  1. Automatically increment the manifest version (odometer).")
+    print("  2. Synchronize version arrays across all manifest modules.")
+    print("  3. Compile and build the Behavior & Resource Pack files.")
+    print("  4. Save backups and releases directly in your workspace.")
+    print(f"{DARK_GRAY}----------------------------------------------------------{RESET}")
+    print(f"  Press {YELLOW}[ENTER]{RESET} to execute release runner | \033[91m[Ctrl+C]\033[0m to cancel")
+    print(f"{YELLOW}{border}{RESET}")
+    try:
+        input()
+    except (KeyboardInterrupt, EOFError):
+        print("\n\033[91mOperation cancelled.\033[0m")
+        sys.exit(0)
+
+# allowZip64=False forces standard ZIP 2.0 format — same as 7-zip output.
+# Minecraft's importer rejects ZIP64 archives produced by default ZipFile settings.
+def zip_folder(folder_path, output_zip):
+    with zipfile.ZipFile(output_zip, 'w', zipfile.ZIP_DEFLATED, allowZip64=False) as zipf:
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                full_path = os.path.join(root, file)
+                rel_path = os.path.relpath(full_path, folder_path)
+                zipf.write(full_path, rel_path)
+
+def main():
+    prompt_confirm()
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(script_dir))
+    manifest_path = os.path.join(project_root, "manifest.json")
+
+    backup_dir = os.path.join(project_root, "backups")
+    release_dir = os.path.join(project_root, "releases")
+    build_dir = os.path.join(project_root, "build")
+
+    os.makedirs(backup_dir, exist_ok=True)
+    os.makedirs(release_dir, exist_ok=True)
+
+    print(f"{CYAN}=========================================={RESET}")
+    print(f"{CYAN}     AETHELGRAD AUTO-RELEASE SYSTEM       {RESET}")
+    print(f"{CYAN}=========================================={RESET}")
+
+    # 1. READ & INCREMENT VERSION (Base-10 Odometer)
+    if not os.path.exists(manifest_path):
+        print("\033[91mmanifest.json not found in workspace!\033[0m")
+        sys.exit(1)
+
+    with open(manifest_path, 'r', encoding='utf-8') as f:
+        manifest = json.load(f)
+
+    version = manifest["header"]["version"]
+    major = int(version[0])
+    minor = int(version[1])
+    patch = int(version[2])
+
+    old_version_str = f"{major}.{minor}.{patch}"
+
+    # Increment logic (Base-10 Odometer roll-over)
+    if patch < 9:
+        patch += 1
+    elif minor < 9:
+        patch = 0
+        minor += 1
+    else:
+        patch = 0
+        minor = 0
+        major += 1
+
+    new_version_str = f"{major}.{minor}.{patch}"
+    new_version_array = [major, minor, patch]
+
+    print(f"{GREEN}[Version] Incrementing version: {old_version_str} -> {new_version_str}{RESET}")
+
+    # Update manifest
+    manifest["header"]["version"] = new_version_array
+    for module in manifest["modules"]:
+        module["version"] = new_version_array
+
+    # Save manifest back with clean standard formatting (avoids json.dump float/array formatting issues)
+    dep = manifest["dependencies"]
+    clean_json = f"""{{\n    "format_version": {manifest["format_version"]},\n    "header": {{\n        "name": "{manifest["header"]["name"]}",\n        "description": "{manifest["header"]["description"]}",\n        "uuid": "{manifest["header"]["uuid"]}",\n        "version": [{major}, {minor}, {patch}],\n        "min_engine_version": [{', '.join(str(x) for x in manifest["header"]["min_engine_version"])}],\n        "license": "{manifest["header"]["license"]}"\n    }},\n    "modules": [\n        {{\n            "description": "{manifest["modules"][0]["description"]}",\n            "type": "{manifest["modules"][0]["type"]}",\n            "uuid": "{manifest["modules"][0]["uuid"]}",\n            "version": [{major}, {minor}, {patch}]\n        }},\n        {{\n            "description": "{manifest["modules"][1]["description"]}",\n            "language": "{manifest["modules"][1]["language"]}",\n            "type": "{manifest["modules"][1]["type"]}",\n            "uuid": "{manifest["modules"][1]["uuid"]}",\n            "entry": "{manifest["modules"][1]["entry"]}",\n            "version": [{major}, {minor}, {patch}]\n        }}\n    ],\n    "dependencies": [\n        {{\n            "module_name": "{dep[0]["module_name"]}",\n            "version": "{dep[0]["version"]}"\n        }},\n        {{\n            "module_name": "{dep[1]["module_name"]}",\n            "version": "{dep[1]["version"]}"\n        }}\n    ]\n}}"""
+    with open(manifest_path, 'w', encoding='utf-8') as f:
+        f.write(clean_json)
+
+    # 2. RUN BUILD & COMPRESS
+    print("[Packager] Cleaning build workspace...")
+    if os.path.exists(build_dir):
+        shutil.rmtree(build_dir)
+    os.makedirs(build_dir, exist_ok=True)
+
+    bp_temp = os.path.join(build_dir, "AethelLib_BP")
+    rp_temp = os.path.join(build_dir, "AethelLib_RP")
+    os.makedirs(bp_temp, exist_ok=True)
+    os.makedirs(rp_temp, exist_ok=True)
+
+    # Copy Behavior Pack assets
+    print("[Packager] Copying Behavior Pack assets...")
+    bp_files = ["manifest.json", "pack_icon.png", "scripts", "entities"]
+    for item in bp_files:
+        src = os.path.join(project_root, item)
+        if os.path.exists(src):
+            dst = os.path.join(bp_temp, item)
+            if os.path.isdir(src):
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+
+    # Copy Resource Pack assets
+    print("[Packager] Copying Resource Pack assets...")
+    rp_source = os.path.join(project_root, "AethelLib (RP)")
+    if os.path.exists(rp_source):
+        for item in os.listdir(rp_source):
+            src = os.path.join(rp_source, item)
+            dst = os.path.join(rp_temp, item)
+            if os.path.isdir(src):
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+
+    # Compress packs
+    print("[Packager] Compressing Packs...")
+    bp_zip = os.path.join(build_dir, "AethelLib_BP.mcpack")
+    rp_zip = os.path.join(build_dir, "AethelLib_RP.mcpack")
+
+    zip_folder(bp_temp, bp_zip)
+    zip_folder(rp_temp, rp_zip)
+
+    # Packaging final .mcaddon (standard ZIP container, no ZIP64)
+    print("[Packager] Packaging final .mcaddon...")
+    addon_zip_path = os.path.join(build_dir, "AethelLib.mcaddon")
+    with zipfile.ZipFile(addon_zip_path, 'w', zipfile.ZIP_DEFLATED, allowZip64=False) as addon_zip:
+        addon_zip.write(bp_zip, os.path.basename(bp_zip))
+        addon_zip.write(rp_zip, os.path.basename(rp_zip))
+
+    # Define paths
+    release_file = os.path.join(release_dir, f"AethelLib_v{new_version_str}.mcaddon")
+    backup_file = os.path.join(backup_dir, f"AethelLib_backup_v{new_version_str}.mcaddon")
+    dev_file = os.path.join(project_root, "AethelLib.mcaddon")
+
+    # Copy to destinations
+    shutil.copy2(addon_zip_path, release_file)
+    shutil.copy2(release_file, backup_file)
+    shutil.copy2(release_file, dev_file)
+
+    # Cleanup
+    shutil.rmtree(build_dir)
+
+    print(f"{GREEN}=========================================={RESET}")
+    print(f"{GREEN}   RELEASE BUILD v{new_version_str} SUCCESSFUL!   {RESET}")
+    print(f"{GREEN}=========================================={RESET}")
+    print(f"  -> Release: {release_file}")
+    print(f"  -> Backup:  {backup_file}")
+    print(f"  -> Dev:     {dev_file}")
+    print(f"{GREEN}=========================================={RESET}")
+
+if __name__ == "__main__":
+    main()
