@@ -143,8 +143,8 @@ export class Kernel {
             },
 
             // standard logging that includes the plugin id.
-            log: (msg) => console.log(`\xA78[\xA7b${manifest.id}\xA78] \xA7f${msg}`),
-            error: (msg) => console.error(`\xA78[\xA7c${manifest.id}\xA78] \xA7cERROR: ${msg}`)
+            log: (msg) => console.log(`\u00A78[\u00A7b${manifest.id}\u00A78] \u00A7f${msg}`),
+            error: (msg) => console.error(`\u00A78[\u00A7c${manifest.id}\u00A78] \u00A7cERROR: ${msg}`)
         };
 
         // save the plugin data in our master map.
