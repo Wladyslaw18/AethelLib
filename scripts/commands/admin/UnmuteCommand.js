@@ -22,26 +22,26 @@ export const UnmuteCommand = {
         const [target] = args;
 
         if (!target) {
-            player.sendMessage("\xA7c\xA7l» \xA77Usage: /ae:unmute <player>")
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:unmute <player>")
             return
         }
 
         const MuteStore = Kernel.get("muteStore");
         if (!MuteStore) {
-            player.sendMessage("\xA7c\xA7l» \xA77Mute system is offline.");
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Mute system is offline.");
             return;
         }
 
         try {
             const success = await MuteStore.unmute(target.id)
             if (success) {
-                player.sendMessage(`\xA7a\xA7l» \xA7fSuccessfully unmuted \xA7e${target.name}\xA7f.`)
-                target.sendMessage("\xA7a\xA7l» \xA7fYou have been unmuted by an admin.")
+                player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully unmuted \u00A7e${target.name}\u00A7f.`)
+                target.sendMessage("\u00A7a\u00A7l» \u00A7fYou have been unmuted by an admin.")
             } else {
-                player.sendMessage("\xA7c\xA7l» \xA77Failed to unmute player.")
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to unmute player.")
             }
         } catch (error) {
-            player.sendMessage(`\xA7cError unmuting player: ${error.message}`)
+            player.sendMessage(`\u00A7cError unmuting player: ${error.message}`)
         }
     }
 }
