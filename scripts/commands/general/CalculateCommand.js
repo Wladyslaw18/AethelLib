@@ -2,6 +2,40 @@
 // | object: CalculateCommand                                                  |
 // | command definition for a sandboxed mathematical parsing engine.           |
 // | avoids eval() and uses shunting-yard to ensure security and performance.  |
+// |                                                                           |
+// | ⚠ THIS COMMAND IS SPECIAL — READ BEFORE TOUCHING.                        |
+// |                                                                           |
+// | WHY chatRaw: true EXISTS:                                                 |
+// |   Bedrock's native slash command system does client-side parameter        |
+// |   schema validation BEFORE the message ever reaches the server.           |
+// |   String-type params are validated by the C++ engine, and it treats       |
+// |   math operators (+, *, /, %) as illegal characters in that context.      |
+// |   The client throws a syntax error immediately and never sends the        |
+// |   message to the server. No event fires. The script never runs.           |
+// |                                                                           |
+// |   The only operator that accidentally worked was "-" because the engine   |
+// |   interprets it as a negative-number prefix on the adjacent token, not    |
+// |   as a standalone operator.                                               |
+// |                                                                           |
+// | THE FIX:                                                                  |
+// |   chatRaw: true tells two things to the system:                           |
+// |   1. CommandManager: skip native registration entirely. The engine         |
+// |      never sees this command, so it can never reject its arguments.       |
+// |   2. CommandHandler: intercept the raw beforeEvents.chatSend message      |
+// |      BEFORE any whitespace tokenization. The full expression string is    |
+// |      extracted as one piece and passed to execute() as args[0].           |
+// |      No splitting, no schema validation, no operator mangling.            |
+// |                                                                           |
+// | HOW TO USE:                                                               |
+// |   Press T (open chat), then type:                                         |
+// |     /ae:calc 2 * (3 + 4)^2                                               |
+// |     -calc sin(pi/2) + sqrt(16)                                            |
+// |   The native slash command bar (/ae:calc) does NOT work for expressions   |
+// |   with operators — this is a hard Bedrock engine limitation.              |
+// |                                                                           |
+// | IF YOU REMOVE chatRaw:                                                    |
+// |   The command registers natively. +, *, /, % stop working immediately.   |
+// |   Only - expressions survive. Do not remove it.                          |
 // ----------------------------------------------------------------------------
 export const CalculateCommand = {
     // internal name.
@@ -14,27 +48,40 @@ export const CalculateCommand = {
     permission: "essentials.calculate",
     // command category.
     category: "GENERAL",
-    // Handled by script to avoid native parsing errors.
+    // native: false — this command is never handled by the C++ engine.
+    // It runs entirely through the script-side CommandHandler pipeline.
     native: false,
-    // RAW_CHAT_MODE: Intercept the full message before any engine tokenization.
-    // Required because Bedrock rejects +, *, / as invalid string param values
-    // at the client side before the server ever sees them.
+    // chatRaw: true — tells CommandHandler to intercept the full raw chat
+    // message string BEFORE whitespace tokenization, and tells CommandManager
+    // to never register this command in the native engine.
+    // See the header comment above for the full explanation of why this exists.
     chatRaw: true,
-    // parameter definitions (for help display only - not used for native registration).
+    // parameter definitions (for help display only — not used for native registration).
     parameters: [
         { name: "expression", type: "string", optional: false }
     ],
 
     // ----------------------------------------------------------------------------
     // | method: execute                                                          |
-    // | entry point for the calculator. joins tokens and triggers the parser.    |
+    // | entry point for the calculator.                                          |
+    // |                                                                           |
+    // | Because chatRaw:true is set, args[0] is the FULL raw expression string   |
+    // | exactly as the player typed it after the command name. No splitting,     |
+    // | no mangling. e.g. "2 * (3 + 4)^2" arrives intact.                       |
+    // |                                                                           |
+    // | The expression is fed to safeMathParse() which runs:                     |
+    // |   1. Sanitization — strips anything not a number, operator, or letter    |
+    // |   2. Paren balance check                                                 |
+    // |   3. Tokenization — splits into numbers, operators, function names        |
+    // |   4. Shunting-yard — converts infix to Reverse Polish Notation (RPN)     |
+    // |   5. RPN evaluation — resolves the postfix stack to a final number       |
     // ----------------------------------------------------------------------------
     execute(_data, player, args) {
-        // combine all arguments into a single string.
-        const expression = args.join(" ")
+        // args[0] is the full raw expression string (guaranteed by chatRaw intercept).
+        const expression = args[0] || ""
         if (!expression) {
             player.sendMessage("\u00A7c\u00A7l» \u00A77Syntax Error: Math expression required.");
-            player.sendMessage("\u00A77Example: /ae:calculate 2 + 3 * (4 / 2)");
+            player.sendMessage("\u00A77Example: -calc 2 + 3 * (4 / 2)");
             return
         }
 
