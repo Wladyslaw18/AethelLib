@@ -8,10 +8,9 @@ Write-Host "==========================================================" -Foregro
 Write-Host "             AETHELGRAD AUTO-RELEASE ENGINE               " -ForegroundColor White
 Write-Host "==========================================================" -ForegroundColor Yellow
 Write-Host "  This script will:" -ForegroundColor Gray
-Write-Host "  1. Automatically increment the manifest version (odometer)." -ForegroundColor White
-Write-Host "  2. Synchronize version arrays across all manifest modules." -ForegroundColor White
-Write-Host "  3. Compile and build the Behavior & Resource Pack files." -ForegroundColor White
-Write-Host "  4. Save backups and releases directly in your workspace." -ForegroundColor White
+Write-Host "  1. [Optional] Increment the manifest version (odometer)." -ForegroundColor White
+Write-Host "  2. Compile and build the Behavior & Resource Pack files." -ForegroundColor White
+Write-Host "  3. Save backups and releases directly in your workspace." -ForegroundColor White
 Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
 Write-Host "  Press [ENTER] to execute release runner | [Ctrl+C] to cancel" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Yellow
@@ -35,7 +34,7 @@ Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "     AETHELGRAD AUTO-RELEASE SYSTEM       " -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
-# 1. READ & INCREMENT VERSION (Base-10 Odometer)
+# 1. READ VERSION (and optionally increment it)
 if (!(Test-Path $ManifestPath)) {
     Write-Error "manifest.json not found in workspace!"
     exit 1
@@ -49,34 +48,47 @@ $Major = [int]$Version[0]
 $Minor = [int]$Version[1]
 $Patch = [int]$Version[2]
 
-$OldVersionStr = "$Major.$Minor.$Patch"
+$CurrentVersionStr = "$Major.$Minor.$Patch"
 
-# Increment logic (Base-10 Odometer roll-over)
-if ($Patch -lt 9) {
-    $Patch++
-} elseif ($Minor -lt 9) {
-    $Patch = 0
-    $Minor++
-} else {
-    $Patch = 0
-    $Minor = 0
-    $Major++
-}
+# Ask whether to bump the version or keep it as-is
+Write-Host ""
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Current version: " -NoNewline -ForegroundColor Gray
+Write-Host $CurrentVersionStr -ForegroundColor Yellow
+Write-Host "  Bump manifest version? " -NoNewline -ForegroundColor Gray
+Write-Host "[Y]" -NoNewline -ForegroundColor Green
+Write-Host "/" -NoNewline -ForegroundColor DarkGray
+Write-Host "[n]" -ForegroundColor Red
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+$BumpChoice = Read-Host
 
-$NewVersionStr = "$Major.$Minor.$Patch"
-$NewVersionArray = @($Major, $Minor, $Patch)
+if ($BumpChoice -eq "" -or $BumpChoice -match "^[Yy]") {
+    # Increment logic (Base-10 Odometer roll-over)
+    if ($Patch -lt 9) {
+        $Patch++
+    } elseif ($Minor -lt 9) {
+        $Patch = 0
+        $Minor++
+    } else {
+        $Patch = 0
+        $Minor = 0
+        $Major++
+    }
 
-Write-Host "[Version] Incrementing version: $OldVersionStr -> $NewVersionStr" -ForegroundColor Green
+    $NewVersionStr = "$Major.$Minor.$Patch"
+    $NewVersionArray = @($Major, $Minor, $Patch)
 
-# Update manifest version
-$Manifest.header.version = $NewVersionArray
-foreach ($Module in $Manifest.modules) {
-    $Module.version = $NewVersionArray
-}
+    Write-Host "[Version] Bumping: $CurrentVersionStr -> $NewVersionStr" -ForegroundColor Green
 
-# Serialize manifest back to file with clean standard formatting (not ConvertTo-Json pyramid)
-$Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-$CleanJson = @"
+    # Update manifest in memory
+    $Manifest.header.version = $NewVersionArray
+    foreach ($Module in $Manifest.modules) {
+        $Module.version = $NewVersionArray
+    }
+
+    # Serialize manifest back to file with clean standard formatting
+    $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    $CleanJson = @"
 {
     "format_version": $($Manifest.format_version),
     "header": {
@@ -115,7 +127,11 @@ $CleanJson = @"
     ]
 }
 "@
-[System.IO.File]::WriteAllText($ManifestPath, $CleanJson, $Utf8NoBom)
+    [System.IO.File]::WriteAllText($ManifestPath, $CleanJson, $Utf8NoBom)
+} else {
+    $NewVersionStr = $CurrentVersionStr
+    Write-Host "[Version] Skipping bump — keeping v$NewVersionStr" -ForegroundColor Yellow
+}
 
 # 2. RUN BUILD & COMPRESS
 Write-Host "[Packager] Cleaning build workspace..." -ForegroundColor Blue

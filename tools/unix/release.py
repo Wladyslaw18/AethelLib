@@ -23,15 +23,28 @@ def prompt_confirm():
     print(f"{YELLOW}          AETHELGRAD AUTO-RELEASE ENGINE (UNIX)          {RESET}")
     print(f"{YELLOW}{border}{RESET}")
     print("  This script will:")
-    print("  1. Automatically increment the manifest version (odometer).")
-    print("  2. Synchronize version arrays across all manifest modules.")
-    print("  3. Compile and build the Behavior & Resource Pack files.")
-    print("  4. Save backups and releases directly in your workspace.")
+    print("  1. [Optional] Increment the manifest version (odometer).")
+    print("  2. Compile and build the Behavior & Resource Pack files.")
+    print("  3. Save backups and releases directly in your workspace.")
     print(f"{DARK_GRAY}----------------------------------------------------------{RESET}")
     print(f"  Press {YELLOW}[ENTER]{RESET} to execute release runner | \033[91m[Ctrl+C]\033[0m to cancel")
     print(f"{YELLOW}{border}{RESET}")
     try:
         input()
+    except (KeyboardInterrupt, EOFError):
+        print("\n\033[91mOperation cancelled.\033[0m")
+        sys.exit(0)
+
+def prompt_bump_version(current_version_str):
+    """Ask whether to bump the manifest version. Returns True to bump, False to skip."""
+    border = "-" * 58
+    print(f"{DARK_GRAY}{border}{RESET}")
+    print(f"  Current version: {YELLOW}{current_version_str}{RESET}")
+    print(f"  Bump manifest version? {GREEN}[Y]{RESET}/{DARK_GRAY}/{RESET}\033[91m[n]\033[0m")
+    print(f"{DARK_GRAY}{border}{RESET}")
+    try:
+        choice = input().strip().lower()
+        return choice in ("", "y")
     except (KeyboardInterrupt, EOFError):
         print("\n\033[91mOperation cancelled.\033[0m")
         sys.exit(0)
@@ -79,32 +92,39 @@ def main():
 
     old_version_str = f"{major}.{minor}.{patch}"
 
-    # Increment logic (Base-10 Odometer roll-over)
-    if patch < 9:
-        patch += 1
-    elif minor < 9:
-        patch = 0
-        minor += 1
+    # Ask whether to bump the version or keep it as-is
+    bump = prompt_bump_version(old_version_str)
+
+    if bump:
+        # Increment logic (Base-10 Odometer roll-over)
+        if patch < 9:
+            patch += 1
+        elif minor < 9:
+            patch = 0
+            minor += 1
+        else:
+            patch = 0
+            minor = 0
+            major += 1
+
+        new_version_str = f"{major}.{minor}.{patch}"
+        new_version_array = [major, minor, patch]
+
+        print(f"{GREEN}[Version] Bumping: {old_version_str} -> {new_version_str}{RESET}")
+
+        # Update manifest
+        manifest["header"]["version"] = new_version_array
+        for module in manifest["modules"]:
+            module["version"] = new_version_array
+
+        # Save manifest back with clean standard formatting
+        dep = manifest["dependencies"]
+        clean_json = f"""{{\n    "format_version": {manifest["format_version"]},\n    "header": {{\n        "name": "{manifest["header"]["name"]}",\n        "description": "{manifest["header"]["description"]}",\n        "uuid": "{manifest["header"]["uuid"]}",\n        "version": [{major}, {minor}, {patch}],\n        "min_engine_version": [{', '.join(str(x) for x in manifest["header"]["min_engine_version"])}],\n        "license": "{manifest["header"]["license"]}"\n    }},\n    "modules": [\n        {{\n            "description": "{manifest["modules"][0]["description"]}",\n            "type": "{manifest["modules"][0]["type"]}",\n            "uuid": "{manifest["modules"][0]["uuid"]}",\n            "version": [{major}, {minor}, {patch}]\n        }},\n        {{\n            "description": "{manifest["modules"][1]["description"]}",\n            "language": "{manifest["modules"][1]["language"]}",\n            "type": "{manifest["modules"][1]["type"]}",\n            "uuid": "{manifest["modules"][1]["uuid"]}",\n            "entry": "{manifest["modules"][1]["entry"]}",\n            "version": [{major}, {minor}, {patch}]\n        }}\n    ],\n    "dependencies": [\n        {{\n            "module_name": "{dep[0]["module_name"]}",\n            "version": "{dep[0]["version"]}"\n        }},\n        {{\n            "module_name": "{dep[1]["module_name"]}",\n            "version": "{dep[1]["version"]}"\n        }}\n    ]\n}}"""
+        with open(manifest_path, 'w', encoding='utf-8') as f:
+            f.write(clean_json)
     else:
-        patch = 0
-        minor = 0
-        major += 1
-
-    new_version_str = f"{major}.{minor}.{patch}"
-    new_version_array = [major, minor, patch]
-
-    print(f"{GREEN}[Version] Incrementing version: {old_version_str} -> {new_version_str}{RESET}")
-
-    # Update manifest
-    manifest["header"]["version"] = new_version_array
-    for module in manifest["modules"]:
-        module["version"] = new_version_array
-
-    # Save manifest back with clean standard formatting (avoids json.dump float/array formatting issues)
-    dep = manifest["dependencies"]
-    clean_json = f"""{{\n    "format_version": {manifest["format_version"]},\n    "header": {{\n        "name": "{manifest["header"]["name"]}",\n        "description": "{manifest["header"]["description"]}",\n        "uuid": "{manifest["header"]["uuid"]}",\n        "version": [{major}, {minor}, {patch}],\n        "min_engine_version": [{', '.join(str(x) for x in manifest["header"]["min_engine_version"])}],\n        "license": "{manifest["header"]["license"]}"\n    }},\n    "modules": [\n        {{\n            "description": "{manifest["modules"][0]["description"]}",\n            "type": "{manifest["modules"][0]["type"]}",\n            "uuid": "{manifest["modules"][0]["uuid"]}",\n            "version": [{major}, {minor}, {patch}]\n        }},\n        {{\n            "description": "{manifest["modules"][1]["description"]}",\n            "language": "{manifest["modules"][1]["language"]}",\n            "type": "{manifest["modules"][1]["type"]}",\n            "uuid": "{manifest["modules"][1]["uuid"]}",\n            "entry": "{manifest["modules"][1]["entry"]}",\n            "version": [{major}, {minor}, {patch}]\n        }}\n    ],\n    "dependencies": [\n        {{\n            "module_name": "{dep[0]["module_name"]}",\n            "version": "{dep[0]["version"]}"\n        }},\n        {{\n            "module_name": "{dep[1]["module_name"]}",\n            "version": "{dep[1]["version"]}"\n        }}\n    ]\n}}"""
-    with open(manifest_path, 'w', encoding='utf-8') as f:
-        f.write(clean_json)
+        new_version_str = old_version_str
+        print(f"{YELLOW}[Version] Skipping bump — keeping v{new_version_str}{RESET}")
 
     # 2. RUN BUILD & COMPRESS
     print("[Packager] Cleaning build workspace...")
