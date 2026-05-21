@@ -16,7 +16,11 @@ export const CalculateCommand = {
     category: "GENERAL",
     // Handled by script to avoid native parsing errors.
     native: false,
-    // parameter definitions (for help display).
+    // RAW_CHAT_MODE: Intercept the full message before any engine tokenization.
+    // Required because Bedrock rejects +, *, / as invalid string param values
+    // at the client side before the server ever sees them.
+    chatRaw: true,
+    // parameter definitions (for help display only - not used for native registration).
     parameters: [
         { name: "expression", type: "string", optional: false }
     ],

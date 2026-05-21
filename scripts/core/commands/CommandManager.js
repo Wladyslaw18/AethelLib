@@ -99,11 +99,17 @@ Registry.getAll().forEach(name => {
     // Resolve parameters
     let paramsList = def.params || def.parameters || [];
 
+    // --- CHATRAW_SKIP_GUARD ---
+    // Commands with chatRaw:true are handled entirely by the chat interceptor.
+    // The native engine must NEVER see them — client-side schema validation
+    // rejects math operators (+, *, /) before the server ever receives the message.
+    if (def.chatRaw === true) return;
+
     // --- SELECTIVE_NATIVE_AUTOCOMPLETE_STRATEGY ---
     // For commands that are truly chaotic (symbols/infinite args), 
     // we use Buffer Registration (10 optional strings).
     // This tricks the native engine into letting the symbols pass to our interceptor.
-    const chaoticCommands = ["calculate", "calc"];
+    const chaoticCommands = [];
     if (chaoticCommands.includes(name.toLowerCase())) {
         paramsList = [
             { name: "t1", type: "string", optional: true },

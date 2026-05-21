@@ -69,6 +69,37 @@ export const CommandHandler = {
 
         const prefix = message.startsWith("/") ? "/" : this._prefix;
         const fullContent = message.slice(prefix.length).trim();
+
+        /*
+         * RAW_EXPRESSION_INTERCEPT
+         * ----------------------------------------------------------------------------
+         * For commands flagged with chatRaw:true, we extract the full unparsed
+         * expression string BEFORE any whitespace tokenization or engine processing.
+         *
+         * Problem: Bedrock does CLIENT-SIDE parameter schema validation for native
+         * slash commands. Operators like +, *, / fail this validation before the
+         * server ever receives the message. Only - passes because the client treats
+         * it as a negative number prefix. This intercept bypasses all of that.
+         *
+         * Usage: type in CHAT (T key) or with the - prefix. e.g. -calc 2 * (3 + 4)
+         */
+        const rawFirstWord = fullContent.split(/\s+/)[0];
+        if (rawFirstWord) {
+            const rawCmdName = rawFirstWord.includes(":") ? rawFirstWord.split(":")[1] : rawFirstWord;
+            const EarlyRegistry = Kernel.get("commandRegistry");
+            if (EarlyRegistry) {
+                const rawCmd = EarlyRegistry.get(rawCmdName);
+                if (rawCmd && rawCmd.chatRaw === true) {
+                    event.cancel = true;
+                    const rawExpression = fullContent.slice(rawFirstWord.length).trim();
+                    Kernel.system.run(async () => {
+                        await this._executeCommand(event.sender, rawCmdName, [rawExpression], "chat_raw");
+                    });
+                    return;
+                }
+            }
+        }
+
         const tokens = fullContent.split(/\s+/).filter(Boolean);
         if (tokens.length === 0) return;
 
