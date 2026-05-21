@@ -164,13 +164,12 @@ export class BatchStore {
     /*
      * PLAYER_TRANSACTION_LOOP
      * ----------------------------------------------------------------------------
-     * Groups operations by PlayerID to minimize lookup overhead. 
-     * Uses a lookup manifest to achieve O(1) entity resolution.
+     * Bypasses the journaled buffer completely to execute safe, direct database writes.
+     * Writes directly to the persistent Database layer to eliminate circular latency.
      */
     static async #executePlayerBatch(operations) {
         const playerGroups = new Map()
-        const PlayerStore = Kernel.get("playerStore")
-        const WorldStore = Kernel.get("worldStore")
+        const Database = Kernel.get("database") // FIX: Query raw database instead of store proxies
         
         operations.forEach(op => {
             if (!playerGroups.has(op.playerId)) {
@@ -178,31 +177,15 @@ export class BatchStore {
             }
             playerGroups.get(op.playerId).push(op)
         })
-
-        // DOD_OPTIMIZATION: Generate O(1) lookup manifest for entities
-        const players = Kernel.world.getAllPlayers()
-        const playerMap = new Map(players.map(p => [p.id, p]))
         
         for (const [playerId, playerOps] of playerGroups) {
             try {
-                const player = playerMap.get(playerId)
-                
-                if (player) {
-                    for (const op of playerOps) {
-                        if (op.operation === 'delete') {
-                            PlayerStore.delete(player, op.key)
-                        } else {
-                            PlayerStore.set(player, op.key, op.value)
-                        }
-                    }
-                } else {
-                    for (const op of playerOps) {
-                        const fullKey = `player:${playerId}:${op.key}`
-                        if (op.operation === 'delete') {
-                            WorldStore.delete(fullKey)
-                        } else {
-                            WorldStore.set(fullKey, op.value)
-                        }
+                for (const op of playerOps) {
+                    const fullKey = `player:${playerId}:${op.key}`
+                    if (op.operation === 'delete') {
+                        Database.delete(fullKey)
+                    } else {
+                        Database.set(fullKey, op.value)
                     }
                 }
             } catch (error) {
@@ -215,13 +198,13 @@ export class BatchStore {
      * WORLD_TRANSACTION_LOOP
      */
     static async #executeWorldBatch(operations) {
-        const WorldStore = Kernel.get("worldStore")
+        const Database = Kernel.get("database") // FIX: Query raw database instead of store proxies
         for (const op of operations) {
             try {
                 if (op.operation === 'delete') {
-                    WorldStore.delete(op.key)
+                    Database.delete(op.key)
                 } else {
-                    WorldStore.set(op.key, op.value)
+                    Database.set(op.key, op.value)
                 }
             } catch (error) {
                 console.error(`[BatchStore] WORLD_BATCH_FAILURE for ${op.key}:`, error)

@@ -97,18 +97,35 @@ async function showReportDetail(admin, reportId, report) {
                 return
             }
 
-            // Execute ban
+            // FIX: Locate "banManager" and execute .addBan with full session kick
             Kernel.system.run(() => {
                 try {
-                    const BanManager = Kernel.get("admin")
-                    if (BanManager && BanManager.banPlayer) {
-                        BanManager.banPlayer(target, admin, `Report: ${report.message}`)
-                        admin.sendMessage(`\u00A7a${report.target} has been banned.`)
+                    const BanManager = Kernel.get("banManager")
+                    if (BanManager) {
+                        const banData = {
+                            playerId: target.id,
+                            playerName: target.name,
+                            bannedBy: admin.name,
+                            bannedById: admin.id,
+                            reason: `Report: ${report.message}`,
+                            timestamp: Date.now(),
+                            duration: 0, // Permanent
+                            expires: 0
+                        }
+
+                        BanManager.addBan(banData)
+
+                        // Terminate target session
+                        try {
+                            Kernel.world.getDimension("overworld").runCommand(`kick "${target.name}" §c[BAN]\n§eREASON: Report: ${report.message}`)
+                        } catch {}
+
+                        admin.sendMessage(`§a${report.target} has been banned.`)
                     } else {
-                        admin.sendMessage("\u00A7cBan system unavailable.")
+                        admin.sendMessage("§cBan system unavailable.")
                     }
                 } catch (error) {
-                    admin.sendMessage(`\u00A7cFailed to ban: ${error}`)
+                    admin.sendMessage(`§cFailed to ban: ${error}`)
                 }
             })
 

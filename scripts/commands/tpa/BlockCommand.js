@@ -35,13 +35,14 @@ export const BlockCommand = {
             return
         }
 
-        // resolve the target player.
-        const targetName = args.join(" ")
-        const target = PlayerUtils.findPlayer(targetName)
+        // FIX: Resolve rich target player objects from autocomplete OR strings
+        const target = typeof args[0] === 'object' && args[0] !== null
+            ? args[0]
+            : PlayerUtils.findPlayer(args.join(" "))
 
         // check if target is online (required for ID-based blocking).
         if (!target) {
-            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found or offline.`)
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player not found or offline.`)
             return
         }
 

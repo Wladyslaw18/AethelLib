@@ -4,6 +4,7 @@ import { Database } from "./DatabaseManager.js";
 /**
  * Buffer-aside persistence layer.
  * Buffers updates in memory Map to minimize disk writes, flushing in batches.
+ * Hardened with isolated transaction-key flushing to prevent state bleeds.
  */
 class JournaledDatabase {
     constructor() {
@@ -31,6 +32,24 @@ class JournaledDatabase {
         return true;
     }
 
+    /**
+     * Flushes ONLY specific keys from the journal buffer.
+     * Used to preserve player-isolation during transactions.
+     */
+    flushKeys(keysToFlush) {
+        for (const key of keysToFlush) {
+            if (this.journal.has(key)) {
+                const value = this.journal.get(key);
+                if (value === undefined) {
+                    Database.delete(key);
+                } else {
+                    Database.set(key, value);
+                }
+                this.journal.delete(key);
+            }
+        }
+    }
+
     flush() {
         if (!this.isDirty) return;
 
@@ -54,11 +73,19 @@ class JournaledDatabase {
     }
 
     async transaction(playerId, operation) {
-        // Flush pending changes before transaction to ensure sync
-        this.flush();
+        // Isolate keys belonging only to the transacting player
+        const playerPrefix = `player:${playerId}:`;
+        const keysToIsolate = Array.from(this.journal.keys()).filter(key => key.startsWith(playerPrefix));
+
+        // Flush ONLY the transacting player's buffered changes before locking
+        this.flushKeys(keysToIsolate);
+
         const result = await Database.transaction(playerId, operation);
-        // Flush transaction modifications immediately
-        this.flush();
+
+        // Re-evaluate and flush ONLY the transacting player's changes after the lock
+        const postKeys = Array.from(this.journal.keys()).filter(key => key.startsWith(playerPrefix));
+        this.flushKeys(postKeys);
+
         return result;
     }
 

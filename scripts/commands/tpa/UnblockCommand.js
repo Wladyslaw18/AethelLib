@@ -35,13 +35,14 @@ export const UnblockCommand = {
             return
         }
 
-        // resolve the target entity.
-        const targetName = args.join(" ")
-        const target = PlayerUtils.findPlayer(targetName)
+        // FIX: Resolve rich target player objects from autocomplete OR strings
+        const target = typeof args[0] === 'object' && args[0] !== null
+            ? args[0]
+            : PlayerUtils.findPlayer(args.join(" "))
 
         // target must be online to retrieve their unique ID.
         if (!target) {
-            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '\u00A7e${targetName}\u00A77' not found or not online.`)
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player not found or not online.`)
             return
         }
 

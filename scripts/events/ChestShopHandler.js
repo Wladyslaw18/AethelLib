@@ -56,10 +56,10 @@ export function init() {
                     return
                 }
                 
-                // check if the player has permission to build here.
-                const ClaimService = Kernel.get("claimService")
-                if (ClaimService && !ClaimService.canAccess(player, chest.location)) {
-                    player.sendMessage("\u00A7c\u00A7l» \u00A77You do not have permission to link to this chest.");
+                // FIX: Retrieve SpatialCache directly for native, fast permission checks
+                const { SpatialCache } = await import("../systems/protection/SpatialCache.js")
+                if (SpatialCache && !SpatialCache.canBuild(player, chest.location)) {
+                    player.sendMessage("§c§l» §7You do not have permission to link to this chest.");
                     return
                 }
 
