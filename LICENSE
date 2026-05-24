@@ -1,44 +1,43 @@
 AETHELGRAD RECIPROCAL PUBLIC CODE COVENANT
 
-Version 1.0
+Version 2.0
 Effective Date: May 25, 2026
-
-Published by: Aethelgrad Studio
+text
 
 ================================================================================
-  ARPCC v1.0 – A SOVEREIGN OPEN SOURCE LICENSE
+  ARPCC v2.0 – A SOVEREIGN OPEN SOURCE LICENSE
   ================================================================================
-  Permissions:  ✓ Commercial use  ✓ Modification  ✓ Distribution  ✓ Sublicensing
-  Conditions:   ⚠ Revocable at any time  ⚠ No use of Aethelgrad marks
-                ⚠ No registry squatting  ⚠ Contribution assignment
-  Termination:  🔴 Unilateral, prospective, for any reason or no reason
+  Permissions:   ✓ Commercial use (tiered)  ✓ Modification   ✓ Distribution
+  Conditions:    ⚠ Revenue‑based compliance  ⚠ No AI training  ⚠ No name use
+                 ⚠ Subsidiary attribution    ⚠ Contractor binding
+  Enforcement:   🔴 3x revenue clawback + public disclosure + immediate revocation
 ================================================================================
 
 PREAMBLE
 
-This Aethelgrad Reciprocal Public Code Covenant (the "Covenant") is a legal agreement between Aethelgrad Studio ("Licensor") and any person or entity that downloads, clones, installs, executes, or distributes the Work ("Recipient"). The Licensor believes in open collaboration but reserves absolute control over its intellectual property. This Covenant grants broad open source freedoms while retaining a unilateral termination right (the "red button") and strict trademark protections.
+This Aethelgrad Reciprocal Public Code Covenant (the "Covenant") is a legal agreement between Aethelgrad Studio ("Licensor") and any individual or legal entity that downloads, clones, installs, executes, or distributes the Work ("Recipient"). The Licensor makes the Work available under terms that grant broad permissions for use, modification, and distribution while establishing objective revenue‑based compliance obligations, financial penalties for violation, and unilateral termination rights to prevent commercial exploitation or misuse of the Licensor's intellectual property.
 
-By obtaining a copy of the Work, the Recipient agrees to be bound by the terms of this Covenant.
+By obtaining a copy of the Work, the Recipient agrees to be bound by all terms and conditions of this Covenant.
 ARTICLE 1: DEFINITIONS
 
 1.1 "Work" means the software source code, object code, documentation, configuration files, build scripts, metadata, visual design elements, and any associated materials made available by the Licensor in any repository referencing this Covenant, together with all updates and successor versions.
 
-1.2 "Recipient" means any individual or legal entity that downloads, clones, installs, executes, distributes, or otherwise obtains a copy of the Work.
+1.2 "Recipient" means any individual or legal entity that downloads, clones, installs, executes, distributes, or otherwise obtains a copy of the Work. "Recipient" includes any parent company, subsidiary, affiliate, successor entity, or any entity under common ownership or control exceeding twenty percent (20%). Use of the Work by any contractor, consultant, or third party on behalf of a Recipient is deemed direct use by the Recipient for all purposes under this Covenant.
 
-1.3 "Derivative Work" means any work based upon or derived from the Work, including modifications, translations, ports, adaptations, or any other form in which the Work may be recast, transformed, or adapted.
+1.3 "Derivative Work" means any work based upon or derived from the Work, including modifications, translations, ports, adaptations, or any other form in which the Work may be recast, transformed, or adapted. Any use of the Work as reference, inspiration, or basis for creating substantially similar functionality constitutes use under this Covenant, regardless of whether any original code is retained. The burden of demonstrating that a substantially similar implementation was developed independently of the Work rests solely on the Recipient.
 
 1.4 "Contribution" means any code, documentation, or other material intentionally submitted to the Licensor for inclusion in the Work.
 
 1.5 "Licensor" means Aethelgrad Studio, its successors, and assigns.
 
-1.6 "Covenant" means this instrument, including all articles and any future amendments published by the Licensor.
+1.6 "Annual Revenue" means the gross revenue (USD equivalent) of the Recipient's entire legal entity or, if the Recipient is a subsidiary, the gross revenue of the ultimate parent entity, as reported in the most recent fiscal year or, if not publicly reported, as certified under penalty of perjury by an officer of the entity.
 
 1.7 The singular includes the plural, and "including" means "including without limitation".
-ARTICLE 2: COPYRIGHT LICENSE – OPEN SOURCE GRANT
+ARTICLE 2: COPYRIGHT LICENSE
 
-2.1 Scope of Grant. Subject to the terms of this Covenant (including the revocation power in Article 5 and the trademark restrictions in Article 4), the Licensor hereby grants to each Recipient a worldwide, non-exclusive, royalty-free, non-transferable copyright license to:
+2.1 Scope of Grant. Subject to the terms of this Covenant (including the revenue tiers in Article 3 and the revocation power in Article 6), the Licensor hereby grants to each Recipient a worldwide, non-exclusive, royalty-free, non-transferable copyright license to:
 
-    (a) reproduce, copy, and distribute the Work, in whole or in part, in Source or Object form;
+    (a) reproduce, copy, and distribute the Work, in whole or in part, in source or object form;
 
     (b) prepare, use, and distribute Derivative Works of the Work;
 
@@ -46,16 +45,27 @@ ARTICLE 2: COPYRIGHT LICENSE – OPEN SOURCE GRANT
 
     (d) sublicense any of the foregoing rights to third parties, provided that any sublicense includes a copy of this Covenant and notice that all permissions are revocable.
 
-2.2 Commercial Use Permitted. Commercial use, including but not limited to selling copies, incorporating the Work into paid products or services, and using the Work in revenue‑generating activities, is expressly permitted under this license. However, the Licensor reserves the right to invoke Article 6 (Financial Clawback) at any time.
+2.2 Patent License. Each Contributor grants each Recipient a worldwide, non‑exclusive, royalty‑free patent license to make, use, sell, offer for sale, and import the Work, limited to patent claims necessarily infringed by that Contributor's Contribution(s).
 
-2.3 Patent License. Each Contributor grants each Recipient a worldwide, non‑exclusive, royalty‑free patent license to make, use, sell, offer for sale, and import the Work, limited to patent claims necessarily infringed by that Contributor's Contribution(s).
+2.3 No Implied Licenses. No rights are granted by implication, estoppel, or otherwise beyond those expressly stated in this Covenant.
+ARTICLE 3: REVENUE TIERS AND COMPLIANCE OBLIGATIONS
 
-2.4 No Implied Licenses. No rights are granted by implication, estoppel, or otherwise beyond those expressly stated in this Covenant.
-ARTICLE 3: CONDITIONS AND LIMITATIONS
+3.1 Commercial Tier System. The Recipient's obligations depend on its Annual Revenue, as defined in Section 1.6:
+Tier	Annual Revenue	Conditions
+Individual / Hobbyist	Under $10,000 USD	Free use. No restrictions. No notice required.
+Small Studio	10,000–10,000–500,000 USD	Free use. Must retain all attribution notices. No notice required.
+Mid Company	500,000–500,000–10,000,000 USD	Must notify the Licensor within 30 days of first commercial use. Notification must include entity name, revenue tier, and brief description of use. No fee.
+Large Corp	10,000,000–10,000,000–1,000,000,000 USD	License negotiation required before any commercial use. Using the Work without a signed commercial license constitutes a violation.
+Mega Corp	Over $1,000,000,000 USD or venture‑capital funded or publicly traded	License negotiation required before any commercial use. Notice period for revocation (Article 6.2) is reduced to 7 days.
 
-3.1 Preservation of Notices. Any distribution of the Work or Derivative Work must retain all copyright, patent, trademark, and attribution notices from the original Work.
+3.2 Determination of Revenue. For entities that do not publicly report revenue, the Recipient must provide a certified statement of Annual Revenue upon request. Failure to provide accurate information is a material breach of this Covenant.
 
-3.2 No Use of Licensor's Trademarks. Recipient may not use any trademark, service mark, trade name, logo, or brand identifier of the Licensor, including but not limited to "Aethelgrad", "Aethelgrad Studio", "AethelLib", and any confusingly similar variants, without the Licensor's express written permission. This prohibition applies to:
+3.3 Tier Migration. If the Recipient's Annual Revenue increases into a higher tier, the new obligations apply within 90 days after the end of the fiscal year in which the increase occurred.
+ARTICLE 4: CONDITIONS AND LIMITATIONS
+
+4.1 Preservation of Notices. Any distribution of the Work or Derivative Work must retain all copyright, patent, trademark, and attribution notices from the original Work.
+
+4.2 No Use of Licensor's Trademarks. Recipient may not use any trademark, service mark, trade name, logo, or brand identifier of the Licensor, including but not limited to "Aethelgrad", "Aethelgrad Studio", "AethelLib", and any confusingly similar variants, without the Licensor's express written permission. This prohibition applies to:
 
     (a) naming any Derivative Work, fork, repository, or package;
 
@@ -63,21 +73,45 @@ ARTICLE 3: CONDITIONS AND LIMITATIONS
 
     (c) any use likely to cause confusion about origin, endorsement, or affiliation.
 
-3.3 No Registry Squatting. Recipient may not publish, upload, or register any software package, library, or module bearing a name that includes or is confusingly similar to the Licensor's marks to any package registry, including but not limited to npm, crates.io, PyPI, Maven Central, RubyGems, Packagist, NuGet, Conda, Homebrew, Docker Hub, or any analogous registry.
+4.3 No Registry Squatting. Recipient may not publish, upload, or register any software package, library, or module bearing a name that includes or is confusingly similar to the Licensor's marks to any package registry, including but not limited to npm, crates.io, PyPI, Maven Central, RubyGems, Packagist, NuGet, Conda, Homebrew, Docker Hub, or any analogous registry.
 
-3.4 No Modification of This Covenant. Recipient may not alter, amend, or supplement the terms of this Covenant with respect to the Work. Any purported modification is void.
-ARTICLE 4: CONTRIBUTION ASSIGNMENT
+4.4 No Modification of This Covenant. Recipient may not alter, amend, or supplement the terms of this Covenant with respect to the Work. Any purported modification is void.
 
-4.1 Irrevocable Assignment. Any Contribution intentionally submitted to the Licensor is hereby irrevocably assigned to the Licensor, including all copyright, patent, trademark, trade secret, and any other intellectual property rights therein. The Contributor waives any moral rights to the extent permitted by law.
+4.5 AI Training Prohibition. Use of the Work, in whole or in part, as training data, input, or reference for any machine learning model, neural network, large language model, generative artificial intelligence system, or any artificial intelligence system is expressly prohibited without a separate written agreement, regardless of commercial status. This prohibition includes indirect use via dataset aggregation, web scraping, crawling, batch downloading, or any automated collection method. The burden of proving that any substantially similar output or model was developed without use of the Work rests solely on the Recipient. Violation of this Section 4.5 triggers immediate revocation under Article 6.3 and the financial clawback under Article 7.
+ARTICLE 5: CONTRIBUTION ASSIGNMENT
 
-4.2 No Obligation to Use. The Licensor may accept, reject, modify, or disregard any Contribution without any duty to credit or compensate the Contributor.
+5.1 Irrevocable Assignment. Any Contribution intentionally submitted to the Licensor is hereby irrevocably assigned to the Licensor, including all copyright, patent, trademark, trade secret, and any other intellectual property rights therein. The Contributor waives any moral rights to the extent permitted by applicable law.
 
-4.3 No Withdrawal. Once submitted, a Contribution may not be revoked or reclaimed.
-ARTICLE 5: UNILATERAL REVOCATION (THE "RED BUTTON")
+5.2 No Obligation to Use. The Licensor may accept, reject, modify, or disregard any Contribution without any duty to credit or compensate the Contributor.
 
-5.1 Absolute Revocation Power. The Licensor retains the absolute, unilateral, and discretionary right to revoke the licenses granted under Article 2 with respect to any specific Recipient, any category of Recipients, or all Recipients collectively. Revocation may be exercised for any reason, for no reason, for arbitrary reasons, or for reasons based on mistaken facts.
+5.3 No Withdrawal. Once submitted, a Contribution may not be revoked or reclaimed by the Contributor.
+ARTICLE 6: UNILATERAL REVOCATION (TIERED NOTICE)
 
-5.2 Manner of Revocation. The Licensor may effect revocation by:
+6.1 Absolute Revocation Power. The Licensor retains the absolute, unilateral, and discretionary right to revoke the licenses granted under Article 2 with respect to any specific Recipient, any category of Recipients, or all Recipients collectively. Revocation may be exercised for any reason, for no reason, for arbitrary reasons, or for reasons based on mistaken facts.
+
+6.2 Tiered Notice Periods. Except as provided in Section 6.3, revocation becomes effective after the following notice periods, and applies prospectively only:
+
+    (a) Individual / Hobbyist (Tier 1): 90 days' notice.
+
+    (b) Small Studio (Tier 2): 30 days' notice.
+
+    (c) Mid Company (Tier 3): 30 days' notice.
+
+    (d) Large Corp (Tier 4, 10M–10M–1B): 15 days' notice.
+
+    (e) Mega Corp (Tier 5, over $1B or VC/public): 7 days' notice.
+
+6.3 Immediate Revocation (Zero Notice). For the following violations, revocation is immediate, without any notice period, and may be applied retroactively to the date of first violation:
+
+    (a) Unauthorized use of the Licensor's trademarks (Section 4.2);
+
+    (b) Registry squatting (Section 4.3);
+
+    (c) AI training in violation of Section 4.5;
+
+    (d) Knowingly false revenue reporting (Section 3.2).
+
+6.4 Manner of Notice. The Licensor may provide notice by:
 
     (a) sending written notice to the Recipient (including electronic mail);
 
@@ -85,33 +119,62 @@ ARTICLE 5: UNILATERAL REVOCATION (THE "RED BUTTON")
 
     (c) any other means reasonably calculated to provide notice.
 
-Revocation becomes effective upon the Recipient's receipt of notice or fifteen (15) days after public posting, whichever is earlier.
+6.5 Consequences of Revocation. Upon revocation (whether after a notice period or immediately), the Recipient must immediately cease all distribution, modification, and use of the Work, and destroy all copies in its possession, custody, or control.
 
-5.3 Prospective Only. Revocation applies prospectively only. Uses of the Work that occurred before the effective date of revocation remain licensed under the terms then in effect. The Licensor does not claim retroactive revocation.
+6.6 Derivative Works and Forks. Revocation applies to any Derivative Work, fork, or adaptation controlled by the Recipient.
+ARTICLE 7: FINANCIAL CLAWBACK (3x MULTIPLIER)
 
-5.4 Consequences of Revocation. Upon revocation, the Recipient must immediately cease all distribution, modification, and use of the Work, and destroy all copies in its possession, custody, or control.
+7.1 Violation Multiplier. Any commercial use that violates the tier requirements of Article 3, or any use of the Work in violation of the AI training prohibition (Section 4.5) or trademark restrictions (Section 4.2), automatically triggers a license fee payable to the Licensor equal to three times (3x) the gross revenues derived from the Work during the period of non‑compliance. The minimum fee for any such violation is $150,000 USD.
 
-5.5 Fork and Derivative Termination. Revocation applies to any Derivative Work, fork, or adaptation controlled by the Recipient.
-ARTICLE 6: FINANCIAL CLAWBACK
+7.2 Definition of "Derived From". For purposes of this Article, "gross revenues derived from the Work" includes all revenue attributable to any product, service, or system where the Work provides material functionality, enables core features, reduces development cost, confers competitive advantage, or contributes to operational efficiency, regardless of whether the Work is one component among many. The Recipient may not argue that the Work is de minimis or incidental to avoid application of this clause.
 
-6.1 Commercial Utilization Review. Although commercial use is permitted, the Licensor may, in its sole discretion, determine that a Recipient's commercial use is excessive, exploitative, or detrimental to the Licensor's legitimate interests. Factors may include revenue scale, market impact, or failure to provide attribution.
+7.3 Presumption in Case of Non‑Cooperation. If the Recipient fails to provide accurate revenue data upon request, the Licensor may presume revenues of $1,000,000 USD per year of violation for purposes of calculating the fee.
 
-6.2 Licensor's Election. Upon such determination, the Licensor may elect to:
+7.4 Audit Right. The Licensor may, at any time upon reasonable suspicion of violation, demand a complete accounting of all revenues attributable to the Work, certified under penalty of perjury by an officer of the Recipient. Such accounting shall be provided within thirty (30) days. Failure to provide an accounting shall entitle the Licensor to presume the maximum statutory damages available under applicable law, or $500,000 USD, whichever is greater.
 
-    (a) Demand a Reasonable Fee. Propose a royalty or flat license fee. The Recipient shall have thirty (30) days to accept in writing and pay the demanded amount. If the Recipient fails to do so, the license is automatically revoked under Article 5.
+7.5 No Waiver. The Licensor's failure to demand clawback against one Recipient does not waive its right to do so against any other Recipient or the same Recipient for future violations.
+ARTICLE 8: PUBLIC DISCLOSURE RIGHT
 
-    (b) Immediate Revocation. Revoke the Recipient's license without offering a fee option.
+8.1 Upon confirmed violation of any provision of this Covenant (including failure to comply with revenue tiers, trademark misuse, AI training, or false reporting), the Licensor reserves the right to publish the violator's name, legal entity, nature of violation, and any relevant details in:
 
-6.3 Audit Right. Upon reasonable suspicion of material commercial use, the Licensor may demand a complete accounting of revenues attributable to the Work. The Recipient shall provide such accounting within thirty (30) days, certified under penalty of perjury. Failure to provide an accounting shall entitle the Licensor to presume statutory damages of no less than USD $50,000.
+    (a) the public repository associated with the Work;
 
-6.4 No Waiver. The Licensor's failure to exercise clawback against any Recipient does not waive its right to do so against the same or any other Recipient later.
-ARTICLE 7: DISCLAIMER OF WARRANTIES
+    (b) any public forum operated by the Licensor; and
+
+    (c) notices to package registries and hosting platforms.
+
+8.2 This right survives termination of the Covenant. The Licensor may exercise this right in its sole discretion, without prior notice to the violator, and without any liability for reputational harm, lost business, or any other consequence.
+ARTICLE 9: LOOPHOLE CLOSERS
+
+9.1 Subsidiaries and Affiliates. Any use of the Work by a subsidiary, affiliate, or entity under common control (ownership of twenty percent (20%) or more) is attributed to the ultimate parent entity for purposes of revenue tier determination and compliance. A large or mega corporation may not route usage through a small subsidiary to avoid the requirements of Article 3.
+
+9.2 Contractors and Third Parties. Use of the Work by any contractor, consultant, or third party on behalf of a Recipient is deemed direct use by that Recipient. The Recipient is fully liable for any violation committed by such third party.
+
+9.3 "Inspiration" Use. Any use of the Work as reference, inspiration, or basis for creating substantially similar functionality constitutes "use" under this Covenant, regardless of whether any original code is retained. This includes rewriting the Work in a different programming language, reimplementing its algorithms, or mimicking its interfaces. The burden of proving independent creation is on the Recipient.
+ARTICLE 10: ATTRIBUTION REQUIREMENTS (TIERED)
+
+10.1 General Attribution. All Recipients must retain the notices required by Section 4.1.
+
+10.2 Enhanced Attribution for High‑Revenue Products. Any product, service, or system generating over $500,000 USD in Annual Revenue that incorporates the Work must display the following attribution in:
+
+    (a) any user‑facing about, credits, or settings section;
+
+    (b) public technical documentation;
+
+    (c) any investor materials (including pitch decks and financial reports) that describe the technology stack; and
+
+    (d) any regulatory filings (including SEC or equivalent disclosures) that describe the software.
+
+10.3 Required Attribution Language. "This product uses AethelLib, developed by Aethelgrad Studio under the Aethelgrad Reciprocal Public Code Covenant (ARPCC v2.0). The license for this component is revocable. See [repository URL] for terms."
+
+10.4 Removal of attribution from any of the locations listed in Section 10.2 constitutes an immediate ground for revocation under Article 6.3 and triggers the financial clawback under Article 7.
+ARTICLE 11: DISCLAIMER OF WARRANTIES
 
 THE WORK IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON‑INFRINGEMENT, OR ACCURACY. THE LICENSOR DOES NOT WARRANT THAT THE WORK WILL BE UNINTERRUPTED, SECURE, OR ERROR‑FREE.
-ARTICLE 8: LIMITATION OF LIABILITY
+ARTICLE 12: LIMITATION OF LIABILITY
 
 IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, GOODWILL, USE, OR DATA, ARISING OUT OF OR RELATING TO THIS COVENANT OR THE WORK, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
-ARTICLE 9: INDEMNIFICATION
+ARTICLE 13: INDEMNIFICATION
 
 The Recipient shall indemnify, defend, and hold harmless the Licensor from any claims, damages, or expenses (including reasonable attorneys' fees) arising from:
 
@@ -119,44 +182,38 @@ The Recipient shall indemnify, defend, and hold harmless the Licensor from any c
 
     (b) any Derivative Work created by the Recipient;
 
-    (c) any violation of this Covenant.
+    (c) any violation of this Covenant; and
 
-ARTICLE 10: MODIFICATION OF COVENANT
+    (d) any claim that the Recipient's use infringes third‑party rights.
 
-10.1 Unilateral Amendment. The Licensor may modify this Covenant at any time by publishing an updated version in the repository associated with the Work.
+ARTICLE 14: MODIFICATION OF COVENANT
 
-10.2 Notice and Acceptance. The Licensor will provide notice of material changes by updating the "Effective Date" and posting a summary. Continued use of the Work more than thirty (30) days after such notice constitutes acceptance of the amended terms.
+14.1 Unilateral Amendment. The Licensor may modify this Covenant at any time by publishing an updated version in the repository associated with the Work.
 
-10.3 No Right to Notice. Recipients are responsible for periodically reviewing this Covenant. The Licensor is not required to provide individual notice.
-ARTICLE 11: SEVERABILITY
+14.2 Notice and Acceptance. The Licensor will provide notice of material changes by updating the "Effective Date" and posting a summary. Continued use of the Work more than thirty (30) days after such notice constitutes acceptance of the amended terms.
 
-If any provision of this Covenant is held unenforceable, the remainder shall continue in full force, and the unenforceable provision shall be reformed to the minimum extent necessary to make it enforceable.
-ARTICLE 12: ACCEPTANCE OF TERMS
+14.3 No Right to Individual Notice. Recipients are responsible for periodically reviewing this Covenant. The Licensor is not required to provide individual notice.
+ARTICLE 15: SEVERABILITY
 
-12.1 Manifestation of Assent. By downloading, cloning, installing, executing, or distributing the Work, the Recipient affirmatively agrees to be bound by all terms of this Covenant.
+If any provision of this Covenant is held unenforceable by a tribunal of competent jurisdiction, the remainder shall continue in full force, and the unenforceable provision shall be reformed to the minimum extent necessary to make it enforceable.
+ARTICLE 16: ACCEPTANCE OF TERMS
 
-12.2 No Browsewrap. Mere viewing of the Work in a web browser without obtaining a copy does not constitute acceptance. Acceptance occurs only when the Recipient takes an affirmative step to acquire or use the Work.
+16.1 Manifestation of Assent. By downloading, cloning, installing, executing, or distributing the Work, the Recipient affirmatively agrees to be bound by all terms of this Covenant.
 
-12.3 Termination for Non‑Acceptance. If the Recipient does not agree to any term of this Covenant, it must not download, install, or use the Work, and must destroy any copies already obtained.
-ARTICLE 13: GOVERNING LAW AND JURISDICTION
+16.2 No Browsewrap. Mere viewing of the Work in a web browser without obtaining a copy does not constitute acceptance. Acceptance occurs only when the Recipient takes an affirmative step to acquire or use the Work.
 
-13.1 Governing Law. This Covenant shall be governed by the laws of the jurisdiction where the Licensor resides at the time of enforcement, without regard to conflict of laws principles. The Licensor may elect to apply the laws of any jurisdiction where the Recipient resides or where infringement occurred.
+16.3 Termination for Non‑Acceptance. If the Recipient does not agree to any term of this Covenant, it must not download, install, or use the Work, and must destroy any copies already obtained.
+ARTICLE 17: GOVERNING LAW AND JURISDICTION
 
-13.2 Exclusive Jurisdiction. Any dispute arising under this Covenant shall be resolved exclusively in the courts of the jurisdiction selected by the Licensor. The Recipient irrevocably submits to personal jurisdiction there and waives any objection based on venue or forum non conveniens.
+17.1 Governing Law. This Covenant shall be governed by the laws of the jurisdiction where the Licensor had its primary place of business on the Effective Date (May 25, 2026). If that jurisdiction cannot be determined or if such law would render any material provision unenforceable, the laws of the jurisdiction where the alleged violation occurred shall apply.
 
-13.3 Service of Process. The Recipient agrees that service of process may be effected by electronic mail to any address associated with the Recipient or by public notification in the Work's repository.
-ARTICLE 14: ENTIRE AGREEMENT
+17.2 Exclusive Jurisdiction. Any dispute arising under this Covenant shall be resolved exclusively in the courts of the jurisdiction identified under Section 17.1. The Recipient irrevocably submits to personal jurisdiction in such courts and waives any objection based on improper venue or forum non conveniens.
+
+17.3 Service of Process. The Recipient agrees that service of process may be effected by electronic mail to any address associated with the Recipient or by public notification in the Work's repository.
+ARTICLE 18: ENTIRE AGREEMENT
 
 This Covenant constitutes the entire agreement between the Licensor and the Recipient concerning the Work. It supersedes all prior communications, representations, or agreements, whether written or oral. The Recipient acknowledges that it has not relied on any representation not expressly set forth herein.
-text
 
-================================================================================
-  END OF COVENANT
-  ================================================================================
-  © 2026 Aethelgrad Studio. Sovereign rights reserved.
-  This Covenant is not open source; it is a revocable public license.
-  The Work may be used freely until the red button is pressed.
-================================================================================
+END OF COVENANT
 
-AETHELGRAD STUDIO
-By publication alone – effective May 25, 2026
+© 2026 Aethelgrad Studio. All rights reserved.
