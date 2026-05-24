@@ -1,4 +1,4 @@
-## ⚜️ AETHELGRAD STUDIO TRADEMARK POLICY
+## ⚜&#xFE0E; AETHELGRAD STUDIO TRADEMARK POLICY
 
 The software and source code in this repository are licensed under the LGPL-3.0. 
 However, the names "Aethel", "Aethelgrad", "AethelLib", and all associated logos, 
