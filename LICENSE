@@ -1,165 +1,386 @@
-                   GNU LESSER GENERAL PUBLIC LICENSE
-                       Version 3, 29 June 2007
+THE AETHELGRAD RECIPROCAL PUBLIC CODE COVENANT
+AND UNILATERAL ENCROACHMENT WAIVER (ARPCC-UEW)
 
- Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
- Everyone is permitted to copy and distribute verbatim copies
- of this license document, but changing it is not allowed.
+RESTATED AND PROMULGATED: MAY 25, 2026
 
+REGISTERED ENTITY: AETHELGRAD STUDIO LEGAL OPERATIONS
+PREAMBLE
 
-  This version of the GNU Lesser General Public License incorporates
-the terms and conditions of version 3 of the GNU General Public
-License, supplemented by the additional permissions listed below.
+WHEREAS, the Licensor has established certain original works of authorship fixed in any tangible medium of expression, now or hereafter known, from which they can be perceived, reproduced, or otherwise communicated, either directly or with the aid of a machine or device;
 
-  0. Additional Definitions.
+WHEREAS, the Licensor desires to make such works available to the general public under terms and conditions that preserve the Licensor's absolute sovereignty over said works while permitting limited, conditional, and revocable access for non-commercial purposes;
 
-  As used herein, "this License" refers to version 3 of the GNU Lesser
-General Public License, and the "GNU GPL" refers to version 3 of the GNU
-General Public License.
+WHEREAS, the Licensor acknowledges the existence of certain open source software customs, practices, and expectations but explicitly rejects any implication that such customs create binding obligations, waivers, or limitations upon the Licensor's proprietary rights;
 
-  "The Library" refers to a covered work governed by this License,
-other than an Application or a Combined Work as defined below.
+WHEREAS, the Licensor further acknowledges that the mere act of publication does not constitute dedication to the public domain, abandonment of intellectual property rights, or any form of implied license;
 
-  An "Application" is any work that makes use of an interface provided
-by the Library, but which is not otherwise based on the Library.
-Defining a subclass of a class defined by the Library is deemed a mode
-of using an interface provided by the Library.
+WHEREAS, the Licensor intends this instrument to be construed under the laws of contract, copyright, trademark, and any other applicable legal regime in a manner that maximizes the Licensor's retained rights and minimizes any implied or presumed permissions in favor of any recipient;
 
-  A "Combined Work" is a work produced by combining or linking an
-Application with the Library.  The particular version of the Library
-with which the Combined Work was made is also called the "Linked
-Version".
+NOW, THEREFORE, for good and valuable consideration, including but not limited to the Recipient's access to the Work and the Recipient's agreement to be bound by the terms hereof, the Licensor hereby promulgates this Covenant.
+ARTICLE I: DEFINITIONS AND CONSTRUALS
 
-  The "Minimal Corresponding Source" for a Combined Work means the
-Corresponding Source for the Combined Work, excluding any source code
-for portions of the Combined Work that, considered in isolation, are
-based on the Application, and not on the Linked Version.
+Section 1.01. "Work" shall mean the entirety of the software source code, object code, documentation, configuration files, build scripts, metadata, digital assets, visual design elements, textual content, and any and all additional materials made available by the Licensor in connection with the repository designated as containing this Covenant, together with all revisions, updates, supplements, and successor versions thereof, whether created before, on, or after the Effective Date.
 
-  The "Corresponding Application Code" for a Combined Work means the
-object code and/or source code for the Application, including any data
-and utility programs needed for reproducing the Combined Work from the
-Application, but excluding the System Libraries of the Combined Work.
+Section 1.02. "Recipient" shall mean any individual, legal entity, juridical person, natural person, corporation, partnership, limited liability company, trust, estate, governmental body, instrumentality, agency, division, department, military branch, intergovernmental organization, non-governmental organization, artificial intelligence system, machine learning model, automated agent, bot, crawler, scraper, or any other cognizable legal or technological actor that accesses, views, downloads, copies, forks, clones, branches, references, links to, imports, requires, depends upon, installs, deploys, executes, integrates, or in any manner whatsoever interacts with the Work.
 
-  1. Exception to Section 3 of the GNU GPL.
+Section 1.03. "Covenant" shall mean this entire instrument, including all Articles, Sections, subsections, clauses, subclauses, schedules, exhibits, appendices, and any modifications, amendments, restatements, or supplements hereto that may be promulgated from time to time.
 
-  You may convey a covered work under sections 3 and 4 of this License
-without being bound by section 3 of the GNU GPL.
+Section 1.04. "Encroachment" shall mean any use, reproduction, distribution, modification, preparation of derivative works, public display, public performance, digital transmission, storage, caching, indexing, aggregation, compilation, incorporation into larger works, sublicensing, assignment, transfer, sale, commercial exploitation, non-commercial exploitation, educational exploitation, personal exploitation, or any other form of interaction with the Work that is not expressly and unambiguously authorized in writing by the Licensor pursuant to Article III of this Covenant.
 
-  2. Conveying Modified Versions.
+Section 1.05. "Licensor" shall mean Aethelgrad Studio, its successors, assigns, designees, and any party acting at its direction or on its behalf, together with the designated representative thereof, whose identity and contact information are maintained in the repository associated with the Work.
 
-  If you modify a copy of the Library, and, in your modifications, a
-facility refers to a function or data to be supplied by an Application
-that uses the facility (other than as an argument passed when the
-facility is invoked), then you may convey a copy of the modified
-version:
+Section 1.06. "Effective Date" shall mean May 25, 2026, or such later date as the Licensor may designate by updating this Covenant within the repository associated with the Work.
 
-   a) under this License, provided that you make a good faith effort to
-   ensure that, in the event an Application does not supply the
-   function or data, the facility still operates, and performs
-   whatever part of its purpose remains meaningful, or
+Section 1.07. For purposes of this Covenant, the singular shall include the plural, the plural shall include the singular, and any gender shall include all genders. The words "including," "includes," and "include" shall be deemed to be followed by the phrase "without limitation." The words "shall," "will," and "must" denote mandatory provisions. The word "may" denotes discretionary provisions. The word "should" denotes aspirational provisions that create no enforceable rights or obligations.
+ARTICLE II: SOVEREIGN RESERVATION OF RIGHTS
 
-   b) under the GNU GPL, with none of the additional permissions of
-   this License applicable to that copy.
+Section 2.01. Default Prohibition Regime. The default legal status of the Work is absolute prohibition. All Encroachment is forbidden unless expressly authorized pursuant to Article III of this Covenant. The absence of an explicit prohibition of any particular form of Encroachment shall not be construed as permission, license, waiver, estoppel, acquiescence, or any form of authorization whatsoever.
 
-  3. Object Code Incorporating Material from Library Header Files.
+Section 2.02. Retention of Exclusive Rights. The Licensor retains all rights, title, and interest in and to the Work, including but not limited to:
 
-  The object code form of an Application may incorporate material from
-a header file that is part of the Library.  You may convey such object
-code under terms of your choice, provided that, if the incorporated
-material is not limited to numerical parameters, data structure
-layouts and accessors, or small macros, inline functions and templates
-(ten or fewer lines in length), you do both of the following:
+(a) The exclusive right to reproduce the Work in whole or in part;
 
-   a) Give prominent notice with each copy of the object code that the
-   Library is used in it and that the Library and its use are
-   covered by this License.
+(b) The exclusive right to prepare derivative works based upon the Work;
 
-   b) Accompany the object code with a copy of the GNU GPL and this license
-   document.
+(c) The exclusive right to distribute copies of the Work to the public by sale, transfer, license, lease, rental, or any other mode of disposition;
 
-  4. Combined Works.
+(d) The exclusive right to perform the Work publicly, where the Work is subject to performance;
 
-  You may convey a Combined Work under terms of your choice that,
-taken together, effectively do not restrict modification of the
-portions of the Library contained in the Combined Work and reverse
-engineering for debugging such modifications, if you also do each of
-the following:
+(e) The exclusive right to display the Work publicly;
 
-   a) Give prominent notice with each copy of the Combined Work that
-   the Library is used in it and that the Library and its use are
-   covered by this License.
+(f) The exclusive right to transmit the Work digitally;
 
-   b) Accompany the Combined Work with a copy of the GNU GPL and this license
-   document.
+(g) All moral rights recognized under the Berne Convention for the Protection of Literary and Artistic Works;
 
-   c) For a Combined Work that displays copyright notices during
-   execution, include the copyright notice for the Library among
-   these notices, as well as a reference directing the user to the
-   copies of the GNU GPL and this license document.
+(h) All trademark rights in and to any names, designations, identifiers, logos, symbols, or branding elements associated with the Work;
 
-   d) Do one of the following:
+(i) All patent rights that may be or become embodied in the Work;
 
-       0) Convey the Minimal Corresponding Source under the terms of this
-       License, and the Corresponding Application Code in a form
-       suitable for, and under terms that permit, the user to
-       recombine or relink the Application with a modified version of
-       the Linked Version to produce a modified Combined Work, in the
-       manner specified by section 6 of the GNU GPL for conveying
-       Corresponding Source.
+(j) All trade secret rights in and to any confidential or proprietary aspects of the Work;
 
-       1) Use a suitable shared library mechanism for linking with the
-       Library.  A suitable mechanism is one that (a) uses at run time
-       a copy of the Library already present on the user's computer
-       system, and (b) will operate properly with a modified version
-       of the Library that is interface-compatible with the Linked
-       Version.
+(k) All rights of attribution, integrity, and withdrawal; and
 
-   e) Provide Installation Information, but only if you would otherwise
-   be required to provide such information under section 6 of the
-   GNU GPL, and only to the extent that such information is
-   necessary to install and execute a modified version of the
-   Combined Work produced by recombining or relinking the
-   Application with a modified version of the Linked Version. (If
-   you use option 4d0, the Installation Information must accompany
-   the Minimal Corresponding Source and Corresponding Application
-   Code. If you use option 4d1, you must provide the Installation
-   Information in the manner specified by section 6 of the GNU GPL
-   for conveying Corresponding Source.)
+(l) All other rights, whether now known or hereafter recognized, that accrue to authors and creators under any legal regime whatsoever.
 
-  5. Combined Libraries.
+Section 2.03. No Implied Licenses. No right or license is granted to any Recipient by implication, estoppel, waiver, course of dealing, course of performance, usage of trade, or any other doctrine that would supplement the express terms of this Covenant. The Recipient may not rely upon any representation, communication, or conduct of the Licensor as creating any right not explicitly set forth in writing within this Covenant.
 
-  You may place library facilities that are a work based on the
-Library side by side in a single library together with other library
-facilities that are not Applications and are not covered by this
-License, and convey such a combined library under terms of your
-choice, if you do both of the following:
+Section 2.04. Reservation of Unspecified Rights. Any right not expressly and unconditionally granted to the Recipient in Article III of this Covenant is expressly and absolutely reserved to the Licensor. The enumeration of specific rights in Article III shall not be construed to limit the generality of the rights reserved in this Article II.
+ARTICLE III: CONDITIONAL AND REVOCABLE ACCESS PRIVILEGES
 
-   a) Accompany the combined library with a copy of the same work based
-   on the Library, uncombined with any other library facilities,
-   conveyed under the terms of this License.
+Section 3.01. Limited Access Privilege. The Licensor hereby grants to Recipients who have not previously been subject to a revocation pursuant to Article V of this Covenant a limited, conditional, non-exclusive, non-transferable, non-assignable, non-sublicensable, royalty-free, and immediately revocable privilege to access the Work through standard web-based viewing interfaces for the sole purpose of evaluating whether to request additional permissions under Section 3.02.
 
-   b) Give prominent notice with the combined library that part of it
-   is a work based on the Library, and explaining where to find the
-   accompanying uncombined form of the same work.
+Section 3.02. Reservation of Additional Privileges. No additional privileges are granted by this Covenant as of the Effective Date. The Licensor may, in its sole and unfettered discretion, elect from time to time to grant certain Recipients additional privileges through separate written instruments, including but not limited to:
 
-  6. Revised Versions of the GNU Lesser General Public License.
+(a) Privileges to reproduce the Work in limited contexts;
 
-  The Free Software Foundation may publish revised and/or new versions
-of the GNU Lesser General Public License from time to time. Such new
-versions will be similar in spirit to the present version, but may
-differ in detail to address new problems or concerns.
+(b) Privileges to prepare derivative works for specified purposes;
 
-  Each version is given a distinguishing version number. If the
-Library as you received it specifies that a certain numbered version
-of the GNU Lesser General Public License "or any later version"
-applies to it, you have the option of following the terms and
-conditions either of that published version or of any later version
-published by the Free Software Foundation. If the Library as you
-received it does not specify a version number of the GNU Lesser
-General Public License, you may choose any version of the GNU Lesser
-General Public License ever published by the Free Software Foundation.
+(c) Privileges to distribute the Work under designated conditions;
 
-  If the Library as you received it specifies that a proxy can decide
-whether future versions of the GNU Lesser General Public License shall
-apply, that proxy's public statement of acceptance of any version is
-permanent authorization for you to choose that version for the
-Library.
+(d) Privileges to integrate the Work into larger projects;
+
+(e) Privileges to deploy the Work in production environments; or
+
+(f) Any other privileges the Licensor may determine.
+
+Any such separate instrument shall be subordinate to this Covenant, shall be revocable upon the same terms as this Covenant, and shall terminate automatically upon any termination or revocation of this Covenant.
+
+Section 3.03. Prohibition on Automated Access. Notwithstanding anything in Section 3.01 to the contrary, no Recipient may access the Work through automated means, including but not limited to web scraping, crawling, indexing, batch downloading, programmatic retrieval, API calls, scripted interactions, robotic access, or any form of systematic data extraction. Any such automated access constitutes Encroachment and is strictly prohibited.
+
+Section 3.04. Prohibition on Name Utilization. No Recipient may utilize any name, designation, identifier, trademark, service mark, trade dress, brand element, or any confusingly similar variant thereof that is associated with the Work, including but not limited to the repository name, the library name, the studio name, or any abbreviation or permutation thereof. Such utilization is Encroachment regardless of context, regardless of whether the Recipient's code differs from the Work, regardless of the platform or registry involved, and regardless of any purported fair use, nominative use, or descriptive use defense.
+
+Section 3.05. Prohibition on Registry Publication. No Recipient may publish, upload, submit, register, deposit, or in any manner make available any package, library, module, tool, framework, or software artifact bearing any name associated with the Work to any package registry, including but not limited to npm, crates.io, PyPI, Maven Central, RubyGems, Packagist, NuGet, Conda, Homebrew, Docker Hub, or any analogous registry now existing or hereafter created. Such publication constitutes Encroachment and is strictly prohibited.
+ARTICLE IV: WAIVER OF RECIPROCAL OBLIGATIONS
+
+Section 4.01. Affirmative Waiver of Expectations. The Recipient hereby waives any expectation, right, claim, or demand that the Licensor adhere to any custom, practice, usage, or convention of open source software communities, including but not limited to:
+
+(a) Any expectation of continued access to the Work;
+
+(b) Any expectation of notice prior to termination or revocation;
+
+(c) Any expectation of explanation or justification for termination or revocation;
+
+(d) Any expectation that the Licensor will accept contributions;
+
+(e) Any expectation that the Licensor will respond to issues or inquiries;
+
+(f) Any expectation that the Licensor will maintain backward compatibility;
+
+(g) Any expectation that the Licensor will continue developing the Work;
+
+(h) Any expectation that the Licensor will act in good faith, reasonably, or fairly;
+
+(i) Any expectation that the Licensor will not change the terms of this Covenant;
+
+(j) Any expectation that the Licensor will not enforce its rights aggressively;
+
+(k) Any expectation that the Licensor will not revoke permissions previously granted; and
+
+(l) Any and all other expectations that might arise from the Licensor's publication of the Work or any conduct of the Licensor.
+
+Section 4.02. Unilateral Encroachment Waiver. By accessing, viewing, downloading, copying, forking, cloning, branching, referencing, linking to, importing, requiring, depending upon, installing, deploying, executing, integrating, or in any manner whatsoever interacting with the Work, the Recipient automatically and irrevocably waives any claim, defense, or argument that such interaction constitutes anything other than Encroachment as defined in Section 1.04, unless and until such time as the Recipient has obtained express written authorization pursuant to a separate instrument described in Section 3.02.
+
+Section 4.03. Waiver of Notice. The Recipient waives any right to receive notice of any modification, amendment, restatement, supplement, replacement, or revocation of this Covenant. The Licensor may effectuate any such modification by updating the text of this Covenant within the repository associated with the Work, and such modification shall be binding upon all Recipients immediately upon publication, regardless of whether any particular Recipient has viewed the updated version.
+
+Section 4.04. Waiver of Jury Trial. To the extent permitted by applicable law, the Recipient waives any right to a trial by jury in any action, proceeding, or counterclaim arising out of or relating to this Covenant, the Work, or any Encroachment.
+
+Section 4.05. Waiver of Class Action. The Recipient waives any right to participate in any class action, class arbitration, consolidated proceeding, or representative action against the Licensor, whether as a class representative, class member, or otherwise.
+ARTICLE V: UNILATERAL REVOCATION AUTHORITY
+
+Section 5.01. Absolute Revocation Power. The Licensor retains the absolute, unconditional, unfettered, unilateral, and discretionary power to revoke any and all privileges granted under Article III of this Covenant, with respect to any specific Recipient, any category of Recipients, or all Recipients collectively. Such revocation may be exercised for any reason, for no reason, for reasons that are arbitrary, for reasons that are capricious, for reasons that are unreasonable, for reasons that are based upon mistaken facts, for reasons that are based upon no facts, or for reasons that would otherwise be considered improper in any legal context.
+
+Section 5.02. Manner of Revocation. The Licensor may effectuate revocation through any means of communication, including but not limited to:
+
+(a) Written notice delivered by any medium;
+
+(b) Electronic mail directed to any address associated with the Recipient;
+
+(c) Public announcement within the repository associated with the Work;
+
+(d) Digital notification through any platform or registry;
+
+(e) Constructive notice by operation of this Section alone; or
+
+(f) Any other method the Licensor deems appropriate.
+
+No actual receipt of notice by the Recipient shall be required for revocation to become effective. Revocation shall be deemed effective immediately upon the Licensor's declaration.
+
+Section 5.03. Consequences of Revocation. Upon revocation, the Recipient shall immediately, without further demand, without notice, without opportunity to cure, and without any grace period:
+
+(a) Cease all use of the Work;
+
+(b) Destroy all copies of the Work in the Recipient's possession, custody, or control;
+
+(c) Delete all installations, deployments, and integrations of the Work;
+
+(d) Remove the Work from any repositories, registries, or distribution channels under the Recipient's control;
+
+(e) Certify in writing to the Licensor that all such destruction and deletion has been completed; and
+
+(f) Indemnify the Licensor for any costs, expenses, fees, or damages arising from the Recipient's continued use of the Work following revocation.
+
+Section 5.04. Retroactive Revocation. The Licensor reserves the right to apply revocation retroactively. In the event of retroactive revocation, any use of the Work that occurred prior to the effective date of revocation shall be deemed unauthorized ab initio (from the beginning), and the Recipient shall be liable for infringement damages for the entire period of such use.
+
+Section 5.05. Forced Fork Termination. Any fork, branch, derivative work, modification, translation, port, adaptation, or any work based in whole or in part upon the Work is subject to the same revocation authority described in this Article V. The Licensor may revoke this Covenant with respect to any fork independently of its revocation with respect to the original Work. Upon revocation of a fork, all consequences described in Section 5.03 shall apply to the maintainer, contributors, distributors, and any party in possession of such fork.
+ARTICLE VI: FINANCIAL EXPLOITATION BAR
+
+Section 6.01. Commercial Utilization Prohibition. The Licensor, in its sole and absolute discretion, may determine that any utilization of the Work for purposes of financial advantage, monetary benefit, economic gain, revenue generation, profit realization, or commercial enrichment constitutes Encroachment and a material breach of the terms of this Covenant.
+
+Section 6.02. Non-Exhaustive Enumeration. Commercial utilization shall include, but shall not be limited to:
+
+(a) Selling access to services, servers, platforms, or applications that incorporate or rely upon the Work;
+
+(b) Accepting any form of payment, donation, subscription, membership fee, patronage contribution, or tip in exchange for access to features enabled by the Work;
+
+(c) Incorporating the Work into any product, service, or offering that is distributed for a fee;
+
+(d) Utilizing the Work to generate indirect revenue through advertising, sponsorships, partnerships, affiliate arrangements, lead generation, or data monetization;
+
+(e) Utilizing the Work within any organizational context where the Recipient derives competitive advantage, operational efficiency, cost reduction, or any form of business benefit; and
+
+(f) Any other activity that the Licensor, in its sole judgment, determines to be commercial exploitation.
+
+Section 6.03. Forfeiture and Disgorgement. Upon the Licensor's determination that a Recipient has engaged in any commercial utilization, the Licensor may, in addition to revoking all privileges pursuant to Article V:
+
+(a) Demand disgorgement of all revenues, profits, earnings, financial benefits, and economic advantages derived from such commercial utilization;
+
+(b) Seek statutory damages as permitted under applicable law up to the maximum amount available;
+
+(c) Petition any hosting platform, repository, registry, service provider, financial institution, payment processor, or any other entity to freeze, attach, or seize assets associated with such commercial utilization;
+
+(d) Publicly identify the Recipient as a violator of this Covenant; and
+
+(e) Pursue any and all other remedies available at law, in equity, or under any applicable legal regime.
+ARTICLE VII: ATTRIBUTION AND NOTICE PRESERVATION
+
+Section 7.01. Mandatory Retention of Notices. Any Recipient who has been granted privileges under Section 3.02 to distribute the Work or any derivative work thereof must retain, in the Source form of such distributed work, all copyright notices, patent notices, trademark notices, attribution notices, license notices, covenant notices, and any other proprietary notices from the Source form of the Work.
+
+Section 7.02. Prohibition on License Alteration. No Recipient may alter, modify, amend, supplement, replace, supersede, or otherwise change this Covenant with respect to the Work or any portion thereof. Any purported alteration of this Covenant shall be void ab initio and of no force or effect.
+
+Section 7.03. Prominence of Required Notices. Any notices required to be retained under Section 7.01 must be displayed with sufficient prominence such that a reasonably attentive recipient of the distributed work would be likely to see and read such notices.
+ARTICLE VIII: DISCLAIMERS AND LIMITATIONS
+
+Section 8.01. Disclaimer of Warranties. THE WORK IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT ANY WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, ACCURACY, COMPLETENESS, RELIABILITY, SECURITY, CURRENCY, OR QUALITY. THE LICENSOR DOES NOT WARRANT THAT THE WORK WILL MEET THE RECIPIENT'S REQUIREMENTS, THAT THE WORK WILL BE AVAILABLE ON AN UNINTERRUPTED, TIMELY, SECURE, OR ERROR-FREE BASIS, OR THAT ANY DEFECTS IN THE WORK WILL BE CORRECTED.
+
+Section 8.02. Disclaimer of Future Availability. THE LICENSOR MAY DISCONTINUE PROVIDING THE WORK, MAY REVOKE ALL PERMISSIONS HEREUNDER, MAY DELETE THE REPOSITORY, AND MAY CEASE ALL ACTIVITIES RELATED TO THE WORK AT ANY TIME WITHOUT NOTICE OR LIABILITY TO ANY RECIPIENT.
+
+Section 8.03. Limitation of Liability. IN NO EVENT SHALL THE LICENSOR BE LIABLE TO ANY RECIPIENT FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, PUNITIVE, OR EXEMPLARY DAMAGES, INCLUDING BUT NOT LIMITED TO DAMAGES FOR LOSS OF PROFITS, GOODWILL, USE, DATA, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR RELATING TO THIS COVENANT, THE WORK, OR ANY ENCROACHMENT, WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), PRODUCT LIABILITY, STATUTORY VIOLATION, OR ANY OTHER LEGAL THEORY, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+Section 8.04. Limitation on Duration of Claims. ANY CLAIM OR CAUSE OF ACTION ARISING OUT OF OR RELATING TO THIS COVENANT OR THE WORK MUST BE FILED WITHIN ONE (1) YEAR AFTER SUCH CLAIM OR CAUSE OF ACTION AROSE, OR SHALL BE FOREVER BARRED.
+ARTICLE IX: INDEMNIFICATION
+
+Section 9.01. Recipient Indemnification. The Recipient shall indemnify, defend, and hold harmless the Licensor from and against any and all claims, demands, actions, suits, proceedings, judgments, settlements, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees and disbursements) arising out of or relating to:
+
+(a) The Recipient's use of the Work;
+
+(b) The Recipient's violation of this Covenant;
+
+(c) The Recipient's Encroachment upon the Licensor's rights;
+
+(d) Any claim that the Recipient's derivative work infringes upon the rights of any third party; or
+
+(e) Any other act or omission of the Recipient related to the Work.
+ARTICLE X: MODIFICATION AND AMENDMENT
+
+Section 10.01. Unilateral Amendment Right. The Licensor reserves the right to modify, amend, restate, supplement, replace, or rescind this Covenant at any time without prior notice to any Recipient and without obtaining consent from any Recipient.
+
+Section 10.02. Effective Date of Amendments. Amendments become effective immediately upon publication within the repository associated with the Work. Any Recipient who continues to interact with the Work after an amendment shall be deemed to have accepted the amended terms.
+
+Section 10.03. No Right to Notice. The Recipient waives any right to receive notice of amendments to this Covenant. It is the Recipient's sole responsibility to review this Covenant periodically for changes.
+ARTICLE XI: SEVERABILITY AND SURVIVAL
+
+Section 11.01. Severability. If any provision of this Covenant is determined by a tribunal of competent jurisdiction to be invalid, illegal, void, or unenforceable, the Licensor may elect either to:
+
+(a) Sever such provision and enforce the remainder of this Covenant; or
+
+(b) Declare the entire Covenant void ab initio and revert to the default prohibition regime described in Article II.
+
+Section 11.02. Survival of Terms. The following provisions shall survive any termination, revocation, expiration, or rescission of this Covenant:
+
+(a) Article II (Sovereign Reservation of Rights);
+
+(b) Article IV (Waiver of Reciprocal Obligations);
+
+(c) Article VI (Financial Exploitation Bar);
+
+(d) Article VIII (Disclaimers and Limitations);
+
+(e) Article IX (Indemnification);
+
+(f) Article XI (Severability and Survival); and
+
+(g) Any other provision that by its nature should survive.
+ARTICLE XII: ACCEPTANCE BY INTERACTION
+
+Section 12.01. Manifestation of Assent. BY ACCESSING, VIEWING, DOWNLOADING, COPYING, FORKING, CLONING, BRANCHING, REFERENCING, LINKING TO, IMPORTING, REQUIRING, DEPENDING UPON, INSTALLING, DEPLOYING, EXECUTING, INTEGRATING, OR IN ANY MANNER WHATSOEVER INTERACTING WITH THE WORK, THE RECIPIENT MANIFESTS ITS ASSENT TO ALL TERMS AND CONDITIONS OF THIS COVENANT.
+
+Section 12.02. Constructive Consent. If the Recipient does not agree to all terms and conditions of this Covenant, the Recipient must immediately cease all interaction with the Work, delete any copies in its possession, and refrain from any Encroachment. Any continued interaction with the Work constitutes constructive consent to this Covenant.
+
+Section 12.03. No Signature Required. This Covenant is binding upon the Recipient regardless of whether the Recipient has signed, clicked, or affirmatively indicated acceptance in any manner. The Licensor disclaims any requirement of a writing, signature, clickwrap, browsewrap, or any other formality for this Covenant to become fully enforceable.
+ARTICLE XIII: GOVERNING LAW AND JURISDICTION
+
+Section 13.01. Governing Law. This Covenant shall be governed by and construed in accordance with the laws of the jurisdiction where the Licensor resides at the time of enforcement, without regard to conflict of laws principles. The Licensor may elect, in its sole discretion and on a case-by-case basis, to apply the laws of any jurisdiction where the Recipient resides or where any Encroachment occurred.
+
+Section 13.02. Exclusive Jurisdiction. Any dispute arising out of or relating to this Covenant shall be resolved exclusively in the courts of the jurisdiction selected by the Licensor. The Recipient irrevocably submits to the personal jurisdiction of such courts and waives any objection based on improper venue or forum non conveniens.
+
+Section 13.03. Service of Process. The Recipient agrees that service of process may be effected through any means reasonably calculated to provide notice, including electronic mail, public repository notification, or any method permitted by the rules of the selected jurisdiction.
+ARTICLE XIV: ENTIRE AGREEMENT
+
+Section 14.01. Integration. This Covenant constitutes the entire agreement between the Licensor and the Recipient with respect to the Work and supersedes all prior or contemporaneous communications, representations, agreements, or understandings, whether written or oral, relating to the Work.
+
+Section 14.02. No Reliance. The Recipient acknowledges that it has not relied upon any representation, communication, or conduct of the Licensor not expressly set forth in this Covenant.
+
+Section 14.03. Construction Against Drafter Not Applicable. The rule of construction that ambiguities are resolved against the drafter is expressly waived and shall not apply to this Covenant. Any ambiguity shall be resolved in favor of the Licensor and against any Recipient.
+ARTICLE XV: COOPERATIVE RECIPROCAL OPEN-PRIVILEGE AND SOVEREIGN CLAWBACK
+(THE DIGNITY, HONOR, AND COMMUNITY FLOURISHING PROVISION)
+
+Section 15.01. The Spirit of Mutual Sharing (The Good Faith Collaborator Presumption).
+
+The Licensor acknowledges the rich traditions of collaborative software development and wishes to participate therein as a generous, albeit prudent, steward. Accordingly, the Licensor graciously extends to any Recipient who has not previously been subject to revocation under Article V a conditional, non-exclusive, non-transferable, and revocable privilege to engage in the following activities, provided such activities are undertaken in a manner consistent with the dignity of the Work and the honor of the Licensor:
+
+(a) Local Modification for Personal Use. The Recipient may modify the Work for the Recipient's own non-commercial, non-public, non-distributed use, such as local experimentation or educational exploration, without any obligation to share such modifications, provided that no modified copy leaves the Recipient's sole custody.
+
+(b) Contribution of Improvements. The Recipient is kindly invited to submit Contributions (as defined in Article I) to the Licensor for potential incorporation into the Work. Any such submission shall be governed by Article V of the Apache License, Version 2.0, as incorporated herein, meaning the Licensor may accept, reject, modify, or ignore such Contributions without any accounting, credit beyond that which the Licensor voluntarily elects to give, or any ongoing obligation to the Contributor.
+
+(c) Forking for Collaborative Enhancement. The Recipient may create a public fork of the Work for the sole purpose of proposing improvements to the Licensor or for the purpose of maintaining a version that addresses a specific, narrowly defined bug or compatibility issue, provided that such fork is explicitly designated as "unofficial," "unendorsed," and "not maintained by Aethelgrad Studio" in any and all documentation, repository descriptions, and metadata.
+
+(d) Integration into Non-Commercial, Non-Distributed Systems. The Recipient may integrate the Work into internal, non-public, non-commercial systems without distributing the Work to third parties, subject to the Recipient's continued compliance with all attribution and notice preservation requirements of Article VII.
+
+Section 15.02. The Reciprocity and Attribution Compact (The Honor Among Developers Undertaking).
+
+In exchange for the privileges described in Section 15.01, the Recipient solemnly agrees to the following obligations, which the Licensor deems essential to preserve the dignity of the Work and the honor of the community:
+
+(a) The Share-Alike Commitment. If the Recipient distributes any modification, derivative work, translation, port, adaptation, or fork of the Work to any third party, whether by public repository, package registry, file transfer, physical media, or any other means, the Recipient must make the complete Source form of such distributed work available to the public under the exact terms of this Covenant (ARPCC-UEW), without any additional restrictions, permissions, or alternative licensing options. The Recipient may not distribute any derivative work under a different license, including but not limited to any version of the GNU General Public License, MIT License, BSD License, or any proprietary license.
+
+(b) The Prominent Attribution Requirement. Any derivative work or distributed fork must contain, in a location readily visible to any user, operator, or recipient of the work, the following notice displayed in plain text, in a font size no smaller than the surrounding text, and in a manner that does not require scrolling, clicking, or any affirmative action to view:
+
+"Built with AethelLib — developed by Aethelgrad Studio under the Aethelgrad Reciprocal Public Code Covenant. This software is not endorsed by, sponsored by, or affiliated with Aethelgrad Studio unless expressly stated."
+
+Such notice must appear in any user interface, chat window, splash screen, log output, about box, help menu, command-line help text, configuration file comment, and any other location where a reasonably observant user might look for attribution.
+
+(c) The Preservation of Sovereign Notices. The Recipient may not remove, alter, obscure, or otherwise modify any copyright notice, trademark notice, license text, covenant text, or any other proprietary notice contained within the Work, except to add the Recipient's own copyright notice for its own modifications.
+
+Section 15.03. The Community Goodwill and Mutual Respect Clause (The Be Nice or Leave Provision).
+
+The Licensor highly values a respectful, constructive, and dignified community atmosphere. Therefore, the Recipient agrees to conduct itself with professional courtesy when discussing, referencing, or interacting with the Work, the Licensor, or any associated projects. Without limiting the generality of the Licensor's revocation authority under Article V, the Licensor may determine, in its sole and absolute discretion, that any of the following constitute a breach of the spirit of this Covenant and a basis for immediate revocation:
+
+(a) Public disparagement, ridicule, or mockery of the Work or the Licensor;
+
+(b) False or misleading statements about the origin, performance, security, or quality of the Work;
+
+(c) Deliberate efforts to cause confusion about whether any third-party work is endorsed by, sponsored by, or affiliated with the Licensor;
+
+(d) Any communication, whether public or private, that the Licensor reasonably perceives as hostile, aggressive, ungrateful, or entitled;
+
+(e) The act of forking the Work without a genuine, good-faith intention to contribute improvements or address defects, where "genuine intention" is determined solely by the Licensor;
+
+(f) Any action that, in the Licensor's judgment, tends to diminish the reputation, goodwill, or perceived value of the Work or the Aethelgrad brand.
+
+Section 15.04. The Sovereign Commercial Clawback (The Gentle Reminder That You Owed Us Clause).
+
+The Licensor respects the legitimate need for commercial entities to sustain their operations. However, the Licensor does not concede that its own labor, creativity, and intellectual property should be exploited for the financial benefit of others without appropriate compensation. Accordingly:
+
+(a) Grace Period for Innocent Commercial Use. If a Recipient engages in any commercial utilization of the Work or its derivatives, as defined in Article VI, such Recipient is hereby placed on constructive notice that its privileges under this Article XV are automatically converted from a gratuitous license to a compensated license, pending the Licensor's election under subsection (b).
+
+(b) The Licensor's Election. Upon discovery of any commercial utilization, the Licensor may, in its sole discretion, elect either:
+
+(i) The Friendly Licensing Offer. The Licensor may propose a commercially reasonable licensing fee, royalty percentage, flat annual payment, or other financial arrangement. The Recipient shall have seventy-two (72) hours from the time of the Licensor's proposal to accept such terms in writing and remit any initial payment demanded. The Licensor's proposal shall be deemed commercially reasonable solely by virtue of having been proposed; the Recipient waives any argument that the proposed terms are excessive, unfair, or inconsistent with industry standards.
+
+(ii) The Immediate Revocation Without Notice. The Licensor may invoke Article V of this Covenant, retroactively revoke all privileges from the Recipient, and demand immediate destruction of all copies, without any opportunity to cure, without any obligation to offer a paid license, and without any liability whatsoever to the Licensor.
+
+(c) The Licensor's Right to Audit. Upon reasonable suspicion of commercial utilization, the Licensor may demand that the Recipient provide a complete and accurate accounting of all revenues, profits, cost savings, or other financial benefits derived directly or indirectly from the Work. The Recipient shall provide such accounting within fourteen (14) days of the demand, certified under penalty of perjury. Failure to provide a timely and accurate accounting shall be deemed an admission of willful infringement and shall entitle the Licensor to seek maximum statutory damages.
+
+Section 15.05. The Contribution Valuation and Reclamation Clause (The Thank You, But It Is Still Ours Provision).
+
+The Licensor warmly welcomes Contributions from the community. However, to avoid any ambiguity regarding ownership and control:
+
+(a) Irrevocable Assignment of Contributions. Any Contribution intentionally submitted to the Licensor shall be deemed an irrevocable, perpetual, worldwide, royalty-free, fully paid-up, transferable, sublicensable assignment to the Licensor of all copyright, patent, trademark, trade secret, and any other intellectual property rights in and to such Contribution. The Contributor waives any moral rights in the Contribution to the extent permitted by applicable law.
+
+(b) No Obligation to Accept or Use. The Licensor may accept, reject, modify, ignore, delete, or incorporate Contributions in any manner whatsoever, without any duty to notify, credit, or compensate the Contributor.
+
+(c) Reclamation Prohibited. Once submitted, a Contribution may not be withdrawn, revoked, or reclaimed by the Contributor, regardless of any subsequent dispute, disagreement, or change of heart regarding the Licensor or this Covenant.
+
+Section 15.06. The Documentation and Good Citizenship Encouragement (The Help Us Help You Clause).
+
+The Licensor encourages Recipients to contribute to the improvement of the Work's documentation, examples, tutorials, and other auxiliary materials. Any such contributions shall be governed by Section 15.05 and, in addition:
+
+(a) The Contributor grants the Licensor an unlimited, irrevocable license to modify, adapt, translate, or restructure any contributed documentation without attribution to the Contributor.
+
+(b) The Contributor warrants that any contributed documentation is accurate, original, and does not infringe any third-party rights. The Contributor agrees to indemnify the Licensor against any claims arising from inaccurate or infringing documentation.
+
+Section 15.07. The No-Reliance and No-Expectation of Continued Openness Clause (The This Is a Gift, Not a Right Clarification).
+
+Notwithstanding the generous permissions set forth in this Article XV, the Recipient acknowledges and agrees that:
+
+(a) All privileges granted herein are revocable at will under Article V, and no course of dealing, period of non-enforcement, or public representation by the Licensor shall create any vested right, legitimate expectation, or reliance interest in the continued availability of such privileges.
+
+(b) The Licensor may, at any time and without notice, convert this Covenant to a fully proprietary, closed-source model, delete the public repository, cease all distribution, and revoke all outstanding privileges, without any liability to any Recipient who may have built upon the Work.
+
+(c) The Recipient assumes all risk of relying upon the Work, including the risk that the Licensor may change the terms, revoke access, or discontinue development at any moment.
+
+Section 15.08. The Dignity Preservation and Honor Protection Clause (The Do Not Make Us Use This Provision).
+
+The Licensor genuinely prefers a cooperative, open, and respectful relationship with the community. The provisions of this Article XV are not intended to be exercised frequently or lightly. They exist to protect the Licensor's dignity, the honor of the Work, and the integrity of the Aethelgrad brand against those who would exploit, abuse, or disrespect them.
+
+The Recipient is therefore encouraged to enjoy the Work, to build wonderful things with it, to share improvements, and to participate in the community in a spirit of mutual flourishing. The Licensor asks only that the Recipient refrain from commercial exploitation, provide proper attribution, respect the share-alike obligation, and treat the Licensor with courtesy.
+
+If the Recipient does these things, the Licensor will likely never invoke the revocation, clawback, audit, or demolition provisions. The Recipient will likely enjoy a long, productive, and untroubled relationship with the Work.
+
+But if the Recipient does not, the Licensor will have no choice but to enforce every provision of this Covenant to the fullest extent permitted by law, without hesitation, without mercy, and without apology.
+
+Section 15.09. The Good Faith Requirement (Unidirectional).
+
+The Recipient agrees to act in good faith in its dealings with the Licensor. The Licensor, however, expressly disclaims any reciprocal obligation of good faith, and the Recipient waives any claim that the Licensor has violated any implied covenant of good faith and fair dealing, as the Licensor's rights under this Covenant are absolute, discretionary, and not subject to any standard of reasonableness.
+
+Section 15.10. Integration with Article V.
+
+For the avoidance of doubt, the privileges granted in this Article XV are fully subordinate to the Licensor's absolute, unilateral, and arbitrary revocation authority under Article V. The Licensor may revoke any or all privileges under this Article XV at any time, for any reason or no reason, regardless of the Recipient's compliance with the terms hereof, and without any obligation to provide notice, explanation, or cure period.
+
+The Recipient's only recourse in the event of revocation is to destroy all copies of the Work and cease all use. No claim for detrimental reliance, promissory estoppel, unjust enrichment, or any other equitable or legal theory shall lie against the Licensor.
+EXECUTION AND PROMULGATION
+
+IN WITNESS WHEREOF, the Licensor has caused this Covenant to be restated, promulgated, and published as of the Effective Date.
+
+AETHELGRAD STUDIO
+
+By virtue of publication alone, without further formality or authentication.
