@@ -60,7 +60,30 @@ Write-Host "[Y]" -NoNewline -ForegroundColor Green
 Write-Host "/" -NoNewline -ForegroundColor DarkGray
 Write-Host "[n]" -ForegroundColor Red
 Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
-$BumpChoice = Read-Host
+$BumpChoice = ""
+if ($Host -and $Host.UI -and $Host.UI.RawUI -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) {
+    while ($Host.UI.RawUI.KeyAvailable) {
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    }
+    $Key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    # Handle Ctrl+C
+    if ($Key.VirtualKeyCode -eq 3 -or ($Key.VirtualKeyCode -eq 67 -and ($Key.ControlKeyState -match "LeftCtrl|RightCtrl"))) {
+        Write-Host ""
+        Write-Error "Operation cancelled by user."
+        exit 1
+    }
+    $BumpChoice = $Key.Character
+    if ([int]$Key.Character -eq 13) {
+        $BumpChoice = ""
+    }
+    if ($BumpChoice -ne "") {
+        Write-Host $BumpChoice
+    } else {
+        Write-Host ""
+    }
+} else {
+    $BumpChoice = Read-Host
+}
 
 if ($BumpChoice -eq "" -or $BumpChoice -match "^[Yy]") {
     # Increment logic (Base-10 Odometer roll-over)
@@ -88,49 +111,51 @@ if ($BumpChoice -eq "" -or $BumpChoice -match "^[Yy]") {
 
     # Serialize manifest back to file with clean standard formatting
     $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-    $CleanJson = @"
-{
-    "format_version": $($Manifest.format_version),
-    "header": {
-        "name": "$($Manifest.header.name)",
-        "description": "$($Manifest.header.description)",
-        "uuid": "$($Manifest.header.uuid)",
-        "version": [$Major, $Minor, $Patch],
-        "min_engine_version": [$($Manifest.header.min_engine_version -join ', ')],
-        "license": "$($Manifest.header.license)"
-    },
-    "modules": [
-        {
-            "description": "$($Manifest.modules[0].description)",
-            "type": "$($Manifest.modules[0].type)",
-            "uuid": "$($Manifest.modules[0].uuid)",
-            "version": [$Major, $Minor, $Patch]
-        },
-        {
-            "description": "$($Manifest.modules[1].description)",
-            "language": "$($Manifest.modules[1].language)",
-            "type": "$($Manifest.modules[1].type)",
-            "uuid": "$($Manifest.modules[1].uuid)",
-            "entry": "$($Manifest.modules[1].entry)",
-            "version": [$Major, $Minor, $Patch]
+    $ManifestObj = [ordered]@{
+        format_version = $Manifest.format_version
+        header = [ordered]@{
+            name = $Manifest.header.name
+            description = $Manifest.header.description
+            uuid = $Manifest.header.uuid
+            version = $NewVersionArray
+            min_engine_version = $Manifest.header.min_engine_version
+            license = $Manifest.header.license
         }
-    ],
-    "dependencies": [
-        {
-            "module_name": "$($Manifest.dependencies[0].module_name)",
-            "version": "$($Manifest.dependencies[0].version)"
-        },
-        {
-            "module_name": "$($Manifest.dependencies[1].module_name)",
-            "version": "$($Manifest.dependencies[1].version)"
-        }
-    ]
-}
-"@
+        modules = @(
+            [ordered]@{
+                description = $Manifest.modules[0].description
+                type = $Manifest.modules[0].type
+                uuid = $Manifest.modules[0].uuid
+                version = $NewVersionArray
+            },
+            [ordered]@{
+                description = $Manifest.modules[1].description
+                language = $Manifest.modules[1].language
+                type = $Manifest.modules[1].type
+                uuid = $Manifest.modules[1].uuid
+                entry = $Manifest.modules[1].entry
+                version = $NewVersionArray
+            }
+        )
+        dependencies = @(
+            [ordered]@{
+                module_name = $Manifest.dependencies[0].module_name
+                version = $Manifest.dependencies[0].version
+            },
+            [ordered]@{
+                module_name = $Manifest.dependencies[1].module_name
+                version = $Manifest.dependencies[1].version
+            }
+        )
+    }
+
+    $CleanJson = ConvertTo-Json $ManifestObj -Depth 10
+    # Clean up array formatting to keep version arrays single-line
+    $CleanJson = $CleanJson -replace '\[\s+(\d+),\s+(\d+),\s+(\d+)\s+\]', '[$1, $2, $3]'
     [System.IO.File]::WriteAllText($ManifestPath, $CleanJson, $Utf8NoBom)
 } else {
     $NewVersionStr = $CurrentVersionStr
-    Write-Host "[Version] Skipping bump — keeping v$NewVersionStr" -ForegroundColor Yellow
+    Write-Host "[Version] Skipping bump - keeping v$NewVersionStr" -ForegroundColor Yellow
 }
 
 # 2. RUN BUILD & COMPRESS
