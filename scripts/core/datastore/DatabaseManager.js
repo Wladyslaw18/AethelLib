@@ -50,6 +50,12 @@ export class DatabaseManager {
         Kernel.system.beforeEvents.shutdown.subscribe(() => {
             this.flushAll()
         })
+
+        // Recover WAL and run migration on boot!
+        Kernel.system.run(async () => {
+            await this.resolvePendingWal()
+            await this.runOneTimeIndexMigration()
+        })
     }
 
     // ----------------------------------------------------------------------------
@@ -87,6 +93,19 @@ export class DatabaseManager {
                 this.cache.delete(key)
             }
             this.cache.set(key, value)
+            
+            // Hard cap cache memory (LRU eviction of clean keys)
+            if (this.cache.size > 1500) {
+                let evicted = 0
+                for (const [k, _] of this.cache.entries()) {
+                    if (evicted >= 200) break
+                    if (k !== key && !this.dirtyKeys.has(k) && !this.isProtectedKey(k)) {
+                        this.cache.delete(k)
+                        evicted++
+                    }
+                }
+            }
+
             // mark the key as 'dirty' so it gets flushed to disk later.
             this.dirtyKeys.add(key)
             // schedule the write task if it isn't already running.
@@ -528,6 +547,163 @@ export class DatabaseManager {
             cacheSize: this.cache.size,
             dirtyKeys: this.dirtyKeys.size,
             transactionQueues: this.transactionQueues.size
+        }
+    }
+
+    /**
+     * Writes a WAL entry to persistent world storage synchronously.
+     */
+    writeWal(senderId, receiverId, amount, senderOriginalBalance, receiverOriginalBalance) {
+        const walEntry = {
+            senderId,
+            receiverId,
+            amount,
+            senderOriginalBalance,
+            receiverOriginalBalance,
+            timestamp: Date.now()
+        };
+        Kernel.world.setDynamicProperty("ae:wal", JSON.stringify(walEntry));
+    }
+
+    /**
+     * Clears the WAL entry.
+     */
+    clearWal() {
+        Kernel.world.setDynamicProperty("ae:wal", undefined);
+    }
+
+    /**
+     * Scans the persistent world storage for unresolved transactions and recovers/rolls them back.
+     */
+    async resolvePendingWal() {
+        try {
+            const rawWal = Kernel.world.getDynamicProperty("ae:wal");
+            if (typeof rawWal !== "string") return;
+
+            console.warn(`[DatabaseManager] [WAL] Unresolved write-ahead log entry found! Recovering...`);
+            const wal = JSON.parse(rawWal);
+            if (!wal || !wal.senderId || !wal.receiverId || !wal.amount) {
+                Kernel.world.setDynamicProperty("ae:wal", undefined);
+                return;
+            }
+
+            const PlayerStore = Kernel.get("playerStore");
+            const StoreKeys = Kernel.get("keys");
+            if (!PlayerStore || !StoreKeys) {
+                console.error(`[DatabaseManager] [WAL] PlayerStore or StoreKeys not available during WAL recovery!`);
+                return;
+            }
+
+            const sender = { id: wal.senderId };
+            const receiver = { id: wal.receiverId };
+            const amount = wal.amount;
+
+            const senderBalanceKey = StoreKeys.money(sender.id);
+            const receiverBalanceKey = StoreKeys.money(receiver.id);
+
+            const currentSenderBalance = PlayerStore.get(sender, senderBalanceKey) ?? 1000;
+            const currentReceiverBalance = PlayerStore.get(receiver, receiverBalanceKey) ?? 1000;
+
+            console.log(`[DatabaseManager] [WAL] Sender '${sender.id}' current balance: ${currentSenderBalance} (expected original: ${wal.senderOriginalBalance})`);
+            console.log(`[DatabaseManager] [WAL] Receiver '${receiver.id}' current balance: ${currentReceiverBalance} (expected original: ${wal.receiverOriginalBalance})`);
+
+            if (currentSenderBalance === wal.senderOriginalBalance - amount && currentReceiverBalance === wal.receiverOriginalBalance) {
+                console.warn(`[DatabaseManager] [WAL] Transaction was partially completed (sender debited but receiver not credited). Rolling back...`);
+                PlayerStore.set(sender, senderBalanceKey, wal.senderOriginalBalance);
+                
+                const { JournaledDb } = await import("./JournaledDatabase.js");
+                JournaledDb.flush();
+                this.flushDirty();
+            } else if (currentSenderBalance === wal.senderOriginalBalance - amount && currentReceiverBalance === wal.receiverOriginalBalance + amount) {
+                console.log(`[DatabaseManager] [WAL] Transaction was fully completed. Clearing log.`);
+            } else if (currentSenderBalance === wal.senderOriginalBalance && currentReceiverBalance === wal.receiverOriginalBalance) {
+                console.log(`[DatabaseManager] [WAL] Transaction had not started. Clearing log.`);
+            } else {
+                console.warn(`[DatabaseManager] [WAL] Mismatched state detected. Performing full rollback to original balances.`);
+                PlayerStore.set(sender, senderBalanceKey, wal.senderOriginalBalance);
+                PlayerStore.set(receiver, receiverBalanceKey, wal.receiverOriginalBalance);
+                
+                const { JournaledDb } = await import("./JournaledDatabase.js");
+                JournaledDb.flush();
+                this.flushDirty();
+            }
+
+            Kernel.world.setDynamicProperty("ae:wal", undefined);
+            console.log(`[DatabaseManager] [WAL] Recovery complete and WAL cleared.`);
+        } catch (error) {
+            console.error(`[DatabaseManager] [WAL] Error during recovery process: ${error}`);
+        }
+    }
+
+    /**
+     * One-time background migration to parse historical data and build indexes.
+     */
+    async runOneTimeIndexMigration() {
+        try {
+            const isMigrated = this.get("ae:index_migrated")
+            if (isMigrated) return
+
+            console.warn("[DatabaseManager] [Migration] Running one-time database index migration...");
+            const allIds = Kernel.world.getDynamicPropertyIds()
+            
+            const playerIndex = new Set()
+            const namePattern = /^player:(.+):name$/
+            const msgPattern = /^audit:msg:(.+)$/
+
+            for (let i = 0; i < allIds.length; i++) {
+                // Yield periodically to prevent blocking the tick
+                if (i % 100 === 0) {
+                    await new Promise(resolve => Kernel.system.run(resolve))
+                }
+
+                const propId = allIds[i]
+                
+                // 1. Process player name mapping & UUID register
+                const nameMatch = propId.match(namePattern)
+                if (nameMatch) {
+                    const uuid = nameMatch[1]
+                    const name = this.get(propId)
+                    if (typeof name === "string" && name.trim().length > 0) {
+                        this.set(`playername:${name.toLowerCase()}`, uuid)
+                        playerIndex.add(uuid)
+                    }
+                }
+
+                // 2. Process conversation message keys
+                const msgMatch = propId.match(msgPattern)
+                if (msgMatch) {
+                    const pairId = msgMatch[1]
+                    const parts = pairId.split("_")
+                    if (parts.length === 2) {
+                        const [idA, idB] = parts
+                        
+                        const convsA = this.get(`audit:convs:${idA}`) || []
+                        if (!convsA.includes(idB)) {
+                            convsA.push(idB)
+                            this.set(`audit:convs:${idA}`, convsA)
+                        }
+                        
+                        const convsB = this.get(`audit:convs:${idB}`) || []
+                        if (!convsB.includes(idA)) {
+                            convsB.push(idA)
+                            this.set(`audit:convs:${idB}`, convsB)
+                        }
+                    }
+                }
+            }
+
+            // Save player ledger index
+            if (playerIndex.size > 0) {
+                const existingIndex = this.get("ae:player_index") || []
+                const mergedIndex = Array.from(new Set([...existingIndex, ...playerIndex]))
+                this.set("ae:player_index", mergedIndex)
+            }
+
+            this.set("ae:index_migrated", true)
+            this.flushDirty()
+            console.warn("[DatabaseManager] [Migration] Database index migration completed successfully!");
+        } catch (error) {
+            console.error(`[DatabaseManager] [Migration] Index migration failed: ${error}`)
         }
     }
 }
