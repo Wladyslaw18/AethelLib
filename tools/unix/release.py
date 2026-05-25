@@ -35,6 +35,47 @@ def prompt_confirm():
         print("\n\033[91mOperation cancelled.\033[0m")
         sys.exit(0)
 
+def get_key():
+    """Reads a single keypress from the terminal without requiring Enter."""
+    if not sys.stdin.isatty():
+        try:
+            return sys.stdin.readline().strip()
+        except Exception:
+            return ""
+
+    if os.name == 'nt':
+        try:
+            import msvcrt
+            while msvcrt.kbhit():
+                msvcrt.getch()
+            ch = msvcrt.getch()
+            try:
+                char_str = ch.decode('utf-8', errors='ignore')
+            except Exception:
+                char_str = ch.decode('cp1252', errors='ignore')
+            return char_str
+        except Exception:
+            pass
+
+    try:
+        import tty
+        import termios
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+    except Exception:
+        pass
+
+    try:
+        return sys.stdin.readline().strip()
+    except Exception:
+        return ""
+
 def prompt_bump_version(current_version_str):
     """Ask whether to bump the manifest version. Returns True to bump, False to skip."""
     border = "-" * 58
@@ -43,7 +84,14 @@ def prompt_bump_version(current_version_str):
     print(f"  Bump manifest version? {GREEN}[Y]{RESET}/{DARK_GRAY}/{RESET}\033[91m[n]\033[0m")
     print(f"{DARK_GRAY}{border}{RESET}")
     try:
-        choice = input().strip().lower()
+        key = get_key()
+        if key in ('\x03', '\x04'):
+            raise KeyboardInterrupt()
+        choice = key.strip().lower()
+        if choice:
+            print(choice)
+        else:
+            print()
         return choice in ("", "y")
     except (KeyboardInterrupt, EOFError):
         print("\n\033[91mOperation cancelled.\033[0m")
