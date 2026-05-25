@@ -53,9 +53,25 @@ export const CommandManager = {
             } catch (e2) { }
         }
 
+        // Populate 'systemName' enum
+        try {
+            const staticSystems = [
+                "database", "playerStore", "worldStore", "rankStore", "keys", "settings",
+                "economy", "shopStore", "chestShopStore", "ranks", "chat", "banManager",
+                "permissions", "formatter", "muteStore", "messageStore", "homeStore",
+                "warpStore", "tpaStore", "tpaHandshake", "tpaService", "teleportService",
+                "signalBus", "placeholders", "claimStore", "floatingTextStore"
+            ];
+            const kernelSystems = Array.from(Kernel.systems.keys()).filter(k => k !== "commandRegistry" && k !== "commandManager");
+            const allSystems = Array.from(new Set([...staticSystems, ...kernelSystems]));
+            Registry.registerEnum("systemName", allSystems);
+        } catch (e) {
+            console.error(`[CommandManager] Failed to register systemName enum: ${e}`);
+        }
+
         // Populate 'permission' enum
         Registry.registerEnum("permission", [
-            "admin", "essentials.home", "essentials.sethome", "essentials.delhome", 
+            "admin", "admin.system", "essentials.home", "essentials.sethome", "essentials.delhome", 
             "essentials.tpa", "essentials.tpaccept", "essentials.tpadeny", "essentials.tpacancel",
             "essentials.pay", "essentials.money", "essentials.withdraw", "essentials.shop",
             "essentials.sell", "essentials.rtp", "essentials.back", "essentials.menu",
@@ -96,20 +112,24 @@ Registry.getAll().forEach(name => {
     const def = Registry.get(name);
     if (!def) return;
 
+    if (def.chatRaw === true) {
+        console.log(`[CommandManager] Skipping native registration for chatRaw command: ${name}`);
+        return;
+    }
+
     // Resolve parameters
     let paramsList = def.params || def.parameters || [];
 
     // --- CHATRAW_SKIP_GUARD ---
-    // Commands with chatRaw:true are handled entirely by the chat interceptor.
-    // The native engine must NEVER see them — client-side schema validation
-    // rejects math operators (+, *, /) before the server ever receives the message.
-    if (def.chatRaw === true) return;
+    // chatRaw commands are registered natively via the chaotic-buffer strategy
+    // so they show up in autocomplete/suggestions, but their execution is handled
+    // by joining split args.
 
     // --- SELECTIVE_NATIVE_AUTOCOMPLETE_STRATEGY ---
     // For commands that are truly chaotic (symbols/infinite args), 
-    // we use Buffer Registration (10 optional strings).
+    // we use Buffer Registration (8 optional strings).
     // This tricks the native engine into letting the symbols pass to our interceptor.
-    const chaoticCommands = [];
+    const chaoticCommands = ["calculate", "calc"];
     if (chaoticCommands.includes(name.toLowerCase())) {
         paramsList = [
             { name: "t1", type: "string", optional: true },
@@ -268,13 +288,19 @@ Registry.getAll().forEach(name => {
             const paramsList = cmd.params || cmd.parameters;
             const isLegacy = !cmd.params && !!cmd.parameters;
 
-            const cleanArgs = args.map((arg, index) => {
+            let rawArgs = args;
+            if (vector === "NATIVE" && args.length === 1 && typeof args[0] === "object" && args[0] !== null && !args[0].isValid && !args[0].id && !args[0].typeId) {
+                const argsObj = args[0];
+                rawArgs = paramsList ? paramsList.map(param => argsObj[param.name]) : [];
+            }
+
+            const cleanArgs = rawArgs.map((arg, index) => {
                 if (arg === undefined) return undefined;
 
                 const paramDef = paramsList ? paramsList[index] : null;
                 if (!paramDef) return arg;
 
-                let pType = paramDef.type;
+                const pType = paramDef.type;
 
                 // Cast number parameters back to string if the original command parameter expects a string
                 const isOriginalString = pType === "string" || pType === Kernel.CustomCommandParamType.String;
