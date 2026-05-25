@@ -21,6 +21,7 @@
 tools/*ship*
 tools/msg_filter.ps1
 tools/purge_history.ps1
+tools/Output/
 
 
 # LLM EXCLUSION ZONE (Strict Lockdown)
@@ -42,3 +43,4 @@ worlds/
 *.db
 *.log
 ContentLog*
+.bds_path
