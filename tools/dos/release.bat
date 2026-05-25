@@ -51,7 +51,19 @@ powershell -ExecutionPolicy Bypass -Command ^
     "Write-Host '/' -NoNewline -ForegroundColor DarkGray;" ^
     "Write-Host '[n]' -ForegroundColor Red;" ^
     "Write-Host '----------------------------------------------------------' -ForegroundColor DarkGray;" ^
-    "$choice=Read-Host;" ^
+    "    $choice='';" ^
+    "    if ($Host -and $Host.UI -and $Host.UI.RawUI -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) {" ^
+    "        while ($Host.UI.RawUI.KeyAvailable) { $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') };" ^
+    "        $k = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');" ^
+    "        if ($k.VirtualKeyCode -eq 3 -or ($k.VirtualKeyCode -eq 67 -and ($k.ControlKeyState -match 'LeftCtrl|RightCtrl'))) {" ^
+    "            Write-Host ''; Write-Error 'Operation cancelled by user.'; exit 1" ^
+    "        };" ^
+    "        $choice = $k.Character;" ^
+    "        if ([int]$k.Character -eq 13) { $choice = '' };" ^
+    "        if ($choice -ne '') { Write-Host $choice } else { Write-Host '' };" ^
+    "    } else {" ^
+    "        $choice = Read-Host;" ^
+    "    };" ^
     "if ($choice -eq '' -or $choice -match '^[Yy]') {" ^
     "  if($p -lt 9){$p++}elseif($mi -lt 9){$p=0;$mi++}else{$p=0;$mi=0;$ma++};" ^
     "  $new=""$ma.$mi.$p"";" ^
