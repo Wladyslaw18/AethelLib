@@ -21,6 +21,12 @@ export const TpaService = {
             return false
         }
 
+        const blocked = TPAStore.getBlocked(target.id)
+        if (blocked.includes(sender.id)) {
+            sender.sendMessage("\u00A7c\u00A7l» \u00A77You are blocked by that player.");
+            return false
+        }
+
         const requestId = TpaHandshake.createRequest(
             sender.id,
             sender.name,
