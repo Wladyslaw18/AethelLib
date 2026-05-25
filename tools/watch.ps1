@@ -1,33 +1,14 @@
+param(
+    [switch]$AutoStart
+)
+
 # ============================================================
 #  Aethelgrad Essentials - BDS Dev Watcher + Auto Restart
 #  Save any file → syncs to BDS → restarts BDS automatically
 #  NO more manual quit/rejoin cycle
 # ============================================================
 
-Clear-Host
-Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "             AETHELGRAD HOT-RELOAD WATCHER                " -ForegroundColor White
-Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "  This script will:" -ForegroundColor Gray
-Write-Host "  1. Monitor behavior pack workspace files recursively." -ForegroundColor White
-Write-Host "  2. Automatically sync file changes to BDS upon save." -ForegroundColor White
-Write-Host "  3. Force-restart the bedrock server console dynamically." -ForegroundColor White
-Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
-Write-Host "  Press [ENTER] to start hot-watcher | [Ctrl+C] to cancel" -ForegroundColor Green
-Write-Host "==========================================================" -ForegroundColor Green
-Read-Host | Out-Null
-
-
-$PSScriptDir = $PSScriptRoot
-$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
-
-$BP_SOURCE  = $ProjectRoot
-$BDS_ROOT   = Join-Path $ProjectRoot "BDS"
-$BP_DEST    = Join-Path $BDS_ROOT "development_behavior_packs\Aethelgrad Essentials"
-$BDS_EXE    = Join-Path $BDS_ROOT "bedrock_server.exe"
-
-$DEBOUNCE_MS      = 800   # ms to wait after last save before restarting
-$RESTART_COOLDOWN = 5     # seconds minimum between restarts
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # ── Helpers ─────────────────────────────────────────────────
 function Info($m)    { Write-Host "[AE $(Get-Date -f HH:mm:ss)] $m" -ForegroundColor Cyan }
@@ -35,20 +16,176 @@ function Ok($m)      { Write-Host "[AE $(Get-Date -f HH:mm:ss)] $m" -ForegroundC
 function Warn($m)    { Write-Host "[AE $(Get-Date -f HH:mm:ss)] $m" -ForegroundColor Yellow }
 function Err($m)     { Write-Host "[AE $(Get-Date -f HH:mm:ss)] $m" -ForegroundColor Red }
 
-# ── Validate ────────────────────────────────────────────────
+function Resolve-BDS-Directory($path) {
+    if ($path -and (Test-Path $path)) {
+        $item = Get-Item $path
+        if ($item.PSIsContainer) {
+            return $item.FullName
+        } else {
+            return $item.DirectoryName
+        }
+    }
+    return $null
+}
+
+function Test-Valid-BDS-Directory($path) {
+    if (!$path -or !(Test-Path $path)) { return $null }
+    $resolved = Resolve-BDS-Directory $path
+    if ($resolved -and (Test-Path (Join-Path $resolved "bedrock_server.exe"))) {
+        return $resolved
+    }
+    return $null
+}
+
+function Kill-BDS-Processes {
+    param($ExcludeProcess = $null)
+    $RunningBDS = Get-Process -Name "bedrock_server" -ErrorAction SilentlyContinue
+    if ($ExcludeProcess) {
+        $RunningBDS = $RunningBDS | Where-Object { $_.Id -ne $ExcludeProcess.Id }
+    }
+    if ($RunningBDS) {
+        $PIDs = $RunningBDS.Id
+        Warn "Found running bedrock_server instance(s) (PIDs: $($PIDs -join ', ')). Terminating..."
+        foreach ($Proc in $RunningBDS) {
+            try {
+                Stop-Process -Id $Proc.Id -Force -ErrorAction Stop
+            } catch {
+                taskkill.exe /F /PID $Proc.Id /T > $null 2>&1
+            }
+        }
+        Start-Sleep -Seconds 1
+    }
+    # Forceful fallback check to kill any rogue instances
+    try {
+        taskkill.exe /F /IM bedrock_server.exe /T > $null 2>&1
+    } catch {}
+}
+
+# ── Paths & Setup ───────────────────────────────────────────
+$PSScriptDir = $null
+if ($PSScriptRoot) { $PSScriptDir = $PSScriptRoot } else { $PSScriptDir = Join-Path (Get-Location).Path "tools" }
+if (!(Test-Path $PSScriptDir)) {
+    if ((Get-Location).Path -like "*tools") {
+        $PSScriptDir = (Get-Location).Path
+    }
+}
+$ProjectRoot = $null
+if ($PSScriptRoot) {
+    $ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+} else {
+    if ((Get-Location).Path -like "*tools") {
+        $ProjectRoot = (Get-Item (Get-Location).Path).Parent.FullName
+    } else {
+        $ProjectRoot = (Get-Location).Path
+    }
+}
+$ConfigPath  = Join-Path $ProjectRoot ".bds_path"
+$BP_SOURCE   = $ProjectRoot
+
+# ── BDS Root Resolution ─────────────────────────────────────
+$BDS_ROOT = $null
+
+# 1. Check environment variables
+if ($env:BDS_PATH) {
+    $BDS_ROOT = Test-Valid-BDS-Directory $env:BDS_PATH
+}
+if (!$BDS_ROOT -and $env:BDS_ROOT) {
+    $BDS_ROOT = Test-Valid-BDS-Directory $env:BDS_ROOT
+}
+
+# 2. Check local config file
+if (!$BDS_ROOT -and (Test-Path $ConfigPath)) {
+    $Cached = Get-Content $ConfigPath -ErrorAction SilentlyContinue
+    $BDS_ROOT = Test-Valid-BDS-Directory $Cached
+}
+
+# 3. Check default BDS folder in project root
+if (!$BDS_ROOT) {
+    $BDS_ROOT = Test-Valid-BDS-Directory (Join-Path $ProjectRoot "BDS")
+}
+
+# 4. Prompt user if still not found or invalid
+while (!$BDS_ROOT) {
+    Warn "BDS directory (containing bedrock_server.exe) not automatically detected or invalid."
+    if ($env:NONINTERACTIVE -or [Console]::IsInputRedirected) {
+        Err "Non-interactive/redirected environment detected. Cannot prompt for BDS directory path. Exiting."
+        exit 1
+    }
+    Write-Host "Please enter the absolute path to your Bedrock Dedicated Server directory (or drag-and-drop bedrock_server.exe):" -ForegroundColor Gray
+    $InputPath = Read-Host
+    if ($null -eq $InputPath) {
+        Err "No input received. Exiting."
+        exit 1
+    }
+    # Trim quotes if dragged and dropped
+    $InputPath = $InputPath.Trim('"', "'").Trim()
+    
+    $Resolved = Test-Valid-BDS-Directory $InputPath
+    if ($Resolved) {
+        $BDS_ROOT = $Resolved
+        # Save to local configuration cache
+        try {
+            $BDS_ROOT | Out-File -FilePath $ConfigPath -Encoding utf8 -Force
+            Ok "BDS path cached to .bds_path"
+        } catch {
+            Warn "Could not save BDS path cache: $_"
+        }
+    } else {
+        Err "Path is invalid, does not exist, or does not contain bedrock_server.exe: $InputPath"
+    }
+}
+
+$BDS_ROOT = (Get-Item $BDS_ROOT).FullName
+$BP_DEST  = Join-Path $BDS_ROOT "development_behavior_packs\Aethelgrad Essentials"
+$RP_DEST  = Join-Path $BDS_ROOT "development_resource_packs\AethelLib (RP)"
+$BDS_EXE  = Join-Path $BDS_ROOT "bedrock_server.exe"
+
+$DEBOUNCE_MS      = 800   # ms to wait after last save before restarting
+$RESTART_COOLDOWN = 5     # seconds minimum between restarts
+
+# ── Validate Sources & Executable ───────────────────────────
 if (!(Test-Path $BP_SOURCE)) { Err "BP source not found: $BP_SOURCE"; exit 1 }
 if (!(Test-Path $BDS_EXE))   { Err "bedrock_server.exe not found: $BDS_EXE"; exit 1 }
 
-# ── Create BP dest if needed ─────────────────────────────────
-if (!(Test-Path $BP_DEST)) {
-    New-Item -ItemType Directory -Path $BP_DEST -Force | Out-Null
-    Ok "Created BP dest: $BP_DEST"
+# ── Terminate existing BDS instances first ───────────────────
+Kill-BDS-Processes
+
+# ── Show Welcome / Interactive Confirmation ──────────────────
+if (!$AutoStart) {
+    Clear-Host
+    Write-Host "==========================================================" -ForegroundColor Green
+    Write-Host "             AETHELGRAD HOT-RELOAD WATCHER                " -ForegroundColor White
+    Write-Host "==========================================================" -ForegroundColor Green
+    Write-Host "  BDS Path:  $BDS_ROOT" -ForegroundColor Gray
+    Write-Host "  Project:   $ProjectRoot" -ForegroundColor Gray
+    Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host "  This script will:" -ForegroundColor Gray
+    Write-Host "  1. Monitor behavior & resource pack files recursively." -ForegroundColor White
+    Write-Host "  2. Automatically sync file changes to BDS upon save." -ForegroundColor White
+    Write-Host "  3. Force-restart the bedrock server console dynamically." -ForegroundColor White
+    Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host "  Press [ENTER] to start hot-watcher | [Ctrl+C] to cancel" -ForegroundColor Green
+    Write-Host "==========================================================" -ForegroundColor Green
+
+    $null = Read-Host
 }
 
+# ── Global Cache & Restart Status ───────────────────────────
+$script:pendingRestart = $false
+$script:lastChangeMs   = 0
+$script:stdinClosed    = $false
+$script:bdsProcess     = $null
+$script:lastRestartSec = 0
+
 # ── Full sync function ────────────────────────────────────────
-function Sync-BP {
+function Sync-Packs {
     try {
-        # Sync only behavior pack files, ignoring BDS folder, build folders, node_modules, etc.
+        # Sync Behavior Pack
+        if (Test-Path $BP_DEST) {
+            Remove-Item -Path $BP_DEST -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        New-Item -ItemType Directory -Path $BP_DEST -Force | Out-Null
+        
         $BP_Files = @("manifest.json", "pack_icon.png", "scripts", "entities")
         foreach ($Item in $BP_Files) {
             $Source = Join-Path $BP_SOURCE $Item
@@ -56,16 +193,25 @@ function Sync-BP {
                 Copy-Item -Path $Source -Destination $BP_DEST -Recurse -Force
             }
         }
-        Ok "BP synced to BDS"
+        
+        # Sync Resource Pack
+        $RP_Name = "AethelLib (RP)"
+        $RP_Source = Join-Path $BP_SOURCE $RP_Name
+        if (Test-Path $RP_Source) {
+            if (Test-Path $RP_DEST) {
+                Remove-Item -Path $RP_DEST -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            New-Item -ItemType Directory -Path $RP_DEST -Force | Out-Null
+            Copy-Item -Path "$RP_Source\*" -Destination $RP_DEST -Recurse -Force
+        }
+        
+        Ok "Packs (BP + RP) synced to BDS"
     } catch {
         Err "Sync failed: $_"
     }
 }
 
 # ── BDS process management ───────────────────────────────────
-$script:bdsProcess  = $null
-$script:lastRestart = 0
-
 function Start-BDS {
     if ($script:bdsProcess -and !$script:bdsProcess.HasExited) {
         Info "Stopping BDS..."
@@ -75,6 +221,9 @@ function Start-BDS {
         } catch { }
     }
 
+    # Ensure no other bedrock_server processes are running (clean port bind)
+    Kill-BDS-Processes -ExcludeProcess $script:bdsProcess
+
     Info "Starting BDS..."
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName  = $BDS_EXE
@@ -82,6 +231,7 @@ function Start-BDS {
     $psi.UseShellExecute = $false
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError  = $true
+    $psi.RedirectStandardInput  = $true
 
     $script:bdsProcess = New-Object System.Diagnostics.Process
     $script:bdsProcess.StartInfo = $psi
@@ -91,10 +241,10 @@ function Start-BDS {
         $line = $Event.SourceEventArgs.Data
         if (!$line) { return }
         if ($line -match "Script|script|ERROR|error|WARN|warn|\[AE\]|Pack Stack|Server started|Exception|exception|scripting") {
-            $color = if ($line -match "ERROR|error|Exception|exception") { "Red" }
-                     elseif ($line -match "WARN|warn") { "Yellow" }
-                     elseif ($line -match "Server started|Pack Stack") { "Green" }
-                     else { "Gray" }
+            $color = "Gray"
+            if ($line -match "ERROR|error|Exception|exception") { $color = "Red" }
+            elseif ($line -match "WARN|warn") { $color = "Yellow" }
+            elseif ($line -match "Server started|Pack Stack") { $color = "Green" }
             Write-Host "  [BDS] $line" -ForegroundColor $color
         }
     }
@@ -105,79 +255,125 @@ function Start-BDS {
     $script:bdsProcess.Start() | Out-Null
     $script:bdsProcess.BeginOutputReadLine()
     $script:bdsProcess.BeginErrorReadLine()
-    $script:lastRestart = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    $script:lastRestartSec = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
     Ok "BDS started (PID $($script:bdsProcess.Id))"
 }
 
-# ── Debounce state ───────────────────────────────────────────
-$script:pendingRestart = $false
-$script:lastChange     = 0
-
-function Queue-Restart {
-    $script:pendingRestart = $true
-    $script:lastChange = [DateTime]::UtcNow.Ticks / 10000
+# ── File watcher (Polling) ───────────────────────────────────
+function Get-Watched-Files {
+    $files = @{}
+    
+    # 1. Behavior Pack files
+    $BP_Files = @("manifest.json", "pack_icon.png", "scripts", "entities")
+    foreach ($Item in $BP_Files) {
+        $Source = Join-Path $BP_SOURCE $Item
+        if (Test-Path $Source) {
+            if (Test-Path $Source -PathType Container) {
+                Get-ChildItem -Path $Source -Recurse -File | ForEach-Object {
+                    if ($_.FullName -notmatch '\.(tmp|swp|bak)$') {
+                        $files[$_.FullName] = $_.LastWriteTime.Ticks
+                    }
+                }
+            } else {
+                if ($Source -notmatch '\.(tmp|swp|bak)$') {
+                    $files[(Get-Item $Source).FullName] = (Get-Item $Source).LastWriteTime.Ticks
+                }
+            }
+        }
+    }
+    
+    # 2. Resource Pack files
+    $RP_Name = "AethelLib (RP)"
+    $RP_Source = Join-Path $BP_SOURCE $RP_Name
+    if (Test-Path $RP_Source) {
+        Get-ChildItem -Path $RP_Source -Recurse -File | ForEach-Object {
+            if ($_.FullName -notmatch '\.(tmp|swp|bak)$') {
+                $files[$_.FullName] = $_.LastWriteTime.Ticks
+            }
+        }
+    }
+    
+    return $files
 }
 
-# ── File watcher ─────────────────────────────────────────────
-$watcher = New-Object System.IO.FileSystemWatcher
-$watcher.Path = $BP_SOURCE
-$watcher.Filter = "*.*"
-$watcher.IncludeSubdirectories = $true
-$watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite -bor
-                        [System.IO.NotifyFilters]::FileName  -bor
-                        [System.IO.NotifyFilters]::DirectoryName
-$watcher.EnableRaisingEvents = $true
+# ── Main Watch Setup ─────────────────────────────────────────
+$global:fileCache = Get-Watched-Files
 
-$fileAction = {
-    $fullPath = $Event.SourceEventArgs.FullPath
-    if ($fullPath -match '\.(tmp|swp|bak)$') { return }
-    # Ignore changes in build, backups, releases, and BDS folders
-    if ($fullPath -match '\\(build|backups|releases|BDS|node_modules|\.git)\\' -or $fullPath -match '\\(build|backups|releases|BDS|node_modules|\.git)$') { return }
-    if (Test-Path $fullPath -PathType Container) { return }
-    $relative = $fullPath.Substring($using:BP_SOURCE.Length)
-    Write-Host "  [CHANGED] $relative" -ForegroundColor DarkCyan
-    Queue-Restart
-}
-
-Register-ObjectEvent $watcher "Changed" -Action $fileAction | Out-Null
-Register-ObjectEvent $watcher "Created" -Action $fileAction | Out-Null
-Register-ObjectEvent $watcher "Deleted" -Action $fileAction | Out-Null
-Register-ObjectEvent $watcher "Renamed" -Action $fileAction | Out-Null
-
-# ── Banner ───────────────────────────────────────────────────
 Write-Host ""
-Write-Host "  ╔══════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "  ║  Aethelgrad Essentials - Dev Watcher     ║" -ForegroundColor Green
-Write-Host "  ║                                          ║" -ForegroundColor Green
-Write-Host "  ║  Save any file -> BDS auto restarts      ║" -ForegroundColor Green
-Write-Host "  ║  Script errors appear here instantly     ║" -ForegroundColor Green
-Write-Host "  ║                                          ║" -ForegroundColor Green
-Write-Host "  ║  Connect: 127.0.0.1:19132               ║" -ForegroundColor Green
-Write-Host "  ║  Ctrl+C to stop everything               ║" -ForegroundColor Green
-Write-Host "  ╚══════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host "  +------------------------------------------+" -ForegroundColor Green
+Write-Host "  |  Aethelgrad Essentials - Dev Watcher     |" -ForegroundColor Green
+Write-Host "  |                                          |" -ForegroundColor Green
+Write-Host "  |  Save any file -> BDS auto restarts      |" -ForegroundColor Green
+Write-Host "  |  Script errors appear here instantly     |" -ForegroundColor Green
+Write-Host "  |                                          |" -ForegroundColor Green
+Write-Host "  |  Connect: 127.0.0.1:19132               |" -ForegroundColor Green
+Write-Host "  |  Ctrl+C to stop everything               |" -ForegroundColor Green
+Write-Host "  +------------------------------------------+" -ForegroundColor Green
 Write-Host ""
 
-# ── Initial sync + start ─────────────────────────────────────
-Sync-BP
+Sync-Packs
 Start-BDS
 
 # ── Main loop ────────────────────────────────────────────────
 try {
     while ($true) {
-        Start-Sleep -Milliseconds 200
+        Start-Sleep -Milliseconds 500
+
+        # Check standard input to forward console commands to BDS asynchronously
+        if (!$script:stdinClosed) {
+            try {
+                if ([System.Console]::KeyAvailable) {
+                    $line = [System.Console]::ReadLine()
+                    if ($null -ne $line -and $line.Trim() -ne "") {
+                        if ($script:bdsProcess -and !$script:bdsProcess.HasExited) {
+                            $script:bdsProcess.StandardInput.WriteLine($line)
+                        }
+                    }
+                }
+            } catch {
+                # Stdin is likely redirected or closed
+                $script:stdinClosed = $true
+            }
+        }
+
+        # Poll for changes
+        $currentFiles = Get-Watched-Files
+        $changed = $false
+        
+        foreach ($filePath in $currentFiles.Keys) {
+            if (!$global:fileCache.ContainsKey($filePath) -or $global:fileCache[$filePath] -ne $currentFiles[$filePath]) {
+                $relative = $filePath.Substring($BP_SOURCE.Length)
+                Write-Host "  [CHANGED] $relative" -ForegroundColor DarkCyan
+                $changed = $true
+            }
+        }
+        foreach ($filePath in $global:fileCache.Keys) {
+            if (!$currentFiles.ContainsKey($filePath)) {
+                $relative = $filePath.Substring($BP_SOURCE.Length)
+                Write-Host "  [DELETED] $relative" -ForegroundColor DarkCyan
+                $changed = $true
+            }
+        }
+        
+        if ($changed) {
+            $global:fileCache = $currentFiles
+            $script:pendingRestart = $true
+            $script:lastChangeMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        }
 
         if ($script:pendingRestart) {
-            $now     = [DateTime]::UtcNow.Ticks / 10000
-            $elapsed = $now - $script:lastChange
+            $nowMs   = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+            $elapsed = $nowMs - $script:lastChangeMs
 
             # Wait for debounce — no more saves for 800ms
             if ($elapsed -ge $DEBOUNCE_MS) {
-                $secsSinceLast = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - $script:lastRestart
+                $nowSec = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+                $secsSinceLast = $nowSec - $script:lastRestartSec
                 if ($secsSinceLast -ge $RESTART_COOLDOWN) {
                     $script:pendingRestart = $false
                     Warn "Change detected - syncing and restarting BDS..."
-                    Sync-BP
+                    Sync-Packs
                     Start-BDS
                 }
             }
@@ -194,8 +390,6 @@ try {
     }
 } finally {
     Warn "Shutting down..."
-    $watcher.EnableRaisingEvents = $false
-    $watcher.Dispose()
     if ($script:bdsProcess -and !$script:bdsProcess.HasExited) {
         $script:bdsProcess.Kill()
     }
