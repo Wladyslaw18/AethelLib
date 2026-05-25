@@ -1,5 +1,6 @@
 import { Kernel } from "../../core/Kernel.js"
 import { LifecycleController } from "../../core/LifecycleController.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 /*
  * LEGACY_COMMAND_INTERCEPTOR
@@ -49,6 +50,8 @@ export const CommandHandler = {
          * communication and tab-completion hacks.
          */
         Kernel.system.afterEvents.scriptEventReceive.subscribe(this._handleSlashCommand.bind(this))
+        Kernel.system.afterEvents.scriptEventReceive.subscribe(this._handleTestCommand.bind(this))
+        Kernel.system.afterEvents.scriptEventReceive.subscribe(this._handleScriptEventCalc.bind(this))
 
         console.log(`[CommandHandler] INTERFACE_ONLINE | Prefix: ${this._prefix}`);
     },
@@ -161,6 +164,171 @@ export const CommandHandler = {
     },
 
     /*
+     * HEADLESS_TEST_ORCHESTRATOR
+     * ----------------------------------------------------------------------------
+     * Intercepts '/scriptevent ae:test_cmd <cmd> [args...]' from standard input/console,
+     * wraps the inputs in a mock player sandbox, and executes the command logic.
+     */
+    _handleTestCommand(event) {
+        if (event.id !== "ae:test_cmd") return
+
+        try {
+            const message = event.message || ""
+            const tokens = message.trim().split(/\s+/).filter(Boolean)
+            if (tokens.length === 0) {
+                console.warn("[TestRunner] Usage: /scriptevent ae:test_cmd <commandName> [args...]")
+                return
+            }
+
+            let commandName = tokens[0]
+            if (commandName.startsWith("/")) {
+                commandName = commandName.slice(1)
+            }
+            if (commandName.includes(":")) {
+                commandName = commandName.split(":")[1]
+            }
+
+            let args = tokens.slice(1)
+            // Clean quotes from arguments
+            args = args.map(arg => {
+                if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
+                    return arg.slice(1, -1)
+                }
+                return arg
+            })
+
+            console.warn(`[TestRunner] Headless simulation: commandName='${commandName}' args=${JSON.stringify(args)}`)
+
+            // Helper to generate a robust mock player entity
+            const createMockPlayer = (name, id, isAdmin = false) => {
+                const properties = new Map()
+                const tags = new Set(isAdmin ? ["admin"] : [])
+                return {
+                    id,
+                    name,
+                    isValid: true,
+                    location: { x: 100, y: 64, z: 100 },
+                    dimension: {
+                        id: "minecraft:overworld"
+                    },
+                    sendMessage(msg) {
+                        const cleanMsg = msg.replace(/§[0-9a-fklmnor]/g, "")
+                        console.warn(`[${name}] ${cleanMsg}`)
+                    },
+                    hasTag(tag) {
+                        return tags.has(tag)
+                    },
+                    getTags() {
+                        return Array.from(tags)
+                    },
+                    addTag(tag) {
+                        tags.add(tag)
+                        console.warn(`[${name}] Tag added: ${tag}`)
+                        return true
+                    },
+                    removeTag(tag) {
+                        const existed = tags.delete(tag)
+                        console.warn(`[${name}] Tag removed: ${tag}`)
+                        return existed
+                    },
+                    getDynamicProperty(key) {
+                        return properties.get(key)
+                    },
+                    setDynamicProperty(key, value) {
+                        if (value === undefined) {
+                            properties.delete(key)
+                        } else {
+                            properties.set(key, value)
+                        }
+                    },
+                    teleport(location, options) {
+                        if (location) {
+                            this.location = { ...location }
+                        }
+                        if (options && options.dimension) {
+                            this.dimension = options.dimension
+                        }
+                        console.warn(`[${name}] Teleported to: ${JSON.stringify(this.location)} in ${this.dimension.id}`)
+                    },
+                    setGameMode(mode) {
+                        console.warn(`[${name}] GameMode set to ${mode}`)
+                        return true
+                    },
+                    runCommand(cmd) {
+                        console.warn(`[${name}] Executed command: ${cmd}`)
+                        return { successCount: 1 }
+                    },
+                    getComponent(componentId) {
+                        if (componentId === "minecraft:health" || componentId === "health") {
+                            return {
+                                effectiveMax: 20,
+                                setCurrentValue(val) {
+                                    console.warn(`[${name}] Health set to ${val}`)
+                                }
+                            }
+                        }
+                        if (componentId === "minecraft:hunger" || componentId === "hunger") {
+                            return {
+                                setCurrentValue(val) {
+                                    console.warn(`[${name}] Hunger set to ${val}`)
+                                }
+                            }
+                        }
+                        if (componentId === "minecraft:inventory" || componentId?.endsWith("inventory")) {
+                            return {
+                                container: {
+                                    getItem(_slot) { return null },
+                                    setItem(_slot, _item) {},
+                                    get size() { return 36 },
+                                    get emptySlotsCount() { return 36 },
+                                    addItem(_item) { return null }
+                                }
+                            }
+                        }
+                        return undefined
+                    }
+                }
+            }
+
+            Kernel.system.run(async () => {
+                const registeredMocks = []
+                try {
+                    const mockPlayer = createMockPlayer("MockPlayer", "mock-player-id", true)
+                    PlayerUtils.registerMock(mockPlayer)
+                    registeredMocks.push(mockPlayer)
+
+                    // Auto-detect other potential players in the arguments list
+                    for (const arg of args) {
+                        if (typeof arg === "string" && isNaN(Number(arg)) && !/^\d+[mhdw]$/i.test(arg) && !/^[{}[\],]/.test(arg)) {
+                            const lowerName = arg.toLowerCase()
+                            if (lowerName !== "mockplayer" && lowerName !== "mock-player-id") {
+                                const targetMock = createMockPlayer(arg, `mock-id-${lowerName}`, false)
+                                PlayerUtils.registerMock(targetMock)
+                                registeredMocks.push(targetMock)
+                            }
+                        }
+                    }
+
+                    await this._executeCommand(mockPlayer, commandName, args, "test")
+                    console.warn(`[TestRunner] Simulation finished.`)
+                } catch (e) {
+                    console.error(`[TestRunner] Simulation crash: ${e}`)
+                } finally {
+                    for (const mock of registeredMocks) {
+                        try {
+                            PlayerUtils.unregisterMock(mock)
+                        } catch (err) {
+                            console.error(`[TestRunner] Error unregistering mock ${mock.name}: ${err}`)
+                        }
+                    }
+                }
+            })
+        } catch (error) {
+            console.error(`[TestRunner] Exception: ${error}`)
+        }
+    },
+
+    /*
      * EXECUTION_ENGINE
      * ----------------------------------------------------------------------------
      * The heart of the command system. Performs the following sequence:
@@ -209,7 +377,8 @@ export const CommandHandler = {
             this._recordCommandStats(commandName, true, Date.now() - startTime)
 
         } catch (error) {
-            console.error(`[CommandHandler] EXECUTION_CRASH [${commandName}]: ${error}`)
+            const stackLines = (error.stack || "").split("\n").map(l => `[Scripting] [error]    ${l}`).join("\n")
+            console.error(`[CommandHandler] EXECUTION_CRASH [${commandName}]: ${error}\n${stackLines}`)
             player.sendMessage(`\u00A7c[Fatal] Execution pipeline failure: \u00A7e${error.message}`)
             this._recordCommandStats(commandName, false, Date.now() - startTime, "error")
         }
@@ -299,7 +468,16 @@ export const CommandHandler = {
         }
 
         if (matched) {
-            const [cmdName, ...args] = cmdText.trim().split(/\s+/).filter(Boolean)
+            let [cmdName, ...args] = cmdText.trim().split(/\s+/).filter(Boolean)
+            if (cmdName.includes(":")) {
+                cmdName = cmdName.split(":")[1]
+            }
+            args = args.map(arg => {
+                if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
+                    return arg.slice(1, -1)
+                }
+                return arg
+            })
             await this._executeCommand(player, cmdName, args, "programmatic")
             return true
         }
@@ -325,5 +503,27 @@ export const CommandHandler = {
         }
 
         return available.sort((a, b) => a.name.localeCompare(b.name))
+    },
+
+    /*
+     * SCRIPT_EVENT_CALCULATOR_ORCHESTRATOR
+     * Handles '/scriptevent ae:calc <expr>' and '/scriptevent ae:calculate <expr>'
+     * to bypass Bedrock's native client-side C++ operator validation.
+     */
+    _handleScriptEventCalc(event) {
+        if (event.id !== "ae:calc" && event.id !== "ae:calculate") return
+        if (!event.sourceEntity || !event.sourceEntity.isValid) return
+
+        const expression = (event.message || "").trim()
+        if (!expression) {
+            event.sourceEntity.sendMessage("\u00A7c\u00A7l\u00BB \u00A77Syntax Error: Math expression required.");
+            event.sourceEntity.sendMessage("\u00A77Example: /scriptevent ae:calc 2 + 3 * (4 / 2)");
+            return
+        }
+
+        Kernel.system.run(async () => {
+            const name = "calculate" // always use the canonical name
+            await this._executeCommand(event.sourceEntity, name, [expression], "scriptevent")
+        })
     }
 }
