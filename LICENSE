@@ -1,9 +1,9 @@
 Aethelgrad Reciprocal Public Code Covenant
-Version 2.1
+Version 2.2
 Effective Date: June 1, 2026
 
 ================================================================================
-  ARPCC v2.1 – A SOVEREIGN SOURCE-AVAILABLE LICENSE
+  ARPCC v2.2 – A SOVEREIGN SOURCE-AVAILABLE LICENSE
   ================================================================================
   Permissions:   ✓ Commercial use (tiered)  ✓ Modification   ✓ Distribution
   Conditions:    ⚠ 40‑day trial for corps    ⚠ No AI training  ⚠ No name squatting
@@ -45,12 +45,18 @@ ARTICLE 1: DEFINITIONS
 
 1.6 "Annual Revenue" means the gross revenue (USD equivalent) of the Recipient’s entire legal entity or, if the Recipient is a subsidiary, the gross revenue of the ultimate parent entity, as reported in the most recent fiscal year according to GAAP or IFRS, as applicable. For entities that do not publicly report revenue, the Recipient must provide a certified statement of Annual Revenue upon request, signed by an officer or owner. Revenue thresholds are adjusted annually for inflation based on the US Consumer Price Index.
 
-1.7 "Commercial Entity" means any Recipient with Annual Revenue exceeding 100,000USD,oranyentitythathasreceivedinstitutionalventurecapitalfundingexceeding100,000USD,oranyentitythathasreceivedinstitutionalventurecapitalfundingexceeding1,000,000 USD in aggregate, or any entity publicly traded on a securities exchange. For venture capital funding, only closed rounds of equity financing count; SAFEs, convertible notes, and grants do not trigger this status until conversion.
+1.7 "Commercial Entity" means:
+    (a) any Recipient with Annual Revenue exceeding $100,000 USD;
+    (b) any entity that has received institutional venture capital funding exceeding $1,000,000 USD in aggregate;
+    (c) any entity publicly traded on a securities exchange;
+    (d) any government agency, public school, or state-owned enterprise with an annual operating budget or public funding allocation exceeding $500,000 USD; or
+    (e) any registered non-profit organization or charity with an annual operating budget exceeding $1,000,000 USD.
+    For venture capital funding, only closed rounds of equity financing count; SAFEs, convertible notes, and grants do not trigger this status until conversion.
 
 1.8 The singular includes the plural, and "including" means "including without limitation".
-ARTICLE 2: COPYRIGHT LICENSE – THE HOMIE PASS
+ARTICLE 2: COPYRIGHT LICENSE – SOVEREIGN RECIPROCAL DEVELOPER FRANCHISE
 
-2.1 Grant for Non‑Commercial and Small Entities (The "Homie Pass").
+2.1 Grant for Non‑Commercial and Small Entities (The "Sovereign Reciprocal Developer Franchise").
 Any Recipient that is not a Commercial Entity (as defined in Section 1.7) is granted a perpetual, irrevocable (except for breach of conditions), worldwide, non‑exclusive, royalty‑free, non‑transferable copyright license to:
 
     (a) reproduce, copy, and distribute the Work, in whole or in part, in source or object form;
@@ -63,7 +69,7 @@ Any Recipient that is not a Commercial Entity (as defined in Section 1.7) is gra
 
 This license cannot be revoked for arbitrary reasons; it may only be terminated for material breach of Articles 4, 5, or 10, with a 30‑day cure period.
 
-2.2 Grant for Evaluation by Commercial Entities (The "WinRAR Trial").
+2.2 Grant for Evaluation by Commercial Entities (The "Finite Commercial Evaluation Franchise").
 Any Commercial Entity is granted a limited, royalty‑free, non‑transferable evaluation license to use the Work for a period of forty (40) calendar days from the date of first download, installation, or cloning (the "Evaluation Period"). During this period, the Commercial Entity may internally test, benchmark, and assess the Work for potential integration.
 
 2.3 Post‑Evaluation Requirement.
@@ -91,12 +97,67 @@ The minimum annual commercial license fee is $1,200 total, regardless of seat co
 
 3.3 Tier Migration.
 If an entity’s revenue moves between tiers, the new fee applies at the next renewal. No retroactive adjustment.
+
+3.4 Retroactive Compliance for Unauthorized Distribution (The "Retroactive Compliance and Infringement Rectification Franchise" Clause).
+Any Recipient who has distributed, sold, or otherwise commercially exploited the Work without prior authorization (including but not limited to Minecraft Marketplace partners, addon creators, or plugin developers) may petition the Licensor for a Retroactive Compliance Agreement. The Licensor may, in its sole discretion, offer terms based on the Recipient's total infringing revenue as follows:
+
+Infringing Revenue (USD)	Licensor's Share	Recipient Retains	Payment Terms
+0–500	25%	75%	Single payment within 30 days
+501–2,500	35%	65%	Single payment within 60 days
+2,501–10,000	45%	55%	Up to 3 installments over 90 days
+10,001–50,000	50%	50%	Up to 6 installments over 180 days
+Over $50,000	50%	50%	Negotiated payment plan
+
+The Licensor may, at their discretion, reduce the share by up to 50% for first-time offenders who:
+
+    (a) provide full written disclosure of all infringing revenue, including screenshots, sales data, and platform analytics;
+
+    (b) issue a public acknowledgment of the original authorship in the infringing product's description, on the Marketplace page, and in all relevant social media channels, reading:
+
+    "This product incorporates code from [WORK], developed by [LICENSOR] under the ARPCC v2.2 license. The original author has graciously allowed continued use under these terms."
+
+    (c) add a prominent link to the original repository;
+
+    (d) remove all Protected Marks and any confusingly similar branding from the infringing product.
+
+No Minimum Payment Floor. If the Recipient's total infringing revenue is zero, the Licensor may accept a written apology and public acknowledgment in lieu of payment.
+
+Audit Rights. The Licensor may demand access to sales records, platform dashboards, and financial accounts to verify reported revenue. Refusal constitutes willful infringement and triggers Article 7 (Reasonable Damages) and Article 8 (Public Disclosure).
+
+Repeat Offenders. Any Recipient who has previously benefited from this clause and is found to have committed a second violation shall be ineligible for any reduced share. The Licensor may pursue maximum damages under Article 7 without further notice.
+
+This clause is not a right. It is a privilege. The Licensor may deny any request for any reason, or for no reason at all. Acceptance of this clause constitutes an admission of past infringement and waives any statute of limitations defenses for the period of infringement.
+
+3.5 The "Equitable Hardship Mitigation and Non-Monetary Restitution Safe Harbor" Provision.
+Notwithstanding Section 3.4, if the Recipient demonstrates genuine financial hardship (defined as total infringing revenue under $2,500 and verifiable inability to pay the calculated share), the Licensor may, in their sole discretion, accept one of the following in lieu of monetary payment:
+
+    (a) A public video statement (minimum 30 seconds) acknowledging the infringement and endorsing the original Work, posted to all platforms where the infringing product was marketed;
+
+    (b) A written article or blog post (minimum 300 words) explaining what was copied, why it was wrong, and linking to the original Work;
+
+    (c) A contribution of code, documentation, or testing services to the original Work, of equivalent value as determined by the Licensor.
+
+This provision exists to educate, not to destroy. The Licensor reserves the right to publish the terms of any such agreement as an example to other potential violators.
+
+3.6 Central European Compliance (Poland & Germany).
+For Recipients whose habitual residence or principal place of business is in the Republic of Poland or the Federal Republic of Germany, the following specific provisions apply:
+
+    (a) Polish Copyright Act. The Licensor invokes the protection of the Polish Act on Copyright and Related Rights (Journal of Laws 2021, item 1062). Any violation of this Covenant shall entitle the Licensor to claim statutory damages under Article 79(1)(3) of that Act, which is limited to two (2) times the license fee that would have been owed (or up to three (3) times in the case of willful commercial infringement by a Commercial Entity), or three times (3x) the Base Rate under Article 7.2, at the Licensor's election. However, if the Recipient is a natural person (individual) or non-commercial entity who cooperates in good faith under Section 3.4, the statutory damages shall be capped at a maximum of one thousand Polish Złoty (1,000 PLN), or waived entirely in favor of a written apology and public acknowledgment under Section 3.5. This ensures Polish hobbyists are protected from financial ruin while maintaining accountability.
+
+    (b) German Copyright Act (UrhG). The 40‑day evaluation period in Article 2.2 constitutes a "test version" (Probeversion) within the meaning of German case law (BGH I ZR 3/08). Any use beyond that period without a paid license is an infringement under §97 UrhG, entitling the Licensor to injunctive relief and damages.
+
+    (c) GDPR‑Compliant Audit. Any audit under Article 7.4 shall, for natural persons in the EU, be limited to financial records directly attributable to revenue generated by the Work. The auditor shall be an independent, certified accountant bound by professional secrecy. The Recipient may redact any personal data unrelated to the Work's revenue.
+
+    (d) Public Disclosure Limitation. For natural persons (individuals) residing in the EU, the Licensor may not publish their name under Article 8 without a final court judgment of infringement. For legal entities (companies), the Licensor may publish the entity's name upon reasonable evidence of violation, without prior court order.
+
+    (e) Clickwrap Enforceability. The Recipient's act of downloading, cloning, or installing the Work constitutes a clear declaration of intent (oświadczenie woli) under Polish Civil Code Art. 60 and is fully enforceable under German contract law.
+
 ARTICLE 4: CONDITIONS AND LIMITATIONS
 
 4.1 Preservation of Notices.
 Any distribution of the Work or Derivative Work must retain all copyright, patent, trademark, and attribution notices from the original Work.
 
-4.2 Trademark Restrictions – The Anti‑Skid Shield.
+4.2 Trademark Restrictions – The Core Brand Integrity and Anti-Dilution Shield.
 Recipient may not use any trademark, service mark, trade name, logo, or brand identifier of the Licensor (including the Protected Marks listed in the Copyright Notice) without the Licensor’s express written permission. This prohibition does not apply to:
 
     (a) Nominative fair use to describe compatibility (e.g., "Compatible with [Work]");
@@ -122,6 +183,12 @@ Use of the Work, in whole or in part, as training data, input, or reference for 
 
 The burden of proving that an AI output was generated without use of the Work rests on the Recipient only if the Recipient had direct access to the Work. For third‑party AI providers who scraped the Work independently, the Licensor must prove access.
 
+4.7 AI Generation and Output Liability.
+If a Recipient uses an AI code generation tool, copilot, or language model that outputs a block of code exceeding five (5) contiguous lines from the Work, and the Recipient incorporates that output into a product or service, the Recipient is fully bound by this Covenant as if they had copied the code directly from the source. The Recipient may not cite "AI generation" or "AI machine translation" to evade the terms of this license.
+
+4.8 Submission of Code to AI Tools.
+Submitting the Work or portions thereof to third-party AI models for debugging, analysis, or refactoring is permitted only if the AI model's provider has a clear, legally binding privacy policy stating that inputted data is not used for model training or retained in a manner accessible to other users. The Recipient is liable if the AI model trains on the submitted Work.
+
 4.6 No Modification of This Covenant.
 Recipient may not alter, amend, or supplement the terms of this Covenant with respect to the Work. Any purported modification is void.
 ARTICLE 5: CONTRIBUTION ASSIGNMENT
@@ -136,7 +203,7 @@ The Licensor may accept, reject, modify, or disregard any Contribution without a
 Once submitted, a Contribution may not be revoked or reclaimed.
 ARTICLE 6: TERMINATION AND REVOCATION (FOR CAUSE ONLY)
 
-6.1 Termination for Material Breach – Homie Pass Recipients.
+6.1 Termination for Material Breach – Sovereign Reciprocal Developer Franchise Recipients.
 For Recipients that are not Commercial Entities, the Licensor may terminate the license only for material breach of Articles 4, 5, or 10. The Licensor must provide 30 days’ written notice and an opportunity to cure. Termination applies prospectively only.
 
 6.2 Revocation for Commercial Entities – Post‑Evaluation.
@@ -164,7 +231,7 @@ ARTICLE 7: REASONABLE DAMAGES (NO PUNITIVE PENALTIES)
 The standard commercial license fee for the Work is $1,200 USD per developer seat per year (the "Base Rate"), as set forth in Article 3. This rate is a reasonable estimate of the Licensor’s lost licensing revenue.
 
 7.2 Liquidated Damages for Unauthorized Commercial Use.
-Any Commercial Entity that uses the Work beyond the 40‑day Evaluation Period without a paid license agrees to pay, as liquidated damages and not as a penalty, an amount equal to three times (3x) the Base Rate (3,600USD)perdeveloperseatperyearofunauthorizeduse,∗∗withaminimumtotalof3,600USD)perdeveloperseatperyearofunauthorizeduse,∗∗withaminimumtotalof15,000 USD**. The damages are capped at $500,000 USD for a single violation to avoid being deemed punitive.
+Any Commercial Entity that uses the Work beyond the 40-day Evaluation Period without a paid license agrees to pay, as liquidated damages and not as a penalty, an amount equal to three times (3x) the Base Rate ($3,600 USD) per developer seat per year of unauthorized use, with a minimum total of $15,000 USD. The damages are capped at $500,000 USD for a single violation to avoid being deemed punitive. In the Federal Republic of Germany, the Licensor may alternatively claim statutory damages under §97(2) UrhG, which are capped at €250,000 per infringing act, at the Licensor's election.
 
 7.3 Tiered Minimum for Small Violators.
 If the violating entity has Annual Revenue under 500,000USD,theminimumliquidateddamagesare∗∗500,000USD,theminimumliquidateddamagesare∗∗5,000 USD** instead of $15,000.
@@ -177,11 +244,19 @@ The Licensor may not presume revenues or damages; actual amounts must be proven 
 
 7.6 No Waiver.
 Failure to enforce any provision does not waive future enforcement.
+
+7.7 Alternative Audits and Privacy Compliance.
+If a Recipient's local laws (including but not limited to the European Union General Data Protection Regulation - GDPR) prohibit direct disclosure of raw sales records or financial databases containing personal data of users, the Recipient shall, at its own expense, engage an independent certified public accountant licensed in the Recipient’s jurisdiction to perform the audit in accordance with the Licensor’s requirements, and provide the Licensor with an anonymized, certified audit report confirming the total gross revenue attributable to the Work.
+
+7.8 Valuation of Cryptocurrency and Virtual Goods.
+For the purpose of calculating revenue and damages under this Covenant, all payments received in cryptocurrency, tokens, virtual currencies, or virtual assets (including Minecraft Minecoins or platform-specific virtual tokens) shall be valued in USD equivalent based on the fair market exchange rate (spot price) at the time of transaction receipt.
 ARTICLE 8: PUBLIC DISCLOSURE RIGHT
 
 8.1 Upon a final, non‑appealable judicial determination or binding arbitration finding that a Recipient materially violated this Covenant (excluding minor, non‑willful violations cured promptly), the Licensor may publish the violator’s name, entity, and nature of violation in the Work’s repository and public forums.
 
 8.2 This right survives termination.
+
+For natural persons residing in the European Union, the Licensor shall seek a final court judgment before exercising the public disclosure right under this Article. This limitation does not apply to legal entities.
 ARTICLE 9: LOOPHOLE CLOSERS (WITH SAFE HARBORS)
 
 9.1 Subsidiaries and Affiliates.
@@ -195,6 +270,17 @@ Clean‑room reverse engineering or independent re‑implementation without copy
 
 9.4 De Minimis Exemption.
 Use of trivial portions of the Work (less than 5 lines of code, a single configuration setting, or a common color value) does not create any obligation under this Covenant.
+
+9.5 Future Environments and Decoupled Distribution.
+"Distribution" and "use" under this Covenant explicitly includes:
+    (a) deploying the Work or its Derivative Works to any public or private blockchain, decentralized database, or smart contract;
+    (b) executing the Work within decentralized autonomous organizations (DAOs);
+    (c) deploying the Work within virtual reality, augmented reality, spatial computing, or metaverse environments;
+    (d) running the Work on quantum computing systems.
+
+9.6 Distributed Autonomous Organizations (DAOs).
+If the Recipient is a DAO or a decentralized protocol, the entity and its members (including holders of governance tokens who vote on proposals affecting the deployment of the Work) are jointly and severally considered "Recipients" under Section 1.2, and their aggregate treasury valuation and trading volume shall be factored into the definition of a Commercial Entity.
+
 ARTICLE 10: ATTRIBUTION AND SHARE‑ALIKE (THE LGPL STYLE)
 
 10.1 General Attribution.
@@ -209,7 +295,7 @@ You may link your own proprietary application to the Work (via API, shared libra
 10.4 Enhanced Attribution for High‑Revenue Products.
 Any product generating over $500,000 USD in Annual Revenue that incorporates the Work must include the following in user‑facing about sections, public documentation, investor materials, and regulatory filings:
 
-    "This product uses [WORK], developed by [LICENSOR] under the ARPCC v2.1 license. This license is revocable for cause. See [REPOSITORY URL] for terms."
+    "This product uses [WORK], developed by [LICENSOR] under the ARPCC v2.2 license. This license is revocable for cause. See [REPOSITORY URL] for terms."
 
 ARTICLE 11: DISCLAIMER OF WARRANTIES
 
@@ -263,6 +349,13 @@ Any dispute arising under this Covenant shall be resolved exclusively in the cou
 
 17.3 Service of Process.
 Service of process may be effected by: (a) registered mail to the Recipient’s registered address; (b) email to the address provided by the Recipient; or (c) if no address is available, by public notice in the Work’s repository accompanied by a reasonable attempt to contact through other means.
+
+17.4 Anonymous and Pseudonymous Enforcements.
+If the Recipient is anonymous or operates under a pseudonym (including but not limited to online aliases, Discord handles, or GitHub usernames), service of process and legal notice may be validly executed by public announcement in the Work's primary repository, combined with a direct message or issue creation directed at any online platform or service provider hosting the Recipient's products, services, or communication channels (e.g., GitHub, Discord, Tebex, Patreon, or Minecraft Marketplace).
+
+17.5 Sanctions and Force Majeure.
+Nothing in this Covenant shall compel the Recipient or Licensor to violate any applicable international trade sanctions, export controls, or local banking regulations. In the event that international sanctions block monetary transfer between the Recipient's and Licensor's jurisdictions, the Recipient must deposit any required fees or revenue share into a local escrow account in the Recipient's jurisdiction, to be held in trust for the Licensor until such transfer becomes legally permissible.
+
 ARTICLE 18: ENTIRE AGREEMENT
 
 This Covenant constitutes the entire agreement between the Licensor and the Recipient concerning the Work. It supersedes all prior communications. Any separate written agreement (e.g., a commercial license) overrides conflicting terms.
@@ -278,7 +371,7 @@ Any copyright holder may use this Covenant as a license for their own Work by:
     (c) not altering the license text below the header.
 
 19.2 Version Control.
-Version numbers of this Covenant are controlled solely by Aethelgrad Studio, the original author. Third parties may not publish modified versions under the ARPCC name. However, any copyright holder using the template may state "Licensed under ARPCC v2.1" without implying endorsement.
+Version numbers of this Covenant are controlled solely by Aethelgrad Studio, the original author. Third parties may not publish modified versions under the ARPCC name. However, any copyright holder using the template may state "Licensed under ARPCC v2.2" without implying endorsement.
 
 19.3 No Endorsement.
 Use of this Covenant as a template does not imply endorsement by, sponsorship by, or affiliation with Aethelgrad Studio.
