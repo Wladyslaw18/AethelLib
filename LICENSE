@@ -27,6 +27,8 @@ PREAMBLE
 
 This Aethelgrad Reciprocal Public Code Covenant (the "Covenant") is a legal agreement between the copyright holder identified in the copyright notice above ("Licensor") and any individual or legal entity that downloads, clones, installs, executes, or distributes the Work ("Recipient").
 
+This library is free software for non-commercial entities, hobbyists, and academics; you can redistribute it and/or modify it under the terms of this Reciprocal Public Code Covenant. This Work is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms below for specific details and commercial limitations.
+
 This Covenant is a source‑available license. It is not submitted for OSI approval, and OSI definitions do not govern its interpretation. Publication of the Work does not constitute dedication to the public domain or any implied license beyond what this Covenant expressly grants.
 
 For individuals, hobbyists, academics, and small entities (annual revenue < $100,000 USD), this license is perpetual, royalty‑free, and cannot be revoked except for material breach.
@@ -411,6 +413,8 @@ Any product generating over $500,000 USD in Annual Revenue that incorporates the
 ARTICLE 11: DISCLAIMER OF WARRANTIES
 
 THE WORK IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON‑INFRINGEMENT, OR ACCURACY. THE LICENSOR DOES NOT WARRANT THAT THE WORK WILL BE UNINTERRUPTED, SECURE, OR ERROR‑FREE.
+
+THIS WORK IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT WITHOUT ANY WARRANTY; WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE WORK IS WITH THE RECIPIENT. SHOULD THE WORK PROVE DEFECTIVE, THE RECIPIENT ASSUMES THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
 
 ARTICLE 12: LIMITATION OF LIABILITY
 
