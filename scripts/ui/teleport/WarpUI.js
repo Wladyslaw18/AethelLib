@@ -10,7 +10,7 @@ import { CommandHandler } from "../../commands/base/CommandHandler.js"
  * Visual interface for public waypoints.
  */
 
-export async function showWarpUI(player) {
+export async function showWarpUI(player, onBack) {
     const warps = await WarpStore.getWarps()
     const warpNames = Object.keys(warps)
 
@@ -30,8 +30,9 @@ export async function showWarpUI(player) {
     if (res.canceled) return
 
     if (res.selection === 0) {
-        const { showMainGUI } = await import("../MainGUI.js")
-        Kernel.system.run(() => showMainGUI(player))
+        if (onBack) {
+            Kernel.system.run(() => onBack(player))
+        }
         return
     }
 

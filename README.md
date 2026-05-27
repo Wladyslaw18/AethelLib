@@ -153,3 +153,23 @@ These aren't suggestions. They're hard-won lessons written in server crashes and
 **AethelLib: Built so you can actually enjoy modding. While breaking things. While crying a little.**
 
 *— Wladyslaw18, somewhere at 3am, probably*
+
+---
+
+## ✦ HEADLESS COMMAND TESTING
+
+Developers can run and debug script commands directly from the server console/stdin without joining the game.
+
+### 1. Headless Commands
+Commands are dispatched using `/scriptevent ae:test_cmd`.
+
+*   **List Warps**: `scriptevent ae:test_cmd listwarp`
+*   **Set Warp**: `scriptevent ae:test_cmd setwarp <name>`
+*   **Teleport to Warp**: `scriptevent ae:test_cmd warp <name>`
+*   **Delete Warp**: `scriptevent ae:test_cmd delwarp <name>`
+*   **Calculator**: `scriptevent ae:test_cmd calc <expression>`
+
+### 2. Implementation details
+*   **PowerShell Input Redirection**: `watch.ps1` runs a background thread to forward host terminal input directly to BDS.
+*   **MockPlayer Object**: Bypasses network connectivity checks by instantiating a mock client satisfying coordinate, dimension, and permission queries.
+*   **Stack Tracing**: Errors are trapped and prefixed with `[Scripting] [error]` to ensure they bypass watcher output filters.

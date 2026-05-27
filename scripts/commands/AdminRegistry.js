@@ -24,6 +24,10 @@ import { FlyCommand } from "./admin/FlyCommand.js"
 import { GodCommand } from "./admin/GodCommand.js"
 import { ClearInventoryCommand } from "./admin/ClearInventoryCommand.js"
 import { RankAdminCommand } from "./admin/RankAdminCommand.js"
+import { SystemOnCommand } from "./admin/SystemOnCommand.js"
+import { SystemDisCommand } from "./admin/SystemDisCommand.js"
+import { PluginReloadCommand } from "./admin/PluginReloadCommand.js"
+import { PermListCommand } from "./admin/PermListCommand.js"
 
 // ----------------------------------------------------------------------------
 // | object: AdminRegistry                                                    |
@@ -123,6 +127,10 @@ export const AdminRegistry = {
         Registry.register("agod", GodCommand)
         Registry.register("aclear", ClearInventoryCommand)
         Registry.register("rankadmin", RankAdminCommand)
+        Registry.register("systemon", SystemOnCommand)
+        Registry.register("systemdis", SystemDisCommand)
+        Registry.register("pluginreload", PluginReloadCommand)
+        Registry.register("permlist", PermListCommand)
 
         // ----------------------------------------------------------------------------
         // | Rank Administration                                                      |

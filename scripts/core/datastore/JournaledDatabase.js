@@ -92,6 +92,29 @@ class JournaledDatabase {
     getSharded(collection, id) { return Database.getSharded(collection, id); }
     setSharded(collection, id, value) { return Database.setSharded(collection, id, value); }
     deleteSharded(collection, id) { return Database.deleteSharded(collection, id); }
+
+    getMemoryFootprint() {
+        let total = 0;
+        // sum journal entries
+        for (const [key, value] of this.journal.entries()) {
+            total += key.length * 2;
+            if (value !== undefined && value !== null) {
+                try {
+                    total += JSON.stringify(value).length * 2;
+                } catch {}
+            }
+        }
+        // sum Database cache entries
+        for (const [key, value] of Database.cache.entries()) {
+            total += key.length * 2;
+            if (value !== undefined && value !== null) {
+                try {
+                    total += JSON.stringify(value).length * 2;
+                } catch {}
+            }
+        }
+        return total;
+    }
 }
 
 export const JournaledDb = new JournaledDatabase();

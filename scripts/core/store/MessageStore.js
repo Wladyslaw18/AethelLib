@@ -68,6 +68,24 @@ export class MessageStore {
 
             // commit to the sharded DB (Władysław's sharding saves the day here!).
             db.set(logKey, existingLogs)
+
+            // Maintain O(1) conversation partner indexes for both players
+            const parts = pairId.split("_")
+            if (parts.length === 2) {
+                const [idA, idB] = parts
+                
+                const convsA = db.get(`audit:convs:${idA}`) || []
+                if (!convsA.includes(idB)) {
+                    convsA.push(idB)
+                    db.set(`audit:convs:${idA}`, convsA)
+                }
+                
+                const convsB = db.get(`audit:convs:${idB}`) || []
+                if (!convsB.includes(idA)) {
+                    convsB.push(idA)
+                    db.set(`audit:convs:${idB}`, convsB)
+                }
+            }
         }
 
         // clear the buffer for the next cycle.

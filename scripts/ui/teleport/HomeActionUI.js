@@ -14,8 +14,8 @@ export async function showCreateHomeUI(player) {
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {
-        const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-        Kernel.system.run(() => showHomeMenu(player))
+        const { showHomeUI } = await import("./HomeUI.js")
+        Kernel.system.run(() => showHomeUI(player))
         return
     }
 
@@ -31,8 +31,8 @@ export async function showCreateHomeUI(player) {
         ? Lang.SUCCESS + `ANCHOR SET: ${name.toUpperCase()} localized.`
         : Lang.ERROR + "ANCHOR FAILURE: Limit reached or Kernel.system error.")
 
-    const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-    Kernel.system.run(() => showHomeMenu(player))
+    const { showHomeUI } = await import("./HomeUI.js")
+    Kernel.system.run(() => showHomeUI(player))
 }
 
 export async function showDeleteHomeUI(player) {
@@ -41,8 +41,8 @@ export async function showDeleteHomeUI(player) {
 
     if (homeNames.length === 0) {
         player.sendMessage(Lang.ERROR + "NO NODES: No anchors found.")
-        const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-        Kernel.system.run(() => showHomeMenu(player))
+        const { showHomeUI } = await import("./HomeUI.js")
+        Kernel.system.run(() => showHomeUI(player))
         return
     }
 
@@ -55,8 +55,8 @@ export async function showDeleteHomeUI(player) {
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled || res.selection === homeNames.length) {
-        const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-        Kernel.system.run(() => showHomeMenu(player))
+        const { showHomeUI } = await import("./HomeUI.js")
+        Kernel.system.run(() => showHomeUI(player))
         return
     }
 
@@ -66,6 +66,6 @@ export async function showDeleteHomeUI(player) {
         ? Lang.SUCCESS + `PURGED: Anchor ${selected} removed.`
         : Lang.ERROR + `FAILURE: Could not purge ${selected}.`)
     
-    const { showHomeMenu } = await import("./HomeSubmenuUI.js")
-    Kernel.system.run(() => showHomeMenu(player))
+    const { showHomeUI } = await import("./HomeUI.js")
+    Kernel.system.run(() => showHomeUI(player))
 }

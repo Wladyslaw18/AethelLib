@@ -20,6 +20,8 @@ export class Kernel {
     static #plugins = new Map();
     // holds services that plugins want to share with each other
     static #serviceProviders = new Map();
+    // holds disabled systems
+    static #disabledSystems = new Set();
 
     // ----------------------------------------------------------------------------
     // | native proxies                                                           |
@@ -33,6 +35,10 @@ export class Kernel {
     static get system() { return mc.system; }
     // helper to see how many services are currently alive.
     static get size() { return this.#systems.size; }
+    // helper to see all registered systems
+    static get systems() { return this.#systems; }
+    // helper to see all disabled systems
+    static get disabledSystems() { return this.#disabledSystems; }
 
     // ----------------------------------------------------------------------------
     // | type proxies                                                             |
@@ -197,6 +203,7 @@ export class Kernel {
     // | fetch a service by its id. checks core systems then plugins.             |
     // ----------------------------------------------------------------------------
     static get(id) {
+        if (this.#disabledSystems.has(id)) return undefined;
         // try to find it in core systems first, then the plugin service providers.
         return this.#systems.get(id) || this.#serviceProviders.get(id);
     }
@@ -206,8 +213,62 @@ export class Kernel {
     // | quick check to see if a service exists.                                  |
     // ----------------------------------------------------------------------------
     static has(id) {
+        if (this.#disabledSystems.has(id)) return false;
         // check both maps.
         return this.#systems.has(id) || this.#serviceProviders.has(id);
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: disableSystem                                                    |
+    // | dynamically disables a core system and runs its shutdown hooks.           |
+    // ----------------------------------------------------------------------------
+    static disableSystem(id) {
+        if (this.#disabledSystems.has(id)) return false;
+
+        // Retrieve instance directly to bypass disabled check
+        const instance = this.#systems.get(id) || this.#serviceProviders.get(id);
+        if (instance) {
+            try {
+                if (typeof instance.shutdown === "function") {
+                    instance.shutdown();
+                } else if (typeof instance.onDisable === "function") {
+                    instance.onDisable();
+                } else if (typeof instance.disable === "function") {
+                    instance.disable();
+                }
+            } catch (e) {
+                console.error(`[Kernel] Error during system '${id}' shutdown hook: ${e}`);
+            }
+        }
+        this.#disabledSystems.add(id);
+        return true;
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: enableSystem                                                     |
+    // | dynamically enables a disabled core system and runs its init hooks.      |
+    // ----------------------------------------------------------------------------
+    static enableSystem(id) {
+        if (!this.#disabledSystems.has(id)) return false;
+
+        this.#disabledSystems.delete(id);
+
+        // Retrieve instance directly to bypass disabled check
+        const instance = this.#systems.get(id) || this.#serviceProviders.get(id);
+        if (instance) {
+            try {
+                if (typeof instance.init === "function") {
+                    instance.init();
+                } else if (typeof instance.onEnable === "function") {
+                    instance.onEnable();
+                } else if (typeof instance.enable === "function") {
+                    instance.enable();
+                }
+            } catch (e) {
+                console.error(`[Kernel] Error during system '${id}' init hook: ${e}`);
+            }
+        }
+        return true;
     }
 
     // ----------------------------------------------------------------------------
@@ -267,6 +328,10 @@ export class Kernel {
 
         // recursive visit function for the graph.
         const visit = (id) => {
+            if (!this.#plugins.has(id)) {
+                console.warn(`[Kernel] Warning: Dependency '${id}' is missing and will be skipped.`);
+                return;
+            }
             // if we're visiting it while already visiting it, we have a circle. bad.
             if (visiting.has(id)) throw new Error(`Circular dependency detected: ${id}`);
             // already done this one.

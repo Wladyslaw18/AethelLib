@@ -52,7 +52,8 @@ export class PermissionManager {
                 data.order || 0, 
                 data.name || tag, 
                 data.colorName || "\u00A77", 
-                data.colorText || "\u00A77"
+                data.colorText || "\u00A77",
+                data.hideRanks || false
             )
 
             if (data.permissions) {
@@ -66,50 +67,72 @@ export class PermissionManager {
     }
 
     /*
-     * CLEARANCE_VERIFICATION_VECTOR
-     * Queries the system for specific auth-node possession. Implements a 
-     * cache-aside strategy to minimize CPU cycles.
+    /*
+     * CACHE_RESOLVER_VECTOR
      */
-    hasPermission(player, permission) {
-        PermissionManager.#stats.totalChecks++
-        
-        /* CACHE_PROBE */
-        const cache = PermissionManager.#playerCache.get(player.id)
+    _getOrComputeCache(player) {
+        let cache = PermissionManager.#playerCache.get(player.id)
         if (cache && Date.now() - cache.timestamp < PermissionManager.#CACHE_TTL) {
             PermissionManager.#stats.cacheHits++
-            if (cache.isSuperAdmin || cache.permissions.get("admin") === true) return true
-            return cache.permissions.get(permission) ?? false
+            return cache
         }
         
-        /* CACHE_MISS_PROTOCOL */
         PermissionManager.#stats.cacheMisses++
         
-        // Check SuperAdmin status and cache it
         const isSuperAdmin = this._isSuperAdmin(player)
         if (isSuperAdmin) {
-            PermissionManager.#playerCache.set(player.id, {
+            cache = {
                 permissions: new Map(),
                 isSuperAdmin: true,
                 timestamp: Date.now()
-            })
-            return true
+            }
+            PermissionManager.#playerCache.set(player.id, cache)
+            return cache
         }
 
         this.syncPlayerRanks(player)
         const permissions = this.#computePermissions(player)
         
-        PermissionManager.#playerCache.set(player.id, {
+        cache = {
             permissions,
             isSuperAdmin: false,
             timestamp: Date.now()
-        })
+        }
+        PermissionManager.#playerCache.set(player.id, cache)
+        return cache
+    }
+
+    /*
+     * VALUE_RETRIEVAL_VECTOR
+     * Fetches the raw permission value (boolean or number) for a player.
+     * Implements admin bypass mechanics where admins get Infinity limits and 0 cooldowns.
+     */
+    getPermission(player, key) {
+        const cache = this._getOrComputeCache(player)
         
-        if (permissions.get("admin") === true) {
+        const isAdmin = cache.isSuperAdmin || cache.permissions.get("admin") === true
+        
+        if (isAdmin) {
+            if (key.endsWith(".limit") || key.includes("limit")) {
+                return Infinity
+            }
+            if (key.endsWith(".cooldown") || key.includes("cooldown") || 
+                key.endsWith(".wait") || key.includes("wait") || 
+                key.endsWith(".cost") || key.includes("cost")) {
+                return 0
+            }
             return true
         }
         
-        return permissions.get(permission) ?? false
+        return cache.permissions.get(key)
     }
+
+    hasPermission(player, permission) {
+        PermissionManager.#stats.totalChecks++
+        const val = this.getPermission(player, permission)
+        return val ?? false
+    }
+
 
     /*
      * RANK_SYNCHRONIZATION_PROTOCOL
@@ -156,9 +179,32 @@ export class PermissionManager {
         const permissions = new Map()
         const playerRanks = PermissionManager.#data.getPlayerRanks(player.id)
         
-        // SCAN_HIERARCHY: Highest rank takes priority unless it says 'Inherit'
+        const RankStore = Kernel.get("rankStore")
+        const allRanks = RankStore ? RankStore.getAllRanks() : {}
+
+        const resolveRankPermissionsRecursive = (rankId, visited = new Set()) => {
+            if (visited.has(rankId)) return {}
+            visited.add(rankId)
+
+            const rankData = allRanks[rankId]
+            if (!rankData) return {}
+
+            const merged = {}
+            if (rankData.inherits) {
+                Object.assign(merged, resolveRankPermissionsRecursive(rankData.inherits, visited))
+            }
+
+            if (rankData.permissions) {
+                for (const [perm, val] of Object.entries(rankData.permissions)) {
+                    merged[perm] = val
+                }
+            }
+            return merged
+        }
+
+        // SCAN_HIERARCHY: Highest rank takes priority
         for (const rankId of playerRanks) {
-            const rankPerms = PermissionManager.#data.getRankPermissions(rankId)
+            const rankPerms = resolveRankPermissionsRecursive(rankId)
             
             for (const [perm, value] of Object.entries(rankPerms)) {
                 if (permissions.has(perm)) continue
@@ -178,7 +224,7 @@ export class PermissionManager {
         }
         
         // BASELINE_FALLBACK: If node is still unresolved, check the 'member' rank
-        const memberRank = PermissionManager.#data.getRankPermissions("member")
+        const memberRank = resolveRankPermissionsRecursive("member")
         for (const [perm, value] of Object.entries(memberRank)) {
             if (!permissions.has(perm)) {
                 if (typeof value === 'number') {
@@ -190,7 +236,6 @@ export class PermissionManager {
                     } else if (value === 2) {
                         permissions.set(perm, false)  // 2 = Deny
                     }
-                    // 0 = No Action / Inherit — don't add to the map
                 } else if (typeof value === 'boolean') {
                     permissions.set(perm, value)
                 }

@@ -1,5 +1,6 @@
 import { Kernel } from "../../core/Kernel.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
+import { ValidationHelper } from "../../utils/ValidationHelper.js"
 
 // ----------------------------------------------------------------------------
 // | object: TempbanCommand                                                   |
@@ -88,8 +89,10 @@ export const TempbanCommand = {
             // step 5: disconnect the player immediately.
             Kernel.system.run(() => {
                 try {
+                    const safeName = ValidationHelper.escapeCommandString(target.name)
+                    const safeReason = ValidationHelper.escapeCommandString(reason)
                     // we use the dimension runCommand as a reliable way to kick.
-                    Kernel.world.getDimension("overworld").runCommand(`kick \"${target.name}\" \u00A7c\u00A7l[TEMPORARY BAN]\n\u00A7eReason: ${reason}`)
+                    /* try */ Kernel.world.getDimension("overworld").runCommand(`kick "${safeName}" \u00A7c\u00A7l[TEMPORARY BAN]\n\u00A7eReason: ${safeReason}`)
                 } catch (error) {
                     console.error(`Failed to kick tempbanned player ${target.name}: ${error}`)
                 }

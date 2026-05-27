@@ -117,7 +117,7 @@ async function showReportDetail(admin, reportId, report) {
 
                         // Terminate target session
                         try {
-                            Kernel.world.getDimension("overworld").runCommand(`kick "${target.name}" §c[BAN]\n§eREASON: Report: ${report.message}`)
+                            /* try */ Kernel.world.getDimension("overworld").runCommand(`kick "${target.name}" §c[BAN]\n§eREASON: Report: ${report.message}`)
                         } catch {}
 
                         admin.sendMessage(`§a${report.target} has been banned.`)

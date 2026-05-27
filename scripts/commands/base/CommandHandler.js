@@ -2,6 +2,64 @@ import { Kernel } from "../../core/Kernel.js"
 import { LifecycleController } from "../../core/LifecycleController.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
+const COMMAND_SYSTEM_MAPPINGS = {
+    // Economy
+    "money": "moneySystem",
+    "pay": "moneySystem",
+    "topmoney": "moneySystem",
+    // Warp
+    "warp": "warpSystem",
+    "setwarp": "warpSystem",
+    "delwarp": "warpSystem",
+    "warps": "warpSystem",
+    "listwarps": "warpSystem",
+    // Home
+    "home": "homeSystem",
+    "sethome": "homeSystem",
+    "delhome": "homeSystem",
+    "homes": "homeSystem",
+    "listhomes": "homeSystem",
+    // TPA
+    "tpa": "tpaSystem",
+    "tpahere": "tpaSystem",
+    "tpaccept": "tpaSystem",
+    "tpadeny": "tpaSystem",
+    "tpacancel": "tpaSystem",
+    // Back
+    "back": "backSystem",
+    // RTP
+    "rtp": "rtpSystem",
+    "wild": "rtpSystem",
+    // Shop
+    "shop": "shopSystem",
+    "shoplist": "shopSystem",
+    "shopsearch": "shopSystem",
+    "shopbuy": "shopSystem",
+    "shopinfo": "shopSystem",
+    "shopcart": "shopSystem",
+    "shopcheckout": "shopSystem",
+    // Quick Sell
+    "sell": "sellSystem",
+    // Auction
+    "auction": "auctionSystem",
+    "ah": "auctionSystem",
+    // Withdraw
+    "withdraw": "withdrawSystem",
+    "banknote": "withdrawSystem",
+    // Message
+    "msg": "messageSystem",
+    "tell": "messageSystem",
+    "w": "messageSystem",
+    "r": "messageSystem",
+    "reply": "messageSystem",
+    // Land Claims
+    "claim": "landSystem",
+    "unclaim": "landSystem",
+    "trust": "landSystem",
+    "untrust": "landSystem",
+    "claims": "landSystem"
+};
+
 /*
  * LEGACY_COMMAND_INTERCEPTOR
  * ----------------------------------------------------------------------------
@@ -350,6 +408,18 @@ export const CommandHandler = {
                 return
             }
 
+            // Verify if the system module associated with the command is enabled
+            const canonicalName = command.name ? command.name.toLowerCase() : commandName.toLowerCase();
+            const settingKey = COMMAND_SYSTEM_MAPPINGS[canonicalName];
+            if (settingKey) {
+                const SettingsStore = Kernel.get("settings");
+                if (SettingsStore && !SettingsStore.get(settingKey)) {
+                    player.sendMessage(`\u00A7c[System] The '${canonicalName}' system is currently disabled by an administrator.`);
+                    this._recordCommandStats(commandName, false, Date.now() - startTime, "system_disabled");
+                    return;
+                }
+            }
+
             if (command.permission && !this._hasPermission(player, command.permission)) {
                 player.sendMessage(`\u00A7c[Security] Access denied for command: \u00A7e${commandName}`)
                 this._recordCommandStats(commandName, false, Date.now() - startTime, "no_permission")
@@ -489,9 +559,17 @@ export const CommandHandler = {
         const CommandRegistry = Kernel.get("commandRegistry")
         const commands = CommandRegistry.getAll()
         const available = []
+        const SettingsStore = Kernel.get("settings")
 
         for (const name of commands) {
             const command = CommandRegistry.get(name)
+            if (command && command.name) {
+                const canonicalName = command.name.toLowerCase();
+                const settingKey = COMMAND_SYSTEM_MAPPINGS[canonicalName];
+                if (settingKey && SettingsStore && !SettingsStore.get(settingKey)) {
+                    continue;
+                }
+            }
             if (!command.permission || this._hasPermission(player, command.permission)) {
                 available.push({
                     name,

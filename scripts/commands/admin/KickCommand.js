@@ -1,5 +1,6 @@
 import { Kernel } from "../../core/Kernel.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
+import { ValidationHelper } from "../../utils/ValidationHelper.js"
 
 // ----------------------------------------------------------------------------
 // | object: KickCommand                                                      |
@@ -40,7 +41,9 @@ export const KickCommand = {
         // step 2: execute kick command on nativeOverworld. escape double quotes to avoid injections.
         Kernel.system.run(() => {
             try {
-                Kernel.world.getDimension("overworld").runCommand(`kick "${target.name}" \u00A7c[KICK]\n\u00A7eREASON: ${reason.replace(/"/g, "'")}`)
+                const safeName = ValidationHelper.escapeCommandString(target.name)
+                const safeReason = ValidationHelper.escapeCommandString(reason)
+                /* try */ Kernel.world.getDimension("overworld").runCommand(`kick "${safeName}" \u00A7c[KICK]\n\u00A7eREASON: ${safeReason}`)
 
                 const kickMessage = `\u00A76\u00A7l[\u00A7eKICK\u00A76\u00A7l] \u00A7r${target.name} \u00A77was kicked by \u00A7e${player.name}\u00A77\n\u00A77Reason: \u00A7f${reason}`
 

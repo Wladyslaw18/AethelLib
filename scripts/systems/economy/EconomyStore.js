@@ -1,5 +1,6 @@
 import { Kernel } from "../../core/Kernel.js"
 import { SignalBus } from "../../core/signalbus/SignalBus.js"
+import { Configuration } from "../../Configuration.js"
 
 // ----------------------------------------------------------------------------
 // | @typedef {import("@minecraft/server").Player} Player                     |
@@ -15,15 +16,37 @@ import { SignalBus } from "../../core/signalbus/SignalBus.js"
 // small cache to store the top 10 richest players so we don't scan the db every frame.
 let cachedLeaderboard = []
 
+function resolvePlayer(player) {
+    if (!player) return null
+    if (typeof player === "string") {
+        const online = Kernel.world.getAllPlayers().find(p => p.id === player)
+        if (online) return online
+        return { id: player }
+    }
+    if (typeof player === "object") {
+        if (player.id && !player.isValid) {
+            const online = Kernel.world.getAllPlayers().find(p => p.id === player.id)
+            if (online) return online
+        }
+        return player
+    }
+    return player
+}
+
 export const EconomyStore = {
     // how much cash a new player gets. enough for a sandwich.
-    DEFAULT_BALANCE: 1000, 
+    get DEFAULT_BALANCE() {
+        return Number(Configuration.STARTING_BALANCE)
+    }, 
 
     // ----------------------------------------------------------------------------
     // | getBalance                                                               |
     // | fetches a player's current credit balance.                               |
     // ----------------------------------------------------------------------------
     getBalance(player) {
+        player = resolvePlayer(player)
+        if (!player || !player.id) return this.DEFAULT_BALANCE
+
         // get the player store and keys utilities from the kernel.
         const PlayerStore = Kernel.get("playerStore")
         const StoreKeys = Kernel.get("keys")
@@ -40,6 +63,9 @@ export const EconomyStore = {
     // | uses a transaction so we don't hit race conditions with other scripts.    |
     // ----------------------------------------------------------------------------
     async setBalance(player, amount) {
+        player = resolvePlayer(player)
+        if (!player || !player.id) return false
+
         // validation. don't allow negative numbers or weird infinity stuff.
         if (typeof amount !== 'number' || amount < 0 || !Number.isFinite(amount)) {
             return false
@@ -65,6 +91,9 @@ export const EconomyStore = {
     // | increments a player's balance.                                           |
     // ----------------------------------------------------------------------------
     async addMoney(player, amount) {
+        player = resolvePlayer(player)
+        if (!player || !player.id) return false
+
         // only allow positive additions.
         if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount)) {
             return false
@@ -93,6 +122,9 @@ export const EconomyStore = {
     // | decrements a player's balance. checks if they are broke first.           |
     // ----------------------------------------------------------------------------
     async removeMoney(player, amount) {
+        player = resolvePlayer(player)
+        if (!player || !player.id) return false
+
         // only allow positive subtractions.
         if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount)) {
             return false
@@ -126,6 +158,10 @@ export const EconomyStore = {
     // | implements a manual rollback if the second write fails.                  |
     // ----------------------------------------------------------------------------
     async transferMoney(sender, receiver, amount) {
+        sender = resolvePlayer(sender)
+        receiver = resolvePlayer(receiver)
+        if (!sender || !sender.id || !receiver || !receiver.id) return false
+
         // basic validation.
         if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount)) {
             return false
@@ -138,44 +174,69 @@ export const EconomyStore = {
 
         const PlayerStore = Kernel.get("playerStore")
         const StoreKeys = Kernel.get("keys")
+        const Database = Kernel.get("database")
 
-        // lock the sender first.
-        return await PlayerStore.transaction(sender, async () => {
-            // then lock the receiver. we now have a double lock.
-            return await PlayerStore.transaction(receiver, async () => {
-                const senderBalance = this.getBalance(sender)
+        const senderBalance = this.getBalance(sender)
+        const receiverBalance = this.getBalance(receiver)
 
-                // check if sender can actually afford this.
-                if (senderBalance < amount) {
-                    return false 
-                }
+        // check if sender can actually afford this.
+        if (senderBalance < amount) {
+            return false 
+        }
 
+        // ✦ Prevent deadlocks by locking sender and receiver in alphabetical order of player IDs
+        const first = sender.id < receiver.id ? sender : receiver
+        const second = sender.id < receiver.id ? receiver : sender
+
+        // Write WAL entry immediately to persist the intent before transaction begins
+        if (Database) {
+            Database.writeWal(sender.id, receiver.id, amount, senderBalance, receiverBalance)
+        }
+
+        return await PlayerStore.transaction(first, async () => {
+            return await PlayerStore.transaction(second, async () => {
                 // subtract from sender.
                 const newSenderBalance = Math.floor(senderBalance - amount)
                 const senderSuccess = await PlayerStore.set(sender, StoreKeys.money(sender.id), newSenderBalance)
-                if (!senderSuccess) return false
+                if (!senderSuccess) {
+                    if (Database) {
+                        Database.flushDirty()
+                        Database.clearWal()
+                    }
+                    return false
+                }
 
                 try {
                     // add to receiver.
-                    const receiverBalance = this.getBalance(receiver)
-                    const newReceiverBalance = Math.floor(receiverBalance + amount)
-                    const receiverSuccess = await PlayerStore.set(receiver, StoreKeys.money(receiver.id), newReceiverBalance)
+                    const receiverSuccess = await PlayerStore.set(receiver, StoreKeys.money(receiver.id), Math.floor(receiverBalance + amount))
 
                     // if the receiver write fails, we MUST give the sender their money back.
                     if (!receiverSuccess) {
                         // EMERGENCY_REFUND_PROTOCOL
                         await PlayerStore.set(sender, StoreKeys.money(sender.id), Math.floor(senderBalance))
+                        if (Database) {
+                            Database.flushDirty()
+                            Database.clearWal()
+                        }
                         return false
                     }
 
                     // emit signals for both players.
                     SignalBus.emit("economy:balanceChanged", { player: sender, newBalance: newSenderBalance })
-                    SignalBus.emit("economy:balanceChanged", { player: receiver, newBalance: newReceiverBalance })
+                    SignalBus.emit("economy:balanceChanged", { player: receiver, newBalance: Math.floor(receiverBalance + amount) })
 
+                    if (Database) {
+                        Database.flushDirty()
+                        Database.clearWal()
+                    }
                     return true
                 } catch (error) {
                     // catch any crash during receiver update and refund the sender.
                     await PlayerStore.set(sender, StoreKeys.money(sender.id), Math.floor(senderBalance))
+                    if (Database) {
+                        Database.flushDirty()
+                        Database.clearWal()
+                    }
                     return false
                 }
             })
@@ -187,12 +248,29 @@ export const EconomyStore = {
     // | quick check if a player can afford something.                            |
     // ----------------------------------------------------------------------------
     async hasEnough(player, amount) {
+        player = resolvePlayer(player)
+        if (!player || !player.id) return false
+
         if (typeof amount !== 'number' || amount < 0 || !Number.isFinite(amount)) {
             return false
         }
 
         const balance = this.getBalance(player)
         return balance >= amount
+    },
+
+    // returns all player balances for leaderboard queries
+    getAllBalances() {
+        const Database = Kernel.get("database")
+        if (!Database) return []
+        const uuids = Database.get("ae:player_index") || []
+        const balances = []
+        for (const uuid of uuids) {
+            const name = Database.get(`player:${uuid}:name`) || `ID:${uuid.slice(0, 5)}`
+            const balance = Database.get(`player:${uuid}:money`) ?? this.DEFAULT_BALANCE
+            balances.push({ name, balance })
+        }
+        return balances
     },
 
     // returns the last generated leaderboard.

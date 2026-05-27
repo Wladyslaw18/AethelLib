@@ -16,7 +16,7 @@ export class AuctionStore {
     static getAuctions() {
         try {
             const Database = Kernel.get("database")
-            const stored = Database.get("ae:auctions")
+            const stored = Database.getSharded("ae:auctions")
             return stored || []
         } catch (error) {
             console.error(`[AuctionStore] MANIFEST_LOAD_FAILURE: ${error}`)
@@ -30,7 +30,21 @@ export class AuctionStore {
     static saveAuctions(auctions) {
         try {
             const Database = Kernel.get("database")
-            Database.set("ae:auctions", auctions)
+            const indexKey = "ae:auctions:index"
+            const currentIndex = Database.get(indexKey) || []
+            const newIds = auctions.map(a => a.id)
+
+            // Delete shards that are no longer in the list
+            for (const id of currentIndex) {
+                if (!newIds.includes(id)) {
+                    Database.deleteSharded("ae:auctions", id)
+                }
+            }
+
+            // Write all current auctions
+            for (const auction of auctions) {
+                Database.setSharded("ae:auctions", auction.id, auction)
+            }
             return true
         } catch (error) {
             console.error(`[AuctionStore] MANIFEST_SAVE_FAILURE: ${error}`)
@@ -263,7 +277,7 @@ export class AuctionStore {
         // 🔥 ACTUALLY GIVE THE ITEM!
         const player = Kernel.world.getAllPlayers().find(p => p.id === claimantId);
         if (player) {
-            const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory).container;
+            const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container; // inv?.
             let remaining = auction.quantity;
             while (remaining > 0) {
                 const take = Math.min(remaining, 64);

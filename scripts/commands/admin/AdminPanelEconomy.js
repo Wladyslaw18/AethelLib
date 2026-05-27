@@ -95,7 +95,7 @@ async function showGiveMoneyInterface(player) {
     }
 
     // FIX: Pass the Player Object, not target.id
-    EconomyStore.addMoney(target, amount)
+    await EconomyStore.addMoney(target, amount)
     player.sendMessage(`\u00A7aSuccessfully gave $${amount} to ${target.name}.`)
     await showEconomyControl(player)
 }
@@ -143,7 +143,7 @@ async function showTakeMoneyInterface(player) {
     }
 
     // FIX: Pass the Player Object, not target.id
-    EconomyStore.removeMoney(target, amount)
+    await EconomyStore.removeMoney(target, amount)
     player.sendMessage(`\u00A7aSuccessfully took $${amount} from ${target.name}.`)
     await showEconomyControl(player)
 }
@@ -191,7 +191,7 @@ async function showSetBalanceInterface(player) {
     }
 
     // FIX: Pass Player Object & use correct setBalance method
-    EconomyStore.setBalance(target, amount)
+    await EconomyStore.setBalance(target, amount)
     player.sendMessage(`\u00A7aSuccessfully set ${target.name}'s balance to $${amount}.`)
     await showEconomyControl(player)
 }

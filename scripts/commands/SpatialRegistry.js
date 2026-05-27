@@ -41,7 +41,7 @@ export const SpatialRegistry = {
         Registry.register("listhome", ListHomeCommand)
 
         // ----------------------------------------------------------------------------
-        // | Warp System                                                              |
+        // | Warp System
         // ----------------------------------------------------------------------------
         
         // save a global waypoint (staff only).

@@ -54,10 +54,21 @@ export class SellStore {
 
     /* 
      * ASSET_VALUATION_QUERY
+     * Integrates dynamic supply-side inflation scaling to prevent market dumping.
      */
     static getSellPrice(itemId) {
         const prices = this.getSellPrices()
-        return prices[itemId] || 0
+        const basePrice = prices[itemId] || 0
+        if (basePrice <= 0) return 0
+
+        const Database = Kernel.get("database")
+        const volume = Database?.get(`shop:volume:${itemId}`) || 0
+        
+        // Saturation Limit: 1000 units sold saturates the market.
+        const saturationLimit = 1000
+        const multiplier = Math.max(0.1, 1 - (volume / saturationLimit))
+
+        return Math.max(1, Math.floor(basePrice * multiplier))
     }
 
     /* 
@@ -98,6 +109,18 @@ export class SellStore {
             return { success: false, message: "Failed to add money to your account." }
         }
 
+        // Increment dynamic supply volumes & insert into active list
+        const Database = Kernel.get("database")
+        if (Database) {
+            const currentVolume = Database.get(`shop:volume:${itemId}`) || 0
+            Database.set(`shop:volume:${itemId}`, currentVolume + quantity)
+
+            const active = Database.get("market:active_items") || []
+            if (!active.includes(itemId)) {
+                active.push(itemId)
+                Database.set("market:active_items", active)
+            }
+        }
 
         this.logTransaction(player.id, itemId, quantity, sellPrice, totalValue)
 
@@ -116,7 +139,7 @@ export class SellStore {
      */
     static getPlayerItemCount(player, itemId) {
         try {
-            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
+            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container // container?.
             let count = 0
             for (let i = 0; i < container.size; i++) {
                 const item = container.getItem(i)
@@ -136,7 +159,7 @@ export class SellStore {
         try {
             if (this.getPlayerItemCount(player, itemId) < quantity) return false;
             
-            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
+            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container // container?.
             let remaining = quantity
             for (let i = 0; i < container.size && remaining > 0; i++) {
                 const item = container.getItem(i)
@@ -159,8 +182,31 @@ export class SellStore {
      * EMERGENCY_ASSET_RESTORATION
      */
     static givePlayerItems(player, itemId, quantity) {
-        player.sendMessage(`\u00A7a\u00A7l» \u00A7fRefunded \u00A7e${quantity}x ${itemId}\u00A7f.`);
-        return true
+        try {
+            console.warn(`[Test Debug] givePlayerItems called for ${player.id}, ${itemId}, ${quantity}`);
+            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
+            if (!container) {
+                console.warn(`[Test Debug] givePlayerItems: no container found!`);
+                return false
+            }
+            
+            const { ItemStack } = Kernel
+            console.warn(`[Test Debug] givePlayerItems: creating ItemStack for ${itemId}`);
+            const itemStack = new ItemStack(itemId, quantity)
+            console.warn(`[Test Debug] givePlayerItems: calling container.addItem`);
+            const leftover = container.addItem(itemStack)
+            console.warn(`[Test Debug] givePlayerItems: container.addItem returned: ${leftover ? `ItemStack(amount=${leftover.amount})` : "undefined/null"}`);
+            
+            if (leftover && leftover.amount > 0) {
+                console.warn(`[Test Debug] givePlayerItems: calling spawnItem for leftover amount ${leftover.amount}`);
+                player.dimension.spawnItem(leftover, player.location)
+            }
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fRefunded \u00A7e${quantity}x ${itemId}\u00A7f.`);
+            return true
+        } catch (error) {
+            console.error(`[SellStore] EMERGENCY_REFUND_FAILURE: ${error}`)
+            return false
+        }
     }
 
 

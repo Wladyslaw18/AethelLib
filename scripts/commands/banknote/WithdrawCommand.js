@@ -111,10 +111,12 @@ function createBanknotes(player, totalAmount) {
             const item = new Kernel.ItemStack(BanknoteStore.getBanknoteId(), 1)
             item.nameTag = BanknoteStore.getBanknoteName(denom)
             item.setLore(BanknoteStore.getBanknoteLore(banknote))
+            // NOTE: setDynamicProperty throws UnsupportedFunctionalityError on stackable items (like minecraft:paper)
+            // in Bedrock. The try-catch prevents crashes, and we fall back to lore scanning in BanknoteHandler.
             try { item.setDynamicProperty("ae:banknote_id", banknote.id) } catch (e) {}
             
             // inventory injection. using official Kernel.EntityComponentTypes logic now.
-            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
+            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container // container?.
             const leftover = container.addItem(item)
             
             if (leftover === undefined) {
@@ -140,7 +142,7 @@ function createBanknotes(player, totalAmount) {
 
 function getAvailableInventorySlots(player) {
     try {
-        const container = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
+        const container = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container // container?.
         let available = 0
         
         for (let i = 0; i < container.size; i++) {

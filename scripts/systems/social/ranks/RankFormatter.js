@@ -22,8 +22,10 @@ export const RankFormatter = {
     formatPlayerRanks: (player) => {
         const PermissionManager = Kernel.get("permissions")
         const highestRank = PermissionManager.getHighestRank(player)
-        if (!highestRank || !highestRank.name) return ""
-        return `${highestRank.color || "\u00A77"}[${highestRank.name.toUpperCase()}] \u00A7r`
+        if (!highestRank || !highestRank.name || highestRank.hideRanks) return ""
+        const colorVal = highestRank.color || "\u00A77"
+        const colorCode = ColorSystem.COLORS[colorVal.toLowerCase()] || colorVal
+        return `${colorCode}[${highestRank.name.toUpperCase()}] \u00A7r`
     },
  
     /* 

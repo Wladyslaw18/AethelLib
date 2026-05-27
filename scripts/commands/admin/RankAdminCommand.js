@@ -32,6 +32,7 @@ async execute(_data, player, args) {
             player.sendMessage("\u00A78- add <player> <tag>");
             player.sendMessage("\u00A78- remove <player> <tag>");
             player.sendMessage("\u00A78- edit <tag> <field> <value>");
+            player.sendMessage("\u00A78- setperm <tag> <permission> <value>");
             player.sendMessage("\u00A78- list | info <tag>");
             return
         }
@@ -54,6 +55,9 @@ async execute(_data, player, args) {
                 break
             case "edit":
                 await handleEdit(player, args.slice(1))
+                break
+            case "setperm":
+                await handleSetPerm(player, args.slice(1))
                 break
             case "list":
                 await handleList(player)
@@ -311,4 +315,54 @@ async function handleInfo(player, args) {
     player.sendMessage(`\u00A77Permissions: \u00A7f${JSON.stringify(rank.permissions, null, 2)}`)
     player.sendMessage(" ")
 }
+
+/* 
+ * PERMISSION_NODE_CALIBRATION_HANDLER
+ */
+async function handleSetPerm(player, args) {
+    if (args.length < 3) {
+        player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:rankadmin setperm <tag> <permission> <value>");
+        player.sendMessage("\u00A78- Values: true, false, a number, or 'none' / 'remove' to delete");
+        return
+    }
+
+    const [tag, permission, valueStr] = args
+    const rank = RankSystem.getRank(tag)
+    if (!rank) {
+        player.sendMessage(`\u00A7c\u00A7l» \u00A77Rank '${tag}' not found.`);
+        return
+    }
+
+    const updatedRank = { ...rank }
+    if (!updatedRank.permissions) {
+        updatedRank.permissions = {}
+    }
+
+    if (valueStr.toLowerCase() === "none" || valueStr.toLowerCase() === "remove" || valueStr === "0") {
+        delete updatedRank.permissions[permission]
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fPermission \u00A7e${permission}\u00A7f removed from rank \u00A7e${tag}\u00A7f.`);
+    } else {
+        let value;
+        if (valueStr.toLowerCase() === "true" || valueStr === "1") {
+            value = true
+        } else if (valueStr.toLowerCase() === "false" || valueStr === "2") {
+            value = false
+        } else {
+            const num = Number(valueStr)
+            if (!isNaN(num)) {
+                value = num
+            } else {
+                value = valueStr
+            }
+        }
+        updatedRank.permissions[permission] = value
+        player.sendMessage(`\u00A7a\u00A7l» \u00A7fPermission \u00A7e${permission}\u00A7f set to \u00A7e${value}\u00A7f for rank \u00A7e${tag}\u00A7f.`);
+    }
+
+    const success = RankSystem.updateRank(tag, updatedRank)
+    if (!success) {
+        player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to update rank permissions.");
+    }
+}
+
 

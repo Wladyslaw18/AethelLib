@@ -87,7 +87,7 @@ async function handleBuyNow(player, auction) {
 }
 
 export async function showCreateUI(player) {
-    const equippable = player.getComponent(Kernel.EntityComponentTypes.Equippable)
+    const equippable = player.getComponent(Kernel.EntityComponentTypes.Equippable) // equippable?.
     const item = equippable.getEquipment("Mainhand")
 
     if (!item) {

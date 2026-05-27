@@ -149,7 +149,10 @@ export class ColorSystem {
         const highestRank = PermissionManager.getHighestRank(player)
         
         if (highestRank) {
-            return `${highestRank.color || "\u00A77"}[${highestRank.name}]`
+            if (highestRank.hideRanks) return ""
+            const colorVal = highestRank.color || "\u00A77"
+            const colorCode = this.COLORS[colorVal.toLowerCase()] || colorVal
+            return `${colorCode}[${highestRank.name}]`
         }
         
         return "\u00A77[Default]"

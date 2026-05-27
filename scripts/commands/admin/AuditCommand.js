@@ -50,10 +50,18 @@ export const AuditCommand = {
         const MessageStore = Kernel.get("messageStore")
         if (MessageStore) MessageStore.flush()
 
-        // this is the heavy part: finding all keys where this player exists.
-        // we pull all keys and filter for 'audit:msg:' containing the target id.
-        const allIds = Kernel.world.getDynamicPropertyIds()
-        const relevantKeys = allIds.filter(id => id.startsWith("audit:msg:") && id.includes(targetId))
+        // resolve conversation threads in O(1)
+        let relevantKeys = []
+        const isMigrated = db.get("ae:index_migrated")
+
+        if (isMigrated) {
+            const partners = db.get(`audit:convs:${targetId}`) || []
+            relevantKeys = partners.map(partnerId => `audit:msg:${[targetId, partnerId].sort().join("_")}`)
+        } else {
+            // fallback for pre-migration data only
+            const allIds = Kernel.world.getDynamicPropertyIds()
+            relevantKeys = allIds.filter(id => id.startsWith("audit:msg:") && id.includes(targetId))
+        }
 
         if (relevantKeys.length === 0) {
             return admin.sendMessage(`\u00A76\u00A7l» \u00A77No communication records found for ${targetName}.`)

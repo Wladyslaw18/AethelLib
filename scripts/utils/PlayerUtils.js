@@ -100,8 +100,33 @@ export const PlayerUtils = {
             return { player: args[0], consumedArgs: 1 }
         }
 
-        let longestMatch = null
-        let consumed = 0
+        // ✦ Quote parsing: detect if the first argument starts with a quote
+        if (typeof args[0] === 'string' && (args[0].startsWith('"') || args[0].startsWith("'"))) {
+            const quoteChar = args[0][0];
+            let closingIndex = -1;
+            for (let i = 0; i < args.length; i++) {
+                if (i === 0 && args[i].length > 1 && args[i].endsWith(quoteChar)) {
+                    closingIndex = 0;
+                    break;
+                } else if (i > 0 && args[i].endsWith(quoteChar)) {
+                    closingIndex = i;
+                    break;
+                }
+            }
+            if (closingIndex !== -1) {
+                const joined = args.slice(0, closingIndex + 1).join(" ");
+                const stripped = joined.slice(1, -1);
+                const target = this.findPlayer(stripped);
+                if (target) {
+                    return { player: target, consumedArgs: closingIndex + 1 };
+                }
+            }
+        }
+
+        let longestExactMatch = null
+        let consumedExact = 0
+        let longestPartialMatch = null
+        let consumedPartial = 0
 
         // greedy matching. try to join as many words as possible to find a valid name.
         for (let i = 1; i <= args.length; i++) {
@@ -109,12 +134,22 @@ export const PlayerUtils = {
             const target = this.findPlayer(potentialName)
             
             if (target) {
-                longestMatch = target
-                consumed = i
+                const isExact = target.name.toLowerCase() === potentialName.toLowerCase() || target.id === potentialName;
+                if (isExact) {
+                    longestExactMatch = target
+                    consumedExact = i
+                } else {
+                    longestPartialMatch = target
+                    consumedPartial = i
+                }
             }
         }
 
-        return { player: longestMatch, consumedArgs: consumed }
+        if (longestExactMatch) {
+            return { player: longestExactMatch, consumedArgs: consumedExact }
+        }
+
+        return { player: longestPartialMatch, consumedArgs: consumedPartial }
     },
 
     // ----------------------------------------------------------------------------
@@ -137,15 +172,23 @@ export const PlayerUtils = {
             }
         }
         
-        // 2. Scan DB for offline players (player:UUID:name)
+        // 2. Query name-to-UUID index in O(1)
         try {
-            const allIds = Kernel.world.getDynamicPropertyIds();
-            for (const propId of allIds) {
-                if (propId.startsWith("player:") && propId.endsWith(":name")) {
-                    const storedName = Kernel.world.getDynamicProperty(propId);
-                    if (typeof storedName === "string" && storedName.toLowerCase() === lowerName) {
-                        const parts = propId.split(":");
-                        return parts[1]; // UUID
+            const db = Kernel.get("database");
+            const uuid = db ? db.get(`playername:${lowerName}`) : Kernel.world.getDynamicProperty(`playername:${lowerName}`);
+            if (uuid) return uuid;
+
+            // Fallback for pre-migration state only
+            const isMigrated = db ? db.get("ae:index_migrated") : Kernel.world.getDynamicProperty("ae:index_migrated");
+            if (!isMigrated) {
+                const allIds = Kernel.world.getDynamicPropertyIds();
+                for (const propId of allIds) {
+                    if (propId.startsWith("player:") && propId.endsWith(":name")) {
+                        const storedName = Kernel.world.getDynamicProperty(propId);
+                        if (typeof storedName === "string" && storedName.toLowerCase() === lowerName) {
+                            const parts = propId.split(":");
+                            return parts[1]; // UUID
+                        }
                     }
                 }
             }
@@ -154,6 +197,27 @@ export const PlayerUtils = {
         }
         
         return null;
+    },
+
+    registerMock(player) {
+        const lowerName = player.name.toLowerCase();
+        nameCache.set(lowerName, player);
+        idToNameCache.set(player.id, lowerName);
+    },
+
+    unregisterMock(player) {
+        const lowerName = player.name.toLowerCase();
+        nameCache.delete(lowerName);
+        idToNameCache.delete(player.id);
+    },
+
+    clearMocks() {
+        for (const [id, lowerName] of idToNameCache.entries()) {
+            if (id.startsWith("mock-id-") || id === "mock-player-id") {
+                nameCache.delete(lowerName);
+                idToNameCache.delete(id);
+            }
+        }
     }
 }
 

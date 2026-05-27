@@ -103,31 +103,63 @@ export class BanknoteHandler {
         }
     }
 
-    static showRedemptionDialog(player, banknote, item) {
+    static async showRedemptionDialog(player, banknote, item) {
         const amount = BanknoteStore.formatMoney(banknote.amount)
         const creator = banknote.creator
         const date = new Date(banknote.timestamp).toLocaleDateString()
 
-        // Create confirmation dialog
-        const form = {
-            type: "modal",
-            title: "\u00A76Banknote Redemption",
-            content: `\u00A77You are about to redeem:\n\n\u00A76Amount: \u00A7e${amount}\n\u00A77Created: ${date}\n\u00A77By: \u00A7f${creator}\n\n\u00A7aThis will add the money to your account.`,
-            button1: "\u00A7aRedeem",
-            button2: "\u00A7cCancel"
-        }
+        const form = new Kernel.MessageFormData()
+            .title("\u00A76Banknote Redemption")
+            .body(`\u00A77You are about to redeem:\n\n\u00A76Amount: \u00A7e${amount}\n\u00A77Created: ${date}\n\u00A77By: \u00A7f${creator}\n\n\u00A7aThis will add the money to your account.`)
+            .button1("\u00A7aRedeem") // Selection 0
+            .button2("\u00A7cCancel") // Selection 1
 
-        Kernel.system.run(() => {
-            player.onFormResponse(form, (response) => {
-                if (response === 0) { // Redeem button
-                    this.processRedemption(player, banknote, item)
-                }
-            })
-        })
+        const { UIUtils } = await import("../../ui/UIUtils.js");
+        
+        Kernel.system.run(async () => {
+            const response = await UIUtils.showForm(player, form);
+            if (!response.canceled && response.selection === 0) {
+                await this.processRedemption(player, banknote, item);
+            }
+        });
     }
 
-    static processRedemption(player, banknote, item) {
+    static async processRedemption(player, banknote, item) {
         try {
+            // Find and verify the banknote exists in player inventory first to prevent duplication exploits
+            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container; // container?.
+            let targetSlotIndex = -1;
+
+            for (let i = 0; i < container.size; i++) {
+                const slot = container.getSlot(i);
+                if (slot && slot.hasItem()) {
+                    const currentItem = slot.getItem();
+                    if (BanknoteStore.isBanknoteItem(currentItem)) {
+                        const extracted = this.extractBanknoteFromItem(currentItem);
+                        if (extracted && extracted.id === banknote.id) {
+                            targetSlotIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Fallback to selected slot if not found by ID
+            if (targetSlotIndex === -1) {
+                const selectedSlot = container.getSlot(player.selectedSlotIndex);
+                if (selectedSlot && selectedSlot.hasItem()) {
+                    const currentItem = selectedSlot.getItem();
+                    if (BanknoteStore.isBanknoteItem(currentItem)) {
+                        targetSlotIndex = player.selectedSlotIndex;
+                    }
+                }
+            }
+
+            if (targetSlotIndex === -1) {
+                player.sendMessage("\u00A7cRedemption failed: Banknote no longer found in your inventory.");
+                return;
+            }
+
             // Mark as redeemed
             if (!BanknoteStore.markRedeemed(banknote.id)) {
                 player.sendMessage("\u00A7cFailed to mark banknote as redeemed")
@@ -135,18 +167,23 @@ export class BanknoteHandler {
             }
 
             // Add money to player's account
-            if (!EconomyStore.addMoney(player.id, banknote.amount)) {
+            const added = await EconomyStore.addMoney(player.id, banknote.amount);
+            if (!added) {
                 player.sendMessage("\u00A7cFailed to add money to your account")
                 // Unmark as redeemed
                 BanknoteStore.markRedeemed(banknote.id) // This should toggle back
                 return
             }
 
-            // Remove the item from inventory
-            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
-            const slot = container.getSlot(item)
-            if (slot) {
-                slot.setItem(undefined)
+            // Remove/decrement the banknote from inventory
+            const targetSlot = container.getSlot(targetSlotIndex);
+            if (targetSlot && targetSlot.hasItem()) {
+                const currentItem = targetSlot.getItem();
+                if (currentItem.amount > 1) {
+                    targetSlot.amount = currentItem.amount - 1;
+                } else {
+                    targetSlot.setItem(undefined);
+                }
             }
 
             player.sendMessage(`\u00A7aSuccessfully redeemed ${BanknoteStore.formatMoney(banknote.amount)}`)

@@ -26,7 +26,7 @@ export async function showSetMoneyUI(player, target, backCallback) {
     }
 
     if (economy) {
-        economy.setBalance(target, amount)
+        await economy.setBalance(target, amount)
         player.sendMessage(`\u00A7a\u00A7l» \u00A7fSet \u00A7e${target.name}'s \u00A7fbalance to \u00A7e$${amount.toLocaleString()}\u00A7f.`)
     }
     backCallback()

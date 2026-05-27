@@ -1,5 +1,6 @@
 import { Kernel } from "../../core/Kernel.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
+import { ValidationHelper } from "../../utils/ValidationHelper.js"
 
 // ----------------------------------------------------------------------------
 // | object: BanCommand                                                       |
@@ -63,7 +64,9 @@ export const BanCommand = {
             // step 5: terminate their session. run kick command on system loop so it doesn't lag.
             Kernel.system.run(() => {
                 try {
-                    Kernel.world.getDimension("overworld").runCommand(`kick "${target.name}" \u00A7c[BAN]\n\u00A7eREASON: ${reason}`)
+                    const safeName = ValidationHelper.escapeCommandString(target.name)
+                    const safeReason = ValidationHelper.escapeCommandString(reason)
+                    Kernel.world.getDimension("overworld").runCommand(`kick "${safeName}" \u00A7c[BAN]\n\u00A7eREASON: ${safeReason}`)
                 } catch (error) {
                     console.error(`[BanCommand] SESSION_TERMINATION_FAILURE: ${error}`)
                 }

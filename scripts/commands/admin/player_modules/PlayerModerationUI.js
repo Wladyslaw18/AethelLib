@@ -1,5 +1,6 @@
 import { Kernel } from "../../../core/Kernel.js"
 import { UIUtils } from "../../../ui/UIUtils.js"
+import { ValidationHelper } from "../../../utils/ValidationHelper.js"
 
 export async function showKickUI(player, target, backCallback) {
     const form = new Kernel.ModalFormData()
@@ -13,7 +14,9 @@ export async function showKickUI(player, target, backCallback) {
     const reason = String(res.formValues[0] || "No reason provided")
     Kernel.system.run(() => {
         try {
-            Kernel.world.getDimension("overworld").runCommand(`kick "${target.name}" ${reason}`)
+            const safeName = ValidationHelper.escapeCommandString(target.name)
+            const safeReason = ValidationHelper.escapeCommandString(reason)
+            /* try */ Kernel.world.getDimension("overworld").runCommand(`kick "${safeName}" ${safeReason}`)
             player.sendMessage(`\u00A7a\u00A7l» \u00A7fKicked \u00A7e${target.name} \u00A7ffor: \u00A7e${reason}\u00A7f.`)
         } catch (error) {
             player.sendMessage("\u00A7cFailed to kick player.")

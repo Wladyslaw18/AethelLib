@@ -29,7 +29,7 @@ export function init() {
 
         // we have to wait a few ticks because the sign text isn't updated 
         // until the player closes the native text-entry UI.
-        Kernel.system.runTimeout(() => {
+        Kernel.system.runTimeout(async () => {
             // check if the block is still there.
             if (!block.isValid) return
             try {
@@ -311,10 +311,11 @@ async function handleBuy(buyer, shop, container) {
     }
 
     // step 6: pay the shop owner.
+    // EconomyStore.addMoney supports offline players by passing the ownerId string.
+    await EconomyStore.addMoney(shop.ownerId, totalCost);
+
     const owner = Kernel.world.getAllPlayers().find(p => p.id === shop.ownerId)
     if (owner) {
-        // they get the full amount (we don't take a cut yet).
-        await EconomyStore.addMoney(owner, totalCost)
         owner.sendMessage(`\u00A7a\u00A7l» \u00A7fSold \u00A7e${shop.quantity}x ${shop.itemId} \u00A7fto \u00A7e${buyer.name}\u00A7f. Profit: \u00A7a$${totalCost}\u00A7f.`);
     }
 
@@ -330,7 +331,24 @@ async function handleSell(seller, shop, container) {
     const sellerInv = seller.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
     if (!sellerInv) return
 
-    // step 1: check if the seller actually has the items they claim to have.
+    const EconomyStore = Kernel.get("economy")
+
+    // step 1: check if the owner can afford at least 1 unit.
+    if (EconomyStore.getBalance(shop.ownerId) < shop.price) {
+        seller.sendMessage("\u00A7c\u00A7l» \u00A77The shop owner cannot afford to buy your items!");
+        return
+    }
+
+    // Determine maximum affordable units based on owner's budget
+    const maxAffordable = Math.floor(EconomyStore.getBalance(shop.ownerId) / shop.price)
+    const transactionQty = Math.min(shop.quantity, maxAffordable)
+
+    if (transactionQty <= 0) {
+        seller.sendMessage("\u00A7c\u00A7l» \u00A77The shop owner cannot afford this transaction!");
+        return
+    }
+
+    // step 2: check if the seller actually has at least transactionQty items.
     let sellerStock = 0
     for (let i = 0; i < sellerInv.size; i++) {
         const item = sellerInv.getItem(i)
@@ -339,28 +357,48 @@ async function handleSell(seller, shop, container) {
         }
     }
 
-    if (sellerStock < shop.quantity) {
+    if (sellerStock < transactionQty) {
         seller.sendMessage("\u00A7c\u00A7l» \u00A77You don't have enough items to sell!");
         return
     }
 
-    // step 2: give them the credits.
-    const totalPay = shop.price * shop.quantity
-    const EconomyStore = Kernel.get("economy")
-    const success = await EconomyStore.addMoney(seller, totalPay)
-    if (!success) {
-        seller.sendMessage("\u00A7c\u00A7l» \u00A77Failed to process payment.");
+    // step 3: temporarily add items to the chest to check capacity.
+    const { ItemStack } = Kernel
+    const testStack = new ItemStack(shop.itemId, transactionQty)
+    const leftover = container.addItem(testStack)
+    const delivered = leftover ? transactionQty - leftover.amount : transactionQty
+
+    if (delivered <= 0) {
+        seller.sendMessage("\u00A7c\u00A7l» \u00A77The shop's chest is full!");
         return
     }
 
-    // step 3: move items from seller to the shop chest.
-    const { ItemStack } = Kernel
-    const itemStack = new ItemStack(shop.itemId, shop.quantity)
-    // put it in the chest.
-    container.addItem(itemStack)
+    // step 4: transfer money from shop owner to the seller.
+    const finalCost = shop.price * delivered
+    const txSuccess = await EconomyStore.transferMoney(shop.ownerId, seller, finalCost)
 
-    // remove it from the seller's pockets.
-    let remaining = shop.quantity
+    if (!txSuccess) {
+        // ROLLBACK: Remove the added items from the chest container!
+        let toRemove = delivered
+        for (let i = 0; i < container.size && toRemove > 0; i++) {
+            const item = container.getItem(i)
+            if (item && item.typeId === shop.itemId) {
+                const take = Math.min(item.amount, toRemove)
+                if (take >= item.amount) {
+                    container.setItem(i, undefined)
+                } else {
+                    item.amount -= take
+                    container.setItem(i, item)
+                }
+                toRemove -= take
+            }
+        }
+        seller.sendMessage("\u00A7c\u00A7l» \u00A77Transaction failed. Could not process payment transfer.");
+        return
+    }
+
+    // step 5: remove the sold items from the seller's inventory.
+    let remaining = delivered
     for (let i = 0; i < sellerInv.size && remaining > 0; i++) {
         const item = sellerInv.getItem(i)
         if (item && item.typeId === shop.itemId) {
@@ -376,7 +414,13 @@ async function handleSell(seller, shop, container) {
     }
 
     // tell the seller it worked.
-    seller.sendMessage(`\u00A7a\u00A7l» \u00A7fSold \u00A7e${shop.quantity}x ${shop.itemId} \u00A7ffor \u00A7a$${totalPay}\u00A7f.`);
+    seller.sendMessage(`\u00A7a\u00A7l» \u00A7fSold \u00A7e${delivered}x ${shop.itemId} \u00A7ffor \u00A7a$${finalCost}\u00A7f.`);
+
+    // notify the owner if they are online.
+    const owner = Kernel.world.getAllPlayers().find(p => p.id === shop.ownerId)
+    if (owner) {
+        owner.sendMessage(`\u00A7a\u00A7l» \u00A7fBought \u00A7e${delivered}x ${shop.itemId} \u00A7ffrom \u00A7e${seller.name}\u00A7f. Cost: \u00A7c$${finalCost}\u00A7f.`);
+    }
 }
 
 // ----------------------------------------------------------------------------

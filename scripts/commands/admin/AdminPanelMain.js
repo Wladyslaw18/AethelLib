@@ -2,6 +2,7 @@ import { Kernel } from "../../core/Kernel.js"
 import { showPlayerManagement } from "./AdminPanelPlayers.js"
 import { showServerSettings } from "./AdminPanelSettings.js"
 import { showBannedPlayers } from "./AdminPanelBanned.js"
+import { showEconomyControl } from "./AdminPanelEconomy.js"
 import { UIUtils } from "../../ui/UIUtils.js"
 
 // ----------------------------------------------------------------------------
@@ -60,6 +61,7 @@ export async function showAdminPanel(player) {
         .button("\u00A7aPlayers", "textures/items/totem")
         .button("\u00A70Settings", "textures/ui/settings_glyph_complex")
         .button("\u00A7cBanned Players", "textures/items/iron_axe")
+        .button("\u00A76Economy Control", "textures/items/emerald")
 
     // show the form using our UI utility wrapper.
     const res = await UIUtils.showForm(player, form)
@@ -79,6 +81,10 @@ export async function showAdminPanel(player) {
         case 2:
             // list of currently banned players.
             await showBannedPlayers(player)
+            break
+        case 3:
+            // economy controls.
+            await showEconomyControl(player)
             break
     }
 }

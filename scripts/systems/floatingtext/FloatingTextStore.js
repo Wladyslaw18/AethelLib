@@ -10,6 +10,8 @@ import { Database } from "../../core/datastore/DatabaseManager.js"
 
 const STORAGE_KEY = "ae:floatingtexts"
 
+let cachedEntries = null
+
 export const FloatingTextStore = {
     /**
      * Add floating text entry
@@ -18,10 +20,12 @@ export const FloatingTextStore = {
      */
     add(entry) {
         try {
-            const entries = this.getAll()
             const id = this.generateId()
-            entries.push({ ...entry, id })
-            Database.set(STORAGE_KEY, entries)
+            const newEntry = { ...entry, id }
+            Database.setSharded(STORAGE_KEY, id, newEntry)
+            if (cachedEntries !== null) {
+                cachedEntries.push(newEntry)
+            }
             return id
         } catch (error) {
             console.error(`Failed to add floating text: ${error}`)
@@ -36,9 +40,10 @@ export const FloatingTextStore = {
      */
     remove(id) {
         try {
-            const entries = this.getAll()
-            const filtered = entries.filter(entry => entry.id !== id)
-            Database.set(STORAGE_KEY, filtered)
+            Database.deleteSharded(STORAGE_KEY, id)
+            if (cachedEntries !== null) {
+                cachedEntries = cachedEntries.filter(entry => entry.id !== id)
+            }
             return true
         } catch (error) {
             console.error(`Failed to remove floating text: ${error}`)
@@ -52,7 +57,10 @@ export const FloatingTextStore = {
      */
     getAll() {
         try {
-            return Database.get(STORAGE_KEY) || []
+            if (cachedEntries === null) {
+                cachedEntries = Database.getSharded(STORAGE_KEY) || []
+            }
+            return cachedEntries.map(entry => ({ ...entry }))
         } catch (error) {
             console.error(`Failed to load floating texts: ${error}`)
             return []
@@ -65,7 +73,11 @@ export const FloatingTextStore = {
      */
     clear() {
         try {
-            Database.delete(STORAGE_KEY)
+            const entries = this.getAll()
+            for (const entry of entries) {
+                Database.deleteSharded(STORAGE_KEY, entry.id)
+            }
+            cachedEntries = []
             return true
         } catch (error) {
             console.error(`Failed to clear floating texts: ${error}`)

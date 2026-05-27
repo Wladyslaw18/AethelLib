@@ -6,6 +6,7 @@ import { init as CompassHandler } from "../events/CompassHandler.js"
 import { init as PlaceholderProvider } from "../systems/placeholders/PlaceholderProvider.js"
 import { init as PlaceholderScheduler } from "../systems/placeholders/PlaceholderScheduler.js"
 import { init as ScoreboardMirror } from "../systems/economy/ScoreboardMirror.js"
+import { startMarketRecoveryJob } from "../commands/shop/ShopPrices.js"
 
 /*
  * BACKGROUND_SERVICE_ORCHESTRATOR
@@ -42,6 +43,7 @@ export const initializeServices = () => {
     Kernel.system.runTimeout(() => PlaceholderProvider(), 700)   // VARIABLE_REGISTRY_BOOT
     Kernel.system.runTimeout(() => PlaceholderScheduler(), 800)  // UPDATE_TICK_BOOT
     Kernel.system.runTimeout(() => ScoreboardMirror(), 900)      // DATA_MIRROR_BOOT
+    Kernel.system.runTimeout(() => startMarketRecoveryJob(), 1000) // MARKET_DECAY_BOOT
 
     /*
      * IMMEDIATE_ACTION_HANDLERS

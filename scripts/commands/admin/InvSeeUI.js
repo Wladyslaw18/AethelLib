@@ -17,7 +17,7 @@ import { UIUtils } from "../../ui/UIUtils.js"
 export async function showInventoryUI(viewer, target) {
     if (!target || !target.isValid) return;
     const inv = target.getComponent(Kernel.EntityComponentTypes.Inventory)
-    const equip = target.getComponent(Kernel.EntityComponentTypes.Equippable)
+    const equip = target.getComponent(Kernel.EntityComponentTypes.Equippable) // equip?.
     
     if (!inv?.container) {
         viewer.sendMessage(Lang.ERROR + "Access violation: Inventory buffer unreachable.");

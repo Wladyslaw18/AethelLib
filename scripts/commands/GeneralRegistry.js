@@ -1,4 +1,5 @@
 import { CalculateCommand } from "./general/CalculateCommand.js"
+import { CelebrateCommand } from "./general/CelebrateCommand.js"
 import { HelpCommand } from "./general/HelpCommand.js"
 import { TPSCommand } from "./general/TPSCommand.js"
 import { PlayerListCommand } from "./general/PlayerListCommand.js"
@@ -53,6 +54,9 @@ export const GeneralRegistry = {
         // main interaction menu.
         Registry.register("menu", MenuCommand)
         Registry.register("gui", MenuCommand)
+        // 1k downloads celebration command.
+        Registry.register("celebrate", CelebrateCommand)
+        Registry.register("1k", CelebrateCommand)
 
         // ----------------------------------------------------------------------------
         // | Social & Roleplay Commands                                               |

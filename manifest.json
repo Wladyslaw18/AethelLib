@@ -6,7 +6,7 @@
                    "uuid":  "c0953459-e159-42b6-9090-08b4825db606",
                    "version":  [1, 0, 7],
                    "min_engine_version":  [1, 26, 20],
-                   "license":  "ARPCC v2.1"
+                   "license":  "ARPCC v2.4"
                },
     "modules":  [
                     {

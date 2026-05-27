@@ -47,7 +47,7 @@ export async function showSellConfirmation(player, item) {
 }
 
 export async function handleQuickSell(player) {
-    const equippable = player.getComponent(Kernel.EntityComponentTypes.Equippable)
+    const equippable = player.getComponent(Kernel.EntityComponentTypes.Equippable) // equippable?.
     const mainhand = equippable.getEquipment("Mainhand")
 
     if (!mainhand) {

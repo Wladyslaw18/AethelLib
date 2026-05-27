@@ -1,4 +1,7 @@
 import { Kernel } from "../../core/Kernel.js";
+import { JournaledDb } from "../../core/datastore/JournaledDatabase.js";
+import { PermissionCache } from "../../core/cache/CacheManager.js";
+
 
 // ----------------------------------------------------------------------------
 // | variable: tickTimes                                                      |
@@ -84,13 +87,22 @@ export const TPSCommand = {
 
 // ----------------------------------------------------------------------------
 // | function: getMemoryUsage                                                 |
-// | PROVISIONAL: Bedrock's JS environment lacks a direct heap probe.         |
-// | this returns a simulated status based on engine rhythm until we find a   |
-// | way to hook the allocator or we get a native API.                        |
+// | Scans the synthetic telemetry allocator for JournaledDb and CacheManager. |
 // ----------------------------------------------------------------------------
 function getMemoryUsage() {
-    const tick = Kernel.system.currentTick
-    if (tick % 100 === 0) return "\u00A7aSTABLE"
-    if (tick % 50 === 0) return "\u00A7eMODERATE_LOAD"
-    return "\u00A7cHIGH_PRESSURE"
+    try {
+        const dbBytes = JournaledDb.getMemoryFootprint();
+        const cacheBytes = PermissionCache.getMemoryFootprint();
+        const totalBytes = dbBytes + cacheBytes;
+        
+        const formatBytes = (bytes) => {
+            if (bytes < 1024) return `${bytes} B`;
+            if (bytes < 1048576) return `${(bytes / 1024).toFixed(2)} KB`;
+            return `${(bytes / 1048576).toFixed(2)} MB`;
+        };
+
+        return `\u00A7a${formatBytes(totalBytes)} \u00A77(DB: \u00A7e${formatBytes(dbBytes)}\u00A77, Cache: \u00A7e${formatBytes(cacheBytes)}\u00A77)`;
+    } catch (e) {
+        return "\u00A7cERROR_ESTIMATING";
+    }
 }

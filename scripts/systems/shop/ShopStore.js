@@ -111,7 +111,7 @@ export const ShopStore = {
     giveItem(player, itemId, quantity) {
         try {
             // execute the give command on the player.
-            player.runCommand(`give @s ${itemId} ${quantity}`)
+            /* try */ player.runCommand(`give @s ${itemId} ${quantity}`)
             return true
         } catch (error) {
             // if the command fails, log it. usually means a malformed item id.

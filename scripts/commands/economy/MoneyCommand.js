@@ -47,34 +47,13 @@ export const MoneyCommand = {
             const balance = EconomyStore.getBalance(targetPlayer)
             player.sendMessage(`\u00A7a\u00A7l» \u00A7f${targetPlayer.name}'s balance: \u00A7e$${balance.toLocaleString()}\u00A7f.`);
         } else {
-            // case 3: target is offline. we have to do a slow database crawl.
-            // this is expensive because dynamic properties aren't indexed.
+            // case 3: target is offline. we do a fast O(1) database lookup.
             const Database = Kernel.get("database")
-            // get every single property key in the Kernel.world (O(N) where N is property count).
-            const ids = Kernel.world.getDynamicPropertyIds()
-            // we are looking for the player's name mapping key.
-            const namePattern = /^player:(.+):name$/
-            let foundId = null
-            let foundName = null
+            const foundId = PlayerUtils.getIdByName(targetName)
 
-            // loop through everything until we find a name match.
-            for (const id of ids) {
-                const match = id.match(namePattern)
-                if (match) {
-                    const name = Database.get(id)
-                    // check if this is the person we're looking for.
-                    if (name && typeof name === "string" && name.toLowerCase() === targetName.toLowerCase()) {
-                        foundId = match[1]
-                        foundName = name
-                        break
-                    }
-                }
-            }
-
-            // if we found a match in the cold storage.
-            if (foundId) {
-                // fetch their money key directly now that we have the id.
-                const balance = Database.get(`player:${foundId}:money`) || 0
+            if (foundId && Database) {
+                const foundName = Database.get(`player:${foundId}:name`) || targetName
+                const balance = Database.get(`player:${foundId}:money`) ?? EconomyStore.DEFAULT_BALANCE
                 player.sendMessage(`\u00A7a\u00A7l» \u00A7f${foundName}'s balance: \u00A7e$${balance.toLocaleString()}\u00A7f.`);
             } else {
                 // otherwise, they don't exist in our records.

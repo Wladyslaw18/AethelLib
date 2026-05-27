@@ -66,6 +66,14 @@ export const ChestShopStore = {
     },
 
     // ----------------------------------------------------------------------------
+    // | isShop                                                                   |
+    // | checks if a shop exists at the given sign location.                      |
+    // ----------------------------------------------------------------------------
+    isShop(signLocation) {
+        return this.getShop(signLocation) !== null
+    },
+
+    // ----------------------------------------------------------------------------
     // | createShop                                                                |
     // | registers a new chest shop in the database.                              |
     // ----------------------------------------------------------------------------

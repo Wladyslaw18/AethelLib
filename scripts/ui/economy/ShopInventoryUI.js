@@ -10,7 +10,7 @@ import { showSellConfirmation } from "./ShopTransaction.js"
  */
 
 export async function showInventorySellUI(player) {
-    const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory).container
+    const inv = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container // inv?.
     const tradableItems = []
     const shopItems = ShopStore.getItems()
 

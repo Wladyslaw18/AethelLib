@@ -23,6 +23,10 @@ export const ListWarpCommand = {
     // | readable list with spatial and attribution metadata.                     |
     // ----------------------------------------------------------------------------
     async execute(_data, player, _args) {
+        console.warn(`[Diag] WarpStore: ${typeof WarpStore}`);
+        if (WarpStore) {
+            console.warn(`[Diag] WarpStore.getWarps: ${typeof WarpStore.getWarps}`);
+        }
         // step 1: retrieve all registered global warps.
         const warps = await WarpStore.getWarps()
         // extract the names (keys).

@@ -1,5 +1,7 @@
 import { WarpStore } from "../../systems/teleport/WarpStore.js"
 import { Kernel } from "../../core/Kernel.js"
+import { showWarpUI } from "../../ui/teleport/WarpUI.js"
+import { showMainGUI } from "../../ui/MainGUI.js"
 
 // ----------------------------------------------------------------------------
 // | object: WarpCommand                                                      |
@@ -34,8 +36,7 @@ export const WarpCommand = {
             name = String(name)
         }
         if (!name) {
-            const { showWarpUI } = await import("../../ui/teleport/WarpUI.js")
-            Kernel.system.run(() => showWarpUI(player))
+            Kernel.system.run(() => showWarpUI(player, showMainGUI))
             return
         }
 

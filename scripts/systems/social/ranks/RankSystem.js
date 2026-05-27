@@ -189,7 +189,7 @@ export const RankSystem = {
      */
     getPermission: (player, key) => {
         const PermissionManager = Kernel.get("permissions")
-        return PermissionManager.hasPermission(player, key)
+        return PermissionManager.getPermission(player, key)
     },
 
     /* 

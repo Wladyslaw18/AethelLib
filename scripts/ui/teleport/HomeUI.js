@@ -20,6 +20,7 @@ export async function showHomeUI(player) {
             : "\u00A7cNO HOMES FOUND.")
 
     form.button("\u00A7c\u00A7l[BACK]", "textures/ui/refresh")
+    form.button("\u00A7a\u00A7l+ SET NEW HOME", "textures/ui/plus")
 
     for (const name of homeNames) {
         const home = homes[name]
@@ -35,7 +36,13 @@ export async function showHomeUI(player) {
         return
     }
 
-    const selectedIndex = response.selection - 1
+    if (response.selection === 1) {
+        const { showCreateHomeUI } = await import("./HomeActionUI.js")
+        Kernel.system.run(() => showCreateHomeUI(player))
+        return
+    }
+
+    const selectedIndex = response.selection - 2
     const selectedName = homeNames[selectedIndex]
     if (!selectedName) return
 

@@ -209,6 +209,22 @@ export class CacheManager {
             size: () => {
                 const cacheMeta = this.#caches.get(name)
                 return cacheMeta ? cacheMeta.cache.size : 0
+            },
+            
+            // get memory footprint in bytes.
+            getMemoryFootprint: () => {
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return 0
+                let total = 0
+                for (const [key, entry] of cacheMeta.cache) {
+                    total += key.length * 2
+                    if (entry.value !== undefined && entry.value !== null) {
+                        try {
+                            total += JSON.stringify(entry.value).length * 2
+                        } catch {}
+                    }
+                }
+                return total
             }
         }
     }

@@ -78,6 +78,12 @@ function cleanupExpiredBans() {
         if (activeBans.length !== bans.length) {
             WorldStore.set("ae:bans", activeBans)
         }
+
+        // ✦ Fail-safe: Check and eject any online players that have an active ban
+        const onlinePlayers = Kernel.world.getAllPlayers()
+        for (const player of onlinePlayers) {
+            checkPlayerBan(player)
+        }
     } catch (error) {
         console.error(`[BanManager] MAINTENANCE_FAILURE: ${error}`)
     }
@@ -104,7 +110,8 @@ function checkPlayerBan(player) {
                 "STATUS: PERMANENT"
                 
             Kernel.system.run(() => {
-                player.kick(`\u00A7c\u00A7lYou are banned!\n\u00A7eReason: ${activeBan.reason}\n\u00A77${durationText}`)
+                const safeName = player.name.replace(/"/g, '\\"');
+                try { Kernel.world.getDimension("overworld").runCommand(`kick "${safeName}" \u00A7c\u00A7lYou are banned!\n\u00A7eReason: ${activeBan.reason}\n\u00A77${durationText}`); } catch (e) {}
             })
 
         }

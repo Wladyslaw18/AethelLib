@@ -57,5 +57,31 @@ export const TPAStore = {
         if (TpaHandshake) {
             TpaHandshake.cleanup();
         }
+    },
+
+    getBlocked(playerId) {
+        try {
+            const raw = Kernel.world.getDynamicProperty(`ae:tpablocked:${playerId}`);
+            if (!raw) return [];
+            return JSON.parse(String(raw));
+        } catch (e) {
+            return [];
+        }
+    },
+
+    blockPlayer(playerId, targetId) {
+        const blocked = this.getBlocked(playerId);
+        if (!blocked.includes(targetId)) {
+            blocked.push(targetId);
+            Kernel.world.setDynamicProperty(`ae:tpablocked:${playerId}`, JSON.stringify(blocked));
+        }
+    },
+
+    unblockPlayer(playerId, targetId) {
+        let blocked = this.getBlocked(playerId);
+        if (blocked.includes(targetId)) {
+            blocked = blocked.filter(id => id !== targetId);
+            Kernel.world.setDynamicProperty(`ae:tpablocked:${playerId}`, JSON.stringify(blocked));
+        }
     }
 }

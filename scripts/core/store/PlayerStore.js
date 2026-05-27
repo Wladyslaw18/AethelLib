@@ -8,7 +8,22 @@ import { JournaledDb } from "../datastore/JournaledDatabase.js"
 // Keep name mapping synchronized for offline resolution
 Kernel.world.afterEvents.playerSpawn.subscribe((ev) => {
     const { player } = ev
+    
+    // 1. Maintain case-insensitive name-to-UUID index and handle name changes
+    const oldName = JournaledDb.get(`player:${player.id}:name`)
+    if (oldName && oldName.toLowerCase() !== player.name.toLowerCase()) {
+        JournaledDb.delete(`playername:${oldName.toLowerCase()}`)
+    }
+    
     JournaledDb.set(`player:${player.id}:name`, player.name)
+    JournaledDb.set(`playername:${player.name.toLowerCase()}`, player.id)
+    
+    // 2. Track registered players list
+    const allUuids = JournaledDb.get("ae:player_index") || []
+    if (!allUuids.includes(player.id)) {
+        allUuids.push(player.id)
+        JournaledDb.set("ae:player_index", allUuids)
+    }
 })
 
 export const PlayerStore = {
@@ -19,7 +34,9 @@ export const PlayerStore = {
      * via the DatabaseManager.
      */
     get: (player, key) => {
-        const fullKey = `player:${player.id}:${key}`
+        const id = typeof player === "string" ? player : player?.id
+        if (!id) return null
+        const fullKey = `player:${id}:${key}`
         return JournaledDb.get(fullKey)
     },
 
@@ -27,7 +44,9 @@ export const PlayerStore = {
      * ENTITY_BOUND_COMMIT_VECTOR
      */
     set: (player, key, value) => {
-        const fullKey = `player:${player.id}:${key}`
+        const id = typeof player === "string" ? player : player?.id
+        if (!id) return false
+        const fullKey = `player:${id}:${key}`
         return JournaledDb.set(fullKey, value)
     },
 
@@ -35,7 +54,9 @@ export const PlayerStore = {
      * ENTITY_BOUND_DECOMMISSION_VECTOR
      */
     delete: (player, key) => {
-        const fullKey = `player:${player.id}:${key}`
+        const id = typeof player === "string" ? player : player?.id
+        if (!id) return false
+        const fullKey = `player:${id}:${key}`
         return JournaledDb.delete(fullKey)
     },
 
@@ -46,6 +67,7 @@ export const PlayerStore = {
      * preventing financial-buffer race conditions.
      */
     transaction: (player, operation) => {
-        return JournaledDb.transaction(player.id, operation)
+        const id = typeof player === "string" ? player : player?.id
+        return JournaledDb.transaction(id, operation)
     }
 }

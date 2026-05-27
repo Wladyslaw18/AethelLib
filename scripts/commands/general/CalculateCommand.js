@@ -58,7 +58,7 @@ export const CalculateCommand = {
     chatRaw: true,
     // parameter definitions (for help display only — not used for native registration).
     parameters: [
-        { name: "expression", type: "string", optional: false }
+        { name: "expression", type: "string", optional: true }
     ],
 
     // ----------------------------------------------------------------------------
@@ -77,21 +77,24 @@ export const CalculateCommand = {
     // |   5. RPN evaluation — resolves the postfix stack to a final number       |
     // ----------------------------------------------------------------------------
     execute(_data, player, args) {
-        // args[0] is the full raw expression string (guaranteed by chatRaw intercept).
-        const expression = args[0] || ""
+        // Reconstruct expression from split args if necessary (to support native C++ splitting)
+        const expression = args.filter(arg => arg !== undefined && arg !== null).join(" ").trim()
         if (!expression) {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77Syntax Error: Math expression required.");
-            player.sendMessage("\u00A77Example: -calc 2 + 3 * (4 / 2)");
+            player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77Syntax Error: Math expression required.");
+            player.sendMessage("\u00A77Options to run calculations:");
+            player.sendMessage("\u00A771. Chat prefix: \u00A7e-calc 2 + 3\u00A77 (No quotes needed)");
+            player.sendMessage("\u00A772. Script event: \u00A7e/scriptevent ae:calc 2 + 3\u00A77 (No quotes needed)");
+            player.sendMessage("\u00A773. Slash command: \u00A7e/ae:calc \"2 + 3\"\u00A77 (Must use quotes)");
             return
         }
 
         try {
             // resolve the expression result using our safe parsing pipeline.
             const result = safeMathParse(expression)
-            player.sendMessage(`\u00A7a\u00A7l» \u00A7fResult: \u00A7e${expression} = \u00A7a${result.toLocaleString()}`);
+            player.sendMessage(`\u00A7a\u00A7l\u00BB \u00A7fResult: \u00A7e${expression} = \u00A7a${result.toLocaleString()}`);
         } catch (error) {
             // catch and display syntax errors or math logic failures (e.g. div by 0).
-            player.sendMessage(`\u00A7c\u00A7l» \u00A77Error: ${error.message}`);
+            player.sendMessage(`\u00A7c\u00A7l\u00BB \u00A77Error: ${error.message}`);
         }
     }
 }
@@ -141,10 +144,10 @@ const constants = {
 function isUnary(index, tokens) {
     if (index === 0) return true;
     const prev = tokens[index - 1];
-    return /[\+\-\*\/\%\^\(\)]/.test(prev) || functions.has(prev);
+    return /[\+\-\*\/\%\^\(]/.test(prev) || functions.has(prev);
 }
 
-function safeMathParse(expression) {
+export function safeMathParse(expression) {
     // regex sanitization: allow numbers, words (functions/constants), standard operators, decimals, and whitespace.
     const clean = expression.replace(/[^0-9a-zA-Z\+\-\*\/\%\^\(\)\.\s]/g, '')
     

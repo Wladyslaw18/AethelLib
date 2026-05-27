@@ -10,6 +10,7 @@ export class PermissionData {
         this.rankNames = []         
         this.rankColors = []        
         this.rankChatColors = []    
+        this.rankHideRanks = []
         this.rankIndexMap = new Map() // O(1) lookup for rank indices
 
         // Bitflag maps for permissions
@@ -25,7 +26,7 @@ export class PermissionData {
     /**
      * Add a new rank to the data structure
      */
-    addRank(rankId, order, name, color, chatColor) {
+    addRank(rankId, order, name, color, chatColor, hideRanks = false) {
         if (this.rankIndexMap.has(rankId)) return
 
         const index = this.rankIds.length
@@ -36,6 +37,7 @@ export class PermissionData {
         this.rankNames.push(name)
         this.rankColors.push(color)
         this.rankChatColors.push(chatColor)
+        this.rankHideRanks.push(hideRanks)
 
         for (const [_perm, flags] of this.permissionFlags) {
             flags[index] = 0
@@ -222,6 +224,7 @@ export class PermissionData {
             name: this.rankNames[index],
             color: this.rankColors[index],
             chatColor: this.rankChatColors[index],
+            hideRanks: this.rankHideRanks[index] ?? false,
             permissions: this.getRankPermissions(rankId)
         }
     }
@@ -238,6 +241,7 @@ export class PermissionData {
                 name: this.rankNames[i],
                 color: this.rankColors[i],
                 chatColor: this.rankChatColors[i],
+                hideRanks: this.rankHideRanks[i] ?? false,
                 permissions: this.getRankPermissions(this.rankIds[i])
             })
         }
@@ -258,6 +262,7 @@ export class PermissionData {
         this.rankNames.splice(index, 1)
         this.rankColors.splice(index, 1)
         this.rankChatColors.splice(index, 1)
+        this.rankHideRanks.splice(index, 1)
         this.rankIndexMap.delete(rankId)
 
         // Re-index remaining ranks
