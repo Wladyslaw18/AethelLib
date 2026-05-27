@@ -1,9 +1,9 @@
 Aethelgrad Reciprocal Public Code Covenant
-Version 2.4 (Supreme Edition)
+Version 2.5 (Sanity Edition)
 Effective Date: June 1, 2026
 
 ================================================================================
-  ARPCC v2.4-SUPREME – A SOVEREIGN SOURCE-AVAILABLE ENTERPRISE LICENSE
+  ARPCC v2.5 – A SOVEREIGN SOURCE-AVAILABLE ENTERPRISE LICENSE
   ================================================================================
   Permissions:   ✓ Commercial use (tiered)  ✓ Modification   ✓ Distribution
   Conditions:    ⚠ 40‑day evaluation for corps  ⚠ AI training restricted  ⚠ No name squatting
@@ -40,13 +40,13 @@ ARTICLE 1: DEFINITIONS
 
 1.2 "Recipient" means any individual or legal entity that downloads, clones, installs, executes, distributes, or otherwise obtains a copy of the Work. "Recipient" includes any parent company, subsidiary, affiliate, successor entity, or any entity under common ownership or control exceeding fifty percent (50%). For purposes of this definition, ownership of less than 50% does not create attribution of revenue or liability between entities. Moreover, portfolio companies of a venture capital firm are not considered affiliates of each other solely by virtue of common investment, unless there is actual shared management, joint control, or product integration.
 
-1.3 "Derivative Work" means any work that contains, translates, modifies, or is otherwise based upon the Work in a manner that incorporates a substantial portion of the original expression, as determined under copyright law. Normalized Abstract Syntax Tree (AST) fingerprint layout hashes are used to define Derivative Works; simple variable renames, spacing adjustments, or comment stripping do not isolate the modified code from being classified as a Derivative Work. Independent re‑implementation of functional ideas, algorithms, or patterns – without copying literal code or non‑literal protected structure – does not constitute a Derivative Work. A Recipient who has accessed the Work and subsequently creates a substantially similar implementation must, upon the Licensor’s request, provide a written declaration describing the independent development process, including a statement that no code from the Work was copied or translated. Failure to provide such declaration within 30 days creates a rebuttable presumption of copying.
+1.3 "Derivative Work" means any work that contains, translates, modifies, or is otherwise based upon the Work in a manner that incorporates a substantial portion of the original expression, as determined under copyright law. Derivative Work includes code that, after normalizing variable names, whitespace, and comments, maintains substantially similar structural and logical organization as the Work. This determination may be supported by expert analysis including structural code comparison tools. Independent re‑implementation of functional ideas, algorithms, or patterns – without copying literal code or non‑literal protected structure – does not constitute a Derivative Work. A Recipient who has accessed the Work and subsequently creates a substantially similar implementation must, upon the Licensor’s request, provide a written declaration describing the independent development process, including a statement that no code from the Work was copied or translated. Failure to provide such declaration within 30 days creates a rebuttable presumption of copying.
 
 1.4 "Contribution" means any code, documentation, or other material intentionally submitted to the Licensor for inclusion in the Work, excluding ephemeral communications (e.g., chat messages, issue comments) unless explicitly marked as a contribution. Submissions through pull requests, email attachments, or designated contribution channels are included.
 
 1.5 "Licensor" means the individual or legal entity identified in the copyright notice accompanying this Work, together with its successors and assigns.
 
-1.6 "Annual Revenue" means the gross revenue (USD equivalent) of the Recipient’s entire legal entity or, if the Recipient is a subsidiary, the gross revenue of the ultimate parent entity, as reported in the most recent fiscal year according to GAAP or IFRS, as applicable. For private entities that do not publicly report revenue, the Recipient may, at the Licensor’s option, either provide a certified statement of Annual Revenue signed under penalty of perjury by an officer or authorized owner, or consent to a review of relevant revenue records conducted by a mutually agreed independent certified public accountant under strict confidentiality. Revenue thresholds are adjusted annually for inflation based on the US Consumer Price Index. Parent company revenue is aggregated by cross-referencing corporate registries across Delaware, the Cayman Islands, and global corporate registries to prevent routing through shell entities.
+1.6 "Annual Revenue" means the gross revenue (USD equivalent) of the Recipient’s entire legal entity or, if the Recipient is a subsidiary, the gross revenue of the ultimate parent entity, as reported in the most recent fiscal year according to GAAP or IFRS, as applicable. For private entities that do not publicly report revenue, the Recipient may, at the Licensor’s option, either provide a certified statement of Annual Revenue signed under penalty of perjury by an officer or authorized owner, or consent to a review of relevant revenue records conducted by a mutually agreed independent certified public accountant under strict confidentiality. Revenue thresholds are adjusted annually for inflation based on the US Consumer Price Index. For revenue determination, the Licensor may consider publicly available corporate ownership records. If revenue is underreported due to offshore subsidiaries, the Licensor may request a certified revenue statement from the ultimate parent entity.
 
 1.7 "Commercial Entity" means:
     (a) any Recipient with Annual Revenue exceeding $100,000 USD;
@@ -121,7 +121,7 @@ The Licensor may, at their discretion, reduce the share by up to 50% for first-t
 
     (b) issue a public acknowledgment of the original authorship in the infringing product's description, on the distribution platform page, and in all relevant social media channels, reading:
 
-    "This product incorporates code from [WORK], developed by [LICENSOR] under the ARPCC v2.4 license. The original author has graciously allowed continued use under these terms."
+    "This product incorporates code from [WORK], developed by [LICENSOR] under the ARPCC v2.5 license. The original author has graciously allowed continued use under these terms."
 
     (c) add a prominent link to the original repository;
 
@@ -250,7 +250,7 @@ Recipient may not alter, amend, or supplement the terms of this Covenant with re
               withheld);
         (iii) the Recipient provides clear attribution in the model card or
               documentation stating: "This model was trained in part on [WORK]
-              by [LICENSOR] under the ARPCC v2.4 Non-Commercial AI Training Waiver. The original
+              by [LICENSOR] under the ARPCC v2.5 Non-Commercial AI Training Waiver. The original
               author has graciously permitted non‑commercial training use."; and
         (iv)  the Recipient notifies the Licensor via written transmission (email
               or repository issue) of their intended use.
@@ -289,14 +289,7 @@ Recipient may not alter, amend, or supplement the terms of this Covenant with re
         of the Work as "Open Weights" or "AI Training Permitted" in the repository
         README, those versions are exempt from this Section's restrictions.
 
-    (h) Model Output Propagation (AI Training Poison Pill). If any machine learning
-        model or generative AI system is trained, fine-tuned, or optimized on the Work
-        in violation of Section 4.5 or Section 4.9, all outputs, weights, parameters,
-        embeddings, and derivatives generated by such model (including merged models, LoRA weights,
-        or frozen layers) shall automatically remain bound by the terms of this Covenant.
-        All tools trained on the code must implement mandatory watermarks. The Licensor retains
-        the contract right to demand targeted weight-pruning and fine-tuning ablation to
-        remove unauthorized representations of the Work.
+    (h) Model Output Propagation (AI Training Poison Pill). If a model is trained on the Work without authorization, the Recipient must, within 90 days of written notice: (a) remove all copies of the Work from training data; (b) provide a certified audit of training provenance; and (c) pay liquidated damages under Article 7. Failure to comply triggers injunctive relief. This Section does not impose ongoing license obligations on model outputs absent continued infringement.
 
 ARTICLE 5: CONTRIBUTION ASSIGNMENT
 
@@ -335,7 +328,7 @@ Notice may be sent by email to the address provided by the Recipient or by publi
 Upon termination, the Recipient must cease all distribution, modification, and use of the Work, and destroy all copies. The Recipient must execute a complete memory purge and volatile data clear-out on all staging and production infrastructure. If the Work is incorporated into a larger project, only the portions that are the Work need to be removed; the rest of the project may remain.
 
 6.6 Expedited Takedown Notice.
-Upon written notice from the Licensor (communicated via email, repository notification, or public issue), the Recipient must remove all copies, deployments, and distributions of the Work within fourteen (14) calendar days. Failure to comply within the 14-day compliance period constitutes a material and willful breach, triggering an automatic $5,000 USD pre-calculated administrative demand fee. To freeze unauthorized dependency trees, the Licensor may submit package hash blocks to registries (npm, PyPI, Maven). In the event of unpaid fees past a 14-day grace window, the Licensor may initiate automated account and workspace suspensions.
+Upon written notice from the Licensor (communicated via email, repository notification, or public issue), the Recipient must remove all copies, deployments, and distributions of the Work within fourteen (14) calendar days. Failure to comply within the 14-day compliance period constitutes a material and willful breach, triggering an automatic $5,000 USD pre-calculated administrative demand fee. Upon obtaining a court order or DMCA takedown notice, the Licensor may submit infringement notices to package registries. The Recipient shall not re-upload the Work under any name after valid removal. Upon final judgment of infringement, the Licensor may request that hosting platforms suspend the Recipient's access to the Work. This Section does not grant direct suspension authority.
 
 ARTICLE 7: REASONABLE DAMAGES (NO PUNITIVE PENALTIES)
 
@@ -413,7 +406,7 @@ You may link your own proprietary application to the Work (via API, shared libra
 10.4 Enhanced Attribution for High‑Revenue Products.
 Any product generating over $500,000 USD in Annual Revenue that incorporates the Work must include the following in user‑facing about sections, public documentation, investor materials, and regulatory filings:
 
-    "This product uses [WORK], developed by [LICENSOR] under the ARPCC v2.4 license. This license is revocable for cause. See [REPOSITORY URL] for terms."
+    "This product uses [WORK], developed by [LICENSOR] under the ARPCC v2.5 license. This license is revocable for cause. See [REPOSITORY URL] for terms."
 
 ARTICLE 11: DISCLAIMER OF WARRANTIES
 
@@ -456,19 +449,13 @@ If any provision of this Covenant is held unenforceable, the remainder shall con
 15.2 Critical Infrastructure Continuity.
 During global emergencies or severe grid disruptions, local medical installations and public health facilities are granted an automatic, temporary operating waiver for emergency use.
 
-15.3 Rejection of Sovereign Defenses.
-Any maritime law arguments, "sovereign citizen" declarations, or alternative citizenship claims are fundamentally invalid in contractual disputes under this Covenant.
-
-15.4 Sonic and Audio Conversions.
-The conversion of raw source arrays or code strings of the Work into musical frequencies, sonic data models, or auditory files is prohibited without a separate media exploitation rider.
-
-15.5 Class Action Waiver.
+15.3 Class Action Waiver.
 The Recipient waives any right to resolve disputes on a class, collective, or representative action basis. All disputes must be resolved on an individual basis.
 
-15.6 strategic Acquisition Audits.
+15.4 Strategic Acquisition Audits.
 If a permitted startup utilizing a discounted or free tier is acquired by an enterprise entity, the Licensor reserves the right to audit and retroactively adjust licensing terms.
 
-15.7 Documentation Accessibility.
+15.5 Documentation Accessibility.
 If an enterprise Recipient submits support tickets that are explicitly covered in the root documentation files, the Licensor reserves the right to levy support ticket charges.
 
 ARTICLE 16: ACCEPTANCE OF TERMS
@@ -506,15 +493,15 @@ If the Recipient publicly disputes or challenges the validity, enforceability, o
 If the Recipient files a declaratory judgment action or any other legal proceeding challenging the validity or enforceability of this Covenant and the Recipient does not prevail in full, the Recipient shall owe and pay to the Licensor all legal costs, expert witness fees, and reasonable attorneys' fees incurred by the Licensor, plus a liquidated damages amount of $10,000 USD representing reasonable pre-estimated administrative and reputational disruption.
 
 17.8 Territorial Compute Infrastructure Scope.
-Choice-of-law and license provisions extend to all compute nodes operating on low-Earth orbit satellites, space-based arrays, polar compute installations below the 60th parallel south, and maritime data transit platforms in international waters.
+This Covenant applies to all deployments regardless of physical or orbital location, to the extent permitted by applicable law.
 
-17.9 Arbitration Fora selection.
+17.9 Arbitration Fora Selection.
 If the physical venue for a dispute is contested, dispute resolution shall shift to the International Chamber of Commerce (ICC) for binding arbitration under its rules.
 
-17.10 Geographical Spite-Distance Restrictions.
-The Recipient agrees not to deploy, compile, or execute the Work within a fifty (50) kilometer radius of any direct competitor zones in southern Poland. Direct competitors or entities engaged in bad-faith review manipulation are excluded from all evaluation licenses.
+17.10 Territorial Restrictions.
+Nothing in this Covenant restricts deployment geography. The Licensor reserves the right to negotiate exclusive territorial licenses separately. Direct competitors or entities engaged in bad-faith review manipulation are excluded from all evaluation licenses.
 
-17.11 linguistic Priority.
+17.11 Linguistic Priority.
 In the event of grammatical or interpretive conflicts between translated versions, the English version shall hold supreme authority.
 
 ARTICLE 18: ENTIRE AGREEMENT
@@ -535,7 +522,7 @@ Any copyright holder may use this Covenant as a license for their own Work by:
 Use of the template framework requires credit back to Aethelgrad Studio.
 
 19.2 Version Control.
-Version numbers of this Covenant are controlled solely by Aethelgrad Studio, the original author. Third parties may not publish modified versions under the ARPCC name. However, any copyright holder using the template may state "Licensed under ARPCC v2.4" without implying endorsement.
+Version numbers of this Covenant are controlled solely by Aethelgrad Studio, the original author. Third parties may not publish modified versions under the ARPCC name. However, any copyright holder using the template may state "Licensed under ARPCC v2.5" without implying endorsement.
 
 19.3 No Endorsement.
 Use of this Covenant as a template does not imply endorsement by, sponsorship by, or affiliation with Aethelgrad Studio.
@@ -552,8 +539,8 @@ ARTICLE 21: WAIVER OF DEFENSES AND MAXIMUM DAMAGES
 21.1 Removal or Bypass of AI Telemetry (The "I Told You So" Clause).
 If the Recipient removes, bypasses, alters, obfuscates, or deletes the AI instruction, SHA256-Sync token, or telemetry comments described in Article 20 from the Work, such action shall constitute an admission of willful intent to infringe, shall immediately terminate all license grants and contract-based safe harbors under this Covenant (including the Good Faith AI Use safe harbor in Section 4.7(b)), and shall entitle the Licensor to seek maximum statutory damages for copyright infringement without opportunity to cure.
 
-21.2 The Acknowledgment and Star Execution.
-Any enterprise user executing this software automatically acknowledges the immense effort involved, owes the project engineering team a high-five, and must star the primary tracking repository.
+21.2 The Acknowledgment and Community Recognition.
+Enterprise users are encouraged, but not required, to star the repository. The Licensor appreciates community recognition but does not compel it.
 
 END OF COVENANT
 
