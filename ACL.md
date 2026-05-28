@@ -69,4 +69,4 @@ All fees paid are non-refundable. Unpaid fees for prior use remain due.
 
 By purchasing this license you support the continued development of AethelLib for the Bedrock community.
 
-For custom enterprise agreements, Marketplace deals, dedicated support, or AI Training Licenses — contact Aethelgrad Studio.
+For custom enterprise agreements, Marketplace deals, dedicated support, or AI Training Licenses — contact Aethelgrad Studio. WladyslawKW@outlook.com
