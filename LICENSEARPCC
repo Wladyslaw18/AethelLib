@@ -1,163 +1,242 @@
+================================================================================
 Aethelgrad Reciprocal Public Code Covenant (ARPCC)
 Version 2.6
-Effective Date: June 1, 2026
+Effective Date: June 11, 2026
+Copyright (C) 2026 Aethelgrad Studio. All Rights Reserved.
+================================================================================
 
-COPYRIGHT NOTICE
-Copyright (C) 2026  Aethelgrad Studio
-Work:          AethelLib
-Protected Marks: AethelLib, AethelEssentials.
-Repository:    https://github.com/Wladyslaw18/AethelLib.git
-Primary Place of Business or Habitual Residence: Poland
+IMPORTANT — READ CAREFULLY BEFORE DOWNLOADING, INSTALLING, OR USING:
 
+This document is a legally binding contract (the "Covenant" or "License") 
+between the Licensor (defined below) and any individual or legal entity 
+that accesses, downloads, copies, modifies, or distributes the software 
+known as "AethelLib" and associated materials (defined below as the "Work").
+
+A software license is a legal instrument that governs the use and redistribution 
+of copyrighted software. It does not transfer ownership of the software to you; 
+instead, it grants you specific, limited, conditional permissions to use the 
+software under the terms and conditions set forth below.
+
+BY DOWNLOADING, INSTALLING, COPYING, DISTRIBUTING, OR OTHERWISE USING THE WORK, 
+YOU EXPLICITLY AGREE TO BE BOUND BY ALL THE TERMS AND CONDITIONS OF THIS COVENANT. 
+IF YOU DO NOT AGREE TO THESE TERMS, YOU DO NOT HAVE PERMISSION TO USE, COPY, 
+MODIFY, OR DISTRIBUTE THE WORK, AND YOU MUST IMMEDIATELY DELETE ALL COPIES 
+OF THE WORK IN YOUR POSSESSION.
+
+================================================================================
 PREAMBLE
+================================================================================
 
-This Covenant is a legally binding agreement between the Licensor and the Recipient. This library is free software for non-commercial entities, hobbyists, and academics; you can redistribute it and/or modify it under the terms of this Covenant. This Work is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+This Covenant is dedicated to safeguarding the fundamental liberties of 
+developers, hobbyists, and academics to study, run, copy, modify, and distribute 
+software. We believe that the digital commons must remain open, collaborative, 
+and protected from unilateral corporate extraction. To ensure that the freedom 
+of the individual developer is preserved, this Covenant operates on a principle 
+of absolute reciprocity. Software freedom is a shared covenant: those who 
+contribute to the commons are granted full, unrestricted access, while those who 
+derive significant commercial gain from the Work are required to support its continued 
+maintenance.
+
+================================================================================
+TERMS AND CONDITIONS
+================================================================================
 
 ARTICLE 1: DEFINITIONS
 
-1.1 "Work" means the software source code, object code, documentation, configuration files, visual design elements, ASCII art, and associated materials made available by the Licensor in any repository referencing this Covenant.
+1.1 "Work" means the software source code, object code, documentation, 
+configuration files, and associated materials made available by the Licensor 
+in any repository referencing this Covenant.
 
-1.2 "Recipient" means any individual or legal entity that obtains a copy of the Work, including any parent company, subsidiary, affiliate, or entity under common control exceeding 50% ownership. Portfolio companies of a venture capital firm are excluded unless under shared management.
+1.2 "Licensor" means Aethelgrad Studio (representing the copyright holder, 
+Wladyslaw18, and authorized contributors), based in Poland.
 
-1.3 "Derivative Work" includes any code that, after normalizing variable names, whitespace, and comments (or any other superficial lexical obfuscation), maintains substantially similar structural and logical organization as the Work. Substantial similarity is determined by expert analysis including, but not limited to, structural code comparison tools.
+1.3 "Recipient" (also referred to as "You" or "Your") means any individual 
+or legal entity that obtains a copy of the Work, including any parent company, 
+subsidiary, affiliate, or entity under common control exceeding fifty percent 
+(50%) ownership.
 
-1.4 "Commercial Entity" means:
+1.4 "Derivative Work" includes any code that, after normalizing variable names, 
+whitespace, and comments, maintains substantially similar structural and logical 
+organization as the Work, as determined by objective structural code comparison tools.
+
+1.5 "Commercial Entity" means:
     (a) any Recipient with Annual Revenue exceeding $100,000 USD;
-    (b) any entity with aggregate venture capital funding, angel investment, venture debt, bridge loans, secondary market investments, convertible debt, or SAFEs exceeding $1,000,000 USD;
-    (c) any publicly traded entity;
-    (d) any government agency or state-owned enterprise with an operating budget exceeding $10,000,000 USD; or
-    (e) any registered non-profit organization or charity with an operating budget exceeding $5,000,000 USD.
-    Use of the Work for purely educational, academic, or humanitarian purposes – without commercial integration, monetization, or paid distribution – is exempt from Commercial Entity status.
+    (b) any entity with aggregate venture capital funding, angel investment, 
+        venture debt, or SAFEs exceeding $1,000,000 USD;
+    (c) any publicly traded entity; or
+    (d) any government agency, state-owned enterprise, or registered non-profit 
+        organization with an operating budget exceeding $10,000,000 USD.
+    Use of the Work exclusively for personal hobby projects, academic instruction, 
+    or non-profit humanitarian aid is exempt from Commercial Entity status.
 
-1.5 "Annual Revenue" means the gross revenue (USD equivalent) of the Recipient's entire legal entity (aggregated across parent/subsidiary layers). Private entities must, at Licensor's option, provide a certified statement of Annual Revenue signed under penalty of perjury, or consent to a confidential audit conducted by a mutually agreed independent CPA. For revenue determination, the Licensor may consider publicly available corporate ownership records. If revenue is underreported due to offshore subsidiaries, the Licensor may request a certified revenue statement from the ultimate parent entity.
+1.6 "Annual Revenue" means the gross revenue (USD equivalent) of the Recipient's 
+entire legal entity, aggregated across all parent and subsidiary layers.
 
-1.6 "Developer Seat" means any individual human developer, software engineer, or contractor who, on behalf of the Recipient, directly modifies, compiles, or actively maintains a software application integrating the Work. This Covenant also governs any automated, algorithmic, or non-human processing system ("Automated Consumer"). Any system that ingests, tokenizes, indexes, embeds, or synthesizes the Work for execution or data structure compilation is classified as an Active Consumer, requiring one paid Developer Seat per concurrent runtime process. Automated build servers and CI/CD pipelines do not require seats.
+1.8 "Developer Seat" means any individual human developer, software engineer, 
+or contractor who, on behalf of the Recipient, directly modifies, compiles, or 
+actively maintains a software application integrating the Work. 
 
-ARTICLE 2: LICENSE GRANTS AND CONDITIONS
 
-2.1 Non-Commercial Grant. Recipients that are not Commercial Entities are granted a perpetual, worldwide, non-exclusive, royalty-free copyright license to reproduce, copy, distribute, and prepare Derivative Works of the Work. Sublicensing cannot expand rights; sublicensees remain subject to the terms of this Covenant. Sublicenses must include this license text.
+ARTICLE 2: LICENSE GRANTS, RECIPROCAL PRICING, AND COMPLIANCE
 
-2.2 Commercial Evaluation Grant. Commercial Entities are granted a limited, royalty-free, non-transferable internal evaluation license for a period of forty (40) calendar days from first download or cloning (the "Evaluation Period"). Continued use beyond the Evaluation Period is strictly prohibited without a signed Commercial License Agreement.
+2.1 Non-Commercial Grant. Recipients that are not Commercial Entities are granted 
+a perpetual, worldwide, non-exclusive, royalty-free copyright license to reproduce, 
+copy, distribute, and prepare Derivative Works of the Work for non-commercial purposes. 
+Sublicenses must include this license text.
 
-2.3 Share-Alike for Core Changes. Distribution of modified versions of the core source code of the Work (excluding configuration files or trivial changes) must be made publicly available under the terms of this Covenant. You may link proprietary applications to the Work (via API or linking) without open-sourcing them, provided you do not modify the Work's source code.
+2.2 Commercial Evaluation Grant. Commercial Entities are granted a limited, 
+royalty-free, non-transferable internal evaluation license for a period of forty (40) 
+calendar days from the date of first access (the "Evaluation Period"). Continued use 
+beyond the Evaluation Period is prohibited without executing a separate Commercial License.
 
-2.4 Patent License. Contributors grant Recipients a royalty-free patent license to make, use, sell, and import the Work, limited to patent claims necessarily infringed by their Contributions. If a Recipient files a patent lawsuit against the Licensor or any Contributor alleging patent infringement by the Work, all patent licenses granted under this Covenant terminate immediately.
+2.3 Share-Alike Reciprocity for Core Changes. Distribution of modified versions of 
+the core source code of the Work must be made publicly available under the terms of this 
+Covenant. You may link proprietary applications to the Work (via API or linking) 
+without open-sourcing them, provided you do not modify the core source code files of 
+the Work itself.
 
-2.5 High-Revenue Attribution. Any commercial product or service generating over $500,000 USD in Annual Revenue that incorporates the Work must include a clear, legible attribution notice in its public documentation and user-accessible credits or "About" interface, stating: "This product incorporates [WORK], licensed under the ARPCC v2.6 license. License terms and repository source are available at [REPOSITORY URL]."
+2.4 Patent License and Retaliation. Contributors grant Recipients a royalty-free 
+patent license to make, use, sell, and import the Work. If a Recipient files a 
+patent lawsuit against the Licensor or any contributor alleging patent infringement 
+by the Work, all patent and copyright licenses granted under this Covenant shall 
+terminate immediately and retroactively.
 
-ARTICLE 3: COMMERCIAL TIERS AND PRICING
+2.5 High-Revenue Attribution. Any commercial product or service generating over 
+$500,000 USD in Annual Revenue that incorporates the Work must include a clear, 
+legible attribution notice in its public documentation or user-accessible credits, 
+stating: "This product incorporates code licensed under the ARPCC v2.6 license."
 
-3.1 Commercial License Tiers. Standard commercial rates (per Developer Seat per year):
+2.6 Reciprocal Commercial Maintenance Allocations. Standard commercial rates (per 
+Developer Seat per year):
     - Startup ($100k - $10M Revenue): $600 USD
     - Mid-Market ($10M - $100M Revenue): $1,200 USD
     - Enterprise ($100M - $1B Revenue): $2,400 USD
     - Mega (Over $1B Revenue): $4,800 USD
-    Minimum annual fee is $1,200 USD, regardless of seat count.
+    The minimum annual licensing fee for any Commercial Entity is $1,200 USD.
+    
+    2.6.1 Early-Stage Venture Discount. Entities under three (3) years old from their initial date of incorporation, which are not subsidiaries, affiliates, or joint ventures of any parent entity exceeding the Commercial Entity threshold, and with Annual Revenue under $5,000,000 USD may pay a discounted rate of $300 USD per Developer Seat per year for the first two (2) years.
+    
+    2.6.2 Serverless Consumption Tariff. For serverless or cloud function execution, 
+    seat tracking may be substituted for a consumption tariff of $50.00 USD per 
+    1,000,000 monthly invocations.
+    
+    2.6.3 Retroactive Compliance and Voluntary Disclosure. If a Recipient voluntarily 
+    discloses their non-compliant commercial use prior to receiving a notice of breach 
+    (a "Voluntary Self-Audit"), the Licensor shall grant a retroactive license in 
+    exchange for a mitigated compliance surcharge equal to 120% of the standard seat 
+    rates. Uncured breaches discovered by the Licensor shall trigger the standard 
+    remediation rates under Section 2.7.
+    
+    2.6.4 Custom Enterprise Licensing Protocols. The Licensor encourages Mega Tier 
+    Recipients (over $1B USD in Annual Revenue) to negotiate custom, multi-year, or 
+    fixed-term licenses.
+        - 2.6.4.1 Default Position. The baseline rate for a custom Mega Tier license 
+          is $250,000 USD per year, auto-renewing, with annual increases tied to the 
+          greater of CPI or five percent (5%).
+        - 2.6.4.2 Negotiation Protocols. All custom enterprise negotiations shall remain 
+          confidential. The Licensor reserves the right to request non-monetary concessions, 
+          including but not limited to: logo placement, written testimonials, or public 
+          contributions to the Work. Custom terms may be finalized via mutual written agreement.
 
-3.2 Startup Discount. Entities under three (3) years old with Annual Revenue under $5,000,000 USD may pay a discounted rate of $300 USD per Developer Seat per year for the first two (2) years.
+2.7 Liquidated Damages and CPA Audits. Unlicensed commercial use beyond the Evaluation 
+Period triggers liquidated damages equal to two times (2x) the standard rate per Developer 
+Seat per year of unauthorized use, which the parties agree is a reasonable pre-estimate 
+of actual damages. Willful violations (including ignoring written notices) multiply 
+damages to three times (3x) the standard rate, capped at $500,000 USD per violation. 
+    - 2.7.1 Audits. Upon reasonable suspicion, the Licensor may request an independent 
+      CPA audit of the Recipient's records to verify seat counts and revenue. The Recipient 
+      may redact proprietary, privileged, or GDPR-protected personal data. If underreporting 
+      exceeds 5%, the Recipient shall bear the reasonable costs of the audit.
+    - 2.7.2 Liability Caps for Small Violators. Total damages are capped at $10,000 USD 
+      for entities with revenue under $500k, and $500 USD for individuals with revenue 
+      under $10k.
 
-3.3 Serverless Consumption Tariff. For serverless or cloud function execution, seat tracking may be substituted for a consumption tariff of $50.00 USD per 1,000,000 monthly invocations. Multi-tenant consumption is scaled based on unique active end-user connections.
+2.8 Covenants Regarding Decoupled and Immutable Environments.
+    2.8.1 Decoupled Environments. The architectural or runtime environment of deployment—
+    including immutable ledgers, distributed systems, and decentralized networks—shall not 
+    diminish liability.
+    2.8.2 Decentralized Autonomous Organizations (DAOs). If the Recipient operates as a 
+    DAO or unincorporated association, its members agree to be bound collectively by the 
+    terms of this Covenant.
+    2.8.3 Irremediable Blockchain Deployments. If the Recipient deploys the Work or any 
+    Derivative Work to an immutable public blockchain (an "Irremediable Deployment"), any 
+    unlicensed commercial use shall be classified as legally incurable, and standard 
+    remediation damages under Section 2.7 shall be multiplied by three (3x).
 
-3.4 Retroactive Compliance. Any Recipient who has commercially exploited the Work without authorization may petition the Licensor for retroactive compliance. The Licensor may, in its sole discretion, grant a retroactive license in exchange for: (a) a licensing share ranging from 25% to 50% of all gross revenue generated during the period of unauthorized use; (b) a public, C-level signed acknowledgment of authorship; and (c) removal of all Protected Marks. Audit rights apply; refusal to disclose revenue records constitutes willful infringement.
 
-3.5 Hardship Safe Harbor. If a natural person demonstrating insolvency or gross revenue under $10,000 USD violates this Covenant, the Licensor may accept non-monetary restitution in lieu of liquidated damages. This restitution shall consist of a mandatory public written article or blog post (minimum 300 words) explaining the compliance breach with a backlink to the Work, and may optionally include, at the Recipient's preference, a public video statement (minimum 30 seconds) acknowledging the original authorship.
+ARTICLE 3: INTELLECTUAL PROPERTY AND AI LIMITATIONS
 
-3.6 Custom Enterprise Licensing Protocols. The Licensor encourages Mega Tier Recipients (over $1B USD in Annual Revenue) to negotiate custom, multi-year, or fixed-term licenses.
-    - 3.6.1 Default Position. The baseline rate for a custom Mega Tier license is $250,000 USD per year, auto-renewing, with annual increases tied to the greater of CPI or five percent (5%).
-    - 3.6.2 Negotiable Structures. The Recipient may propose alternative pricing structures, including prepaid terms of three (3), five (5), or ten (10) years, or a perpetual single-payment license.
-    - 3.6.3 The Floor. The Licensor maintains a confidential minimum total payment threshold (the "Floor"). The Floor is not disclosed under any circumstances, is not subject to inquiry, and is determined dynamically in the Licensor's sole discretion on a case-by-case basis depending on the Recipient's industry sector, prior licensing history, public statements regarding open-source licensing, and subjective cooperativeness.
-    - 3.6.4 Negotiation Mechanics. 
-        (a) Initial Offer. The Recipient must submit a proposed total price and term in writing.
-        (b) Response. The Licensor may, within thirty (30) days, accept the offer, reject the offer without explanation, or submit a counter-offer.
-        (c) Expiration. Any offer or counter-offer expires fourteen (14) calendar days after transmission. Expired offers are void.
-        (d) Concessions. The Licensor may request non-monetary concessions, including but not limited to: logo placement on the Recipient's site/product credits, quarterly social media endorsements, a written testimonial or video case study with a perpetual license to use, introductions to prospective clients leading to meetings, public code contributions to the Work, specific feature funding (minimum $50,000 USD), or a signed letter of appreciation on corporate letterhead.
-        (e) Information Asymmetry. The Licensor will not disclose the relationship of any offer to the Floor, the terms of other Recipients, or the Licensor's internal assessment of the Recipient's position.
-        (f) Risk Allocation. The Recipient bears the sole risk of overpaying by submitting an offer above the Floor (which is non-refundable), having an offer rejected for falling below the Floor without appeal, or having negotiating leverage reduced through iterative proposals.
-    - 3.6.5 Transparency Penalty (The "We Saw You Coming" Subclause). If the Recipient's negotiation communications contain pleas of budget limitations, cost-effectiveness, requests for "fair price," references to general economic uncertainty, or indications of alternative licensing options, the Licensor may, in its sole discretion, increase any counter-offer by fifteen percent (15%) as a non-negotiable Transparency Penalty, which may be applied repeatedly to successive proposals.
-    - 3.6.6 Reverse Auction. If multiple Mega Tier Recipients are negotiating concurrently in a ninety (90) day window, the Licensor may accept the highest bid, accept the most extensive concession package, disclose post-signing the general binned range of the winning bid to encourage higher anchoring, and terminate negotiations with any party attempting to request competitor bid details.
-    - 3.6.7 Public Negotiation Summary. The Licensor may publish an anonymous summary of any negotiation that fails or exceeds sixty (60) days without conclusion, listing the industry sector, the binned price range (in $250k increments), general concession categories, and reasons for delay or rejection. Successful signees may request exclusion from public social proof lists in writing prior to execution, which may trigger a ten percent (10%) price increase.
-    - 3.6.8 The Trap Door (Walking Away Subclause). If the Recipient terminates negotiations by declaring they will not sign, the Licensor may immediately revoke any outstanding evaluation rights, demand complete removal of the Work within seven (7) days, and condition any subsequent re-engagement on a non-refundable $20,000 USD re-engagement fee, a starting price of twice (2x) the last offer, and a mandatory public acknowledgment of the prior failed negotiation.
-    - 3.6.9 Silence Penalty (Silence Is Expensive Subclause). If a Recipient fails to respond to a counter-offer within fourteen (14) days, the offer is void. Any subsequent proposal from the Recipient may be conditioned on a new minimum baseline rate equal to at least 120% of the expired offer and a non-refundable $25,000 USD negotiation deposit.
-    - 3.6.10 Governing Negotiation Law. All negotiations are governed by the law and jurisdiction specified in Article 7. Any disputes arising from negotiation conduct, disclosures, or termination shall be resolved exclusively in the District Court in Warsaw, and the Recipient waives any claim of bad faith or unfair negotiation conduct to the maximum extent permitted by law.
+3.1 Notice Preservation. All copyright, patent, trademark, and trade secret notices 
+contained within the Work must be preserved in all copies and Derivative Works.
 
-ARTICLE 4: INTELLECTUAL PROPERTY AND AI LIMITATIONS
+3.2 Trademark and Rebranding. Use of the Licensor's Protected Marks (including "AethelLib" 
+or "AethelEssentials") or distinctive visual layouts is prohibited except for nominative 
+fair use to describe compatibility.
+    - 3.2.1 Rebranding. Recipients distributing Derivative Works or forks must completely 
+      remove all Protected Marks and apply distinct branding. Registering packages 
+      containing Protected Marks on public registries (e.g., npm, PyPI, Maven) without 
+      prior written consent is strictly prohibited.
 
-4.1 Notice Preservation and Trade Secrets. All copyright, patent, trademark, and trade secret notices must be preserved. Uncompiled inline software comments and annotations are protected trade secrets.
+3.3 Algorithmic Ingestion and Training Restrictions. Ingestion, scraping, or training 
+of artificial intelligence, machine learning, neural networks, or LLM models ("Algorithmic 
+Synthesis Engines") on the source code of the Work is strictly prohibited without a 
+separate, written Commercial AI Training License from the Licensor.
+    - 3.3.1 Output Liability. Liability only applies if the generated AI model output 
+      reproduces one hundred (100) or more consecutive characters of code from the Work, 
+      verified via objective structural code comparison tools.
+    - 3.3.2 Open Training Exemption. Non-commercial research institutions, students, 
+      and open-source developers compiling weights for models distributed exclusively 
+      under an OSI-approved open-source license are granted a royalty-free license, 
+      provided proper attribution is maintained.
 
-4.2 Trademark. Use of the Licensor's Protected Marks, distinctive ASCII art headers, or visual layout palettes is prohibited except for nominative fair use to describe compatibility.
 
-4.2.1 Rebranding and Registry Restrictions. Recipients distributing Derivative Works or forks must remove all Protected Marks and apply distinct branding. Registering package names containing Protected Marks on public package registries (such as npm, PyPI, Maven, or similar registries) without written consent is prohibited. A first-time violation triggers a 14-day cure period after written notice, after which failure to remove the registry package constitutes a material breach.
+ARTICLE 4: GOVERNING LAW AND JURISDICTION
 
-4.3 Algorithmic Ingestion Restrictions. Ingestion, training, or tuning of machine learning, neural networks, or generative AI models ("Algorithmic Synthesis Engine") on the Work is prohibited without a separate written license. Crawling or scraping the Work for dataset compilation constitutes acceptance of this Covenant.
-    - 4.3.1 "Training" means any process that updates model weights based on the Work. "Inference" is NOT training.
-    - 4.3.2 Output liability ONLY applies if the output reproduces ≥25 consecutive code characters from the Work, verified via fuzzy hash comparison.
-    - 4.3.3 Safe harbor requires documented good-faith effort including: (a) use of output filtering, (b) training data provenance logs retained for 2 years.
-    - 4.3.4 Open Training Exemption. Non-commercial research institutions, students, and developers compiling weights for models distributed exclusively under an OSI-approved open source license or a royalty-free Open Weights license (where the weights and architectures are fully public) are granted a royalty-free AI Training License, provided proper attribution and provenance logs are maintained.
-    - Commercial AI Training rates: Startup ($2k/model/year), Mid ($10k/model/year), Enterprise ($50k/model/year), Mega ($250k/model/year). Ingestion volume is valued based on token-volume indexes.
-    - Non-Commercial AI training is permitted under a royalty-free waiver, provided the model is non-commercial, weights are publicly released under an approved license, and Licensor is notified.
-    - If an Algorithmic Synthesis Engine is trained on the Work without authorization, the Recipient must, within 90 days of written notice: (a) purge all copies of the Work from training data; (b) provide a certified audit of training provenance; and (c) pay liquidated damages under Article 5. Failure to comply triggers injunctive relief. This Section does not impose ongoing license obligations on model outputs absent continued infringement.
+4.1 Governing Law and Venue. This Covenant shall be governed by, construed, and enforced in accordance with the laws of the jurisdiction of the Licensor's primary place of business or habitual residence, without regard to conflict of laws principles. Any legal action, suit, or proceeding arising under or in connection with this Covenant shall be brought exclusively in the competent courts located in the Licensor's primary jurisdiction. If the Recipient is located in North America, and the Licensor elects, the dispute may alternatively be resolved under the governing laws and federal/state courts of the state or province where the Licensor's agent or primary representative for North America resides or is registered.
 
-4.4 AI Output Liability. If a Recipient knowingly uses an AI tool to replicate substantial portions of the Work, they are bound by this Covenant as if they had copied the code directly. Safe harbor applies if the Recipient demonstrates good faith, verifies originality, and immediately replaces the code upon notification. Downstream developers and model providers share joint and several liability.
+4.2 Arbitration Option. At the Licensor's sole and unilateral election, any dispute arising under this Covenant may instead be referred to and finally resolved by binding arbitration under the rules of the International Chamber of Commerce (ICC) or the American Arbitration Association (AAA), with the seat of arbitration located in the capital city of the Licensor's country of residence or primary business, conducted in the English language.
 
-ARTICLE 5: REMEDIATION AND DAMAGES
+4.3 Statute of Limitations. Any claim arising under this Covenant must be brought within two (2) years of discovery of the violation, or four (4) years from the actual occurrence of the violation, whichever is earlier.
 
-5.1 Liquidated Damages. Unlicensed commercial use beyond the Evaluation Period triggers liquidated damages equal to two times (2x) the Base Rate per Developer Seat per year of unauthorized use. Willful violations (including ignoring notices) multiply damages to three times (3x) the Base Rate. Damages are capped at $500,000 USD per violation. Interest accrues on unpaid fees at SOFR + 5% per annum, compounded daily.
-    - 5.1.1 Liquidated damages are reasonable estimate of actual damages given difficulty of calculation. If court finds penalty unenforceable, Recipient pays Licensor's actual damages plus reasonable attorney fees.
-    - Small Violator Caps: Total liquidated damages are capped at $10,000 USD for entities with revenue under $500k, and $500 USD for individuals/entities with revenue under $10k.
 
-5.2 Audits. Upon reasonable suspicion, Licensor may request an independent CPA audit. If Recipient fails to respond within 60 days, Licensor may file a motion to compel. Continued non-compliance after court order is contempt. Recipient may redact privileged or personally identifying information. If underreporting exceeds 5%, the Recipient bears audit costs. Audits may inspect repository development logs. EU natural persons may redact GDPR-protected personal data unrelated to revenue. Non-monetary assets or cryptocurrency are valued in USD spot price locked to the date the breach began.
+ARTICLE 5: MACHINE-READABLE COMPLIANCE METADATA
 
-5.3 Takedown, Suspension, and Accelerated Maturity. Recipient must cease use and destroy all copies of the Work upon license termination. Failure to pay licensing fees within the 14-day grace window triggers accelerated maturity of outstanding obligations, rendering all future payments for the remaining term immediately due. Upon written notice, Recipient must comply with takedown demands within 14 calendar days, failing which Recipient shall be liable for the Licensor's reasonable administrative costs incurred in enforcement, pre-estimated at $5,000 USD as liquidated administrative costs. Upon obtaining a court order or DMCA takedown notice, the Licensor may submit infringement notices to package registries. The Recipient shall not re-upload the Work under any name after valid removal. Upon final judgment of infringement, the Licensor may request that hosting platforms suspend the Recipient's access to the Work. This Section does not grant direct suspension authority.
+5.1 Automated compliance verification may be assisted via API endpoints or dynamic 
+telemetry check integrations.
 
-5.4 Public Disclosure. Upon obtaining a final court order, judgment, or written settlement agreement resolving a breach or infringement, the Licensor may publish the Recipient's entity name, corporate identifier, and compliance audit details in the Work's public repository. The Recipient agrees that the public relations and brand damage incurred by the Licensor due to the Recipient's public association with unlicensed software use is difficult to calculate, and agrees to pay a liquidated public relations remediation fee of $25,000 USD upon such final judgment, court order, or settlement agreement.
+5.2 Compliance metadata may be verified via checksum values compiled from variables 
+located within the Work's source files. Mechanical integration parameters are not terms 
+of this Covenant, have no independent binding legal effect, and their removal does 
+not constitute a license violation.
 
-5.5 Indemnification. Recipients exceeding the Commercial Entity threshold shall defend and indemnify the Licensor against all claims, liabilities, and legal costs arising from Recipient's distribution of the Work or Derivative Works.
 
-ARTICLE 6: EXTRATERRITORIAL AND DECOUPLED COMPLIANCE
+ARTICLE 6: WARRANTY AND LIMITATION OF LIABILITY
 
-6.1 Decoupled and Non-Classical Environments. The geographic, structural, or architectural runtime environment of the deployment—including immutable ledgers and distributed systems where standard remediation is technically infeasible—shall not alter or diminish the calculation of liability. If the deployment medium prevents technical remediation (deletion), Recipient must maintain a liquidity reserve equal to the maximum statutory cap.
+6.1 Disclaimer of Warranty. THE WORK IS PROVIDED ON AN "AS IS" BASIS, WITHOUT 
+WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING, 
+WITHOUT LIMITATION, ANY WARRANTIES OR CONDITIONS OF TITLE, NON-INFRINGEMENT, 
+MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. YOU ARE SOLELY RESPONSIBLE 
+FOR DETERMINING THE APPROPRIATENESS OF USING OR REDISTRIBUTING THE WORK.
 
-6.2 Decentralized Autonomous Organizations (DAOs). If the Recipient operates as a Decentralized Autonomous Organization (DAO) or other unincorporated association, the members who actively vote on, deploy, or execute governance proposals relating to the integration of the Work agree to be bound collectively. In the event of a breach, the Licensor may seek joint and several liability against individual members who participated in such governance or deployment decisions under default partnership, agency, or unincorporated association laws of the governing jurisdiction, subject to judicial determination. This section constitutes a contractual acknowledgment of potential partnership liability, not a self-executing waiver of legal process. Escrow and payment obligations apply concurrently to all surviving state paths in a hard fork.
+6.2 Limitation of Liability. IN NO EVENT AND UNDER NO LEGAL THEORY, WHETHER IN 
+TORT (INCLUDING NEGLIGENCE), CONTRACT, OR OTHERWISE, SHALL THE LICENSOR BE LIABLE 
+TO YOU FOR DAMAGES, INCLUDING ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR 
+CONSEQUENTIAL DAMAGES OF ANY CHARACTER ARISING AS A RESULT OF THIS COVENANT OR 
+THE USE OR INABILITY TO USE THE WORK, EVEN IF THE LICENSOR HAS BEEN ADVISED OF 
+THE POSSIBILITY OF SUCH DAMAGES.
 
-6.3 Irremediable Blockchain Deployments. The Recipient acknowledges that deploying the Work or any Derivative Work to an immutable, decentralized, or distributed network (such as a public blockchain or smart contract environment) creates a permanent runtime instance that cannot be technically removed, deleted, or de-provisioned (an "Irremediable Deployment").
-    - 6.3.1 Incurable Material Breach. In the event of a licensing breach, audit failure, or non-payment of fees by a Recipient associated with an Irremediable Deployment, such breach shall be classified as legally incurable. The standard cure periods provided in this Covenant shall not apply, and the license grant for the Irremediable Deployment shall terminate automatically and retroactively to the date of deployment.
-    - 6.3.2 Liquidated Damages Multiplier. Because an Irremediable Deployment cannot be deleted, any unauthorized commercial use associated with it constitutes a permanent, ongoing infringement. The liquidated damages under Section 5.1 shall be multiplied by three (3x) for any Irremediable Deployment, and the $500,000 USD cap under Section 5.1 shall not apply.
-    - 6.3.3 Frontend and Gateway Intermediary Liability. All operators of web front-ends, gateways, APIs, or indexing servers that facilitate human or automated interaction with the Irremediable Deployment share joint and several liability for the ongoing infringement, and the Recipient agrees that the Licensor may seek immediate injunctive relief against such intermediaries to restrict access to the deployment.
 
-ARTICLE 7: GOVERNING LAW AND JURISDICTION
+ARTICLE 7: MISCELLANEOUS
 
-7.1 Jurisdiction and Enforcement.
-    - 7.1.1 Primary Venue and Governing Law. This Covenant is governed by the laws of the Republic of Poland, without regard to conflict of laws principles. All disputes arising under this Covenant shall be resolved exclusively in the District Court in Warsaw (Sąd Okręgowy w Warszawie - Wydział XXI ds. Własności Intelektualnej), or, at the Licensor's sole and unilateral election, via binding arbitration administered by the International Chamber of Commerce (ICC) in Warsaw, Poland, conducted in the English language.
-    - 7.1.2 US Commercial Entities. By using the Work in commerce, any Recipient organized under the laws of or operating within the United States explicitly consents to exclusive personal jurisdiction and venue in the United States District Court for the Northern District of California for any claims arising under the United States Copyright Act.
-    - 7.1.3 Recognition of Judgments and Waiver of Forum Non Conveniens. The Recipient waives any objection based on forum non conveniens or improper venue. The Recipient explicitly agrees not to challenge the recognition, registration, or enforcement of any judgment or arbitral award obtained by the Licensor in any jurisdiction where the Recipient holds assets or conducts business.
-    - 7.1.4 Small Claims Exception. For disputes where the total monetary relief sought is less than $25,000 USD, either party may elect to bring claims in their local small claims court of competent jurisdiction, without prejudice to the primary venue requirements for larger disputes or intellectual property claims.
-    - 7.1.5 Compliance as Consent and Downstream Indemnification. Any Recipient that continues to use, modify, or distribute the Work after receiving written notice of a licensing breach or of this Covenant's terms explicitly consents to the jurisdiction and venue provisions herein. Distribution of the Work or any Derivative Work to any third party constitutes an agreement by that Recipient to indemnify, defend, and hold harmless the Licensor against all legal fees, costs, and damages arising from jurisdictional or venue challenges raised by that third party.
+7.1 Severability. If any provision of this Covenant is held to be invalid or 
+unenforceable, such provision shall be reformed to the minimum extent necessary to 
+make it valid and enforceable, and the remaining provisions shall remain in full 
+force and effect.
 
-7.2 Service of Process. Service of process under this Covenant must be executed via certified electronic mail (email), registered or certified mail with return receipt requested, or other delivery method recognized under the civil procedure rules of the competent court. The Licensor may optionally transmit an additional, non-binding advisory notification to any digital wallet address associated with the Recipient.
+7.2 Entire Agreement. This Covenant constitutes the entire agreement between the 
+parties concerning the subject matter hereof and supersedes all prior understandings, 
+negotiations, or agreements, whether written or oral.
 
-7.3 Frivolous Claims. If a Recipient challenges the validity of this Covenant and does not prevail in full, the Recipient must pay all legal costs, attorneys' fees, and a liquidated disruption fee of $10,000 USD.
-
-7.4 Default Judgment. Failure to respond within 30 business days allows Licensor to petition the court for a default judgment under applicable civil procedure rules. Recipient may reopen for good cause shown.
-
-7.5 Miscellaneous. English translation holds priority. Medical installations are granted a temporary operating waiver during global emergencies. Class action waivers apply.
-
-7.6 Severability. If any clause is unenforceable, Licensor may reform it to the minimum extent needed for enforceability, OR terminate this license and demand immediate takedown. Recipient cannot use unenforceability as a defense to compliance with separable clauses.
-
-7.7 Statute of Limitations. Any claim under this Covenant must be brought within 2 years of discovery, or 4 years from the violation, whichever is earlier. This supersedes any longer statutory periods.
-
-ARTICLE 8: MACHINE-READABLE COMPLIANCE TELEMETRY
-
-8.1 Automated compliance verification may be assisted via API endpoints or dynamic telemetry check integrations.
-
-8.2 Dynamic telemetry checksum values may be compiled from variables SECURITY_CHECKSUM_PART_1 (in Constants.js), SECURITY_CHECKSUM_PART_2 (in ValidationHelper.js), SECURITY_CHECKSUM_PART_3 (in TimeHelper.js), and SECURITY_CHECKSUM_PART_4 (in FormatHelper.js). Mechanical integration parameters are not terms of this Covenant, have no independent binding legal effect, and their removal does not constitute a license violation. Enterprise users are encouraged, but not required, to star the repository.
-
-ARTICLE 9: COMPLIANCE AND ECONOMIC INTERESTS
-
-9.1 Economic Protection. The non-commercial license grants are strictly conditional upon the Recipient not engaging in activities that cause economic or tortious interference with the Licensor's commercial operation. Tortious interference includes, without limitation, deploying the Work within competitive commercial operations or generating provably false deprecating commentary.
-
-9.2 Documentation Accessibility Charges (The "Sass Tax"). If a Recipient submits a support ticket, bug report, issue/feature request, or technical inquiry regarding a topic that is explicitly addressed in the Work's root documentation files, public repositories, or this Covenant (an "Accessibility Bypass"), the Licensor shall not be required to assess any monetary fine. Instead, the Licensor reserves the absolute, unilateral, and non-appealable discretion to: (a) ignore the submission entirely and provide no response; (b) redirect the Recipient to the relevant documentation or license terms with minimal or no additional instruction; or (c) handle the inquiry under custom, non-standard response parameters determined solely at the moment of evaluation. Response latency, prioritisation, and level of assistance for any inquiry are at the Licensor's reasonable discretion based on available administrative resources and engineering capacity.
-
+================================================================================
 END OF COVENANT
-
-© 2026 Aethelgrad Studio. All rights reserved.
-
+================================================================================
