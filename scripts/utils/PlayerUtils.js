@@ -65,14 +65,31 @@ export const PlayerUtils = {
         const lowerId = identifier.toLowerCase()
 
         // step 1: O(1) lookup for exact name.
-        const nameMatch = nameCache.get(lowerId)
-        // check .isValid to ensure the engine hasn't destroyed the entity yet.
+        let nameMatch = nameCache.get(lowerId)
+        if (nameMatch && !nameMatch.isValid) {
+            // Stale reference detected! Try to heal it from the active world players list.
+            const activePlayer = Kernel.world.getAllPlayers().find(p => p.name.toLowerCase() === lowerId);
+            if (activePlayer) {
+                nameCache.set(lowerId, activePlayer);
+                idToNameCache.set(activePlayer.id, lowerId);
+                nameMatch = activePlayer;
+            }
+        }
         if (nameMatch?.isValid) return nameMatch
 
         // step 2: look for an exact ID match.
         const foundName = [...idToNameCache.entries()].find(([id, _name]) => id === identifier)
         if (foundName) {
-            const p = nameCache.get(foundName[1])
+            let p = nameCache.get(foundName[1])
+            if (p && !p.isValid) {
+                const activePlayer = Kernel.world.getAllPlayers().find(pl => pl.id === identifier);
+                if (activePlayer) {
+                    const lowerName = activePlayer.name.toLowerCase();
+                    nameCache.set(lowerName, activePlayer);
+                    idToNameCache.set(activePlayer.id, lowerName);
+                    p = activePlayer;
+                }
+            }
             if (p?.isValid) return p
         }
 
