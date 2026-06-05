@@ -55,7 +55,7 @@ export const SetWarpCommand = {
         // step 3: global capacity check.
         // we cap the total number of warps to 50 to maintain fast lookup times.
         const warps = await WarpStore.getWarps();
-        if (warps.length >= 50) {
+        if (Object.keys(warps).length >= 50) {
             player.sendMessage(`\u00A7c\u00A7l» \u00A77Failed to set warp. Global server limit (50) reached.`);
             return;
         }
