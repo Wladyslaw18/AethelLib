@@ -23,6 +23,12 @@ export const ClaimCommand = {
     permission: "essentials.default",
     // command category.
     category: "General",
+    // native parameter definitions to allow subcommand inputs.
+    parameters: [
+        { name: "subcommand", type: "string", optional: true },
+        { name: "arg1", type: "string", optional: true },
+        { name: "arg2", type: "string", optional: true }
+    ],
 
     // ----------------------------------------------------------------------------
     // | method: execute                                                          |
