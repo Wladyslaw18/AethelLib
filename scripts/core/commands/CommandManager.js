@@ -93,6 +93,13 @@ export const CommandManager = {
             "essentials.help", "essentials.info", "essentials.credit", "essentials.default"
         ]);
 
+        // Populate 'chatcolor' enum
+        Registry.registerEnum("chatcolor", [
+            "black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple",
+            "gold", "gray", "dark_gray", "blue", "green", "aqua", "red", "light_purple",
+            "yellow", "white", "rainbow", "bold", "strikethrough", "underline", "italic", "reset"
+        ]);
+
         // Sync all enums to the native C++ engine
         Registry.getAllEnums().forEach(enumName => {
             try {
@@ -289,7 +296,7 @@ Registry.getAll().forEach(name => {
             const isLegacy = !cmd.params && !!cmd.parameters;
 
             let rawArgs = args;
-            if (vector === "NATIVE" && args.length === 1 && typeof args[0] === "object" && args[0] !== null && !args[0].isValid && !args[0].id && !args[0].typeId) {
+            if (vector === "NATIVE" && args.length === 1 && typeof args[0] === "object" && args[0] !== null && typeof args[0].isValid !== "function" && !args[0].id && !args[0].typeId) {
                 const argsObj = args[0];
                 rawArgs = paramsList ? paramsList.map(param => argsObj[param.name]) : [];
             }
