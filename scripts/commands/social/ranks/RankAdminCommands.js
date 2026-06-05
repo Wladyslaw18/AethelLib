@@ -211,7 +211,11 @@ export const RankAdminCommands = [
             const target = args[0];
             const rankTag = args[1];
 
-            if (!target) {
+            const targetPlayer = typeof target === 'object' && target !== null
+                ? target
+                : PlayerUtils.findPlayer(target)
+
+            if (!targetPlayer) {
                 player.sendMessage("\u00A7c\u00A7l» \u00A77Player not found.")
                 return
             }
@@ -220,6 +224,12 @@ export const RankAdminCommands = [
             const targetRank = RankSystem.getRank(rankTag);
             if (!targetRank) {
                 player.sendMessage(`\u00A7c\u00A7l» \u00A77Rank definition '${rankTag}' not found.`)
+                return
+            }
+
+            // check if the target player already has the rank tag
+            if (targetPlayer.hasTag(rankTag)) {
+                player.sendMessage(`\u00A7c\u00A7l» \u00A7e${targetPlayer.name} \u00A77already has the rank '\u00A7b${rankTag}\u00A77'.`)
                 return
             }
 
@@ -233,12 +243,12 @@ export const RankAdminCommands = [
             }
 
             // step 2: execution.
-            target.addTag(rankTag)
-            player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully assigned rank '${rankTag}' to ${target.name}.`)
-            target.sendMessage(`\u00A7a\u00A7l» \u00A7fYou have been assigned the rank: \u00A7e${rankTag}`)
+            targetPlayer.addTag(rankTag)
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully assigned rank '${rankTag}' to ${targetPlayer.name}.`)
+            targetPlayer.sendMessage(`\u00A7a\u00A7l» \u00A7fYou have been assigned the rank: \u00A7e${rankTag}`)
 
             // purge the stale permission cache.
-            PermissionManager.invalidatePlayerCache(target.id)
+            PermissionManager.invalidatePlayerCache(targetPlayer.id)
         }
     },
     // --- Vector: removeranks ---
@@ -258,19 +268,29 @@ export const RankAdminCommands = [
             const target = args[0];
             const rankTag = args[1];
 
-            if (!target) {
+            const targetPlayer = typeof target === 'object' && target !== null
+                ? target
+                : PlayerUtils.findPlayer(target)
+
+            if (!targetPlayer) {
                 player.sendMessage("\u00A7c\u00A7l» \u00A77Player not found.")
                 return
             }
 
+            // check if the target player has the rank tag
+            if (!targetPlayer.hasTag(rankTag)) {
+                player.sendMessage(`\u00A7c\u00A7l» \u00A7e${targetPlayer.name} \u00A77does not have the rank '\u00A7b${rankTag}\u00A77'.`)
+                return
+            }
+
             // execute revocation.
-            target.removeTag(rankTag)
-            player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully removed rank '${rankTag}' from ${target.name}.`)
-            target.sendMessage(`\u00A7c\u00A7l» \u00A77Your rank '${rankTag}' has been revoked.`)
+            targetPlayer.removeTag(rankTag)
+            player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully removed rank '${rankTag}' from ${targetPlayer.name}.`)
+            targetPlayer.sendMessage(`\u00A7c\u00A7l» \u00A77Your rank '${rankTag}' has been revoked.`)
 
             // purge the stale permission cache.
             const PermissionManager = Kernel.get("permissions")
-            PermissionManager.invalidatePlayerCache(target.id)
+            PermissionManager.invalidatePlayerCache(targetPlayer.id)
         }
     },
     // --- Vector: deleteranks ---
