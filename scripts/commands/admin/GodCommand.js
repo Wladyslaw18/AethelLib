@@ -37,3 +37,14 @@ export const GodCommand = {
         }
     }
 };
+
+// --- NATIVE INVULNERABILITY MOTOR ---
+// Intercepts and cancels any damage vectors applied to players with active clearance.
+Kernel.world.beforeEvents.entityHurt.subscribe((event) => {
+    const { hurtEntity } = event;
+    if (hurtEntity && hurtEntity.typeId === "minecraft:player") {
+        if (hurtEntity.hasTag("ae:god_mode") || hurtEntity.getDynamicProperty("ae:is_god") === true) {
+            event.cancel = true;
+        }
+    }
+});
