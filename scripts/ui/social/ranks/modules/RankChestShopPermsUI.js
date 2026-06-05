@@ -17,7 +17,10 @@ export async function showChestShopPermissions(player, rankTag, backCallback) {
 
     const form = new Kernel.ModalFormData().title("Chest Shop Perm")
     nodes.forEach(node => {
-        const val = p[node.key] === undefined ? 1 : p[node.key]
+        let val = 1; // Default: No action (1)
+        if (p[node.key] === true) val = 0;
+        else if (p[node.key] === false) val = 2;
+        
         form.dropdown(node.label, options, val)
     })
 
@@ -25,7 +28,14 @@ export async function showChestShopPermissions(player, rankTag, backCallback) {
     if (res.canceled) return backCallback()
 
     nodes.forEach((node, index) => {
-        rank.permissions[node.key] = res.formValues[index]
+        const selection = res.formValues[index]
+        if (selection === 0) {
+            rank.permissions[node.key] = true
+        } else if (selection === 2) {
+            rank.permissions[node.key] = false
+        } else {
+            delete rank.permissions[node.key]
+        }
     })
 
     RankSystem.updateRank(rankTag, rank)
