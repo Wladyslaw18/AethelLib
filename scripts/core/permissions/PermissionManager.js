@@ -202,6 +202,8 @@ export class PermissionManager {
             return merged
         }
 
+        const isNumeric = (k) => k.includes("limit") || k.includes("cooldown") || k.includes("wait") || k.includes("cost");
+
         // SCAN_HIERARCHY: Highest rank takes priority
         for (const rankId of playerRanks) {
             const rankPerms = resolveRankPermissionsRecursive(rankId)
@@ -209,16 +211,22 @@ export class PermissionManager {
             for (const [perm, value] of Object.entries(rankPerms)) {
                 if (permissions.has(perm)) continue
 
-                // 3-STATE_LOGIC_RESOLUTION
-                // 1 or true IS ALLOW
-                // 2 or false IS DENY
-                // 0 or null IS NO_ACTION (inherit)
-                if (value === 1 || value === true) {
-                    permissions.set(perm, true)
-                } else if (value === 2 || value === false) {
-                    permissions.set(perm, false)
-                } else if (typeof value === 'number') {
-                    permissions.set(perm, value)
+                if (isNumeric(perm)) {
+                    if (typeof value === 'number') {
+                        permissions.set(perm, value)
+                    }
+                } else {
+                    // 3-STATE_LOGIC_RESOLUTION
+                    // 1 or true IS ALLOW
+                    // 2 or false IS DENY
+                    // 0 or null IS NO_ACTION (inherit)
+                    if (value === 1 || value === true) {
+                        permissions.set(perm, true)
+                    } else if (value === 2 || value === false) {
+                        permissions.set(perm, false)
+                    } else if (typeof value === 'number') {
+                        permissions.set(perm, value)
+                    }
                 }
             }
         }
@@ -227,17 +235,23 @@ export class PermissionManager {
         const memberRank = resolveRankPermissionsRecursive("member")
         for (const [perm, value] of Object.entries(memberRank)) {
             if (!permissions.has(perm)) {
-                if (typeof value === 'number') {
-                    if (value > 2) {
-                        // Large number = numeric config (cooldown seconds, home limit, etc.) - store as-is
+                if (isNumeric(perm)) {
+                    if (typeof value === 'number') {
                         permissions.set(perm, value)
-                    } else if (value === 1) {
-                        permissions.set(perm, true)   // 1 = Allow
-                    } else if (value === 2) {
-                        permissions.set(perm, false)  // 2 = Deny
                     }
-                } else if (typeof value === 'boolean') {
-                    permissions.set(perm, value)
+                } else {
+                    if (typeof value === 'number') {
+                        if (value > 2) {
+                            // Large number = numeric config (cooldown seconds, home limit, etc.) - store as-is
+                            permissions.set(perm, value)
+                        } else if (value === 1) {
+                            permissions.set(perm, true)   // 1 = Allow
+                        } else if (value === 2) {
+                            permissions.set(perm, false)  // 2 = Deny
+                        }
+                    } else if (typeof value === 'boolean') {
+                        permissions.set(perm, value)
+                    }
                 }
             }
         }
