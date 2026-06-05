@@ -40,10 +40,10 @@ export async function showAdminPermissions(player, rankTag, backCallback) {
             label = "Allow/Deny player to use admin command\n\n" + label
         }
         
-        // Mapping: if undefined -> 0 (No action). 
-        // If it was stored with the old mapping (0=Allow, 1=NoAction, 2=Deny), we should ideally convert it.
-        // For simplicity and matching screenshot, we'll assume the new indices.
-        const val = p[node.key] === undefined ? 0 : p[node.key]
+        let val = 0; // Default: No action (0)
+        if (p[node.key] === true) val = 1;
+        else if (p[node.key] === false) val = 2;
+        
         form.dropdown(label, options, val)
     })
 
@@ -51,7 +51,14 @@ export async function showAdminPermissions(player, rankTag, backCallback) {
     if (res.canceled) return backCallback()
 
     nodes.forEach((node, index) => {
-        rank.permissions[node.key] = res.formValues[index]
+        const selection = res.formValues[index]
+        if (selection === 1) {
+            rank.permissions[node.key] = true
+        } else if (selection === 2) {
+            rank.permissions[node.key] = false
+        } else {
+            delete rank.permissions[node.key]
+        }
     })
 
     RankSystem.updateRank(rankTag, rank)
