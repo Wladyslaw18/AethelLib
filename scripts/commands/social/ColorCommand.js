@@ -1,3 +1,4 @@
+import { Kernel } from "../../core/Kernel.js"
 import { ColorSystem } from "../../systems/social/chat/ColorSystem.js"
 
 // ----------------------------------------------------------------------------
@@ -16,6 +17,10 @@ export const ColorCommand = {
     permission: "essentials.chat.color",
     // command category.
     category: "SOCIAL",
+    // native parameter definitions to allow color suggestions.
+    parameters: [
+        { name: "color", type: "chatcolor", optional: true }
+    ],
 
     // ----------------------------------------------------------------------------
     // | method: execute                                                          |
