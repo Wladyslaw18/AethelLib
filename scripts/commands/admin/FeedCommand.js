@@ -1,4 +1,3 @@
-import { Kernel } from "../../core/Kernel.js";
 import { PlayerUtils } from "../../utils/PlayerUtils.js";
 
 export const FeedCommand = {
