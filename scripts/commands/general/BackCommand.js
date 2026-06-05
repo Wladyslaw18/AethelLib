@@ -84,13 +84,22 @@ export const BackCommand = {
 
 // ----------------------------------------------------------------------------
 // | function: getLastLocation                                               |
-// | fetches the spatial snapshot from the player's dynamic properties.       |
+// | fetches the spatial snapshot from the TeleportService.                  |
 // ----------------------------------------------------------------------------
 function getLastLocation(player) {
     try {
-        const location = player.getDynamicProperty("ae:lastLocation")
-        // parse the JSON string back into a coordinate object.
-        return location ? JSON.parse(location) : null
+        const teleportService = Kernel.get("teleportService")
+        if (!teleportService) return null
+        
+        const lastPos = teleportService.getLastPosition(player.id)
+        if (!lastPos || !lastPos.location) return null
+        
+        return {
+            x: lastPos.location.x,
+            y: lastPos.location.y,
+            z: lastPos.location.z,
+            dimension: lastPos.dimensionId
+        }
     } catch (error) {
         console.error(`[BackCommand] MANIFEST_LOAD_FAILURE: ${error}`)
         return null
@@ -104,27 +113,3 @@ function getLastLocation(player) {
 function isInCombat(player) {
     return isPlayerInCombat(player.id)
 }
-
-// ----------------------------------------------------------------------------
-// | event: spatial snapshot vector                                           |
-// | listens for player spawns (e.g. after death) to capture their death      |
-// | location before it's overwritten by the new spawn point.                |
-// ----------------------------------------------------------------------------
-Kernel.world.afterEvents.playerSpawn.subscribe((event) => {
-    // skip initial login spawn. we only care about respawns.
-    if (event.initialSpawn) return
-    const player = event.player
-    // create a snapshot of the current (death) location.
-    const location = {
-        x: Math.floor(player.location.x),
-        y: Math.floor(player.location.y),
-        z: Math.floor(player.location.z),
-        dimension: player.dimension.id
-    }
-    try {
-        // serialize and persist to the player entity.
-        player.setDynamicProperty("ae:lastLocation", JSON.stringify(location))
-    } catch (error) {
-        console.error(`[BackCommand] SNAPSHOT_COMMIT_FAILURE for ${player.name}: ${error}`)
-    }
-})
