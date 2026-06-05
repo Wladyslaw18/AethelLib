@@ -125,7 +125,7 @@ export const ReplyCommand = {
         }
 
         // find the player object.
-        const lastSender = [...world.getAllPlayers()].find(p => p.id === lastSenderId)
+        const lastSender = [...Kernel.world.getAllPlayers()].find(p => p.id === lastSenderId)
         if (!lastSender) {
             // if they left since the last message.
             player.sendMessage("\u00A7c\u00A7l» \u00A77That player is now offline.");
