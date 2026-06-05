@@ -73,6 +73,10 @@ export const PlaceBountyCommand = {
     usage: "/ae:placebounty <playerName> <amount>",
     permission: "essentials.bounty.place",
     category: "ECONOMY",
+    parameters: [
+        { name: "player", type: "player", optional: false },
+        { name: "amount", type: "int", optional: false }
+    ],
     execute(data, player, args) {
         try {
             if (args.length < 2) {
@@ -80,19 +84,19 @@ export const PlaceBountyCommand = {
                 return;
             }
 
-            const targetName = args[0];
+            const isObj = typeof args[0] === "object" && args[0] !== null;
+            const target = isObj ? args[0] : this.context.world.getAllPlayers().find(p => p.name.toLowerCase() === String(args[0]).toLowerCase());
+            const targetName = target ? target.name : String(args[0]);
+
+            if (!target) {
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found or offline.`);
+                return;
+            }
+
             const amount = Number(args[1]);
 
             if (isNaN(amount) || amount <= 0) {
                 player.sendMessage("\u00A7c\u00A7l» \u00A77Amount must be a positive integer.");
-                return;
-            }
-
-            const world = this.context.world;
-            const target = world.getAllPlayers().find(p => p.name.toLowerCase() === targetName.toLowerCase());
-
-            if (!target) {
-                player.sendMessage(`\u00A7c\u00A7l» \u00A77Player '${targetName}' not found or offline.`);
                 return;
             }
 
