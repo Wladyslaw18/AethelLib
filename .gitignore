@@ -1,1 +1,14 @@
-
+node_modules/
+BDS/
+backups/
+releases/
+scratch/
+.antigravitycli/
+package-lock.json
+AethelLib (RP)/
+AethelLib.mcaddon
+index.UId.txt
+index.d.txt
+IndexUIBeta2.1.0.txt
+LICENSEARPCC
+LICINSE
