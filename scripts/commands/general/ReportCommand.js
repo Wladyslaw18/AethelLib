@@ -18,12 +18,16 @@ export const ReportCommand = {
     permission: "essentials.report",
     // command category.
     category: "Utility",
-    // Intercepted by script for complex string handling.
-    native: false,
-    // native parameter definitions.
+    // native parameter definitions to allow player suggestions and multi-word reasons.
     parameters: [
-        { name: "target", type: "string", optional: false },
-        { name: "reason", type: "string", optional: true }
+        { name: "target", type: "player", optional: false },
+        { name: "r1", type: "string", optional: true },
+        { name: "r2", type: "string", optional: true },
+        { name: "r3", type: "string", optional: true },
+        { name: "r4", type: "string", optional: true },
+        { name: "r5", type: "string", optional: true },
+        { name: "r6", type: "string", optional: true },
+        { name: "r7", type: "string", optional: true }
     ],
 
     // ----------------------------------------------------------------------------
@@ -32,23 +36,24 @@ export const ReportCommand = {
     // | bug handler or a player report handler based on the first token.         |
     // ----------------------------------------------------------------------------
     execute(_data, player, args) {
-        if (args.length < 1) {
+        if (!args || args.length === 0 || args[0] === undefined) {
             player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:report <player|'server'> <reason>");
             return
         }
 
-        const reportType = args[0].toLowerCase()
-        
-        if (reportType === "server") {
-            const message = args.slice(1).join(" ")
+        const isObj = typeof args[0] === "object" && args[0] !== null;
+        const targetName = isObj ? args[0].name : String(args[0]);
+
+        if (!isObj && targetName.toLowerCase() === "server") {
+            const message = args.slice(1).filter(x => x !== undefined).join(" ")
             if (!message) {
                 player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:report server <reason>");
                 return
             }
             createServerReport(player, message)
         } else {
-            const { player: target, consumedArgs } = PlayerUtils.resolveFromArgs(args)
-            const message = args.slice(consumedArgs).join(" ")
+            const target = isObj ? args[0] : PlayerUtils.findPlayer(targetName)
+            const message = args.slice(1).filter(x => x !== undefined).join(" ")
             
             if (!target || !message) {
                 player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:report <player> <reason>");
