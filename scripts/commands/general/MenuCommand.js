@@ -1,3 +1,4 @@
+import { Kernel } from "../../core/Kernel.js"
 import { showMainGUI } from "../../ui/MainGUI.js"
 
 // ----------------------------------------------------------------------------
