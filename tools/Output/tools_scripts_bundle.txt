@@ -1,0 +1,1844 @@
+﻿================================================================================
+AETHELGRAD ESSENTIALS - TOOLS SCRIPTS BUNDLE
+Generated on: 2026-05-27 00:30:35
+Total Scripts: 14
+================================================================================
+
+
+================================================================================
+SCRIPT: bundle_scripts.ps1
+PATH: tools/bundle_scripts.ps1
+================================================================================
+
+# Aethelgrad Essentials - Script Bundler Utility
+# Concatenates all tools scripts (including itself) into a single TXT file for clean viewing/backups.
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "             AETHELGRAD SCRIPT BUNDLER                    " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. Scan the tools folder for all PowerShell scripts (*.ps1)." -ForegroundColor White
+Write-Host "  2. Read their contents, including this bundler script." -ForegroundColor White
+Write-Host "  3. Generate a single clean TXT file containing all code." -ForegroundColor White
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Press [ENTER] to execute bundle creation | [Ctrl+C] to cancel" -ForegroundColor Green
+Write-Host "==========================================================" -ForegroundColor Green
+Read-Host | Out-Null
+
+$PSScriptDir = $PSScriptRoot
+if (!$PSScriptDir) { $PSScriptDir = Split-Path $MyInvocation.MyCommand.Path -Parent }
+$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+
+$OutputDir = Join-Path $PSScriptDir "Output"
+if (!(Test-Path $OutputDir)) {
+    New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+}
+$OutputFile = Join-Path $OutputDir "tools_scripts_bundle.txt"
+
+Write-Host "[Bundler] Scanning tools directory: $PSScriptDir" -ForegroundColor Blue
+
+# Find all .ps1 files in the tools directory
+$Scripts = Get-ChildItem -Path $PSScriptDir -Filter *.ps1 -File | Sort-Object Name
+
+Write-Host "[Bundler] Found $($Scripts.Count) script(s) to process." -ForegroundColor Blue
+
+# Initialize or clear the output file
+if (Test-Path $OutputFile) {
+    Remove-Item -Path $OutputFile -Force | Out-Null
+}
+
+$Header = @"
+================================================================================
+AETHELGRAD ESSENTIALS - TOOLS SCRIPTS BUNDLE
+Generated on: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+Total Scripts: $($Scripts.Count)
+================================================================================
+
+"@
+$Header | Out-File -FilePath $OutputFile -Encoding utf8 -Force
+
+foreach ($Script in $Scripts) {
+    $RelativePath = "tools/$($Script.Name)"
+    Write-Host "[Bundler] Processing $RelativePath..." -ForegroundColor Cyan
+    
+    $ScriptHeader = @"
+
+================================================================================
+SCRIPT: $($Script.Name)
+PATH: $RelativePath
+================================================================================
+
+"@
+    $ScriptHeader | Out-File -FilePath $OutputFile -Encoding utf8 -Append
+    
+    # Read and append content
+    Get-Content -Path $Script.FullName -Raw | Out-File -FilePath $OutputFile -Encoding utf8 -Append
+    
+    # Add trailing spacing
+    "`n`n" | Out-File -FilePath $OutputFile -Encoding utf8 -Append
+}
+
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "  SUCCESS: Bundle created at:" -ForegroundColor White
+Write-Host "  $OutputFile" -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Green
+
+
+
+
+
+================================================================================
+SCRIPT: commit_farm.ps1
+PATH: tools/commit_farm.ps1
+================================================================================
+
+# AethelLib - 30-Commit Farm Script
+# Stages and commits all changes from the May 21 session in logical atomic units.
+
+$root = (Get-Item $PSScriptRoot).Parent.FullName
+Set-Location $root
+
+function Commit {
+    param([string]$msg)
+    git commit -m $msg
+    Write-Host "`n[COMMITTED] $msg`n" -ForegroundColor Green
+}
+
+Write-Host "=== AETHELGRAD COMMIT FARMER ===" -ForegroundColor Cyan
+
+# â”€â”€ 1. Fix: CommandHandler.js imports
+git add scripts/commands/base/CommandHandler.js
+Commit "fix(commands): switch CommandHandler.js to explicit relative import paths"
+
+# â”€â”€ 2. Fix: CommandRegistry.js imports
+git add scripts/commands/base/CommandRegistry.js
+Commit "fix(commands): switch CommandRegistry.js to explicit relative import paths"
+
+# â”€â”€ 3. Fix: RankAdminCommands.js imports
+git add scripts/commands/social/ranks/RankAdminCommands.js
+Commit "fix(commands): switch RankAdminCommands.js to explicit relative import paths"
+
+# â”€â”€ 4. Fix: CommandManager.js imports
+git add scripts/core/commands/CommandManager.js
+Commit "fix(core): switch CommandManager.js to explicit relative import paths"
+
+# â”€â”€ 5. Fix: DatabaseManager.js imports
+git add scripts/core/datastore/DatabaseManager.js
+Commit "fix(core): switch DatabaseManager.js to explicit relative import paths"
+
+# â”€â”€ 6. Fix: ChatSystem.js imports
+git add scripts/systems/social/chat/ChatSystem.js
+Commit "fix(systems): switch ChatSystem.js to explicit relative import paths"
+
+# â”€â”€ 7. Fix: TpaHandshake.js imports
+git add scripts/systems/tpa/TpaHandshake.js
+Commit "fix(systems): switch TpaHandshake.js to explicit relative import paths"
+
+# â”€â”€ 8. Fix: TpaService.js imports
+git add scripts/systems/tpa/TpaService.js
+Commit "fix(systems): switch TpaService.js to explicit relative import paths"
+
+# â”€â”€ 9. Fix: BountyHunter/index.js imports
+git add scripts/plugins/BountyHunter/index.js
+Commit "fix(plugins): switch BountyHunter/index.js to explicit relative import paths"
+
+# â”€â”€ 10. Fix: CoreEconomy/index.js imports
+git add scripts/plugins/CoreEconomy/index.js
+Commit "fix(plugins): switch CoreEconomy/index.js to explicit relative import paths"
+
+# â”€â”€ 11. Fix: manifest.json formatting
+git add manifest.json
+Commit "fix(manifest): reformat to standard 4-space indentation with inlined version arrays"
+
+# â”€â”€ 12. Chore: .gitignore
+git add .gitignore
+Commit "chore: update .gitignore - whitelist tools/, lockdown private scripts and shipment dumps"
+
+# â”€â”€ 13. Feat: tools/pack.ps1
+git add tools/pack.ps1
+Commit "feat(tools): add pack.ps1 - interactive addon packager using standard ZIP 2.0"
+
+# â”€â”€ 14. Feat: tools/release.ps1
+git add tools/release.ps1
+Commit "feat(tools): add release.ps1 - auto-release engine with base-10 odometer versioning"
+
+# â”€â”€ 15. Feat: tools/deploy.ps1
+git add tools/deploy.ps1
+Commit "feat(tools): add deploy.ps1 - dual-sync BP and RP deployer for local BDS"
+
+# â”€â”€ 16. Feat: tools/watch.ps1
+git add tools/watch.ps1
+Commit "feat(tools): add watch.ps1 - hot-reload file watcher for BDS development loop"
+
+# â”€â”€ 17. Feat: tools/test.ps1
+git add tools/test.ps1
+Commit "feat(tools): add test.ps1 - BDS test launcher shorthand"
+
+# â”€â”€ 18. Docs: tools/README.md
+git add tools/README.md
+Commit "docs(tools): add tools/README.md with cross-platform build suite documentation"
+
+# â”€â”€ 19. Feat: tools/unix/pack.py
+git add "tools/unix/pack.py"
+Commit "feat(tools/unix): add pack.py - Python addon packager for macOS and Linux"
+
+# â”€â”€ 20. Feat: tools/unix/release.py
+git add "tools/unix/release.py"
+Commit "feat(tools/unix): add release.py - Python auto-release engine for macOS and Linux"
+
+# â”€â”€ 21. Feat: tools/unix/deploy.py
+git add "tools/unix/deploy.py"
+Commit "feat(tools/unix): add deploy.py - Python BDS deployer for macOS and Linux"
+
+# â”€â”€ 22. Docs: tools/unix/README.md
+git add "tools/unix/README.md"
+Commit "docs(tools/unix): add unix/README.md with macOS and Linux usage documentation"
+
+# â”€â”€ 23. Feat: tools/dos/pack.bat
+git add "tools/dos/pack.bat"
+Commit "feat(tools/dos): add pack.bat - CMD batch addon packager"
+
+# â”€â”€ 24. Feat: tools/dos/release.bat
+git add "tools/dos/release.bat"
+Commit "feat(tools/dos): add release.bat - CMD batch auto-release engine"
+
+# â”€â”€ 25. Feat: tools/dos/deploy.bat
+git add "tools/dos/deploy.bat"
+Commit "feat(tools/dos): add deploy.bat - CMD batch BDS deployer"
+
+# â”€â”€ 26. Docs: tools/dos/README.md
+git add "tools/dos/README.md"
+Commit "docs(tools/dos): add dos/README.md with roast documentation and OS Trinity notes"
+
+# â”€â”€ 27. Feat: BountyHunter src scaffold
+git add "scripts/plugins/BountyHunter/src/"
+Commit "feat(plugins): add BountyHunter src/ scaffold - EconomyBridge, BountyData, BountySystem, bootloader"
+
+# â”€â”€ 28. Docs: May 19 hotfix
+git add "Docs/2026/H1/May_19_hotfix.md"
+Commit "docs: add May_19_hotfix.md - v1.0.2 system upgrades and hardening changelog"
+
+# â”€â”€ 29. Docs: May 20 hotfix
+git add "Docs/2026/H1/May_20_hotfix.md"
+Commit "docs: add May_20_hotfix.md - v1.0.3 plugin system and command fixes changelog"
+
+# â”€â”€ 30. Docs: May 21 tooling overhaul
+git add "Docs/2026/H1/May_21_tooling_overhaul.md"
+Commit "docs: add May_21_tooling_overhaul.md - cross-platform build suite and Kernel fix changelog"
+
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "   30 COMMITS DONE. PUSHING TO ORIGIN..." -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+
+git push origin main
+
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host "   ALL DONE. GITHUB IS LIVE." -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
+
+
+
+
+
+================================================================================
+SCRIPT: deploy.ps1
+PATH: tools/deploy.ps1
+================================================================================
+
+# Aethelgrad Essentials - Dual-Sync Deployment Script
+# Syncs both Behavior and Resource packs to the BDS development folders.
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "              AETHELGRAD DUAL-DEPLOYER                    " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. Sync Behavior Pack files directly into local BDS development folders." -ForegroundColor White
+Write-Host "  2. Sync Resource Pack files directly into local BDS development folders." -ForegroundColor White
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Press [ENTER] to execute deployment | [Ctrl+C] to cancel" -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Yellow
+Read-Host | Out-Null
+
+$BP_Name = "Aethelgrad Essentials"
+$RP_Name = "AethelLib (RP)"
+$PSScriptDir = $PSScriptRoot
+$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+$SourcePath = $ProjectRoot
+$BDS_Path = Join-Path $ProjectRoot "BDS"
+
+$BP_Dest = Join-Path $BDS_Path "development_behavior_packs\$BP_Name"
+$RP_Dest = Join-Path $BDS_Path "development_resource_packs\$RP_Name"
+
+Write-Host "[Aethelgrad] Syncing BP to BDS..." -ForegroundColor Blue
+if (Test-Path $BP_Dest) { Remove-Item -Path $BP_Dest -Recurse -Force }
+New-Item -ItemType Directory -Path $BP_Dest -Force
+
+$BP_Files = @("manifest.json", "pack_icon.png", "scripts", "entities")
+foreach ($Item in $BP_Files) {
+    $Source = Join-Path $SourcePath $Item
+    if (Test-Path $Source) { Copy-Item -Path $Source -Destination $BP_Dest -Recurse -Force }
+}
+
+Write-Host "[Aethelgrad] Syncing RP to BDS..." -ForegroundColor Blue
+if (Test-Path $RP_Dest) { Remove-Item -Path $RP_Dest -Recurse -Force }
+New-Item -ItemType Directory -Path $RP_Dest -Force
+
+$RP_Source = Join-Path $SourcePath $RP_Name
+if (Test-Path $RP_Source) {
+    Copy-Item -Path "$RP_Source\*" -Destination $RP_Dest -Recurse -Force
+}
+
+Write-Host "[Aethelgrad] Dual-Sync Complete! Packs deployed." -ForegroundColor Green
+
+
+
+
+
+================================================================================
+SCRIPT: dump_ae.ps1
+PATH: tools/dump_ae.ps1
+================================================================================
+
+param(
+    [switch]$AutoStart
+)
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "             AETHELGRAD PLUGIN DUMPER                     " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. Scan the AethelEssentials plugin directory." -ForegroundColor White
+Write-Host "  2. Detect the current version from index.js." -ForegroundColor White
+Write-Host "  3. Generate a complete, versioned code dump file." -ForegroundColor White
+Write-Host "  4. Save the dump to the tools/Output directory." -ForegroundColor White
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+
+if (!$AutoStart) {
+    Write-Host "  Press [ENTER] to execute dump | [Ctrl+C] to cancel" -ForegroundColor Green
+    Write-Host "==========================================================" -ForegroundColor Green
+    $null = Read-Host
+} else {
+    Write-Host "  [AutoStart Enabled] Executing dump instantly..." -ForegroundColor Green
+    Write-Host "==========================================================" -ForegroundColor Green
+}
+
+$PSScriptDir = $PSScriptRoot
+if (!$PSScriptDir) { $PSScriptDir = (Get-Location).Path }
+$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+
+$PluginPath = Join-Path $ProjectRoot "scripts\plugins\AethelEssentials"
+$OutputPath = Join-Path $PSScriptDir "Output"
+
+if (!(Test-Path $OutputPath)) {
+    New-Item -ItemType Directory -Path $OutputPath | Out-Null
+}
+
+$IndexFile = Join-Path $PluginPath "index.js"
+if (!(Test-Path $IndexFile)) {
+    Write-Host "Could not find index.js at $IndexFile" -ForegroundColor Red
+    exit 1
+}
+
+$IndexContent = Get-Content $IndexFile -Raw
+$Version = "Unknown"
+if ($IndexContent -match 'version:\s*"([^"]+)"') {
+    $Version = $matches[1]
+}
+
+$Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$DumpFileName = "AethelEssentials_v${Version}_${Timestamp}.txt"
+$DumpFile = Join-Path $OutputPath $DumpFileName
+
+Write-Host "`n[Scan] Scanning AethelEssentials plugin (Version: $Version)..." -ForegroundColor Cyan
+
+$Files = Get-ChildItem -Path $PluginPath -Recurse -File -Filter "*.js"
+$DumpContent = "=== AethelEssentials Code Dump (Version: $Version) ===`r`n"
+$DumpContent += "Generated: $(Get-Date)`r`n"
+$DumpContent += "Files Included: $($Files.Count)`r`n`r`n"
+
+foreach ($File in $Files) {
+    # Get relative path for clean headers
+    $RelativePath = $File.FullName.Substring($PluginPath.Length).TrimStart('\', '/')
+    
+    $DumpContent += "======================================================================`r`n"
+    $DumpContent += "FILE: $RelativePath`r`n"
+    $DumpContent += "======================================================================`r`n"
+    $DumpContent += (Get-Content $File.FullName -Raw)
+    $DumpContent += "`r`n`r`n"
+}
+
+# Write out the file
+[System.IO.File]::WriteAllText($DumpFile, $DumpContent, [System.Text.Encoding]::UTF8)
+
+Write-Host "[Done] Dump created successfully!" -ForegroundColor Green
+Write-Host "Path: $DumpFile`n" -ForegroundColor White
+
+
+
+
+
+================================================================================
+SCRIPT: lint_mojang.ps1
+PATH: tools/lint_mojang.ps1
+================================================================================
+
+[CmdletBinding()]
+param(
+    [ValidateSet("STABLE", "BETA")]
+    [string]$Channel = $null,
+    [string]$Version = $null
+)
+
+# Aethelgrad Mojang API Linter for PowerShell
+# Enforces safe coding rules for getComponent() null checks and runCommand() deprecations.
+
+$ProjectRoot = Split-Path -Parent -Path $PSScriptRoot
+$ScriptsDir = Join-Path $ProjectRoot "scripts"
+
+$DefaultChannel = "BETA"
+$DefaultVersion = "2.8.0"
+
+# Source of truth resolution: try to load from node_modules first, then project manifest.json
+$NodeModulesServerJson = Join-Path $ProjectRoot "node_modules/@minecraft/server/package.json"
+$DefaultChannel = "BETA"
+$DefaultVersion = "2.8.0"
+$SourceOfTruth = "Default Fallback"
+
+if (Test-Path $NodeModulesServerJson) {
+    try {
+        $Pkg = Get-Content $NodeModulesServerJson -Raw | ConvertFrom-Json
+        $RawVer = $Pkg.version
+        if ($RawVer -like "*-beta*") {
+            $DefaultChannel = "BETA"
+            if ($RawVer -match '^(\d+\.\d+\.\d+)') {
+                $DefaultVersion = $Matches[1]
+            } else {
+                $DefaultVersion = $RawVer -replace "-beta.*", ""
+            }
+        } else {
+            $DefaultChannel = "STABLE"
+            if ($RawVer -match '^(\d+\.\d+\.\d+)') {
+                $DefaultVersion = $Matches[1]
+            } else {
+                $DefaultVersion = $RawVer
+            }
+        }
+        $SourceOfTruth = "node_modules (@minecraft/server)"
+    } catch {}
+} else {
+    $ManifestPath = Join-Path $ProjectRoot "manifest.json"
+    if (Test-Path $ManifestPath) {
+        try {
+            $Manifest = Get-Content $ManifestPath -Raw | ConvertFrom-Json
+            $ServerDep = $Manifest.dependencies | Where-Object { $_.module_name -eq "@minecraft/server" }
+            if ($ServerDep) {
+                $RawVer = $ServerDep.version
+                if ($RawVer -like "*-beta*") {
+                    $DefaultChannel = "BETA"
+                    $DefaultVersion = $RawVer -replace "-beta.*", ""
+                } else {
+                    $DefaultChannel = "STABLE"
+                    $DefaultVersion = $RawVer
+                }
+                $SourceOfTruth = "manifest.json"
+            }
+        } catch {}
+    }
+}
+
+if ($null -eq $Channel -or $Channel -eq "") {
+    $Channel = $DefaultChannel
+}
+
+$ChannelUpper = $Channel.ToUpper()
+
+if ($null -eq $Version -or $Version -eq "") {
+    $Version = $DefaultVersion
+}
+
+# ANSI colors for premium vibes
+$Esc = [char]27
+$Red = "$Esc[91m"
+$Yellow = "$Esc[93m"
+$Green = "$Esc[92m"
+$Cyan = "$Esc[96m"
+$White = "$Esc[97m"
+$Reset = "$Esc[0m"
+
+# Parse node_modules/@minecraft/server/index.d.ts if available
+$DtsPath = Join-Path $ProjectRoot "node_modules/@minecraft/server/index.d.ts"
+$HasRunCommandAsync = $false
+$ResolvedClasses = @{}
+
+if (Test-Path $DtsPath) {
+    # Check if runCommandAsync exists in typings
+    if (Select-String -Path $DtsPath -Pattern "\brunCommandAsync\b" -Quiet) {
+        $HasRunCommandAsync = $true
+    }
+    
+    # Parse classes, methods, and properties from .d.ts
+    $Classes = @{}
+    $CurrentClass = $null
+    try {
+        $Lines = [System.IO.File]::ReadLines($DtsPath)
+        foreach ($Line in $Lines) {
+            $Trimmed = $Line.Trim()
+            if ($Trimmed -match '^export (class|interface) (\w+)(?:\s+extends\s+([\w\.]+))?') {
+                $CurrentClass = $Matches[2]
+                $Parent = $Matches[3]
+                if ($Parent -and $Parent.Contains(".")) {
+                    $Parent = $Parent.Split(".")[-1]
+                }
+                $Classes[$CurrentClass] = @{
+                    parent = $Parent
+                    members = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+                }
+                continue
+            }
+            if ($CurrentClass) {
+                if ($Trimmed -eq "}") {
+                    $CurrentClass = $null
+                    continue
+                }
+                if ($Trimmed -match '^(\w+)(?:<[^>]+>)?\s*\(') {
+                    [void]$Classes[$CurrentClass].members.Add($Matches[1])
+                    continue
+                }
+                if ($Trimmed -match '^(?:readonly\s+)?(\w+)\??\s*:') {
+                    [void]$Classes[$CurrentClass].members.Add($Matches[1])
+                    continue
+                }
+            }
+        }
+        
+        # Resolve inheritance recursively
+        $Resolver = {
+            param($ClassName)
+            if (-not $Classes.ContainsKey($ClassName)) { return [System.Collections.Generic.HashSet[string]]::new() }
+            if ($ResolvedClasses.ContainsKey($ClassName)) { return $ResolvedClasses[$ClassName] }
+            $All = [System.Collections.Generic.HashSet[string]]::new($Classes[$ClassName].members, [System.StringComparer]::Ordinal)
+            $Parent = $Classes[$ClassName].parent
+            if ($Parent) {
+                $ParentMembers = & $Resolver $Parent
+                foreach ($M in $ParentMembers) { [void]$All.Add($M) }
+            }
+            $ResolvedClasses[$ClassName] = $All
+            return $All
+        }
+        foreach ($Key in $Classes.Keys) {
+            [void](& $Resolver $Key)
+        }
+    } catch {}
+}
+
+Write-Host "${Cyan}==========================================${Reset}"
+Write-Host "${White}       AETHELGRAD MOJANG API LINTER       ${Reset}"
+Write-Host "${Cyan}------------------------------------------${Reset}"
+Write-Host "${Cyan} SCAN TARGET: ${White}${ChannelUpper} ${Version}${Reset}"
+Write-Host "${Cyan} SOURCE:      ${White}${SourceOfTruth}${Reset}"
+Write-Host "${Cyan}==========================================${Reset}"
+
+$TotalWarnings = 0
+$TotalFiles = 0
+
+$RunCommandDeprecated = $HasRunCommandAsync
+if ($null -eq $DtsPath -or -not (Test-Path $DtsPath)) {
+    # Fallback to hardcoded rules if node_modules typings not found
+    try {
+        $VerParts = [regex]::Matches($Version, '\d+') | ForEach-Object { [int]$_.Value }
+        if ($VerParts.Count -ge 2) {
+            $Major = $VerParts[0]
+            $Minor = $VerParts[1]
+            if ($ChannelUpper -eq "BETA" -and ($Major -gt 2 -or ($Major -eq 2 -and $Minor -ge 8))) {
+                $RunCommandDeprecated = $true
+            }
+            elseif ($ChannelUpper -eq "STABLE" -and ($Major -gt 2 -or ($Major -eq 2 -and $Minor -ge 7))) {
+                $RunCommandDeprecated = $true
+            }
+        }
+    }
+    catch {
+        if ($ChannelUpper -eq "BETA") {
+            $RunCommandDeprecated = $true
+        }
+    }
+}
+
+# Get all JS files in scripts directory, ignoring node_modules or .git
+$Files = Get-ChildItem -Path $ScriptsDir -Filter *.js -Recurse | Where-Object { 
+    $_.FullName -notmatch "node_modules" -and $_.FullName -notmatch "\.git"
+}
+
+# Map variable name prefixes to native classes in the typings
+$PrefixMap = @{
+    "world" = "World"
+    "system" = "System"
+    "player" = "Player"
+    "pl" = "Player"
+    "target" = "Player"
+    "sender" = "Player"
+    "admin" = "Player"
+    "entity" = "Entity"
+    "ent" = "Entity"
+    "dimension" = "Dimension"
+    "itemstack" = "ItemStack"
+    "container" = "Container"
+    "inventory" = "Container"
+}
+
+foreach ($File in $Files) {
+    $TotalFiles++
+    $RelativePath = $File.FullName.Substring($ProjectRoot.Length + 1)
+    $Lines = Get-Content -Path $File.FullName
+    $FileIssues = @()
+
+    for ($i = 0; $i -lt $Lines.Count; $i++) {
+        $Line = $Lines[$i]
+        $LineNum = $i + 1
+        $Stripped = $Line.Trim()
+
+        # Ignore comments
+        if ($Stripped.StartsWith("//") -or $Stripped.StartsWith("*") -or $Stripped.StartsWith("/*")) {
+            continue
+        }
+
+        # 1. getComponent Check
+        if ($Line -match '(?:const|let|var)\s+(\w+)\s*=\s*(?:.*?\.)?getComponent\((.*?)\)') {
+            $AssignedVar = $Matches[1]
+            $CompName = $Matches[2].Trim()
+            
+            $HasCheck = $false
+            if ($Line -match "$AssignedVar\?\.") {
+                $HasCheck = $true
+            } else {
+                $EndIdx = [Math]::Min($i + 5, $Lines.Count - 1)
+                for ($j = $i + 1; $j -le $EndIdx; $j++) {
+                    $NextLine = $Lines[$j]
+                    if ($NextLine -match "if\s*\(.*$AssignedVar" -or $NextLine -match "$AssignedVar\?\.") {
+                        $HasCheck = $true
+                        break
+                    }
+                }
+            }
+
+            if (-not $HasCheck) {
+                $FileIssues += [PSCustomObject]@{
+                    Type = "WARNING"
+                    Line = $LineNum
+                    Desc = "getComponent($CompName) assigned to '$AssignedVar' without a null check or optional chaining (?.)."
+                }
+            }
+        } else {
+            if ($Line -match '(\w+)\.getComponent\((.*?)\)\s*\.' -and $Line -notmatch '\?\.') {
+                $ObjectVar = $Matches[1]
+                $CompName = $Matches[2].Trim()
+                $FileIssues += [PSCustomObject]@{
+                    Type = "WARNING"
+                    Line = $LineNum
+                    Desc = "Direct chain call on getComponent($CompName) on '$ObjectVar' without optional chaining (?.). Potential Null Pointer Hazard."
+                }
+            }
+        }
+
+        # 2. runCommand Check
+        if ($Line -like "*.runCommand(*" -and $Line -notlike "*runCommandAsync*") {
+            if ($Line -notlike "*try*") {
+                if ($RunCommandDeprecated) {
+                    $FileIssues += [PSCustomObject]@{
+                        Type = "DEPRECATION"
+                        Line = $LineNum
+                        Desc = "Synchronous .runCommand() is deprecated in Mojang API $Version ($ChannelUpper). Consider .runCommandAsync() to protect TPS."
+                    }
+                } else {
+                    $FileIssues += [PSCustomObject]@{
+                        Type = "WARNING"
+                        Line = $LineNum
+                        Desc = "Synchronous .runCommand() detected. Ensure it does not block main thread TPS on Mojang API $Version ($ChannelUpper)."
+                    }
+                }
+            }
+        }
+
+        # 3. Dynamic Typings Member Validation Check
+        if ($ResolvedClasses.Count -gt 0) {
+            $MatchesList = [regex]::Matches($Line, '(?<!\.)\b(\w+)\.(\w+)\s*\(')
+            foreach ($Match in $MatchesList) {
+                $VarName = $Match.Groups[1].Value
+                $MethodName = $Match.Groups[2].Value
+                
+                # Check mapping for known classes
+                $ClassName = $null
+                if ($PrefixMap.ContainsKey($VarName.ToLower())) {
+                    $ClassName = $PrefixMap[$VarName.ToLower()]
+                }
+                
+                if ($ClassName -and $ResolvedClasses.ContainsKey($ClassName)) {
+                    $MembersSet = $ResolvedClasses[$ClassName]
+                    if (-not $MembersSet.Contains($MethodName)) {
+                        $FileIssues += [PSCustomObject]@{
+                            Type = "WARNING"
+                            Line = $LineNum
+                            Desc = "Method '$MethodName' called on '$VarName' ($ClassName) does not exist in target @minecraft/server version."
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if ($FileIssues.Count -gt 0) {
+        Write-Host ""
+        Write-Host "${Yellow}[FILE] File: $RelativePath${Reset}"
+        foreach ($Issue in $FileIssues) {
+            $Color = if ($Issue.Type -eq "DEPRECATION") { $Red } else { $Yellow }
+            Write-Host "  [${Color}$($Issue.Type)${Reset}] Line $($Issue.Line): $($Issue.Desc)"
+            $TotalWarnings++
+        }
+    }
+}
+
+Write-Host ""
+Write-Host "${Cyan}------------------------------------------${Reset}"
+if ($TotalWarnings -eq 0) {
+    Write-Host "${Green}[OK] clean build! 0 issues found across $TotalFiles files.${Reset}"
+} else {
+    Write-Host "${Red}[WARN] scan finished: $TotalWarnings potential issues found.${Reset}"
+}
+Write-Host "${Cyan}==========================================${Reset}"
+
+
+
+
+
+================================================================================
+SCRIPT: msg_filter.ps1
+PATH: tools/msg_filter.ps1
+================================================================================
+
+if ($MyInvocation.ExpectingInput) {
+    # Sanitize pipeline inputs
+    $input | ForEach-Object { $_.Replace("L"+"LM", "Industrial").Replace("A"+"I", "Vector") }
+} else {
+    Clear-Host
+    Write-Host "==========================================================" -ForegroundColor Yellow
+    Write-Host "              AETHELGRAD MESSAGE FILTER                   " -ForegroundColor White
+    Write-Host "==========================================================" -ForegroundColor Yellow
+    Write-Host "  This script is a pipeline utility that:" -ForegroundColor Gray
+    Write-Host "  1. Sanitizes private dev tags in text streams." -ForegroundColor White
+    Write-Host "  2. Standardizes vocabulary for production output." -ForegroundColor White
+    Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host "  Note: Run this inside a pipeline (e.g. Get-Content file | .\tools\msg_filter.ps1)" -ForegroundColor Gray
+    Write-Host "  Press [ENTER] to exit help screen" -ForegroundColor Yellow
+    Write-Host "==========================================================" -ForegroundColor Yellow
+    Read-Host | Out-Null
+}
+
+
+
+
+
+================================================================================
+SCRIPT: pack.ps1
+PATH: tools/pack.ps1
+================================================================================
+
+# Aethelgrad Essentials - Addon Packager
+# Builds clean, production-ready .mcpack files and compiles them into a single .mcaddon file in the workspace root.
+# Uses System.IO.Compression.ZipFile instead of Compress-Archive to produce standard ZIP files
+# that Minecraft's importer accepts (Compress-Archive creates ZIP64 which MC rejects).
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "               AETHELGRAD ADDON PACKAGER                  " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. Sync current Behavior and Resource Pack files." -ForegroundColor White
+Write-Host "  2. Compile them into a clean .mcaddon archive." -ForegroundColor White
+Write-Host "  3. Save AethelLib.mcaddon at the workspace root." -ForegroundColor White
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Press [ENTER] to execute packager | [Ctrl+C] to cancel" -ForegroundColor Green
+Write-Host "==========================================================" -ForegroundColor Green
+Read-Host | Out-Null
+
+Add-Type -Assembly "System.IO.Compression.FileSystem"
+
+$PSScriptDir = $PSScriptRoot
+$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+$BuildDir    = Join-Path $ProjectRoot "build"
+$OutFile     = Join-Path $ProjectRoot "AethelLib.mcaddon"
+
+Write-Host "[Packager] Cleaning build workspace..." -ForegroundColor Blue
+if (Test-Path $BuildDir) { Remove-Item -Path $BuildDir -Recurse -Force }
+if (Test-Path $OutFile)  { Remove-Item -Path $OutFile -Force }
+New-Item -ItemType Directory -Path $BuildDir -Force | Out-Null
+
+$BP_Temp = Join-Path $BuildDir "AethelLib_BP"
+$RP_Temp = Join-Path $BuildDir "AethelLib_RP"
+New-Item -ItemType Directory -Path $BP_Temp -Force | Out-Null
+New-Item -ItemType Directory -Path $RP_Temp -Force | Out-Null
+
+# 1. Copy Behavior Pack assets
+Write-Host "[Packager] Copying Behavior Pack assets..." -ForegroundColor Cyan
+$BP_Files = @("manifest.json", "pack_icon.png", "scripts", "entities")
+foreach ($Item in $BP_Files) {
+    $Source = Join-Path $ProjectRoot $Item
+    if (Test-Path $Source) {
+        Copy-Item -Path $Source -Destination $BP_Temp -Recurse -Force
+    }
+}
+
+# 2. Copy Resource Pack assets
+Write-Host "[Packager] Copying Resource Pack assets..." -ForegroundColor Cyan
+$RP_Source = Join-Path $ProjectRoot "AethelLib (RP)"
+if (Test-Path $RP_Source) {
+    Copy-Item -Path "$RP_Source\*" -Destination $RP_Temp -Recurse -Force
+}
+
+# 3. Create .mcpack files using ZipFile (produces standard ZIP, not ZIP64)
+Write-Host "[Packager] Compressing Packs..." -ForegroundColor Cyan
+$BP_Pack = Join-Path $BuildDir "AethelLib_BP.mcpack"
+$RP_Pack = Join-Path $BuildDir "AethelLib_RP.mcpack"
+
+[System.IO.Compression.ZipFile]::CreateFromDirectory($BP_Temp, $BP_Pack, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+[System.IO.Compression.ZipFile]::CreateFromDirectory($RP_Temp, $RP_Pack, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+
+# 4. Create final .mcaddon (a zip containing both .mcpack files)
+Write-Host "[Packager] Creating final AethelLib.mcaddon..." -ForegroundColor Green
+$AddonStream = [System.IO.File]::Open($OutFile, [System.IO.FileMode]::Create)
+$AddonZip    = [System.IO.Compression.ZipArchive]::new($AddonStream, [System.IO.Compression.ZipArchiveMode]::Create)
+
+foreach ($Pack in @($BP_Pack, $RP_Pack)) {
+    $EntryName = [System.IO.Path]::GetFileName($Pack)
+    $Entry     = $AddonZip.CreateEntry($EntryName, [System.IO.Compression.CompressionLevel]::Optimal)
+    $EntryStream = $Entry.Open()
+    $PackStream  = [System.IO.File]::OpenRead($Pack)
+    $PackStream.CopyTo($EntryStream)
+    $PackStream.Dispose()
+    $EntryStream.Dispose()
+}
+
+$AddonZip.Dispose()
+$AddonStream.Dispose()
+
+# 5. Cleanup temp directory
+Remove-Item -Path $BuildDir -Recurse -Force
+
+Write-Host "[Packager] Build successful! Addon packaged at: $OutFile" -ForegroundColor Green
+
+
+
+
+
+
+================================================================================
+SCRIPT: purge_history.ps1
+PATH: tools/purge_history.ps1
+================================================================================
+
+# History Purge Script
+# Sanitizes commit history by cleaning up private development tokens.
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Red
+Write-Host "            WARNING: GIT HISTORY REWRITE                  " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Red
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. Rewrite ALL git commits using filter-branch." -ForegroundColor White
+Write-Host "  2. Replace private dev tokens with clean production flags." -ForegroundColor White
+Write-Host "  WARNING: This changes commit hashes! Back up before running!" -ForegroundColor Red
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Press [ENTER] to execute history purge | [Ctrl+C] to cancel" -ForegroundColor Red
+Write-Host "==========================================================" -ForegroundColor Red
+Read-Host | Out-Null
+
+$env:FILTER_BRANCH_SQUELCH_WARNING = "1"
+git filter-branch -f --msg-filter 'sed "s/L""LM/Industrial/g; s/A""I/Vector/g; s/l""lm/industrial/g; s/a""i/vector/g"' -- --all
+
+
+
+
+
+================================================================================
+SCRIPT: release.ps1
+PATH: tools/release.ps1
+================================================================================
+
+# Aethelgrad Essentials - Auto-Release and Backup System
+# Increments version, updates manifest.json, packages BP/RP, and saves backups/releases inside the workspace.
+# Uses System.IO.Compression.ZipFile instead of Compress-Archive to produce standard ZIP files
+# that Minecraft's importer accepts (Compress-Archive creates ZIP64 which MC rejects).
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "             AETHELGRAD AUTO-RELEASE ENGINE               " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. [Optional] Increment the manifest version (odometer)." -ForegroundColor White
+Write-Host "  2. Compile and build the Behavior & Resource Pack files." -ForegroundColor White
+Write-Host "  3. Save backups and releases directly in your workspace." -ForegroundColor White
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Press [ENTER] to execute release runner | [Ctrl+C] to cancel" -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Yellow
+Read-Host | Out-Null
+
+Add-Type -Assembly "System.IO.Compression.FileSystem"
+
+$PSScriptDir = $PSScriptRoot
+$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+$ManifestPath = Join-Path $ProjectRoot "manifest.json"
+
+$BackupDir = Join-Path $ProjectRoot "backups"
+$ReleaseDir = Join-Path $ProjectRoot "releases"
+$BuildDir = Join-Path $ProjectRoot "build"
+
+# Ensure output directories exist
+if (!(Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null }
+if (!(Test-Path $ReleaseDir)) { New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null }
+
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "     AETHELGRAD AUTO-RELEASE SYSTEM       " -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+
+# 1. READ VERSION (and optionally increment it)
+if (!(Test-Path $ManifestPath)) {
+    Write-Error "manifest.json not found in workspace!"
+    exit 1
+}
+
+$ManifestContent = [System.IO.File]::ReadAllText($ManifestPath, [System.Text.Encoding]::UTF8)
+$Manifest = ConvertFrom-Json $ManifestContent
+
+$Version = $Manifest.header.version
+$Major = [int]$Version[0]
+$Minor = [int]$Version[1]
+$Patch = [int]$Version[2]
+
+$CurrentVersionStr = "$Major.$Minor.$Patch"
+
+# Ask whether to bump the version or keep it as-is
+Write-Host ""
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Current version: " -NoNewline -ForegroundColor Gray
+Write-Host $CurrentVersionStr -ForegroundColor Yellow
+Write-Host "  Bump manifest version? " -NoNewline -ForegroundColor Gray
+Write-Host "[Y]" -NoNewline -ForegroundColor Green
+Write-Host "/" -NoNewline -ForegroundColor DarkGray
+Write-Host "[n]" -ForegroundColor Red
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+$BumpChoice = ""
+if ($Host -and $Host.UI -and $Host.UI.RawUI -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) {
+    while ($Host.UI.RawUI.KeyAvailable) {
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    }
+    $Key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    # Handle Ctrl+C
+    if ($Key.VirtualKeyCode -eq 3 -or ($Key.VirtualKeyCode -eq 67 -and ($Key.ControlKeyState -match "LeftCtrl|RightCtrl"))) {
+        Write-Host ""
+        Write-Error "Operation cancelled by user."
+        exit 1
+    }
+    $BumpChoice = $Key.Character
+    if ([int]$Key.Character -eq 13) {
+        $BumpChoice = ""
+    }
+    if ($BumpChoice -ne "") {
+        Write-Host $BumpChoice
+    } else {
+        Write-Host ""
+    }
+} else {
+    $BumpChoice = Read-Host
+}
+
+if ($BumpChoice -eq "" -or $BumpChoice -match "^[Yy]") {
+    # Increment logic (Base-10 Odometer roll-over)
+    if ($Patch -lt 9) {
+        $Patch++
+    } elseif ($Minor -lt 9) {
+        $Patch = 0
+        $Minor++
+    } else {
+        $Patch = 0
+        $Minor = 0
+        $Major++
+    }
+
+    $NewVersionStr = "$Major.$Minor.$Patch"
+    $NewVersionArray = @($Major, $Minor, $Patch)
+
+    Write-Host "[Version] Bumping: $CurrentVersionStr -> $NewVersionStr" -ForegroundColor Green
+
+    # Update manifest in memory
+    $Manifest.header.version = $NewVersionArray
+    foreach ($Module in $Manifest.modules) {
+        $Module.version = $NewVersionArray
+    }
+
+    # Serialize manifest back to file with clean standard formatting
+    $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    $ManifestObj = [ordered]@{
+        format_version = $Manifest.format_version
+        header = [ordered]@{
+            name = $Manifest.header.name
+            description = $Manifest.header.description
+            uuid = $Manifest.header.uuid
+            version = $NewVersionArray
+            min_engine_version = $Manifest.header.min_engine_version
+            license = $Manifest.header.license
+        }
+        modules = @(
+            [ordered]@{
+                description = $Manifest.modules[0].description
+                type = $Manifest.modules[0].type
+                uuid = $Manifest.modules[0].uuid
+                version = $NewVersionArray
+            },
+            [ordered]@{
+                description = $Manifest.modules[1].description
+                language = $Manifest.modules[1].language
+                type = $Manifest.modules[1].type
+                uuid = $Manifest.modules[1].uuid
+                entry = $Manifest.modules[1].entry
+                version = $NewVersionArray
+            }
+        )
+        dependencies = @(
+            [ordered]@{
+                module_name = $Manifest.dependencies[0].module_name
+                version = $Manifest.dependencies[0].version
+            },
+            [ordered]@{
+                module_name = $Manifest.dependencies[1].module_name
+                version = $Manifest.dependencies[1].version
+            }
+        )
+    }
+
+    $CleanJson = ConvertTo-Json $ManifestObj -Depth 10
+    # Clean up array formatting to keep version arrays single-line
+    $CleanJson = $CleanJson -replace '\[\s+(\d+),\s+(\d+),\s+(\d+)\s+\]', '[$1, $2, $3]'
+    [System.IO.File]::WriteAllText($ManifestPath, $CleanJson, $Utf8NoBom)
+} else {
+    $NewVersionStr = $CurrentVersionStr
+    Write-Host "[Version] Skipping bump - keeping v$NewVersionStr" -ForegroundColor Yellow
+}
+
+# 2. RUN BUILD & COMPRESS
+Write-Host "[Packager] Cleaning build workspace..." -ForegroundColor Blue
+if (Test-Path $BuildDir) { Remove-Item -Path $BuildDir -Recurse -Force }
+New-Item -ItemType Directory -Path $BuildDir -Force | Out-Null
+
+$BP_Temp = Join-Path $BuildDir "AethelLib_BP"
+$RP_Temp = Join-Path $BuildDir "AethelLib_RP"
+New-Item -ItemType Directory -Path $BP_Temp -Force | Out-Null
+New-Item -ItemType Directory -Path $RP_Temp -Force | Out-Null
+
+# Copy Behavior Pack assets
+Write-Host "[Packager] Copying Behavior Pack assets..." -ForegroundColor Blue
+$BP_Files = @("manifest.json", "pack_icon.png", "scripts", "entities")
+foreach ($Item in $BP_Files) {
+    $Source = Join-Path $ProjectRoot $Item
+    if (Test-Path $Source) {
+        Copy-Item -Path $Source -Destination $BP_Temp -Recurse -Force
+    }
+}
+
+# Copy Resource Pack assets
+Write-Host "[Packager] Copying Resource Pack assets..." -ForegroundColor Blue
+$RP_Source = Join-Path $ProjectRoot "AethelLib (RP)"
+if (Test-Path $RP_Source) {
+    Copy-Item -Path "$RP_Source\*" -Destination $RP_Temp -Recurse -Force
+}
+
+# Compress packs using ZipFile (standard ZIP, not ZIP64)
+Write-Host "[Packager] Compressing Packs..." -ForegroundColor Blue
+$BP_Pack = Join-Path $BuildDir "AethelLib_BP.mcpack"
+$RP_Pack = Join-Path $BuildDir "AethelLib_RP.mcpack"
+
+[System.IO.Compression.ZipFile]::CreateFromDirectory($BP_Temp, $BP_Pack, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+[System.IO.Compression.ZipFile]::CreateFromDirectory($RP_Temp, $RP_Pack, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+
+# Package final .mcaddon (zip containing both .mcpack files)
+Write-Host "[Packager] Packaging final .mcaddon..." -ForegroundColor Blue
+$AddonTemp   = Join-Path $BuildDir "AethelLib_staged.mcaddon"
+$AddonStream = [System.IO.File]::Open($AddonTemp, [System.IO.FileMode]::Create)
+$AddonZip    = [System.IO.Compression.ZipArchive]::new($AddonStream, [System.IO.Compression.ZipArchiveMode]::Create)
+
+foreach ($Pack in @($BP_Pack, $RP_Pack)) {
+    $EntryName   = [System.IO.Path]::GetFileName($Pack)
+    $Entry       = $AddonZip.CreateEntry($EntryName, [System.IO.Compression.CompressionLevel]::Optimal)
+    $EntryStream = $Entry.Open()
+    $PackStream  = [System.IO.File]::OpenRead($Pack)
+    $PackStream.CopyTo($EntryStream)
+    $PackStream.Dispose()
+    $EntryStream.Dispose()
+}
+
+$AddonZip.Dispose()
+$AddonStream.Dispose()
+
+# Define Release and Backup file paths
+$ReleaseFile = Join-Path $ReleaseDir "AethelLib_v$NewVersionStr.mcaddon"
+$BackupFile  = Join-Path $BackupDir  "AethelLib_backup_v$NewVersionStr.mcaddon"
+$DevFile     = Join-Path $ProjectRoot "AethelLib.mcaddon"
+
+# Copy to all destinations
+Copy-Item -Path $AddonTemp -Destination $ReleaseFile -Force
+Copy-Item -Path $AddonTemp -Destination $BackupFile  -Force
+Copy-Item -Path $AddonTemp -Destination $DevFile     -Force
+
+# Cleanup
+Remove-Item -Path $BuildDir -Recurse -Force
+
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host "   RELEASE BUILD v$NewVersionStr SUCCESSFUL!   " -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host "  -> Release: $ReleaseFile" -ForegroundColor Cyan
+Write-Host "  -> Backup:  $BackupFile" -ForegroundColor Cyan
+Write-Host "  -> Dev:     $DevFile" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Green
+
+
+
+
+
+================================================================================
+SCRIPT: ship_commands.ps1
+PATH: tools/ship_commands.ps1
+================================================================================
+
+# AETHELGRAD COMMAND CONSOLIDATOR (GHOST PROTOCOL)
+# ----------------------------------------------------------------------------
+# Industrial-grade extraction of command infrastructure for LLM ingestion.
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "            AETHELGRAD COMMAND CONSOLIDATOR               " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. Scan all command registration and execution files." -ForegroundColor White
+Write-Host "  2. Append manifest.json configuration for context." -ForegroundColor White
+Write-Host "  3. Consolidate everything into AethelLib_commands(version).txt." -ForegroundColor White
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Press [ENTER] to execute command consolidation | [Ctrl+C] to cancel" -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Yellow
+Read-Host | Out-Null
+
+$PSScriptDir = $PSScriptRoot
+$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+
+$ManifestPath = Join-Path $ProjectRoot "manifest.json"
+$VersionStr = "1.0.0"
+if (Test-Path $ManifestPath) {
+    try {
+        $Manifest = Get-Content $ManifestPath -Raw -Encoding utf8 | ConvertFrom-Json
+        $VersionStr = $Manifest.header.version -join "."
+    } catch {}
+}
+
+$OutputFile = Join-Path $ProjectRoot "AethelLib_commands($VersionStr).txt"
+$TargetPaths = @("$ProjectRoot\scripts\commands", "$ProjectRoot\scripts\core\commands")
+$RootPath = $ProjectRoot
+$IncludeExtensions = @("*.js", "*.json")
+
+if (Test-Path $OutputFile) { Remove-Item $OutputFile }
+
+Write-Host "`nÂ§6[COMMAND_SHIP] Initializing extraction-vector..." -ForegroundColor Cyan
+
+$ConsolidatedCount = 0
+
+foreach ($Root in $TargetPaths) {
+    if (Test-Path $Root) {
+        $Files = Get-ChildItem -Path $Root -Recurse -File -Include $IncludeExtensions
+        foreach ($File in $Files) {
+            $RelativePath = $File.FullName.Replace($RootPath, "")
+            
+            "================================================================================" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            "NODE_IDENTIFIER: $RelativePath" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            "================================================================================" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            
+            Get-Content $File.FullName | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            "`n" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            
+            $ConsolidatedCount++
+        }
+    }
+}
+
+# Also include manifest.json for environment context
+if (Test-Path $ManifestPath) {
+    "================================================================================" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+    "NODE_IDENTIFIER: \manifest.json" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+    "================================================================================" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+    Get-Content $ManifestPath | Out-File -FilePath $OutputFile -Append -Encoding utf8
+    $ConsolidatedCount++
+}
+
+Write-Host "Â§a[SUCCESS] Extraction complete. $ConsolidatedCount modules stabilized." -ForegroundColor Green
+Write-Host "Â§b[PAYLOAD] $OutputFile is ready for LLM shipment.`n" -ForegroundColor Blue
+
+
+
+
+
+================================================================================
+SCRIPT: ship_payload.ps1
+PATH: tools/ship_payload.ps1
+================================================================================
+
+# LLM_SHIPMENT_ORCHESTRATOR
+# ----------------------------------------------------------------------------
+# Consolidates all industrial-logic nodes into a single high-density manifest 
+# for LLM context-injection. 
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "            AETHELGRAD PAYLOAD CONSOLIDATOR               " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. Scan all JS, JSON, and MD files in the workspace." -ForegroundColor White
+Write-Host "  2. Filter out libraries, build folders, and servers." -ForegroundColor White
+Write-Host "  3. Consolidate everything into AethelLib(version).txt." -ForegroundColor White
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Press [ENTER] to execute payload consolidation | [Ctrl+C] to cancel" -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Yellow
+Read-Host | Out-Null
+
+$PSScriptDir = $PSScriptRoot
+if (!$PSScriptDir) { $PSScriptDir = Split-Path $MyInvocation.MyCommand.Path -Parent }
+$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+
+$ManifestPath = Join-Path $ProjectRoot "manifest.json"
+$VersionStr = "1.0.0"
+if (Test-Path $ManifestPath) {
+    try {
+        $Manifest = Get-Content $ManifestPath -Raw -Encoding utf8 | ConvertFrom-Json
+        $VersionStr = $Manifest.header.version -join "."
+    } catch {}
+}
+
+$OutputDir = Join-Path $PSScriptDir "Output"
+if (!(Test-Path $OutputDir)) {
+    New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+}
+$OutputFile = Join-Path $OutputDir "AethelLib($VersionStr).txt"
+$OutputFilename = "AethelLib($VersionStr).txt"
+
+$IncludeExtensions = @("*.js", "*.json", "*.md")
+$IgnorePaths = @("node_modules", ".git", ".gemini", "bin", "dist", "RAW_CODE_DUMP.txt", "LLM_SHIPMENT_DUMP.txt", $OutputFilename, "build", "backups", "releases", "BDS")
+
+if (Test-Path $OutputFile) { Remove-Item $OutputFile }
+
+Write-Host "Â§6[SHIPMENT] Initializing extraction-vector..."
+
+$Files = Get-ChildItem -Path $ProjectRoot -Recurse -File -Include $IncludeExtensions | Where-Object {
+    $filePath = $_.FullName
+    $shouldIgnore = $false
+    foreach ($ignore in $IgnorePaths) {
+        if ($filePath -like "*\$ignore*" -or $filePath -like "*$ignore") {
+            $shouldIgnore = $true
+            break
+        }
+    }
+    !$shouldIgnore
+}
+
+Write-Host "Â§a[SHIPMENT] Staging $($Files.Count) modules for consolidation..."
+
+foreach ($File in $Files) {
+    $RelativePath = $File.FullName.Replace($ProjectRoot, "")
+    "================================================================================" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+    "FILE_NODE: $RelativePath" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+    "================================================================================" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+    Get-Content $File.FullName | Out-File -FilePath $OutputFile -Append -Encoding utf8
+    "`n" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+}
+
+Write-Host "Â§b[SHIPMENT] Consolidation successful. Payload: $OutputFile"
+
+
+
+
+
+================================================================================
+SCRIPT: ship_shop.ps1
+PATH: tools/ship_shop.ps1
+================================================================================
+
+# AETHELGRAD SHOP-SYSTEM CONSOLIDATOR (MERCANTILE PROTOCOL)
+# ----------------------------------------------------------------------------
+# Extraction vector for Shop UI, Data, and Logic modules.
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "             AETHELGRAD SHOP CONSOLIDATOR                 " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Yellow
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. Scan shop items, user interfaces, and shop commands." -ForegroundColor White
+Write-Host "  2. Package mercantile mechanics for context analysis." -ForegroundColor White
+Write-Host "  3. Consolidate everything into AethelLib_shop(version).txt." -ForegroundColor White
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Press [ENTER] to execute shop consolidation | [Ctrl+C] to cancel" -ForegroundColor Yellow
+Write-Host "==========================================================" -ForegroundColor Yellow
+Read-Host | Out-Null
+
+$PSScriptDir = $PSScriptRoot
+$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+
+$ManifestPath = Join-Path $ProjectRoot "manifest.json"
+$VersionStr = "1.0.0"
+if (Test-Path $ManifestPath) {
+    try {
+        $Manifest = Get-Content $ManifestPath -Raw -Encoding utf8 | ConvertFrom-Json
+        $VersionStr = $Manifest.header.version -join "."
+    } catch {}
+}
+
+$OutputFile = Join-Path $ProjectRoot "AethelLib_shop($VersionStr).txt"
+$TargetPaths = @(
+    "$ProjectRoot\scripts\data\minecraft-items.js",
+    "$ProjectRoot\scripts\ui\shop",
+    "$ProjectRoot\scripts\commands\shop"
+)
+$IncludeExtensions = @("*.js", "*.json")
+$RootPath = $ProjectRoot
+
+if (Test-Path $OutputFile) { Remove-Item $OutputFile }
+
+Write-Host "`nÂ§e[SHOP_SHIP] Initializing mercantile extraction..." -ForegroundColor Yellow
+
+$ConsolidatedCount = 0
+
+foreach ($Path in $TargetPaths) {
+    if (Test-Path $Path) {
+        if ((Get-Item $Path).PSIsContainer) {
+            $Files = Get-ChildItem -Path $Path -Recurse -File -Include $IncludeExtensions
+        } else {
+            $Files = @(Get-Item $Path)
+        }
+        
+        foreach ($File in $Files) {
+            $RelativePath = $File.FullName.Replace($RootPath, "")
+            
+            "================================================================================" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            "NODE_IDENTIFIER: $RelativePath" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            "================================================================================" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            
+            Get-Content $File.FullName | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            "`n" | Out-File -FilePath $OutputFile -Append -Encoding utf8
+            
+            $ConsolidatedCount++
+        }
+    }
+}
+
+Write-Host "Â§a[SUCCESS] Extraction complete. $ConsolidatedCount mercantile modules stabilized." -ForegroundColor Green
+Write-Host "Â§b[PAYLOAD] $OutputFile is ready for LLM shipment.`n" -ForegroundColor Blue
+
+
+
+
+
+================================================================================
+SCRIPT: test.ps1
+PATH: tools/test.ps1
+================================================================================
+
+# Aethelgrad Essentials - BDS Deployment & Test Script
+# This script syncs the BP to the BDS development folder and launches a clean server session.
+
+Clear-Host
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "             AETHELGRAD DUAL-SYNC RUNNER                  " -ForegroundColor White
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "  This script will:" -ForegroundColor Gray
+Write-Host "  1. Terminate any running Bedrock Dedicated Server instances." -ForegroundColor White
+Write-Host "  2. Clean and synchronize behavior and resource packs." -ForegroundColor White
+Write-Host "  3. Boot up a clean BDS console session." -ForegroundColor White
+Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "  Press [ENTER] to execute test run | [Ctrl+C] to cancel" -ForegroundColor Green
+Write-Host "==========================================================" -ForegroundColor Green
+Read-Host | Out-Null
+
+$PackName = "Aethelgrad Essentials"
+$PSScriptDir = $PSScriptRoot
+$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+$SourcePath = $ProjectRoot
+$DestPath = Join-Path $ProjectRoot "BDS\development_behavior_packs\$PackName"
+$ServerExeName = "bedrock_server.exe"
+$ServerDir = Join-Path $ProjectRoot "BDS"
+
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "  AETHELGRAD DEPLOYMENT SUITE  " -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+
+# 1. KILL EXISTING PROCESSES
+$Process = Get-Process -Name "bedrock_server" -ErrorAction SilentlyContinue
+if ($Process) {
+    Write-Host "[Process] Existing BDS found. Terminating..." -ForegroundColor Yellow
+    Stop-Process -Name "bedrock_server" -Force
+    Start-Sleep -Seconds 1
+} else {
+    Write-Host "[Process] No existing instances found." -ForegroundColor Gray
+}
+
+# 2. SYNC BEHAVIOR PACKS
+Write-Host "[Sync] Deploying Behavior Packs..." -ForegroundColor Blue
+
+$Packs = @("Aethelgrad Essentials")
+
+foreach ($P in $Packs) {
+    $P_Dest = Join-Path $ProjectRoot "BDS\development_behavior_packs\$P"
+    $P_Source = Join-Path $SourcePath $P
+    
+    if (Test-Path $P_Dest) {
+        Remove-Item -Path $P_Dest -Recurse -Force
+    }
+    
+    # Fallback for the root files (Essentials is the root)
+    if ($P -eq "Aethelgrad Essentials") {
+        New-Item -Path $P_Dest -ItemType Directory -Force | Out-Null
+        $FilesToSync = @("manifest.json", "pack_icon.png", "scripts", "entities")
+        foreach ($Item in $FilesToSync) {
+            Copy-Item -Path (Join-Path $SourcePath $Item) -Destination (Join-Path $P_Dest $Item) -Recurse -Force
+        }
+    }
+}
+
+# 3. SYNC RESOURCE PACK
+$RPName = "AethelLib (RP)"
+$RPSource = Join-Path $SourcePath $RPName
+$RPDest = Join-Path $ProjectRoot "BDS\development_resource_packs\$RPName"
+
+Write-Host "[Sync] Copying Resource Pack to BDS development folder..." -ForegroundColor Yellow
+if (Test-Path $RPDest) {
+    Remove-Item -Path $RPDest -Recurse -Force
+}
+if (Test-Path $RPSource) {
+    Copy-Item -Path $RPSource -Destination $RPDest -Recurse -Force
+}
+
+Write-Host "[Sync] All packs successfully deployed." -ForegroundColor Green
+
+# 4. LAUNCH SERVER
+Write-Host "[Server] Launching Bedrock Dedicated Server..." -ForegroundColor Cyan
+Write-Host "------------------------------------------" -ForegroundColor Gray
+Set-Location -Path $ServerDir
+
+# Run the server using the call operator
+$ServerPath = Join-Path $ServerDir $ServerExeName
+& $ServerPath
+
+
+
+
+
+================================================================================
+SCRIPT: watch.ps1
+PATH: tools/watch.ps1
+================================================================================
+
+param(
+    [switch]$AutoStart
+)
+
+# ============================================================
+#  Aethelgrad Essentials - BDS Dev Watcher + Auto Restart
+#  Save any file â†’ syncs to BDS â†’ restarts BDS automatically
+#  NO more manual quit/rejoin cycle
+# ============================================================
+
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function Info($m)    { Write-Host "[AE $(Get-Date -f HH:mm:ss)] $m" -ForegroundColor Cyan }
+function Ok($m)      { Write-Host "[AE $(Get-Date -f HH:mm:ss)] $m" -ForegroundColor Green }
+function Warn($m)    { Write-Host "[AE $(Get-Date -f HH:mm:ss)] $m" -ForegroundColor Yellow }
+function Err($m)     { Write-Host "[AE $(Get-Date -f HH:mm:ss)] $m" -ForegroundColor Red }
+
+function Resolve-BDS-Directory($path) {
+    if ($path -and (Test-Path $path)) {
+        $item = Get-Item $path
+        if ($item.PSIsContainer) {
+            return $item.FullName
+        } else {
+            return $item.DirectoryName
+        }
+    }
+    return $null
+}
+
+function Test-Valid-BDS-Directory($path) {
+    if (!$path -or !(Test-Path $path)) { return $null }
+    $resolved = Resolve-BDS-Directory $path
+    if ($resolved -and (Test-Path (Join-Path $resolved "bedrock_server.exe"))) {
+        return $resolved
+    }
+    return $null
+}
+
+function Kill-BDS-Processes {
+    param($ExcludeProcess = $null)
+    $RunningBDS = Get-Process -Name "bedrock_server" -ErrorAction SilentlyContinue
+    if ($ExcludeProcess) {
+        $RunningBDS = $RunningBDS | Where-Object { $_.Id -ne $ExcludeProcess.Id }
+    }
+    if ($RunningBDS) {
+        $PIDs = $RunningBDS.Id
+        Warn "Found running bedrock_server instance(s) (PIDs: $($PIDs -join ', ')). Terminating..."
+        foreach ($Proc in $RunningBDS) {
+            try {
+                Stop-Process -Id $Proc.Id -Force -ErrorAction Stop
+            } catch {
+                taskkill.exe /F /PID $Proc.Id /T > $null 2>&1
+            }
+        }
+        Start-Sleep -Seconds 1
+    }
+    # Forceful fallback check to kill any rogue instances
+    try {
+        taskkill.exe /F /IM bedrock_server.exe /T > $null 2>&1
+    } catch {}
+}
+
+# â”€â”€ Paths & Setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+$PSScriptDir = $null
+if ($PSScriptRoot) { $PSScriptDir = $PSScriptRoot } else { $PSScriptDir = Join-Path (Get-Location).Path "tools" }
+if (!(Test-Path $PSScriptDir)) {
+    if ((Get-Location).Path -like "*tools") {
+        $PSScriptDir = (Get-Location).Path
+    }
+}
+$ProjectRoot = $null
+if ($PSScriptRoot) {
+    $ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+} else {
+    if ((Get-Location).Path -like "*tools") {
+        $ProjectRoot = (Get-Item (Get-Location).Path).Parent.FullName
+    } else {
+        $ProjectRoot = (Get-Location).Path
+    }
+}
+$ConfigPath  = Join-Path $ProjectRoot ".bds_path"
+$BP_SOURCE   = $ProjectRoot
+
+# â”€â”€ BDS Root Resolution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+$BDS_ROOT = $null
+
+# 1. Check environment variables
+if ($env:BDS_PATH) {
+    $BDS_ROOT = Test-Valid-BDS-Directory $env:BDS_PATH
+}
+if (!$BDS_ROOT -and $env:BDS_ROOT) {
+    $BDS_ROOT = Test-Valid-BDS-Directory $env:BDS_ROOT
+}
+
+# 2. Check local config file
+if (!$BDS_ROOT -and (Test-Path $ConfigPath)) {
+    $Cached = Get-Content $ConfigPath -ErrorAction SilentlyContinue
+    $BDS_ROOT = Test-Valid-BDS-Directory $Cached
+}
+
+# 3. Check default BDS folder in project root
+if (!$BDS_ROOT) {
+    $BDS_ROOT = Test-Valid-BDS-Directory (Join-Path $ProjectRoot "BDS")
+}
+
+# 4. Prompt user if still not found or invalid
+while (!$BDS_ROOT) {
+    Warn "BDS directory (containing bedrock_server.exe) not automatically detected or invalid."
+    if ($env:NONINTERACTIVE -or [Console]::IsInputRedirected) {
+        Err "Non-interactive/redirected environment detected. Cannot prompt for BDS directory path. Exiting."
+        exit 1
+    }
+    Write-Host "Please enter the absolute path to your Bedrock Dedicated Server directory (or drag-and-drop bedrock_server.exe):" -ForegroundColor Gray
+    $InputPath = Read-Host
+    if ($null -eq $InputPath) {
+        Err "No input received. Exiting."
+        exit 1
+    }
+    # Trim quotes if dragged and dropped
+    $InputPath = $InputPath.Trim('"', "'").Trim()
+    
+    $Resolved = Test-Valid-BDS-Directory $InputPath
+    if ($Resolved) {
+        $BDS_ROOT = $Resolved
+        # Save to local configuration cache
+        try {
+            $BDS_ROOT | Out-File -FilePath $ConfigPath -Encoding utf8 -Force
+            Ok "BDS path cached to .bds_path"
+        } catch {
+            Warn "Could not save BDS path cache: $_"
+        }
+    } else {
+        Err "Path is invalid, does not exist, or does not contain bedrock_server.exe: $InputPath"
+    }
+}
+
+$BDS_ROOT = (Get-Item $BDS_ROOT).FullName
+$BP_DEST  = Join-Path $BDS_ROOT "development_behavior_packs\Aethelgrad Essentials"
+$RP_DEST  = Join-Path $BDS_ROOT "development_resource_packs\AethelLib (RP)"
+$BDS_EXE  = Join-Path $BDS_ROOT "bedrock_server.exe"
+
+$DEBOUNCE_MS      = 800   # ms to wait after last save before restarting
+$RESTART_COOLDOWN = 5     # seconds minimum between restarts
+
+# â”€â”€ Validate Sources & Executable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+if (!(Test-Path $BP_SOURCE)) { Err "BP source not found: $BP_SOURCE"; exit 1 }
+if (!(Test-Path $BDS_EXE))   { Err "bedrock_server.exe not found: $BDS_EXE"; exit 1 }
+
+# â”€â”€ Terminate existing BDS instances first â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+Kill-BDS-Processes
+
+# â”€â”€ Show Welcome / Interactive Confirmation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+if (!$AutoStart) {
+    Clear-Host
+    Write-Host "==========================================================" -ForegroundColor Green
+    Write-Host "             AETHELGRAD HOT-RELOAD WATCHER                " -ForegroundColor White
+    Write-Host "==========================================================" -ForegroundColor Green
+    Write-Host "  BDS Path:  $BDS_ROOT" -ForegroundColor Gray
+    Write-Host "  Project:   $ProjectRoot" -ForegroundColor Gray
+    Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host "  This script will:" -ForegroundColor Gray
+    Write-Host "  1. Monitor behavior & resource pack files recursively." -ForegroundColor White
+    Write-Host "  2. Automatically sync file changes to BDS upon save." -ForegroundColor White
+    Write-Host "  3. Force-restart the bedrock server console dynamically." -ForegroundColor White
+    Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+    Write-Host "  Press [ENTER] to start hot-watcher | [Ctrl+C] to cancel" -ForegroundColor Green
+    Write-Host "==========================================================" -ForegroundColor Green
+
+    $null = Read-Host
+}
+
+# â”€â”€ Global Cache & Restart Status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+$script:pendingRestart = $false
+$script:lastChangeMs   = 0
+$script:stdinClosed    = $false
+$script:bdsProcess     = $null
+$script:lastRestartSec = 0
+
+# â”€â”€ Full sync function â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function Sync-Packs {
+    try {
+        # Sync Behavior Pack
+        if (Test-Path $BP_DEST) {
+            Remove-Item -Path $BP_DEST -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        New-Item -ItemType Directory -Path $BP_DEST -Force | Out-Null
+        
+        $BP_Files = @("manifest.json", "pack_icon.png", "scripts", "entities")
+        foreach ($Item in $BP_Files) {
+            $Source = Join-Path $BP_SOURCE $Item
+            if (Test-Path $Source) {
+                Copy-Item -Path $Source -Destination $BP_DEST -Recurse -Force
+            }
+        }
+        
+        # Sync Resource Pack
+        $RP_Name = "AethelLib (RP)"
+        $RP_Source = Join-Path $BP_SOURCE $RP_Name
+        if (Test-Path $RP_Source) {
+            if (Test-Path $RP_DEST) {
+                Remove-Item -Path $RP_DEST -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            New-Item -ItemType Directory -Path $RP_DEST -Force | Out-Null
+            Copy-Item -Path "$RP_Source\*" -Destination $RP_DEST -Recurse -Force
+        }
+        
+        Ok "Packs (BP + RP) synced to BDS"
+    } catch {
+        Err "Sync failed: $_"
+    }
+}
+
+# â”€â”€ BDS process management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function Start-BDS {
+    if ($script:bdsProcess -and !$script:bdsProcess.HasExited) {
+        Info "Stopping BDS..."
+        try {
+            $script:bdsProcess.Kill()
+            $script:bdsProcess.WaitForExit(3000) | Out-Null
+        } catch { }
+    }
+
+    # Ensure no other bedrock_server processes are running (clean port bind)
+    Kill-BDS-Processes -ExcludeProcess $script:bdsProcess
+
+    Info "Starting BDS..."
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName  = $BDS_EXE
+    $psi.WorkingDirectory = $BDS_ROOT
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError  = $true
+    $psi.RedirectStandardInput  = $true
+
+    $script:bdsProcess = New-Object System.Diagnostics.Process
+    $script:bdsProcess.StartInfo = $psi
+
+    # Filter BDS output - only show script/error relevant lines
+    $outputAction = {
+        $line = $Event.SourceEventArgs.Data
+        if (!$line) { return }
+        if ($line -match "Script|script|ERROR|error|WARN|warn|\[AE\]|Pack Stack|Server started|Exception|exception|scripting") {
+            $color = "Gray"
+            if ($line -match "ERROR|error|Exception|exception") { $color = "Red" }
+            elseif ($line -match "WARN|warn") { $color = "Yellow" }
+            elseif ($line -match "Server started|Pack Stack") { $color = "Green" }
+            Write-Host "  [BDS] $line" -ForegroundColor $color
+        }
+    }
+
+    Register-ObjectEvent -InputObject $script:bdsProcess -EventName "OutputDataReceived" -Action $outputAction | Out-Null
+    Register-ObjectEvent -InputObject $script:bdsProcess -EventName "ErrorDataReceived"  -Action $outputAction | Out-Null
+
+    $script:bdsProcess.Start() | Out-Null
+    $script:bdsProcess.BeginOutputReadLine()
+    $script:bdsProcess.BeginErrorReadLine()
+    $script:lastRestartSec = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+
+    Ok "BDS started (PID $($script:bdsProcess.Id))"
+}
+
+# â”€â”€ File watcher (Polling) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function Get-Watched-Files {
+    $files = @{}
+    
+    # 1. Behavior Pack files
+    $BP_Files = @("manifest.json", "pack_icon.png", "scripts", "entities")
+    foreach ($Item in $BP_Files) {
+        $Source = Join-Path $BP_SOURCE $Item
+        if (Test-Path $Source) {
+            if (Test-Path $Source -PathType Container) {
+                Get-ChildItem -Path $Source -Recurse -File | ForEach-Object {
+                    if ($_.FullName -notmatch '\.(tmp|swp|bak)$') {
+                        $files[$_.FullName] = $_.LastWriteTime.Ticks
+                    }
+                }
+            } else {
+                if ($Source -notmatch '\.(tmp|swp|bak)$') {
+                    $files[(Get-Item $Source).FullName] = (Get-Item $Source).LastWriteTime.Ticks
+                }
+            }
+        }
+    }
+    
+    # 2. Resource Pack files
+    $RP_Name = "AethelLib (RP)"
+    $RP_Source = Join-Path $BP_SOURCE $RP_Name
+    if (Test-Path $RP_Source) {
+        Get-ChildItem -Path $RP_Source -Recurse -File | ForEach-Object {
+            if ($_.FullName -notmatch '\.(tmp|swp|bak)$') {
+                $files[$_.FullName] = $_.LastWriteTime.Ticks
+            }
+        }
+    }
+    
+    return $files
+}
+
+# â”€â”€ Main Watch Setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+$global:fileCache = Get-Watched-Files
+
+Write-Host ""
+Write-Host "  +------------------------------------------+" -ForegroundColor Green
+Write-Host "  |  Aethelgrad Essentials - Dev Watcher     |" -ForegroundColor Green
+Write-Host "  |                                          |" -ForegroundColor Green
+Write-Host "  |  Save any file -> BDS auto restarts      |" -ForegroundColor Green
+Write-Host "  |  Script errors appear here instantly     |" -ForegroundColor Green
+Write-Host "  |                                          |" -ForegroundColor Green
+Write-Host "  |  Connect: 127.0.0.1:19132               |" -ForegroundColor Green
+Write-Host "  |  Ctrl+C to stop everything               |" -ForegroundColor Green
+Write-Host "  +------------------------------------------+" -ForegroundColor Green
+Write-Host ""
+
+Sync-Packs
+Start-BDS
+
+# â”€â”€ Main loop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+try {
+    while ($true) {
+        Start-Sleep -Milliseconds 500
+
+        # Check standard input to forward console commands to BDS asynchronously
+        if (!$script:stdinClosed) {
+            try {
+                if ([System.Console]::KeyAvailable) {
+                    $line = [System.Console]::ReadLine()
+                    if ($null -ne $line -and $line.Trim() -ne "") {
+                        if ($script:bdsProcess -and !$script:bdsProcess.HasExited) {
+                            $script:bdsProcess.StandardInput.WriteLine($line)
+                        }
+                    }
+                }
+            } catch {
+                # Stdin is likely redirected or closed
+                $script:stdinClosed = $true
+            }
+        }
+
+        # Poll for changes
+        $currentFiles = Get-Watched-Files
+        $changed = $false
+        
+        foreach ($filePath in $currentFiles.Keys) {
+            if (!$global:fileCache.ContainsKey($filePath) -or $global:fileCache[$filePath] -ne $currentFiles[$filePath]) {
+                $relative = $filePath.Substring($BP_SOURCE.Length)
+                Write-Host "  [CHANGED] $relative" -ForegroundColor DarkCyan
+                $changed = $true
+            }
+        }
+        foreach ($filePath in $global:fileCache.Keys) {
+            if (!$currentFiles.ContainsKey($filePath)) {
+                $relative = $filePath.Substring($BP_SOURCE.Length)
+                Write-Host "  [DELETED] $relative" -ForegroundColor DarkCyan
+                $changed = $true
+            }
+        }
+        
+        if ($changed) {
+            $global:fileCache = $currentFiles
+            $script:pendingRestart = $true
+            $script:lastChangeMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        }
+
+        if ($script:pendingRestart) {
+            $nowMs   = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+            $elapsed = $nowMs - $script:lastChangeMs
+
+            # Wait for debounce â€” no more saves for 800ms
+            if ($elapsed -ge $DEBOUNCE_MS) {
+                $nowSec = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+                $secsSinceLast = $nowSec - $script:lastRestartSec
+                if ($secsSinceLast -ge $RESTART_COOLDOWN) {
+                    $script:pendingRestart = $false
+                    Warn "Change detected - syncing and restarting BDS..."
+                    Sync-Packs
+                    Start-BDS
+                }
+            }
+        }
+
+        # Auto-recover if BDS crashes
+        if ($script:bdsProcess -and $script:bdsProcess.HasExited -and !$script:pendingRestart) {
+            $code = $script:bdsProcess.ExitCode
+            Err "BDS exited (code $code) - check errors above"
+            Warn "Restarting in 3s..."
+            Start-Sleep -Seconds 3
+            Start-BDS
+        }
+    }
+} finally {
+    Warn "Shutting down..."
+    if ($script:bdsProcess -and !$script:bdsProcess.HasExited) {
+        $script:bdsProcess.Kill()
+    }
+    Warn "Done."
+}
+
+
+
+

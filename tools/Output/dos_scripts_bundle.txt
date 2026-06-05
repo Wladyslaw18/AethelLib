@@ -1,0 +1,364 @@
+================================================================================ 
+AETHELGRAD ESSENTIALS - DOS TOOLS SCRIPTS BUNDLE 
+Generated on: Wed 05/27/2026  0:30:58.96 
+================================================================================ 
+ 
+================================================================================ 
+SCRIPT: bundle_scripts.bat 
+PATH: tools/dos/bundle_scripts.bat 
+================================================================================ 
+ 
+@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul 2>&1
+
+cls
+echo ==========================================================
+echo            AETHELGRAD SCRIPT BUNDLER (DOS)
+echo ==========================================================
+echo   This script will:
+echo   1. Scan the tools\dos folder for all batch scripts (*.bat).
+echo   2. Read their contents, including this bundler script.
+echo   3. Generate a single clean TXT file containing all code.
+echo ----------------------------------------------------------
+echo   Press [ENTER] to execute bundle creation ^| [Ctrl+C] to cancel
+echo ==========================================================
+pause >nul
+
+set "OUTPUT_DIR=%~dp0..\Output"
+if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
+set "OUTPUT_FILE=%OUTPUT_DIR%\dos_scripts_bundle.txt"
+
+echo [Bundler] Scanning dos directory: %~dp0
+echo [Bundler] Creating bundle...
+
+echo ================================================================================ > "%OUTPUT_FILE%"
+echo AETHELGRAD ESSENTIALS - DOS TOOLS SCRIPTS BUNDLE >> "%OUTPUT_FILE%"
+echo Generated on: %date% %time% >> "%OUTPUT_FILE%"
+echo ================================================================================ >> "%OUTPUT_FILE%"
+echo. >> "%OUTPUT_FILE%"
+
+for %%F in ("%~dp0*.bat") do (
+    echo [Bundler] Processing tools/dos/%%~nxF...
+    
+    echo ================================================================================ >> "%OUTPUT_FILE%"
+    echo SCRIPT: %%~nxF >> "%OUTPUT_FILE%"
+    echo PATH: tools/dos/%%~nxF >> "%OUTPUT_FILE%"
+    echo ================================================================================ >> "%OUTPUT_FILE%"
+    echo. >> "%OUTPUT_FILE%"
+    
+    type "%%F" >> "%OUTPUT_FILE%"
+    echo. >> "%OUTPUT_FILE%"
+    echo. >> "%OUTPUT_FILE%"
+)
+
+echo ==========================================================
+echo   SUCCESS: Bundle created at:
+echo   %OUTPUT_FILE%
+echo ==========================================================
+ 
+ 
+================================================================================ 
+SCRIPT: deploy.bat 
+PATH: tools/dos/deploy.bat 
+================================================================================ 
+ 
+@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul 2>&1
+
+cls
+echo ==========================================================
+echo            AETHELGRAD DUAL-DEPLOYER (DOS)
+echo ==========================================================
+echo   This script will:
+echo   1. Sync Behavior Pack into local BDS development folder.
+echo   2. Sync Resource Pack into local BDS development folder.
+echo ----------------------------------------------------------
+echo   Press [ENTER] to execute deployment ^| [Ctrl+C] to cancel
+echo ==========================================================
+pause >nul
+
+:: Resolve workspace root
+pushd "%~dp0..\.."
+set "PROJECT_ROOT=%CD%"
+popd
+
+set "BP_NAME=Aethelgrad Essentials"
+set "RP_NAME=AethelLib (RP)"
+set "BDS=%PROJECT_ROOT%\BDS"
+set "BP_DEST=%BDS%\development_behavior_packs\%BP_NAME%"
+set "RP_DEST=%BDS%\development_resource_packs\%RP_NAME%"
+
+echo [Aethelgrad] Syncing BP to BDS...
+if exist "%BP_DEST%" rmdir /s /q "%BP_DEST%"
+mkdir "%BP_DEST%"
+
+for %%F in (manifest.json pack_icon.png) do (
+    if exist "%PROJECT_ROOT%\%%F" copy /y "%PROJECT_ROOT%\%%F" "%BP_DEST%\%%F" >nul
+)
+if exist "%PROJECT_ROOT%\scripts" xcopy /e /i /q "%PROJECT_ROOT%\scripts" "%BP_DEST%\scripts" >nul
+if exist "%PROJECT_ROOT%\entities" xcopy /e /i /q "%PROJECT_ROOT%\entities" "%BP_DEST%\entities" >nul
+
+echo [Aethelgrad] Syncing RP to BDS...
+if exist "%RP_DEST%" rmdir /s /q "%RP_DEST%"
+mkdir "%RP_DEST%"
+
+if exist "%PROJECT_ROOT%\%RP_NAME%" (
+    xcopy /e /i /q "%PROJECT_ROOT%\%RP_NAME%" "%RP_DEST%" >nul
+)
+
+echo.
+echo [Aethelgrad] Dual-Sync Complete! Packs deployed.
+echo.
+ 
+ 
+================================================================================ 
+SCRIPT: lint_mojang.bat 
+PATH: tools/dos/lint_mojang.bat 
+================================================================================ 
+ 
+@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul 2>&1
+
+:: Resolve paths (go up two levels from tools\dos\ to workspace root)
+set "SCRIPT_DIR=%~dp0"
+set "TOOLS_DIR=%SCRIPT_DIR%.."
+set "PROJECT_ROOT=%TOOLS_DIR%\.."
+
+:: Normalize the path
+pushd "%PROJECT_ROOT%"
+set "PROJECT_ROOT=%CD%"
+popd
+
+:: Parse parameters
+set "CHANNEL=%~1"
+if "!CHANNEL!"=="" set "CHANNEL=BETA"
+
+set "VERSION=%~2"
+
+:: Launch the PowerShell linter script forwarding parameters
+powershell -NoProfile -ExecutionPolicy Bypass -File "%TOOLS_DIR%\lint_mojang.ps1" -Channel !CHANNEL! -Version "!VERSION!"
+ 
+ 
+================================================================================ 
+SCRIPT: pack.bat 
+PATH: tools/dos/pack.bat 
+================================================================================ 
+ 
+@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul 2>&1
+
+cls
+echo ==========================================================
+echo            AETHELGRAD ADDON PACKAGER (DOS)
+echo ==========================================================
+echo   This script will:
+echo   1. Sync current Behavior and Resource Pack files.
+echo   2. Compile them into a clean .mcaddon archive.
+echo   3. Save AethelLib.mcaddon at the workspace root.
+echo ----------------------------------------------------------
+echo   Press [ENTER] to execute packager ^| [Ctrl+C] to cancel
+echo ==========================================================
+pause >nul
+
+:: Resolve paths (go up two levels from tools\dos\ to workspace root)
+set "SCRIPT_DIR=%~dp0"
+set "TOOLS_DIR=%SCRIPT_DIR%.."
+set "PROJECT_ROOT=%TOOLS_DIR%\.."
+
+:: Normalize the path
+pushd "%PROJECT_ROOT%"
+set "PROJECT_ROOT=%CD%"
+popd
+
+set "BUILD_DIR=%PROJECT_ROOT%\build"
+set "OUT_FILE=%PROJECT_ROOT%\AethelLib.mcaddon"
+
+echo [Packager] Cleaning build workspace...
+if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
+if exist "%OUT_FILE%" del /q "%OUT_FILE%"
+mkdir "%BUILD_DIR%\AethelLib_BP"
+mkdir "%BUILD_DIR%\AethelLib_RP"
+
+echo [Packager] Copying Behavior Pack assets...
+for %%F in (manifest.json pack_icon.png) do (
+    if exist "%PROJECT_ROOT%\%%F" copy /y "%PROJECT_ROOT%\%%F" "%BUILD_DIR%\AethelLib_BP\%%F" >nul
+)
+if exist "%PROJECT_ROOT%\scripts" xcopy /e /i /q "%PROJECT_ROOT%\scripts" "%BUILD_DIR%\AethelLib_BP\scripts" >nul
+if exist "%PROJECT_ROOT%\entities" xcopy /e /i /q "%PROJECT_ROOT%\entities" "%BUILD_DIR%\AethelLib_BP\entities" >nul
+
+echo [Packager] Copying Resource Pack assets...
+if exist "%PROJECT_ROOT%\AethelLib (RP)" xcopy /e /i /q "%PROJECT_ROOT%\AethelLib (RP)" "%BUILD_DIR%\AethelLib_RP" >nul
+
+echo [Packager] Compressing and packaging via PowerShell (standard ZIP, no ZIP64)...
+powershell -ExecutionPolicy Bypass -Command ^
+    "Add-Type -Assembly 'System.IO.Compression.FileSystem';" ^
+    "$b='%BUILD_DIR%';" ^
+    "$r='%PROJECT_ROOT%';" ^
+    "$bp=\"$b\AethelLib_BP.mcpack\";" ^
+    "$rp=\"$b\AethelLib_RP.mcpack\";" ^
+    "[System.IO.Compression.ZipFile]::CreateFromDirectory(\"$b\AethelLib_BP\", $bp, [System.IO.Compression.CompressionLevel]::Optimal, $false);" ^
+    "[System.IO.Compression.ZipFile]::CreateFromDirectory(\"$b\AethelLib_RP\", $rp, [System.IO.Compression.CompressionLevel]::Optimal, $false);" ^
+    "$out=\"$r\AethelLib.mcaddon\";" ^
+    "$fs=[System.IO.File]::Open($out,[System.IO.FileMode]::Create);" ^
+    "$az=[System.IO.Compression.ZipArchive]::new($fs,[System.IO.Compression.ZipArchiveMode]::Create);" ^
+    "foreach($p in @($bp,$rp)){" ^
+    "  $e=$az.CreateEntry([System.IO.Path]::GetFileName($p),[System.IO.Compression.CompressionLevel]::Optimal);" ^
+    "  $es=$e.Open(); $ps=[System.IO.File]::OpenRead($p); $ps.CopyTo($es); $ps.Dispose(); $es.Dispose()};" ^
+    "$az.Dispose(); $fs.Dispose();"
+
+rmdir /s /q "%BUILD_DIR%"
+
+echo.
+echo ==========================================
+echo    BUILD SUCCESSFUL! AethelLib.mcaddon
+echo ==========================================
+echo.
+ 
+ 
+================================================================================ 
+SCRIPT: release.bat 
+PATH: tools/dos/release.bat 
+================================================================================ 
+ 
+@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul 2>&1
+
+cls
+echo ==========================================================
+echo           AETHELGRAD AUTO-RELEASE ENGINE (DOS)
+echo ==========================================================
+echo   This script will:
+echo   1. [Optional] Increment the manifest version.
+echo   2. Compile and build the Behavior ^& Resource Packs.
+echo   3. Save backups and releases directly in your workspace.
+echo ----------------------------------------------------------
+echo   Press [ENTER] to execute release runner ^| [Ctrl+C] to cancel
+echo ==========================================================
+pause >nul
+
+:: Resolve workspace root (two levels up from tools\dos\)
+set "SCRIPT_DIR=%~dp0"
+pushd "%SCRIPT_DIR%..\..\"
+set "PROJECT_ROOT=%CD%"
+popd
+
+set "BUILD_DIR=%PROJECT_ROOT%\build"
+set "BACKUP_DIR=%PROJECT_ROOT%\backups"
+set "RELEASE_DIR=%PROJECT_ROOT%\releases"
+set "MANIFEST=%PROJECT_ROOT%\manifest.json"
+
+if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
+if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
+
+echo ==========================================
+echo      AETHELGRAD AUTO-RELEASE SYSTEM
+echo ==========================================
+
+:: Use PowerShell to handle JSON versioning and packaging
+powershell -ExecutionPolicy Bypass -Command ^
+    "Add-Type -Assembly 'System.IO.Compression.FileSystem';" ^
+    "$root='%PROJECT_ROOT%';" ^
+    "$mPath='%MANIFEST%';" ^
+    "$m=Get-Content $mPath -Raw -Encoding utf8 | ConvertFrom-Json;" ^
+    "$v=$m.header.version;" ^
+    "$ma=[int]$v[0];$mi=[int]$v[1];$p=[int]$v[2];" ^
+    "$current=""$ma.$mi.$p"";" ^
+    "Write-Host '';" ^
+    "Write-Host '----------------------------------------------------------' -ForegroundColor DarkGray;" ^
+    "Write-Host '  Current version: ' -NoNewline -ForegroundColor Gray;" ^
+    "Write-Host $current -ForegroundColor Yellow;" ^
+    "Write-Host '  Bump manifest version? ' -NoNewline -ForegroundColor Gray;" ^
+    "Write-Host '[Y]' -NoNewline -ForegroundColor Green;" ^
+    "Write-Host '/' -NoNewline -ForegroundColor DarkGray;" ^
+    "Write-Host '[n]' -ForegroundColor Red;" ^
+    "Write-Host '----------------------------------------------------------' -ForegroundColor DarkGray;" ^
+    "    $choice='';" ^
+    "    if ($Host -and $Host.UI -and $Host.UI.RawUI -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) {" ^
+    "        while ($Host.UI.RawUI.KeyAvailable) { $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown') };" ^
+    "        $k = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');" ^
+    "        if ($k.VirtualKeyCode -eq 3 -or ($k.VirtualKeyCode -eq 67 -and ($k.ControlKeyState -match 'LeftCtrl|RightCtrl'))) {" ^
+    "            Write-Host ''; Write-Error 'Operation cancelled by user.'; exit 1" ^
+    "        };" ^
+    "        $choice = $k.Character;" ^
+    "        if ([int]$k.Character -eq 13) { $choice = '' };" ^
+    "        if ($choice -ne '') { Write-Host $choice } else { Write-Host '' };" ^
+    "    } else {" ^
+    "        $choice = Read-Host;" ^
+    "    };" ^
+    "if ($choice -eq '' -or $choice -match '^[Yy]') {" ^
+    "  if($p -lt 9){$p++}elseif($mi -lt 9){$p=0;$mi++}else{$p=0;$mi=0;$ma++};" ^
+    "  $new=""$ma.$mi.$p"";" ^
+    "  Write-Host ""[Version] Bumping: $current -> $new"" -ForegroundColor Green;" ^
+    "  $utf8=New-Object System.Text.UTF8Encoding($false);" ^
+    "  $mev=$m.header.min_engine_version -join ', ';" ^
+    "  $cleanJson=""{`n    \`""format_version\`"": $($m.format_version),`n    \`""header\`"": {`n        \`""name\`"": \`""$($m.header.name)\`"",`n        \`""description\`"": \`""$($m.header.description)\`"",`n        \`""uuid\`"": \`""$($m.header.uuid)\`"",`n        \`""version\`"": [$ma, $mi, $p],`n        \`""min_engine_version\`"": [$mev],`n        \`""license\`"": \`""$($m.header.license)\`""`n    },`n    \`""modules\`"": [`n        {`n            \`""description\`"": \`""$($m.modules[0].description)\`"",`n            \`""type\`"": \`""$($m.modules[0].type)\`"",`n            \`""uuid\`"": \`""$($m.modules[0].uuid)\`"",`n            \`""version\`"": [$ma, $mi, $p]`n        },`n        {`n            \`""description\`"": \`""$($m.modules[1].description)\`"",`n            \`""language\`"": \`""$($m.modules[1].language)\`"",`n            \`""type\`"": \`""$($m.modules[1].type)\`"",`n            \`""uuid\`"": \`""$($m.modules[1].uuid)\`"",`n            \`""entry\`"": \`""$($m.modules[1].entry)\`"",`n            \`""version\`"": [$ma, $mi, $p]`n        }`n    ],`n    \`""dependencies\`"": [`n        {`n            \`""module_name\`"": \`""$($m.dependencies[0].module_name)\`"",`n            \`""version\`"": \`""$($m.dependencies[0].version)\`""`n        },`n        {`n            \`""module_name\`"": \`""$($m.dependencies[1].module_name)\`"",`n            \`""version\`"": \`""$($m.dependencies[1].version)\`""`n        }`n    ]`n}"";" ^
+    "  [System.IO.File]::WriteAllText($mPath, $cleanJson, $utf8);" ^
+    "} else {" ^
+    "  $new=$current;" ^
+    "  Write-Host ""[Version] Skipping bump - keeping v$new"" -ForegroundColor Yellow;" ^
+    "};" ^
+    "$b=""$root\build"";" ^
+    "if(Test-Path $b){Remove-Item $b -Recurse -Force};" ^
+    "New-Item ""$b\AethelLib_BP"" -ItemType Directory -Force|Out-Null;" ^
+    "New-Item ""$b\AethelLib_RP"" -ItemType Directory -Force|Out-Null;" ^
+    "Write-Host '[Packager] Copying BP assets...' -ForegroundColor Blue;" ^
+    "foreach($f in @('manifest.json','pack_icon.png','scripts','entities')){" ^
+    "  $s=""$root\$f"";if(Test-Path $s){Copy-Item $s ""$b\AethelLib_BP"" -Recurse -Force}};" ^
+    "Write-Host '[Packager] Copying RP assets...' -ForegroundColor Blue;" ^
+    "$rps=""$root\AethelLib (RP)"";" ^
+    "if(Test-Path $rps){Copy-Item ""$rps\*"" ""$b\AethelLib_RP"" -Recurse -Force};" ^
+    "Write-Host '[Packager] Compressing (standard ZIP, no ZIP64)...' -ForegroundColor Blue;" ^
+    "$bp=""$b\AethelLib_BP.mcpack""; $rp=""$b\AethelLib_RP.mcpack"";" ^
+    "[System.IO.Compression.ZipFile]::CreateFromDirectory(""$b\AethelLib_BP"", $bp, [System.IO.Compression.CompressionLevel]::Optimal, $false);" ^
+    "[System.IO.Compression.ZipFile]::CreateFromDirectory(""$b\AethelLib_RP"", $rp, [System.IO.Compression.CompressionLevel]::Optimal, $false);" ^
+    "$staged=""$b\AethelLib_staged.mcaddon"";" ^
+    "$fs=[System.IO.File]::Open($staged,[System.IO.FileMode]::Create);" ^
+    "$az=[System.IO.Compression.ZipArchive]::new($fs,[System.IO.Compression.ZipArchiveMode]::Create);" ^
+    "foreach($pk in @($bp,$rp)){" ^
+    "  $e=$az.CreateEntry([System.IO.Path]::GetFileName($pk),[System.IO.Compression.CompressionLevel]::Optimal);" ^
+    "  $es=$e.Open();$ps=[System.IO.File]::OpenRead($pk);$ps.CopyTo($es);$ps.Dispose();$es.Dispose()};" ^
+    "$az.Dispose();$fs.Dispose();" ^
+    "$rel=""$root\releases\AethelLib_v$new.mcaddon"";" ^
+    "$bak=""$root\backups\AethelLib_backup_v$new.mcaddon"";" ^
+    "$dev=""$root\AethelLib.mcaddon"";" ^
+    "Copy-Item $staged $rel -Force;" ^
+    "Copy-Item $staged $bak -Force;" ^
+    "Copy-Item $staged $dev -Force;" ^
+    "Remove-Item $b -Recurse -Force;" ^
+    "Write-Host '';" ^
+    "Write-Host '==========================================' -ForegroundColor Green;" ^
+    "Write-Host ""   RELEASE BUILD v$new SUCCESSFUL!"" -ForegroundColor Green;" ^
+    "Write-Host '==========================================' -ForegroundColor Green;"
+
+
+echo.
+ 
+ 
+================================================================================ 
+SCRIPT: watch.bat 
+PATH: tools/dos/watch.bat 
+================================================================================ 
+ 
+@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul 2>&1
+
+:: Resolve paths (go up two levels from tools\dos\ to workspace root)
+set "SCRIPT_DIR=%~dp0"
+set "TOOLS_DIR=%SCRIPT_DIR%.."
+set "PROJECT_ROOT=%TOOLS_DIR%\.."
+
+:: Normalize the path
+pushd "%PROJECT_ROOT%"
+set "PROJECT_ROOT=%CD%"
+popd
+
+:: Launch the PowerShell watcher script
+powershell -NoProfile -ExecutionPolicy Bypass -File "%TOOLS_DIR%\watch.ps1"
+ 
+ 
