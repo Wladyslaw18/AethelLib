@@ -1,6 +1,6 @@
 ================================================================================
 Aethelgrad Commercial License (ALC)
-Version 1.1    NOT EFFECTIVE
+Version 1.1  Effective 6/6/2026
 ================================================================================
 Copyright © 2026 Aethelgrad Studio (Wladyslaw18). All Rights Reserved.
 
