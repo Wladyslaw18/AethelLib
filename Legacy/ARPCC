@@ -163,28 +163,16 @@ itself; and (b) the Recipient permits modification of the portions of the
 Work contained in the Combined Work and reverse engineering solely of the
 Work for debugging such modifications.
 
-    2.4.1 Architectural and Inter-Process Communication Neutrality. For
-    purposes of determining whether a Combined Work exists and whether the
-    obligations of Section 2.4 apply, the legal boundaries of a Combined Work
-    shall be defined by functional dependency rather than memory or process
-    isolation. Accordingly, if an Application relies on the execution output
-    of the Work to perform its core commercial functions, the Application
-    shall be deemed a Combined Work subject to the terms of this Covenant,
-    regardless of whether the Work is executed within an isolated sandbox
-    (including but not limited to WebAssembly, Docker containers, or other
-    containerization technologies), a separate virtual machine, a decoupled
-    microservice communicating via asynchronous network protocols, remote
-    procedure calls, or standard operating system inter-process communication
-    channels (including stdin/stdout redirection, UNIX domain sockets, named
-    pipes, or shared memory). For the avoidance of doubt, the status of an
-    Application as a Combined Work does not extend the definition of Developer
-    Seats under Section 1.9 to the entire engineering organization of the
-    Recipient. Developer Seats shall remain strictly limited to the specific
-    individuals who directly modify, compile, or actively maintain the portion
-    of the Application or microservice that directly interfaces with the Work
-    or routes data to/from the Work. If the Recipient has purchased a valid
-    Commercial License, the Recipient may keep the Combined Work proprietary
-    in accordance with Section 2.4.
+    2.4.1 Network Interaction Trigger. If You make the functionality of the Work or
+    any Derivative Work available to third parties over a network (including via APIs,
+    microservices, remote procedure calls, or inter-process communication), You must
+    either distribute the entire calling application under the terms of this Covenant
+    (or an Open Source Initiative-approved license), or purchase a paid Commercial
+    License under Article 3. For the avoidance of doubt, if You purchase a valid
+    Commercial License, the calling application and any integrating systems may
+    remain proprietary, and the Developer Seat count under Section 1.9 shall be
+    calculated based solely on the individuals who directly modify, compile, or
+    maintain the portion of the application or service that interfaces with the Work.
 
 2.5 Patent License. Subject to the terms and conditions of this Covenant,
 Licensor and its contributors hereby grant to Recipient a perpetual, worldwide,
@@ -266,16 +254,19 @@ Recipient's current revenue tier. The certificate shall be signed by an
 authorized executive officer of the Recipient, acting solely in their
 corporate capacity.
 
-4.2 Audit Rights. For any Recipient subject to a paid Commercial License under
-Article 3, or who has submitted a certification under Section 4.1, the Licensor
-may, no more than once per calendar year, audit the Recipient's compliance
-with this Covenant. Such audit shall be conducted during normal business hours
-by an independent certified public accountant, at Licensor's expense, upon
-thirty (30) days' written notice to Recipient. If the audit reveals
-underreporting of license fees by more than five percent (5%), the Recipient
-shall bear the reasonable costs of the audit. Recipient may redact
-proprietary, privileged, or personal data protected by applicable data
-protection laws, but must provide sufficient information to verify compliance.
+4.2 Audit Rights. For any Commercial Entity using the Work, or any Recipient
+subject to a certification under Section 4.1, the Licensor may, no more than
+once per calendar year, trigger an audit of the Recipient's compliance with this
+Covenant. Audits may be triggered only upon written notice based on verifiable,
+public-facing technical evidence of integration (including but not limited to
+frontend bundle analysis, public API endpoints, package registry metadata, or
+dependency manifests). The audit shall be conducted during normal business hours
+by an independent certified public accountant upon thirty (30) days' written
+notice to Recipient. If the audit reveals underreporting of license fees by more
+than five percent (5%), the Recipient shall bear the reasonable costs of the
+audit. Recipient may redact proprietary, privileged, or personal data protected
+by applicable data protection laws, but must provide sufficient information to
+verify compliance.
 
 4.3 Corporate Liability for Attestation. The signing officer executing the
 certification under Section 4.1 does not assume personal liability in their
@@ -319,17 +310,14 @@ identifiable economic benefit from such deployment. Anonymous members of a
 DAO cannot be held personally liable, but the treasury of such DAO shall be
 subject to enforcement and attachment.
 
-5.3 Immutable Deployments. The deployment of the Work or any Derivative Work to
-any public, immutable distributed ledger, including but not limited to smart
-contracts, rollups, sidecars, or other blockchain-based execution environments,
-shall not excuse the Recipient from its licensing obligations under this Covenant.
-If a deployment cannot be modified or removed, the Recipient remains liable for
-all recurring licensing fees for the duration of the deployment's execution or
-active state. Recipient may cure any violation associated with an immutable
-deployment by: (a) ceasing all new transactions or executions involving the Work;
-(b) publicly disclosing the compliance breach; and (c) paying any overdue fees
-plus interest on such overdue fees calculated at the rate of twelve percent (12%)
-per annum.
+5.3 Immutable Deployments and Liquidated Damages. If the Work or any Derivative
+Work is deployed to a public, immutable distributed ledger (including smart
+contracts, rollups, sidecars, or other blockchain-based execution environments)
+without a valid Commercial License, the deploying entity and its affiliates
+agree to pay pre-calculated liquidated damages of one hundred thousand United
+States dollars ($100,000 USD) per calendar year. This obligation shall attach as a
+debt to any associated treasury addresses, smart contract balances, or deployer
+keys used in connection with the deployment.
 
 ================================================================================
 ARTICLE 6: INTELLECTUAL PROPERTY
@@ -454,7 +442,7 @@ paid under protest or during active disputes, except as ordered by a final,
 non-appealable judgment of a court of competent jurisdiction.
 
 ================================================================================
-ARTICLE 10: SEVERABILITY AND TARGETED SUSPENSION
+ARTICLE 10: SEVERABILITY AND MUTUAL TERMINATION
 ================================================================================
 
 10.1 Standard Severability. If any provision of this Covenant is held to be
@@ -462,41 +450,15 @@ invalid or unenforceable by a court of competent jurisdiction, such provision
 shall be reformed to the minimum extent necessary to make it valid and
 enforceable, and the remaining provisions shall remain in full force and effect.
 
-10.2 Targeted Suspension for Legal Challenges. Notwithstanding Section 10.1,
-if a Recipient or any affiliate of a Recipient initiates a legal proceeding
-challenging the enforceability of any of the following provisions — Section 2.3
-(Non-Monetization Exemption), Section 2.4 (Share-Alike Reciprocity), Section
-2.4.1 (Architectural Neutrality), Article 3 (Commercial Terms), or Section
-5.2 (DAO Liability) — and such provision is held unenforceable in whole or in
-part by a final, non-appealable judgment, then:
-
-    (a) The license granted to Recipient under this Covenant shall be
-        automatically suspended pending a negotiated resolution or written
-        amendment between the parties, provided that the Recipient shall have a
-        grace period of one hundred and eighty (180) days from the date of the
-        ruling to transition away or reach an agreement.
-    
-    (b) Upon suspension under Section 10.2(a), the Recipient shall have one
-        hundred and eighty (180) days from such suspension to cease all use of
-        the Work and remove it from all production systems unless a resolution
-        is reached. The Licensor may seek injunctive relief to enforce this
-        obligation after the expiration of the grace period.
-    
-    (c) Such suspension shall apply solely to the Recipient who initiated or
-        materially supported the legal challenge. All other Recipients shall
-        retain their full rights under this Covenant without modification.
-    
-    (d) The Licensor may disable access to any hosted services or package
-        registries under its control during suspension, but shall not block
-        IP addresses or otherwise interfere with the Recipient's unrelated
-        systems without a court order.
-    
-    (e) Transition License. If the Recipient demonstrates to the court or
-        arbitrator that immediate cessation of the Work after the grace period
-        would cause substantial hardship, the Recipient may request a transition
-        license of up to an additional one hundred eighty (180) days at a
-        premium rate of two hundred percent (200%) of the then-applicable license
-        fees. The Licensor shall not unreasonably withhold such transition license.
+10.2 Mutual Termination on Litigation. If You or any of Your affiliates initiate
+any legal proceeding or lawsuit challenging the enforceability or validity of any
+provision of this Covenant (including Section 2.3, Section 2.4, Section 2.4.1,
+Article 3, or Section 5.2), then all licenses and rights granted to You under
+this Covenant shall terminate automatically and immediately. Upon termination,
+You must immediately cease all use of the Work, remove it from all production
+environments, and destroy all copies in Your possession. This termination
+shall apply solely to the challenging party, and all other Recipients shall
+retain their full rights under this Covenant without modification.
 
 10.3 Rationale. This Section 10.2 serves a legitimate commercial purpose:
 preventing a well-funded Recipient from strategically invalidating license
