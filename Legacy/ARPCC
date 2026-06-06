@@ -1,6 +1,6 @@
 ================================================================================
 Aethelgrad Reciprocal Public Code Covenant (ARPCC) TEST
-Version 2.6
+Version 3.1
 Effective Date: June 11, 2026
 Copyright (C) 2026 Aethelgrad Studio. All Rights Reserved.
 
@@ -116,7 +116,7 @@ If You or Your affiliates initiate patent litigation against the Licensor allegi
 2.5 High-Revenue Attribution. Any commercial product or service generating over 
 $500,000 USD in Annual Revenue that incorporates the Work must include a clear, 
 legible attribution notice in its public documentation or user-accessible credits, 
-stating: "This product incorporates code licensed under the ARPCC v2.6 license."
+stating: "This product incorporates code licensed under the ARPCC v3.1 license."
 
 2.6 Reciprocal Commercial Maintenance Allocations. Commercial Entities must purchase a commercial license in accordance with their tier. The commercial licensing tiers and fee structures are as follows:
     (a) Small Teams: Any Commercial Entity with Annual Revenue under $2,000,000 USD and fewer than ten (10) Developer Seats shall pay a flat rate of $399 USD per year.
@@ -128,36 +128,24 @@ stating: "This product incorporates code licensed under the ARPCC v2.6 license."
     
     2.6.1 Serverless Consumption Tariff. For serverless or cloud function execution, seat tracking may be substituted for a consumption tariff of $50.00 USD per 1,000,000 monthly invocations. An "invocation" means each distinct execution of a serverless function containing the Work that runs to completion or timeout, excluding: (a) health check requests designated by a configurable header; (b) failed invocations lasting less than 100ms; and (c) test invocations clearly identified via environment variable. Invocations are aggregated monthly across all functions, regions, and cloud providers.
     
-    2.6.2 Retroactive Compliance and Voluntary Disclosure. If a Recipient voluntarily 
-    discloses their non-compliant commercial use prior to receiving a notice of breach 
-    (a "Voluntary Self-Audit"), the Licensor shall grant a retroactive license in 
-    exchange for a mitigated compliance surcharge equal to 120% of the standard license 
-    fees. Uncured breaches discovered by the Licensor shall trigger the standard 
-    remediation rates under Section 2.7.
-    
-    2.6.4 Custom Enterprise Licensing Protocols. The Licensor encourages Mega Tier 
+    2.6.2 Custom Enterprise Licensing Protocols. The Licensor encourages Mega Tier 
     Recipients (over $1B USD in Annual Revenue) to negotiate custom, multi-year, or 
     fixed-term licenses.
-        - 2.6.4.1 Default Position. The baseline rate for a custom Mega Tier license 
+        - 2.6.2.1 Default Position. The baseline rate for a custom Mega Tier license 
           is $250,000 USD per year, auto-renewing, with annual increases tied to the 
           greater of CPI or five percent (5%). Auto-renewal terms require the Licensor to provide written notice of renewal no less than sixty (60) days before the renewal date. Recipients may opt out of auto-renewal by written notice within thirty (30) days of receiving renewal terms. For Recipients in the European Union, auto-renewal provisions comply with applicable consumer protection directives and may be void if they create an unfair burden.
-        - 2.6.4.2 Negotiation Protocols. All custom enterprise negotiations shall remain 
+        - 2.6.2.2 Negotiation Protocols. All custom enterprise negotiations shall remain 
           confidential. The Licensor reserves the right to request non-monetary concessions, 
           including but not limited to: logo placement, written testimonials, or public 
           contributions to the Work. Custom terms may be finalized via mutual written agreement.
 
-2.7 Liquidated Damages and CPA Audits.
-    2.7.1 Reasonable Liquidated Damages. The parties agree that actual damages from unlicensed commercial use are difficult to calculate with precision. Accordingly, in the event of unlicensed commercial exploitation of the Work, liquidated damages shall be calculated as follows:
-        (a) Base Damages: 150% of the applicable annual license fees for the period of unauthorized use, prorated monthly.
-        (b) Willful Violation Multiplier: If the Recipient continues unauthorized commercial use for more than thirty (30) calendar days after receiving written notice of breach (via electronic mail or physical delivery to the technical, administrative, or registration contact listed on the Recipient's public website, corporate registry, or WHOIS record), the liquidated damages rate shall increase to 200% of the applicable annual license fees.
-        (c) Cap for Good Faith Errors: If the Recipient demonstrates by a preponderance of the evidence that the violation resulted solely from a good faith administrative or calculation error (such as an inadvertent misclassification of revenue tier), the damages shall be capped at 100% of the unpaid fees plus interest accruing at a rate of five percent (5%) per annum.
-        (d) Proportionality Acknowledgment: In any jurisdiction applying consumer protection or unfair contract terms directives, the parties explicitly agree that a multiplier of 150% to 200% of standard commercial fees constitutes a genuine, reasonable pre-estimate of the Licensor's actual damages, administrative enforcement costs, and project economic disruption, and is not a penalty.
-    2.7.2 Unified Compliance Certification and Audit.
+2.7 Compliance Certification and Audit.
+    2.7.1 Unified Compliance Certification and Audit.
         (a) Annual Certification: Within ninety (90) days of each anniversary of first access, each Commercial Entity shall deliver a signed certificate certifying: (i) the maximum Developer Seat count; (ii) serverless invocations; and (iii) AI training usage. The certificate must be signed by an authorized executive officer (CEO, CFO, or General Counsel) on behalf of the Commercial Entity.
         (b) Audit Rights: The Licensor may trigger an independent CPA audit under this section upon (i) reasonable suspicion generated by public engineering logs, job descriptions, or telemetry metrics, or (ii) an automatic random audit protocol applicable to any Commercial Entity whose Annual Revenue exceeds $10,000,000 USD, limited to once per calendar year. If the audit reveals underreporting exceeding five percent (5%), the Recipient shall bear the reasonable costs of the audit. The Recipient may redact proprietary, privileged, or GDPR-protected personal data.
-        (c) Entity Liability for Non-Compliance: If the Commercial Entity submits a false or materially inaccurate certification, it shall be liable for all unpaid fees, liquidated damages, and the Licensor's enforcement costs. The submission of a compliance certification that underreports usage metrics, revenue tiers, or seat counts by more than ten percent (10%) of the actual qualifying metrics or fees shall create a rebuttable presumption of intentional misrepresentation by the Recipient.
+        (c) Entity Liability for Non-Compliance: If the Commercial Entity submits a false or materially inaccurate certification, it shall be liable for all unpaid fees, damages under Section 4.4, and the Licensor's enforcement costs. The submission of a compliance certification that underreports usage metrics, revenue tiers, or seat counts by more than ten percent (10%) of the actual qualifying metrics or fees shall create a rebuttable presumption of intentional misrepresentation by the Recipient.
         (d) Personal Liability Limitation: The signing officer (CEO, CFO, or General Counsel) who executes the compliance certification on behalf of the Commercial Entity does not assume personal liability, personal joinder, or personal guarantee for the Commercial Entity's compliance under this Covenant in the ordinary course of business. Personal liability or joinder shall only attach to the signing officer in their individual capacity if the Licensor proves by clear and convincing evidence that: (i) the certification was false; (ii) the officer had actual knowledge of the material falsity at the time of signing; (iii) the officer acted with the specific intent to defraud the Licensor; and (iv) such fraud constituted willful corporate concealment, such as deliberately hiding commercial usage of the Work for a period of two (2) or more years.
-    2.7.3 Liability Caps for Small Violators. Total damages are capped at $10,000 USD for entities with revenue under $500,000 USD, and $500 USD for individuals with revenue under $10,000 USD.
+    2.7.2 Liability Caps for Small Violators. Total damages are capped at $10,000 USD for entities with revenue under $500,000 USD, and $500 USD for individuals with revenue under $10,000 USD.
 
 2.8 Covenants Regarding Decoupled and Immutable Environments.
     2.8.1 Decoupled Environments. The architectural or runtime environment of deployment—including immutable ledgers, distributed systems, and decentralized networks—shall not diminish liability.
@@ -209,6 +197,27 @@ ARTICLE 4: GOVERNING LAW AND JURISDICTION
 
 4.3 Statute of Limitations. Any claim arising under this Covenant must be brought within two (2) years of discovery of the violation, or four (4) years from the actual occurrence of the violation, whichever is earlier. Notwithstanding the foregoing, if applicable law provides a longer statute of limitations that cannot be contractually shortened, the longer statutory period shall apply. This section is intended to establish a default limitation period where contractually permitted by law, and not to override non-waivable statutory protections.
 
+4.4 Damages for Unauthorized Use.
+If Recipient uses the Work in violation of this Agreement, Licensor may
+recover:
+   (a) The unpaid license fees that would have been owed for the entire
+       period of unauthorized use, calculated at the then-current rates
+       for Recipient's actual revenue tier and Developer Seat count.
+   (b) Licensor's reasonable costs incurred in detecting and addressing
+       such unauthorized use, including audit costs and legal fees.
+   (c) Prejudgment interest at the rate of eight percent (8%) per annum
+       or SOFR plus five percent (5%).
+Nothing in this Section prevents Licensor from seeking injunctive relief
+or specific performance. The parties agree that this Section provides a
+reasonable measure of damages given the difficulty of calculating actual
+harm from unauthorized use of the Work.
+
+4.5 No Penalties.
+Nothing in this Agreement is intended to create, nor shall be construed
+as creating, a penalty. All remedies provided herein are compensatory
+in nature and are reasonable estimates of the harm that would result
+from unauthorized use, given the difficulty of precise calculation.
+
 
 ARTICLE 5: COMPLIANCE TELEMETRY
 
@@ -244,13 +253,31 @@ unenforceable, such provision shall be reformed to the minimum extent necessary 
 make it valid and enforceable, and the remaining provisions shall remain in full 
 force and effect.
     7.1.1 Conditional Non-Severability with Termination:
-        (a) The following provisions are NON-SEVERABLE: 2.2(b), 2.3, 2.3.1, 2.6, 2.7.1, 3.3, and 4.2.
+        (a) The following provisions are NON-SEVERABLE: 2.2(b), 2.3, 2.3.1, 2.6, 3.3, 4.2, and 4.4.
         (b) If a final, non-appealable judgment holds any of the foregoing provisions unenforceable in a material respect, this Covenant automatically terminates as to that Recipient one hundred and eighty (180) days after such ruling.
         (c) Upon termination, all rights to use, execute, or distribute the Work cease. The Recipient shall immediately remove the Work from all production systems. The Licensor may seek injunctive relief to enforce this obligation, and the Recipient consents to expedited proceedings.
         (d) The Licensor may disable access to any hosted services or package registries under its control, but shall not block IP addresses or otherwise interfere with the Recipient's unrelated systems without a court order.
         (e) Transition License: If the Recipient demonstrates to the court or arbitrator that immediate cessation of the Work would cause substantial hardship, the Recipient may request a transition license of up to an additional one hundred eighty (180) days at a premium rate of 200% of the then-applicable license fees. The Licensor shall not unreasonably withhold such transition license.
 
-7.2 Entire Agreement. This Covenant constitutes the entire agreement between the 
+7.2 Termination for Legal Challenge.
+Notwithstanding anything to the contrary in this Agreement, if Recipient
+or any Affiliate initiates any legal proceeding challenging the validity,
+enforceability, or scope of any provision of this Agreement (a "Challenge"),
+then:
+   (a) All rights granted to Recipient under this Agreement shall terminate
+       automatically and immediately upon service of such Challenge.
+   (b) Recipient shall have ninety (90) days from such termination to cease
+       all use of the Work and remove it from all production systems.
+   (c) Termination under this Section 7.2 applies solely to the Recipient
+       bringing such Challenge. This Agreement remains in full force and
+       effect for all other Recipients.
+   (d) Recipient may request a transition license at standard rates for
+       an additional ninety (90) days, which Licensor may grant in its
+       sole discretion.
+This provision is a material term of this Agreement and is consistent with
+standard commercial licensing practices.
+
+7.3 Entire Agreement. This Covenant constitutes the entire agreement between the 
 parties concerning the subject matter hereof and supersedes all prior understandings, 
 negotiations, or agreements, whether written or oral.
 
