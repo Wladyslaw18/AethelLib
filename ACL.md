@@ -2,17 +2,19 @@
 Aethelgrad Commercial License (ALC)
 Version 1.1  Effective 6/6/2026
 ================================================================================
-Copyright © 2026 Aethelgrad Studio (Wladyslaw18). All Rights Reserved.
-
-Everyone is permitted to copy and distribute verbatim copies of this license
-document, but changing it is not allowed.
+Copyright © 2026 Aethelgrad Studio. All Rights Reserved.
 ================================================================================
 
-IMPORTANT NOTICE
+IMPORTANT NOTICE & MANIFESTATION OF ASSENT
 This license is designed to be generous for non-commercial, academic, hobby, 
 and open-source use. However, **Article 7 contains commercial enforcement terms**. 
-By continuing to use the Work after the 40-day trial period as a Commercial 
-Entity, you agree to be bound by all terms in Article 7.
+By downloading, installing, compiling, executing, modifying, contributing to, 
+linking, or otherwise using the Work (including as a dependency, part of a Minecraft 
+add-on, mod, pack, server, or development environment) even once, you manifest 
+your assent to this License and agree to be bound by all of its terms, including 
+Article 7 if you are a Commercial Entity. If you do not agree to these terms, 
+you have no right to use the Work, and you must immediately cease all use and 
+delete all copies of the Work.
 
 ================================================================================
 PREAMBLE – WHY THIS LICENSE EXISTS
@@ -23,12 +25,12 @@ and researcher should be able to study, modify, run, and share code without
 unnecessary barriers. Open source thrives when we give back to the commons.
 
 This license begins with strong freedoms inspired by the GNU Lesser General 
-Public License (LGPL). You may use AethelLib freely for personal projects, 
+Public License (LGPL). You may use the Work freely for personal projects, 
 academic research, non-profit work, and open-source software. 
 
 We only ask for reciprocity: if our work helps you build something commercially 
 valuable, please support its continued maintenance through a fair commercial 
-license. This balance keeps AethelLib alive and free for those who cannot pay.
+license. This balance keeps the Work alive and free for those who cannot pay.
 
 ================================================================================
 ARTICLE 1 – BASIC FREEDOMS (FOR EVERYONE)
@@ -50,7 +52,7 @@ ARTICLE 1 – BASIC FREEDOMS (FOR EVERYONE)
 ARTICLE 2 – DEFINITIONS
 ================================================================================
 
-2.1 "Work" means AethelLib source code, object code, documentation, and 
+2.1 "Work" means the software source code, object code, documentation, and 
     associated materials.
 
 2.2 "Commercial Entity" means any person or organization with:
@@ -60,9 +62,13 @@ ARTICLE 2 – DEFINITIONS
     (d) government or non-profit operating budget exceeding $10,000,000 USD.
 
 2.3 "Licensee" includes the direct user and any parent, subsidiary, affiliate, 
-    or entity under common control (>50% ownership). It also includes any entity 
-    that uses, accesses, or receives **outputs, API responses, data structures, 
-    or generated behavior** from the Work.
+    or entity under common control (>50% ownership).
+    (a) For the avoidance of doubt, the term "Licensee" does NOT include end-users, 
+        players, or clients of a service, application, or game server (e.g., Minecraft 
+        players connecting to a server running the Work) who merely interact with or 
+        receive generated behavior, data structures, or outputs of the Work through 
+        standard gameplay or client-side interaction, provided they do not host, 
+        deploy, modify, compile, or distribute the Work themselves.
 
 2.4 "Developer Seat" means any individual (employee, contractor, or agent) who 
     directly modifies, compiles, or actively maintains code integrating the Work. 
@@ -82,9 +88,9 @@ ARTICLE 3 – MODIFICATION AND DISTRIBUTION
 ================================================================================
 
 3.1 You may modify the Work and distribute your modifications, provided you:
-    - Change the name and remove Aethelgrad branding to avoid confusion
+    - Change the name and remove the Licensor's branding to avoid confusion
     - Clearly document your changes
-    - License your modifications under this ALCL
+    - License your modifications under this License
 
 3.2 You may distribute Combined Works under your own terms (including 
     proprietary), as long as the core Work and its modifications remain under 
@@ -148,26 +154,20 @@ within 30 days allows court-ordered production at Licensee’s expense.
 - Unauthorized commercial use: **150%** of owed fees for the entire period of use (prorated monthly).
 - Willful violation after written notice and failure to cure within 30 days: **200%**.
 
-7.7 **AI Training**
-Commercial training of any LLM or code-generation model on the Work (source, 
-structure, **or outputs**) requires a separate AI Training License 
-($150,000 USD per year).
+7.7 **Anti-Cloning & Reverse-Engineering Covenant**
+Licensee acknowledges that the Work contains proprietary architecture, data structures, and logic. As a material condition of this license, Licensee agrees not to, and shall not permit any third party to:
+(a) reverse-engineer, decompile, or disassemble the Work, or
+(b) use knowledge of the Work's internal structures, proprietary APIs, or undocumented behavior obtained via access to the Work to create, develop, or distribute a competing or functionally compatible drop-in replacement software program (including clean-room re-implementations intended to bypass the commercial terms of this License).
+Any software developed in breach of this covenant shall be contractually treated as a breach of this License, and Licensor reserves all rights to seek injunctive relief and liquidated damages under Section 7.6.
 
-7.8 **Anti-Cloning Protection**
-Any software re-implemented based on knowledge of the Work’s APIs, logic, 
-architecture, or behavior (including from memory, pseudocode, or intermediary 
-documents) is considered a Derivative Work subject to this license.
-
-7.9 **Assignment**
+7.8 **Assignment**
 This license is personal to the Licensee. Any assignment, merger, or change of 
 control without Licensor’s written consent voids the commercial license.
 
-7.10 **Jurisdiction**
-Exclusive jurisdiction in the courts of **Warsaw, Poland**. The Licensor may, 
-at its sole discretion, bring action in Delaware, USA. Prevailing party recovers 
-reasonable attorneys’ fees.
+7.9 **Governing Law & Jurisdiction**
+This License shall be governed by, interpreted, and enforced in accordance with the laws of the country, state, or province of the Licensor’s primary place of business or residence, without regard to its conflict of law provisions. Any legal action, suit, or proceeding arising under or relating to this License shall be brought exclusively in the competent courts located in the Licensor’s primary jurisdiction. Notwithstanding the foregoing, the Licensor reserves the right to bring enforcement proceedings or seek injunctive relief in any court of competent jurisdiction where the Licensee is incorporated, resides, conducts business, or holds assets. The prevailing party in any action to enforce this License shall be entitled to recover its reasonable attorneys' fees and legal costs.
 
-7.11 **Termination**
+7.10 **Termination**
 Non-payment after 14 days’ notice terminates commercial rights. Licensee must 
 then either:
 (a) remove all copies from production systems, or
@@ -183,8 +183,10 @@ unreasonably withhold such transition period.
 END OF LICENSE
 ================================================================================
 
-By using AethelLib, you acknowledge that you have read, understood, and agree 
-to be bound by this license — including Article 7 if you are a Commercial Entity.
+By downloading, installing, integrating, or otherwise using the Work (including 
+working on it, modifying it, or running it in a game server or addon), you 
+acknowledge that you have read, understood, and agree to be bound by this license 
+— including Article 7 if you are a Commercial Entity.
 
 For non-commercial and open-source use — thank you for being part of the 
 community. Enjoy the freedom!
