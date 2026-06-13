@@ -33,7 +33,7 @@ Scenario 3: "fork AethelLib and sell the whole thing" → NOPE. Need ACL. Read A
 
 Scenario 4: "running servers with custom mods commercially" → ACL required after 40 days. Read ACL.md.
 
-Scenario 5: Filthy Rich Crop? → Custom agreement. Email us.
+Scenario 5: Filthy Rich Corp? → Custom agreement. Email us.
  THE ACTUAL RULES (READ THIS IT'S IMPORTANT)
  THE BIG ONE 
 
