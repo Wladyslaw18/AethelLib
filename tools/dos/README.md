@@ -131,7 +131,7 @@ tools\dos\deploy.bat
 
 ---
 
-## ꧁ ⚜ ꧂ SPECIAL ROAST: THE ARCHITECT HIMSELF
+## ꧁ ⚜&#xFE0E; ꧂ SPECIAL ROAST: THE ARCHITECT HIMSELF
 
 ### WladyslawKW — Władysław
 #### *Architect / CEO / Supreme Leader / Grand Marshal of the Kernel / Landlord / Debt Collector / Director of Boredom-Driven Engineering / Minister of JavaScript That Has No Business Existing / Minister of Unnecessary Cache Systems / Head of the Bureau of Atomic Transactions / Official Oxygen Supplier (subscription required) / Supreme Leader of a Server With No Players / Glorious Founder of a Framework Nobody Asked For / The Guy Who Removed Beds Because Immersion / Please Send Help / Also Coffee / Both*
