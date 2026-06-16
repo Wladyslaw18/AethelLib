@@ -221,21 +221,3 @@ You are built different.
 We salute you. 🫡
 
 ---
-
-## ✦ HEADLESS COMMAND TESTING
-
-The testing framework allows console-driven command verification.
-
-### 1. Headless Commands
-Commands are dispatched using `/scriptevent ae:test_cmd`.
-
-*   **List Warps**: `scriptevent ae:test_cmd listwarp`
-*   **Set Warp**: `scriptevent ae:test_cmd setwarp <name>`
-*   **Teleport to Warp**: `scriptevent ae:test_cmd warp <name>`
-*   **Delete Warp**: `scriptevent ae:test_cmd delwarp <name>`
-*   **Calculator**: `scriptevent ae:test_cmd calc <expression>`
-
-### 2. Design Principles
-*   **Input Pipe**: Stdin input is forwarded to the bedrock server using standard streams.
-*   **Impostor Entity**: The server executes the logic against a virtual client object with full permissions.
-*   **Trace Extraction**: Script errors print stack lines to console output.
