@@ -2,11 +2,11 @@
     "format_version":  2,
     "header":  {
                    "name":  "§6Aethel§fLib",
-                   "description":  "§7AethelEssentials BETA OP!\n§c[REQUIRED] ENABLE BETA API!",
+                   "description":  "§7AethelLib BETA OP!\n§c[REQUIRED] ENABLE BETA API!",
                    "uuid":  "c0953459-e159-42b6-9090-08b4825db606",
                    "version":  [1, 0, 8],
                    "min_engine_version":  [1, 26, 20],
-                   "license":  "GNU Lesser General Public License v3"
+                       "license":  "AGPL"
                },
     "modules":  [
                     {
