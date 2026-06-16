@@ -7,7 +7,7 @@ import { UIUtils } from "../UIUtils.js"
  */
 
 export async function showPlayersUI(player) {
-    const players = [...world.getAllPlayers()]
+    const players = [...Kernel.world.getAllPlayers()]
     const form = new Kernel.ActionFormData()
         .title(Lang.UI.PLAYERS_TITLE)
         .body(Lang.format(Lang.UI.PLAYERS_BODY, { count: players.length }))

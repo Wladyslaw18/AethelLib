@@ -1,5 +1,3 @@
-import { ItemStack } from "@minecraft/server";
-
 export const MoreCommand = {
     name: "more",
     description: "Maximize the stack of the item in your hand",

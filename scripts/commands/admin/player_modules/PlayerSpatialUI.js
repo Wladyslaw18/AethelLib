@@ -3,7 +3,8 @@ import { UIUtils } from "../../../ui/UIUtils.js"
 
 export async function showHomeListUI(player, target, backCallback) {
     const HomeStore = Kernel.get("homeStore")
-    const homes = HomeStore ? HomeStore.getHomes(target) : []
+    const homesObj = HomeStore ? await HomeStore.getHomes(target) : {}
+    const homes = Object.entries(homesObj).map(([name, data]) => ({ name, ...data }))
 
     if (homes.length === 0) {
         player.sendMessage(`\u00A7c\u00A7l» \u00A7e${target.name} \u00A77has no homes.`)
@@ -12,7 +13,7 @@ export async function showHomeListUI(player, target, backCallback) {
 
     const form = new Kernel.ActionFormData()
         .title(`\u00A7e\u00A7lHomes: ${target.name}`)
-        .body(`Total Assets: ${homes.length}`)
+        .body(`Total Waypoints: ${homes.length}`)
 
     homes.forEach(h => {
         form.button(`\u00A7e${h.name}\n\u00A77${Math.floor(h.x)}, ${Math.floor(h.y)}, ${Math.floor(h.z)}`)

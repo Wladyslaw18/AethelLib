@@ -7,6 +7,8 @@ import { Kernel } from "../../core/Kernel.js";
 import { BanknoteStore } from "./BanknoteStore.js"
 import { EconomyStore } from "../economy/EconomyStore.js"
 
+const redeemCooldowns = new Map();
+
 export class BanknoteHandler {
     static init() {
         // Handle item use (right-click)
@@ -18,6 +20,9 @@ export class BanknoteHandler {
             
             // Prevent default behavior
             event.cancel = true
+
+            if (redeemCooldowns.has(player.id) && Date.now() - redeemCooldowns.get(player.id) < 1000) return;
+            redeemCooldowns.set(player.id, Date.now());
             
             // Handle redemption
             this.handleRedemption(player, item)
@@ -180,7 +185,8 @@ export class BanknoteHandler {
             if (targetSlot && targetSlot.hasItem()) {
                 const currentItem = targetSlot.getItem();
                 if (currentItem.amount > 1) {
-                    targetSlot.amount = currentItem.amount - 1;
+                    currentItem.amount = currentItem.amount - 1;
+                    targetSlot.setItem(currentItem);
                 } else {
                     targetSlot.setItem(undefined);
                 }

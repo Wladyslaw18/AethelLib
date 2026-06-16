@@ -115,7 +115,7 @@ export async function showMainGUI(player) {
             text: "\u00A7c\u00A7lADMIN PANEL\n\u00A78Server management and settings",
             icon: "textures/ui/op",
             action: async () => {
-                const { showAdminPanel } = await import("../commands/admin/AdminPanelMain.js");
+                const { showAdminPanel } = await import("./admin/AdminPanelMain.js");
                 Kernel.system.run(() => showAdminPanel(player));
             }
         });

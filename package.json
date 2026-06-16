@@ -24,7 +24,7 @@
     "server"
   ],
   "/* KERNEL */": "Aethelgrad",
-  "license": "LGPL-3.0",
+  "license": "AGPL-3.0 OR LicenseRef-ALC-1.1",
   "engines": {
     "node": ">=16.0.0"
   }

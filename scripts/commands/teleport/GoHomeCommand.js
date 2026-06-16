@@ -49,7 +49,7 @@ export const GoHomeCommand = {
 
         // step 1: cooldown resolution.
         // check if the player is still in their temporal recharge window.
-        const cdValue = PermissionManager.hasPermission(player, "home.cooldown") ?? 30
+        const cdValue = PermissionManager.getPermission(player, "home.cooldown") ?? 30
         const cd = Number(cdValue) * 20
         const last = cooldowns.get(player.id) ?? 0
         
@@ -69,7 +69,7 @@ export const GoHomeCommand = {
 
         // step 3: wait time resolution.
         // determines if the player has to stand still before teleporting (combat safety).
-        const waitTime = Number(PermissionManager.hasPermission(player, "teleport.wait") ?? 5)
+        const waitTime = Number(PermissionManager.getPermission(player, "teleport.wait") ?? 5)
 
         // step 4: relocation execution.
         // center the player on the block (0.5 offset).

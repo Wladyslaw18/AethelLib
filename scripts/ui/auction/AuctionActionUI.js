@@ -63,7 +63,7 @@ async function showBidUI(player, auction) {
     const form = new Kernel.ModalFormData()
         .title("\u00A76Place Bid")
 
-        .textField(`Amount (Min: \u00A7e$${minBid.toLocaleString()}\u00A77):`, "0", String(minBid))
+        .textField(`Amount (Min: \u00A7e$${minBid.toLocaleString()}\u00A77):`, "0")
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) return
@@ -99,13 +99,12 @@ export async function showCreateUI(player) {
     const form = new Kernel.ModalFormData()
         .title("\u00A76Create Auction")
 
-        .toggle(`List ${item.typeId.replace("minecraft:", "").toUpperCase()} x${item.amount}?`, true)
-        .textField("Start Bid ($):", "100", "100")
-        .textField("Buy Now ($) [0 to disable]:", "1000", "1000")
+        .textField(`Start Bid ($):\n\u00A78(Listing ${item.typeId.replace("minecraft:", "").toUpperCase()} x${item.amount})\u00A7r`, "100")
+        .textField("Buy Now ($) [0 to disable]:", "1000")
         .slider("Duration (Hours):", 1, 48, 1, 24)
 
     const res = await UIUtils.showForm(player, form)
-    if (res.canceled || !res.formValues[0]) return
+    if (res.canceled) return
 
     // 🔥 RE-VERIFY AFTER AWAIT!
     const currentItem = equippable.getEquipment("Mainhand");
@@ -114,7 +113,7 @@ export async function showCreateUI(player) {
         return;
     }
 
-    const [_, start, buy, dur] = res.formValues
+    const [start, buy, dur] = res.formValues
     AuctionStore.createAuction(player.id, player.name, item.typeId, item.typeId.replace("minecraft:", "").toUpperCase(), item.amount, Number(start), Number(buy), Number(dur))
     equippable.setEquipment("Mainhand", undefined)
     player.sendMessage("\u00A7a\u00A7l» \u00A7fItem listed successfully on the Auction House!")

@@ -36,6 +36,21 @@ export const GamemodeCommand = {
             return;
         }
 
+        const PM = Kernel.get("permissions");
+        if (PM) {
+            const shortMap = {
+                "survival": "admin.gm.s",
+                "creative": "admin.gm.c",
+                "adventure": "admin.gm.a",
+                "spectator": "admin.gm.sp"
+            };
+            const permKey = shortMap[modeToken];
+            if (!PM.hasPermission(player, permKey) && !PM.hasPermission(player, "essentials.gamemode")) {
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77You do not have permission to switch to ${modeToken} mode.`);
+                return;
+            }
+        }
+
         // execute outside the current event tick.
         Kernel.system.run(() => {
             try {

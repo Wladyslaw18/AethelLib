@@ -277,7 +277,7 @@ Registry.getAll().forEach(name => {
             }
 
             // Cooldown logic: stop players from spamming heavy SQL/DB database queries.
-            const cooldownSec = PM ? (PM.hasPermission(player, "command.cooldown") ?? 0) : 0;
+            const cooldownSec = PM ? (PM.getPermission(player, "command.cooldown") ?? 0) : 0;
             if (cooldownSec > 0) {
                 const now = Kernel.system.currentTick;
                 const last = player.getDynamicProperty("ae:last_cmd_tick") ?? 0;

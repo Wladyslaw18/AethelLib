@@ -1,5 +1,5 @@
 import { PlayerUtils } from "../../../../../utils/PlayerUtils.js";
-import { ItemStack } from "@minecraft/server";
+import { Kernel } from "../../../../../core/Kernel.js";
 
 export const GiveCommand = {
     name: "agive",
@@ -31,7 +31,7 @@ export const GiveCommand = {
         try {
             // Ensure namespace prefix exists
             const typeId = itemId.includes(":") ? itemId : `minecraft:${itemId}`;
-            const item = new ItemStack(typeId, amount);
+            const item = new Kernel.ItemStack(typeId, amount);
             
             const inv = target.getComponent("minecraft:inventory");
             if (inv && inv.container) {

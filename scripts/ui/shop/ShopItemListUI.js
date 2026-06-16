@@ -1,6 +1,6 @@
 import { Kernel } from "../../core/Kernel.js";
-import { ShopStore } from "../../systems/shop/ShopStore.js"
-import { UIUtils } from "../UIUtils.js"
+import { getItemsByCategory } from "../../commands/shop/ShopPrices.js";
+import { UIUtils } from "../UIUtils.js";
 
 /*
  * COMMERCE_ASSET_LIST_ORCHESTRATOR
@@ -14,8 +14,7 @@ import { UIUtils } from "../UIUtils.js"
  */
 async function showItemList(player, category) {
     try {
-        const result = ShopStore.getShopItems(category, null, 1, 1000)
-        const items = result.items
+        const items = getItemsByCategory(category)
         await showItemListPage(player, items, category, 0)
     } catch (error) {
         console.error(`[ShopItemListUI] MANIFEST_LOAD_FAILURE: ${error}`)

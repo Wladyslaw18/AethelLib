@@ -33,38 +33,44 @@ export async function showEconomyMenu(player) {
             await showWithdrawUI(player);
             break;
         case 3:
-            const { MainGUI } = await import("../MainGUI.js");
+            const { showMainMenu } = await import("../MainGUI.js");
             Kernel.system.runTimeout(() => {
-                MainGUI.showMainMenu(player);
+                showMainMenu(player);
             }, 5);
             break;
     }
 }
 
 async function showPayPlayerUI(player) {
-    const onlinePlayers = Kernel.world.getAllPlayers().filter(p => p.id !== player.id && p.isValid);
-    if (onlinePlayers.length === 0) {
-        player.sendMessage("\u00A7c\u00A7l» \u00A77There are no other online players to pay.");
-        return showEconomyMenu(player);
-    }
-
-    const form = new Kernel.ActionFormData()
+    const form = new Kernel.ModalFormData()
         .title("\u00A76\u00A7lPAY PLAYER")
-        .body("\u00A77Select a player to transfer money to.");
-
-    for (const p of onlinePlayers) {
-        form.button(`\u00A7e${p.name}`, "textures/ui/avatar");
-    }
-    form.button("\u00A7cBACK", "textures/ui/refresh");
+        .textField("Enter player name to pay:", "Player Name");
 
     const res = await UIUtils.showForm(player, form);
     if (res.canceled) return showEconomyMenu(player);
 
-    if (res.selection === onlinePlayers.length) {
+    const targetName = res.formValues[0]?.trim();
+    if (!targetName) {
+        player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid name.");
         return showEconomyMenu(player);
     }
 
-    const targetPlayer = onlinePlayers[res.selection];
+    const { PlayerUtils } = await import("../../utils/PlayerUtils.js");
+    const targetId = PlayerUtils.getIdByName(targetName);
+
+    if (!targetId) {
+        player.sendMessage(`\u00A7c\u00A7l» \u00A77Could not find a player named "\u00A7e${targetName}\u00A77".`);
+        return showEconomyMenu(player);
+    }
+
+    if (targetId === player.id) {
+        player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot pay yourself!");
+        return showEconomyMenu(player);
+    }
+
+    let targetPlayer = Kernel.world.getAllPlayers().find(p => p.id === targetId);
+    if (!targetPlayer) targetPlayer = { id: targetId, name: targetName };
+
     await showPayAmountUI(player, targetPlayer);
 }
 
@@ -115,7 +121,9 @@ async function showPayAmountUI(player, targetPlayer) {
     const success = await EconomyStore.transferMoney(player, targetPlayer, amount);
     if (success) {
         player.sendMessage(`\u00A7a\u00A7l» \u00A7fSent \u00A7e$${amount.toLocaleString()}\u00A7f to \u00A7e${targetPlayer.name}\u00A7f.`);
-        targetPlayer.sendMessage(`\u00A7a\u00A7l» \u00A7fReceived \u00A7e$${amount.toLocaleString()}\u00A7f from \u00A7e${player.name}\u00A7f.`);
+        if (typeof targetPlayer.sendMessage === 'function') {
+            targetPlayer.sendMessage(`\u00A7a\u00A7l» \u00A7fReceived \u00A7e$${amount.toLocaleString()}\u00A7f from \u00A7e${player.name}\u00A7f.`);
+        }
     } else {
         player.sendMessage("\u00A7c\u00A7l» \u00A77Transaction failed. Please try again.");
     }
@@ -191,9 +199,10 @@ async function showWithdrawUI(player) {
         return showEconomyMenu(player);
     }
 
-    Kernel.system.run(() => {
+    Kernel.system.run(async () => {
         try {
-            if (!EconomyStore.removeMoney(player.id, amount)) {
+            const removed = await EconomyStore.removeMoney(player.id, amount);
+            if (!removed) {
                 player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to withdraw money.");
                 return;
             }
@@ -203,13 +212,13 @@ async function showWithdrawUI(player) {
                 player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully withdrew ${BanknoteStore.formatMoney(amount)} into ${created} banknote(s)`);
                 player.sendMessage("\u00A77Right-click banknotes to redeem them");
             } else {
-                EconomyStore.addMoney(player.id, amount);
+                await EconomyStore.addMoney(player.id, amount);
                 player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to create banknotes. Money refunded.");
             }
         } catch (error) {
             console.error(`Withdraw UI error: ${error}`);
             player.sendMessage("\u00A7c\u00A7l» \u00A77An error occurred during withdrawal.");
-            EconomyStore.addMoney(player.id, amount);
+            await EconomyStore.addMoney(player.id, amount);
         }
     });
 

@@ -1,0 +1,158 @@
+﻿{
+  "namespace": "rank_creation",
+
+  "rank_creation_screen@common.base_screen": {
+    "button_mappings": [
+      {
+        "from": "button.menu_exit",
+        "to": "button.menu_exit",
+        "mapping_type": "focused"
+      }
+    ],
+    "controls": [
+      { "main_panel@rank_creation.main_panel": {} }
+    ]
+  },
+
+  "main_panel": {
+    "type": "panel",
+    "size": [ "100%", "100%" ],
+    "controls": [
+      {
+        "forge_container": {
+          "type": "panel",
+          "size": [ "90%", "85%" ],
+          "controls": [
+            { "header@rank_creation.header": {} },
+            { "content@rank_creation.content": {} },
+            { "footer@rank_creation.footer": {} }
+          ]
+        }
+      }
+    ]
+  },
+
+  "header": {
+    "type": "panel",
+    "size": [ "100%", 60 ],
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "controls": [
+      {
+        "title@aethel_ui.aero_label": {
+          "text": "§6RANK §fFORGE",
+          "anchor_from": "center",
+          "anchor_to": "center",
+          "offset": [ 0, 4 ],
+          "bindings": []
+        }
+      }
+    ]
+  },
+
+  "content": {
+    "type": "stack_panel",
+    "orientation": "vertical",
+    "size": [ "80%", "70%" ],
+    "anchor_from": "center",
+    "anchor_to": "center",
+    "offset": [ 0, 10 ],
+    "controls": [
+      {
+        "rank_id_label@aethel_ui.aero_label": {
+          "text": "§7RANK IDENTIFIER §8(INTERNAL NAME)",
+          "size": [ "100%", 10 ],
+          "bindings": []
+        }
+      },
+      { "p1": { "type": "panel", "size": [ "100%", 4 ] } },
+      {
+        "rank_id_input@rank_creation.aero_text_edit": {
+          "$text_edit_box_placeholder_text": "e.g. warlord",
+          "$text_edit_box_content_binding_name": "#rank_id_text"
+        }
+      },
+      { "p2": { "type": "panel", "size": [ "100%", 16 ] } },
+      {
+        "display_name_label@aethel_ui.aero_label": {
+          "text": "§7DISPLAY NAME §8(CHAT PREFIX)",
+          "size": [ "100%", 10 ],
+          "bindings": []
+        }
+      },
+      { "p3": { "type": "panel", "size": [ "100%", 4 ] } },
+      {
+        "display_name_input@rank_creation.aero_text_edit": {
+          "$text_edit_box_placeholder_text": "e.g. §c[WARLORD]",
+          "$text_edit_box_content_binding_name": "#display_name_text"
+        }
+      },
+      { "p4": { "type": "panel", "size": [ "100%", 16 ] } },
+      {
+        "color_palette_label@aethel_ui.aero_label": {
+          "text": "§7ESSENCE COLOR §8(COLOR PALETTE)",
+          "size": [ "100%", 10 ],
+          "bindings": []
+        }
+      },
+      { "p5": { "type": "panel", "size": [ "100%", 6 ] } },
+      { "color_palette@rank_creation.color_palette": {} }
+    ]
+  },
+
+  "footer": {
+    "type": "panel",
+    "size": [ "100%", 60 ],
+    "anchor_from": "bottom_middle",
+    "anchor_to": "bottom_middle",
+    "controls": [
+      {
+        "forge_button@aethel_ui.aero_button": {
+          "size": [ 160, 32 ],
+          "$button_text": "§6FORGE RANK",
+          "$pressed_button_name": "button.forge_rank"
+        }
+      }
+    ]
+  },
+
+  "aero_text_edit@common.text_edit_box": {
+    "size": [ "100%", 32 ],
+    "$text_edit_box_label_offset": [ 8, 0 ],
+    "$text_edit_box_placeholder_color": [ 0.5, 0.5, 0.5 ]
+  },
+
+  "color_palette": {
+    "type": "grid",
+    "size": [ "100%", 64 ],
+    "grid_dimensions": [ 8, 2 ],
+    "grid_item_template": "rank_creation.color_button",
+    "collection_name": "rank_colors",
+    "bindings": [
+      {
+        "binding_name": "#rank_colors_length",
+        "binding_name_override": "#collection_length"
+      }
+    ]
+  },
+
+  "color_button": {
+    "type": "panel",
+    "size": [ "100% - 4px", "100% - 4px" ],
+    "controls": [
+      {
+        "btn@aethel_ui.aero_button": {
+          "$button_text": "#color_code",
+          "$pressed_button_name": "button.select_color",
+          "bindings": [
+            {
+              "binding_name": "#color_code",
+              "binding_type": "collection",
+              "binding_collection_name": "rank_colors"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

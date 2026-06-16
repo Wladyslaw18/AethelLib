@@ -45,6 +45,33 @@ export const ClaimCommand = {
             return
         }
 
+        const PM = Kernel.get("permissions");
+        if (PM) {
+            let permKey;
+            switch (subcommand) {
+                case "menu":
+                case "ui":
+                    permKey = "land.setting";
+                    break;
+                case "create":
+                    permKey = "land.claim";
+                    break;
+                case "remove":
+                    permKey = "land.unclaim";
+                    break;
+                case "trust":
+                    permKey = "land.invite";
+                    break;
+                case "untrust":
+                    permKey = "land.kick";
+                    break;
+            }
+            if (permKey && !PM.hasPermission(player, permKey)) {
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77Permission Denied: You do not have the required permission node: '\u00A7e${permKey}\u00A77'.`);
+                return;
+            }
+        }
+
         // route based on token.
         switch (subcommand) {
             case "menu":

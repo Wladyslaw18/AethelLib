@@ -1,6 +1,6 @@
 import { PlayerUtils } from "../../../../../utils/PlayerUtils.js";
 import { FreezeTracker } from "../../systems/stores/FreezeTracker.js";
-import { InputPermissionCategory } from "@minecraft/server";
+import { Kernel } from "../../../../../core/Kernel.js";
 export const FreezeCommand = {
     name: "freeze",
     description: "Freeze a player in place",
@@ -23,12 +23,12 @@ export const FreezeCommand = {
 
         if (isFrozen) {
             FreezeTracker.unfreezePlayer(target.id);
-            target.inputPermissions.setPermissionCategory(InputPermissionCategory.Movement, true);
+            target.inputPermissions.setPermissionCategory(Kernel.InputPermissionCategory.Movement, true);
             this.context.world.sendMessage(`§8[§aUnfreeze§8] §f${player.name} §7unfrozen §f${target.name}§7.`);
             target.sendMessage(`§a§l» §fYou have been unfrozen.`);
         } else {
             FreezeTracker.freezePlayer(target.id);
-            target.inputPermissions.setPermissionCategory(InputPermissionCategory.Movement, false);
+            target.inputPermissions.setPermissionCategory(Kernel.InputPermissionCategory.Movement, false);
             this.context.world.sendMessage(`§8[§bFreeze§8] §f${player.name} §7froze §f${target.name}§7.`);
             target.sendMessage(`§b§l» §fYou have been frozen by §b${player.name}§f.`);
         }

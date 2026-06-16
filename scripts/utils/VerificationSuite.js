@@ -566,6 +566,41 @@ export const VerificationSuite = {
             failed++
         }
 
+        // ----------------------------------------------------------------------------
+        // | TEST 12: Kernel Null Object Proxy for Disabled Systems
+        // ----------------------------------------------------------------------------
+        try {
+            const mockSys = {
+                myValue: 42,
+                getValue() { return 100; },
+                async checkStatus() { return true; },
+                *generatorFunc() { yield 1; }
+            };
+            Kernel.register("test_mock_system", mockSys);
+            
+            Kernel.disableSystem("test_mock_system");
+            
+            const proxy = Kernel.get("test_mock_system");
+            assert(proxy !== undefined, "Kernel.get returns proxy for disabled system");
+            assert(proxy.myValue === undefined, "Accessing normal properties on disabled system returns undefined");
+            assert(proxy.getValue() === 0, "getValue method on disabled system returns 0 (number heuristic)");
+            
+            const promiseVal = proxy.checkStatus();
+            assert(promiseVal instanceof Promise, "checkStatus method on disabled system returns a Promise (async heuristic)");
+            const resolvedVal = await promiseVal;
+            assert(resolvedVal === false, "checkStatus resolved promise on disabled system returns false (boolean heuristic)");
+            
+            const gen = proxy.generatorFunc();
+            assert(gen && typeof gen.next === "function", "generatorFunc method on disabled system returns a generator");
+            
+            Kernel.enableSystem("test_mock_system");
+            Kernel.systems.delete("test_mock_system");
+            Kernel.disabledSystems.delete("test_mock_system");
+        } catch (e) {
+            console.error(`[FAIL] Kernel Null Object Proxy test crash: ${e}`)
+            failed++
+        }
+
         console.warn("----------------------------------------------------------")
         console.warn(`⚜ VERIFICATION RESULTS: Passed: ${passed} | Failed: ${failed}`)
         console.warn("==========================================================")

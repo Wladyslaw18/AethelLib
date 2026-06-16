@@ -54,6 +54,7 @@ export class Kernel {
     static get EquipmentSlot() { return mc.EquipmentSlot; }
     static get BlockPermutation() { return mc.BlockPermutation; }
     static get BlockComponentTypes() { return mc.BlockComponentTypes; }
+    static get InputPermissionCategory() { return mc.InputPermissionCategory; }
 
     // ----------------------------------------------------------------------------
     // | ui proxies                                                               |
@@ -201,11 +202,95 @@ export class Kernel {
     // ----------------------------------------------------------------------------
     // | method: get                                                              |
     // | fetch a service by its id. checks core systems then plugins.             |
+    // | returns a Null Object proxy if the system is registered but disabled.    |
     // ----------------------------------------------------------------------------
     static get(id) {
-        if (this.#disabledSystems.has(id)) return undefined;
+        if (this.#disabledSystems.has(id)) {
+            const instance = this.#systems.get(id) || this.#serviceProviders.get(id);
+            return this.#createNullProxy(id, instance);
+        }
         // try to find it in core systems first, then the plugin service providers.
         return this.#systems.get(id) || this.#serviceProviders.get(id);
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: #createNullProxy                                                 |
+    // | creates a robust Null Object Pattern proxy to prevent TypeError crashes. |
+    // | returns 0, false, empty arrays, or Promises based on method heuristics.   |
+    // ----------------------------------------------------------------------------
+    static #createNullProxy(id, instance) {
+        const target = instance || {};
+        
+        return new Proxy(target, {
+            get(obj, prop, receiver) {
+                // bypass special properties and promise checks
+                if (prop === "then") return undefined;
+                if (prop === "toJSON") return () => null;
+                if (prop === "valueOf") return () => 0;
+                if (prop === "toString") return () => `[DisabledSystemProxy:${id}]`;
+                if (prop === Symbol.toPrimitive) {
+                    return (hint) => {
+                        if (hint === "number") return 0;
+                        if (hint === "string") return "";
+                        return false;
+                    };
+                }
+
+                let originalValue;
+                try {
+                    originalValue = obj[prop];
+                } catch (e) {
+                    // fall through
+                }
+
+                if (typeof originalValue === "function") {
+                    return (...args) => {
+                        const name = String(prop).toLowerCase();
+                        
+                        // Check if it's a generator function
+                        if (originalValue.constructor.name === "GeneratorFunction") {
+                            return (function*() {})();
+                        }
+
+                        // Heuristic check: is it an async method?
+                        const isAsync = originalValue.constructor.name === "AsyncFunction" || 
+                                        name.startsWith("async") || 
+                                        name.includes("transaction") || 
+                                        name.includes("transfer") || 
+                                        name.includes("setbalance") || 
+                                        name.includes("addmoney") || 
+                                        name.includes("removemoney") || 
+                                        name.includes("hasenough");
+
+                        // Resolve default value based on method name patterns
+                        let val;
+                        if (name.startsWith("get") || name.includes("balance") || name.includes("count") || name.includes("price") || name.includes("size") || name.includes("amount")) {
+                            if (name.includes("player") || name.includes("account") || name.includes("system") || name.includes("service")) {
+                                val = null;
+                            } else if (name.includes("leaderboard") || name.includes("balances") || name.includes("list") || name.includes("all")) {
+                                val = [];
+                            } else {
+                                val = 0;
+                            }
+                        } else if (name.startsWith("is") || name.startsWith("has") || name.startsWith("can") || name.startsWith("pay") || name.startsWith("charge") || name.startsWith("withdraw") || name.startsWith("deposit") || name.startsWith("save") || name.startsWith("set") || name.startsWith("delete") || name.startsWith("remove") || name.startsWith("add") || name.startsWith("update") || name.startsWith("disable") || name.startsWith("enable") || name.startsWith("transfer")) {
+                            val = false;
+                        } else {
+                            val = undefined;
+                        }
+
+                        return isAsync ? Promise.resolve(val) : val;
+                    };
+                }
+
+                // If they access non-function properties directly
+                const name = String(prop).toLowerCase();
+                if (name.includes("balance") || name.includes("limit") || name.includes("default")) {
+                    return 0;
+                }
+
+                return undefined;
+            }
+        });
     }
 
     // ----------------------------------------------------------------------------

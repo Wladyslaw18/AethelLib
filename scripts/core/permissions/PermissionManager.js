@@ -124,7 +124,45 @@ export class PermissionManager {
             return true
         }
         
-        return cache.permissions.get(key)
+        let val = cache.permissions.get(key)
+        if (val === undefined) {
+            const parts = key.split('.')
+            if (parts.length === 2) {
+                val = cache.permissions.get(`${parts[1]}.${parts[0]}`)
+            }
+        }
+
+        const aliases = {
+            "essentials.admin": "admin.panel",
+            "essentials.ban": "admin.ban",
+            "essentials.admin.ban": "admin.ban",
+            "essentials.kick": "admin.kick",
+            "essentials.admin.mute": "admin.mute",
+            "essentials.admin.reports": "admin.reports",
+            "essentials.admin.ft": "admin.floatingtext",
+            "essentials.admin.invsee": "admin.invsee",
+            "essentials.admin.ranks": "admin.ranks",
+            "essentials.admin.economy": "admin.economy",
+            "admin.shop": "admin.shopsetting",
+            "admin.system": "admin.setting",
+            "admin.plugin": "admin.setting",
+            "admin.broadcast.reset": "admin.broadcast"
+        }
+
+        if (val === undefined && aliases[key]) {
+            val = cache.permissions.get(aliases[key])
+        }
+
+        if (val === undefined && key === "essentials.gamemode") {
+            if (cache.permissions.get("admin.gm.c") === true ||
+                cache.permissions.get("admin.gm.s") === true ||
+                cache.permissions.get("admin.gm.sp") === true ||
+                cache.permissions.get("admin.gm.a") === true) {
+                val = true
+            }
+        }
+
+        return val
     }
 
     hasPermission(player, permission) {
@@ -197,6 +235,10 @@ export class PermissionManager {
             if (rankData.permissions) {
                 for (const [perm, val] of Object.entries(rankData.permissions)) {
                     merged[perm] = val
+                    const parts = perm.split('.')
+                    if (parts.length === 2) {
+                        merged[`${parts[1]}.${parts[0]}`] = val
+                    }
                 }
             }
             return merged

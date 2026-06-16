@@ -71,6 +71,16 @@ export function init() {
                     return
                 }
 
+                // check if the player has permission to create a buy/sell chest shop.
+                const PermissionManager = Kernel.get("permissions")
+                if (PermissionManager) {
+                    const permKey = shopType === "buy" ? "chestshop.create.buy" : "chestshop.create.sell"
+                    if (!PermissionManager.hasPermission(player, permKey)) {
+                        player.sendMessage("\u00A7c\u00A7l» \u00A77You do not have permission to create this type of shop.");
+                        return
+                    }
+                }
+
                 // everything looks good. show the configuration UI to the player.
                 showSetupUI(player, shopType, block.location, chest.location)
 
@@ -100,6 +110,16 @@ export function init() {
 
         // cancel the native event so the player doesn't open the 'edit sign' UI.
         event.cancel = true 
+
+        // check if player has permission to buy/sell at chest shops
+        const PermissionManager = Kernel.get("permissions")
+        if (PermissionManager) {
+            const permKey = shop.type === "buy" ? "chestshop.buy" : "chestshop.sell"
+            if (!PermissionManager.hasPermission(player, permKey)) {
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77You do not have permission to use this ${shop.type} shop.`);
+                return
+            }
+        }
 
         // don't let owners buy from themselves. 
         if (shop.ownerId === player.id) {
@@ -362,18 +382,47 @@ async function handleSell(seller, shop, container) {
         return
     }
 
-    // step 3: temporarily add items to the chest to check capacity.
+    // step 3: remove the sold items from the seller's inventory first (Synchronously!)
+    let remaining = transactionQty
+    for (let i = 0; i < sellerInv.size && remaining > 0; i++) {
+        const item = sellerInv.getItem(i)
+        if (item && item.typeId === shop.itemId) {
+            const take = Math.min(item.amount, remaining)
+            if (take >= item.amount) {
+                sellerInv.setItem(i, undefined)
+            } else {
+                item.amount -= take
+                sellerInv.setItem(i, item)
+            }
+            remaining -= take
+        }
+    }
+
+    const actualTaken = transactionQty - remaining
+    if (actualTaken <= 0) {
+        seller.sendMessage("\u00A7c\u00A7l» \u00A77You don't have enough items to sell!");
+        return
+    }
+
+    // step 4: add items to the chest to check capacity.
     const { ItemStack } = Kernel
-    const testStack = new ItemStack(shop.itemId, transactionQty)
+    const testStack = new ItemStack(shop.itemId, actualTaken)
     const leftover = container.addItem(testStack)
-    const delivered = leftover ? transactionQty - leftover.amount : transactionQty
+    const delivered = leftover ? actualTaken - leftover.amount : actualTaken
 
     if (delivered <= 0) {
+        // Refund the seller the items we took from them since chest is full
+        sellerInv.addItem(new ItemStack(shop.itemId, actualTaken))
         seller.sendMessage("\u00A7c\u00A7l» \u00A77The shop's chest is full!");
         return
     }
 
-    // step 4: transfer money from shop owner to the seller.
+    // If there is any leftover that couldn't fit in the chest, refund it to the seller
+    if (leftover && leftover.amount > 0) {
+        sellerInv.addItem(leftover)
+    }
+
+    // step 5: transfer money from shop owner to the seller.
     const finalCost = shop.price * delivered
     const txSuccess = await EconomyStore.transferMoney(shop.ownerId, seller, finalCost)
 
@@ -393,24 +442,10 @@ async function handleSell(seller, shop, container) {
                 toRemove -= take
             }
         }
+        // Refund the seller
+        sellerInv.addItem(new ItemStack(shop.itemId, delivered))
         seller.sendMessage("\u00A7c\u00A7l» \u00A77Transaction failed. Could not process payment transfer.");
         return
-    }
-
-    // step 5: remove the sold items from the seller's inventory.
-    let remaining = delivered
-    for (let i = 0; i < sellerInv.size && remaining > 0; i++) {
-        const item = sellerInv.getItem(i)
-        if (item && item.typeId === shop.itemId) {
-            const take = Math.min(item.amount, remaining)
-            if (take >= item.amount) {
-                sellerInv.setItem(i, undefined)
-            } else {
-                item.amount -= take
-                sellerInv.setItem(i, item)
-            }
-            remaining -= take
-        }
     }
 
     // tell the seller it worked.

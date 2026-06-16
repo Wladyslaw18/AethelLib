@@ -1,0 +1,160 @@
+﻿{
+  "namespace": "rank_edit",
+
+  "main_panel": {
+    "type": "panel",
+    "size": [ "95%", "90%" ],
+    "controls": [
+      { "bg@aethel_ui.aero_glass_panel": {} },
+      { "header@rank_edit.header": {} },
+      { "scroll_view@rank_edit.scroll_view": {} },
+      { "footer@rank_edit.footer": {} }
+    ]
+  },
+
+  "header": {
+    "type": "panel",
+    "size": [ "100%", 50 ],
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "controls": [
+      {
+        "title@aethel_ui.aero_label": {
+          "text": "§6RANK EDITOR: §f#title_text",
+          "bindings": [ { "binding_name": "#title_text" } ]
+        }
+      }
+    ]
+  },
+
+  "scroll_view@common.scrolling_panel": {
+    "size": [ "94%", "78%" ],
+    "offset": [ 0, 45 ],
+    "anchor_from": "top_middle",
+    "anchor_to": "top_middle",
+    "$scrolling_content": "rank_edit.scrolling_content"
+  },
+
+  "scrolling_content": {
+    "type": "stack_panel",
+    "size": [ "100%", "100%c" ],
+    "controls": [
+      /* CATEGORY 1: CORE & LIMITS (Index 0-6) */
+      { "h1@rank_edit.cat_header": { "$title": "§e[1] CORE IDENTITY & GLOBAL LIMITS" } },
+      { "g1@rank_edit.cat_grid": { "$count": 7, "$start": 0 } },
+
+      /* CATEGORY 2: ADMIN POWERS (Index 7-21) */
+      { "h2@rank_edit.cat_header": { "$title": "§c[2] ADMINISTRATIVE OVERLORD POWERS" } },
+      { "g2@rank_edit.cat_grid": { "$count": 15, "$start": 7 } },
+
+      /* CATEGORY 3: COOLDOWNS (Index 22-26) */
+      { "h3@rank_edit.cat_header": { "$title": "§b[3] SPATIAL COOLDOWNS (SECONDS)" } },
+      { "g3@rank_edit.cat_grid": { "$count": 5, "$start": 22 } },
+
+      /* CATEGORY 4: ECONOMY (Index 27-35) */
+      { "h4@rank_edit.cat_header": { "$title": "§a[4] FEATURE COSTS & COMMERCE" } },
+      { "g4@rank_edit.cat_grid": { "$count": 9, "$start": 27 } },
+
+      { "pad": { "type": "panel", "size": [ 1, 20 ] } }
+    ]
+  },
+
+  "cat_header": {
+    "type": "panel",
+    "size": [ "100%", 24 ],
+    "controls": [
+      { "title@aethel_ui.aero_label": { "text": "$title", "color": [1.0, 0.88, 0.4], "bindings": [] } }
+    ]
+  },
+
+  "cat_grid": {
+    "type": "grid",
+    "size": [ "100%", "100%c" ],
+    "grid_dimensions": [ 2, "100%c" ],
+    "factory": {
+      "name": "buttons",
+      "control_ids": {
+        "toggle": "rank_edit.aero_toggle_item",
+        "input": "rank_edit.aero_input_item"
+      }
+    },
+    "collection_name": "custom_form",
+    "bindings": [
+      {
+        "binding_name": "#custom_form_length",
+        "binding_name_override": "#collection_length"
+      }
+    ]
+  },
+
+  "aero_toggle_item": {
+    "type": "panel",
+    "size": [ "100%", 32 ],
+    "controls": [
+      { "label@aethel_ui.aero_label": { 
+        "text": "#custom_text", 
+        "anchor_from": "left", 
+        "anchor_to": "left", 
+        "offset": [ 4, 0 ],
+        "bindings": [ { "binding_name": "#custom_text", "binding_type": "collection", "binding_collection_name": "custom_form" } ] 
+      } },
+      { "btn@aethel_ui.aero_button": {
+        "size": [ 44, 20 ],
+        "anchor_from": "right",
+        "anchor_to": "right",
+        "offset": [ -4, 0 ],
+        "$pressed_button_name": "button.form_button_click",
+        "controls": [
+          { "lever@aethel_ui.aethel_button": {
+            "size": [20, 20],
+            "bindings": [
+              {
+                "binding_name": "#custom_toggle_state",
+                "binding_name_override": "#toggle_state",
+                "binding_type": "collection",
+                "binding_collection_name": "custom_form"
+              }
+            ]
+          } }
+        ]
+      } }
+    ]
+  },
+
+  "aero_input_item": {
+    "type": "panel",
+    "size": [ "100%", 36 ],
+    "controls": [
+      { "label@aethel_ui.aero_label": { 
+        "text": "#custom_text", 
+        "anchor_from": "left", 
+        "anchor_to": "left", 
+        "offset": [ 4, 0 ],
+        "bindings": [ { "binding_name": "#custom_text", "binding_type": "collection", "binding_collection_name": "custom_form" } ] 
+      } },
+      { "input@rank_creation.aero_text_edit": {
+        "size": [ 60, 24 ],
+        "anchor_from": "right",
+        "anchor_to": "right",
+        "offset": [ -4, 0 ],
+        "$text_edit_box_content_binding_name": "#custom_input_text"
+      } }
+    ]
+  },
+
+  "footer": {
+    "type": "panel",
+    "size": [ "100%", 50 ],
+    "anchor_from": "bottom_middle",
+    "anchor_to": "bottom_middle",
+    "controls": [
+      {
+        "submit@aethel_ui.aero_button": {
+          "size": [ 160, 32 ],
+          "$button_text": "§aSAVE CHANGES",
+          "$pressed_button_name": "button.submit_custom_form"
+        }
+      }
+    ]
+  }
+}

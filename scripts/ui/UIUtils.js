@@ -9,8 +9,8 @@ export class UIUtils {
      * @returns {Promise<any>}
      */
     static async showForm(player, form, retries = 5) {
-        // Yield to the next tick to ensure any command/chat UI has fully closed on the client.
-        await new Promise(resolve => Kernel.system.run(resolve));
+        // Yield to ensure any command/chat/previous UI has fully closed on the client.
+        await new Promise(resolve => Kernel.system.runTimeout(resolve, 5));
 
         for (let i = 0; i < retries; i++) {
             if (!player || !player.isValid) return { canceled: true };
