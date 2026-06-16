@@ -1,4 +1,11 @@
 {
+    "_meta": {
+        "_comment": "AethelLib • A Bedrock Lib • 2026",
+        "_generator": "Aethel Build System v2.1",
+        "_maintainer": "Aethelgrad Studio",
+        "_repository": "https://github.com/Wladyslaw18/AethelLib",
+        "_stability": "experimental"
+    },
     "format_version": 2,
     "header": {
         "name": "§6§lAethel§fLib §r§8• §7[RP] v1.0.0",
