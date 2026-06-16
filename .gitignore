@@ -16,3 +16,10 @@ Legacy/
 Reference/
 tools/Output/
 AethelLib_commands*.txt
+tools/watermark.md
+tools/obfuscate_watermark.cjs
+tools/obfuscate_watermark.ps1
+tools/ship_commands.ps1
+tools/ship_payload.ps1
+tools/ship_shop.ps1
+**/__pycache__/
