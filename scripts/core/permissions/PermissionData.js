@@ -58,21 +58,29 @@ export class PermissionData {
         const index = this.rankIndexMap.get(rankId)
         if (index === undefined) return false
 
-        if (typeof value === 'boolean') {
-            let flags = this.permissionFlags.get(permission)
-            if (!flags) {
-                flags = new Array(this.rankIds.length).fill(0)
-                this.permissionFlags.set(permission, flags)
+        const setVal = (perm) => {
+            if (typeof value === 'boolean') {
+                let flags = this.permissionFlags.get(perm)
+                if (!flags) {
+                    flags = new Array(this.rankIds.length).fill(0)
+                    this.permissionFlags.set(perm, flags)
+                }
+                flags[index] = value ? 1 : 0
+            } else {
+                let values = this.permissionValues.get(perm)
+                if (!values) {
+                    values = new Array(this.rankIds.length).fill(0)
+                    this.permissionValues.set(perm, values)
+                }
+                values[index] = value
             }
+        }
 
-            flags[index] = value ? 1 : 0
-        } else {
-            let values = this.permissionValues.get(permission)
-            if (!values) {
-                values = new Array(this.rankIds.length).fill(0)
-                this.permissionValues.set(permission, values)
-            }
-            values[index] = value
+        setVal(permission)
+
+        const parts = permission.split('.')
+        if (parts.length === 2) {
+            setVal(`${parts[1]}.${parts[0]}`)
         }
 
         this.invalidatePlayerCache()

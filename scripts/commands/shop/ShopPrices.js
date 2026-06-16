@@ -81,6 +81,7 @@ export function searchItems(query) {
     const results = [];
 
     for (const [id, meta] of Object.entries(MINECRAFT_ITEMS)) {
+        if (meta.category === "admin") continue;
         const displayName = meta.name.toLowerCase();
         const cleanId = id.replace("minecraft:", "").toLowerCase();
         if (displayName.includes(cleanQuery) || cleanId.includes(cleanQuery)) {
@@ -111,6 +112,7 @@ export function getItemsByCategory(category) {
     const targetCategories = categoryMap[lowerCat] || [lowerCat];
 
     for (const [id, meta] of Object.entries(MINECRAFT_ITEMS)) {
+        if (meta.category === "admin") continue;
         const itemCat = meta.category?.toLowerCase() || "misc";
         let match = targetCategories.includes(itemCat);
 

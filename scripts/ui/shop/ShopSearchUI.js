@@ -1,6 +1,6 @@
 import { Kernel } from "../../core/Kernel.js";
-import { ShopStore } from "../../systems/shop/ShopStore.js"
-import { UIUtils } from "../UIUtils.js"
+import { searchItems } from "../../commands/shop/ShopPrices.js";
+import { UIUtils } from "../UIUtils.js";
 
 /*
  * COMMERCE_QUERY_ORCHESTRATOR
@@ -14,12 +14,7 @@ import { UIUtils } from "../UIUtils.js"
  */
 async function showSearchResults(player, query) {
     try {
-        const result = ShopStore.getShopItems(null, null, 1, 1000)
-        const items = result.items
-        const results = items.filter(item =>
-            item.name.toLowerCase().includes(query) || 
-            item.id.toLowerCase().includes(query)
-        )
+        const results = searchItems(query);
 
         await showResultsPage(player, results, query, 0)
     } catch (error) {

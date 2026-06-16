@@ -1,0 +1,124 @@
+﻿{
+  "namespace": "admin_panel",
+
+  "admin_panel_content": {
+    "type": "panel",
+    "size": [ "100%", "100%" ],
+    "controls": [
+      {
+        "main_bg@aethel_ui.aero_glass_panel": {
+          "size": [ "95%", "90%" ]
+        }
+      },
+      {
+        "header_panel": {
+          "type": "panel",
+          "size": [ "100%", "25%" ],
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "controls": [
+            {
+              "title@aethel_ui.aero_label": {
+                "text": "§6ADMIN §fCONTROL CENTER",
+                "offset": [ 0, "20%" ],
+                "anchor_from": "top_middle",
+                "anchor_to": "top_middle"
+              }
+            },
+            {
+              "stats_stack": {
+                "type": "stack_panel",
+                "orientation": "horizontal",
+                "size": [ "100%c", "100%c" ],
+                "anchor_from": "top_middle",
+                "anchor_to": "top_middle",
+                "offset": [ 0, "55%" ],
+                "controls": [
+                  {
+                    "tps_group": {
+                      "type": "panel",
+                      "size": [ "100%c", "100%c" ],
+                      "controls": [
+                        {
+                          "label@aethel_ui.aero_label": {
+                            "text": "§7TPS: §f#tps_text",
+                            "bindings": [
+                              {
+                                "binding_name": "#tps_text"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  { "padding": { "type": "panel", "size": [ 20, 1 ] } },
+                  {
+                    "uptime_group": {
+                      "type": "panel",
+                      "size": [ "100%c", "100%c" ],
+                      "controls": [
+                        {
+                          "label@aethel_ui.aero_label": {
+                            "text": "§7UPTIME: §f#uptime_text",
+                            "bindings": [
+                              {
+                                "binding_name": "#uptime_text"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "buttons_grid": {
+          "type": "grid",
+          "size": [ "85%", "60%" ],
+          "anchor_from": "bottom_middle",
+          "anchor_to": "bottom_middle",
+          "offset": [ 0, "-5%" ],
+          "grid_dimensions": [ 2, 3 ],
+          "grid_item_template": "admin_panel.admin_button_item",
+          "collection_name": "form_buttons",
+          "bindings": [
+            {
+              "binding_name": "#form_button_contents",
+              "binding_name_override": "#collection_length"
+            }
+          ]
+        }
+      }
+    ]
+  },
+
+  "admin_button_item": {
+    "type": "panel",
+    "size": [ "100% - 8px", "100% - 8px" ],
+    "controls": [
+      {
+        "btn@aethel_ui.aero_button": {
+          "$button_text": "#form_button_text",
+          "$pressed_button_name": "button.form_button_click",
+          "bindings": [
+            {
+              "binding_name": "#form_button_text",
+              "binding_type": "collection",
+              "binding_collection_name": "form_buttons"
+            },
+            {
+              "binding_type": "collection_details",
+              "binding_collection_name": "form_buttons"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

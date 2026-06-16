@@ -38,9 +38,9 @@ export async function showTpaSettingsUI(player) {
             Kernel.system.runTimeout(() => showBlockedPlayersUI(player), 5);
             break;
         case 3:
-            const { MainGUI } = await import("../MainGUI.js");
+            const { showMainMenu } = await import("../MainGUI.js");
             Kernel.system.runTimeout(() => {
-                MainGUI.showMainMenu(player);
+                showMainMenu(player);
             }, 5);
             break;
     }

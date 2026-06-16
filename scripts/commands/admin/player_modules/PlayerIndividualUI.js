@@ -17,7 +17,8 @@ export async function showIndividualPlayerPanel(player, target, backCallback) {
     const PlayerStore = Kernel.get("playerStore")
     
     const money = economy ? economy.getBalance(target) : 0
-    const homes = homesStore ? homesStore.getHomes(target).length : 0
+    const homesObj = homesStore ? await homesStore.getHomes(target) : {}
+    const homes = Object.keys(homesObj).length
     const isAdmin = PM ? PM.hasPermission(target, "essentials.admin") : target.hasTag("admin")
     
     const pos = target.location

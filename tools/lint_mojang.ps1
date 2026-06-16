@@ -218,6 +218,15 @@ foreach ($File in $Files) {
             continue
         }
 
+        # 0. Direct Import Check for Plugins
+        if ($RelativePath -match "scripts[/\\]plugins[/\\]" -and ($Line -match 'from\s+["'']@minecraft/server(-ui)?["'']' -or $Line -match 'import\s+["'']@minecraft/server(-ui)?["'']')) {
+            $FileIssues += [PSCustomObject]@{
+                Type = "BYPASS_WARN"
+                Line = $LineNum
+                Desc = "Direct import of '@minecraft/server(-ui)' bypasses Kernel proxies. Memory leaks and circular imports are ON YOU if this breaks. 💀"
+            }
+        }
+
         # 1. getComponent Check
         if ($Line -match '(?:const|let|var)\s+(\w+)\s*=\s*(?:.*?\.)?getComponent\((.*?)\)') {
             $AssignedVar = $Matches[1]
@@ -306,7 +315,7 @@ foreach ($File in $Files) {
         Write-Host ""
         Write-Host "${Yellow}[FILE] File: $RelativePath${Reset}"
         foreach ($Issue in $FileIssues) {
-            $Color = if ($Issue.Type -eq "DEPRECATION") { $Red } else { $Yellow }
+            $Color = if ($Issue.Type -eq "DEPRECATION" -or $Issue.Type -eq "BYPASS_WARN") { $Red } else { $Yellow }
             Write-Host "  [${Color}$($Issue.Type)${Reset}] Line $($Issue.Line): $($Issue.Desc)"
             $TotalWarnings++
         }

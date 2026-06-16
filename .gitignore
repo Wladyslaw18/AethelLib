@@ -1,1 +1,16 @@
-
+.antigravitycli/
+.git-rewrite/
+BDS/
+backups/
+releases/
+scratch/
+node_modules/
+*.mcaddon
+tools/unix/__pycache__/
+*.pyc
+package-lock.json
+IndexUIBeta2.1.0.txt
+index.UId.txt
+index.d.txt
+Legacy/
+Reference/

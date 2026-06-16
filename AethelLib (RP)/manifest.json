@@ -1,0 +1,18 @@
+﻿{
+    "format_version": 2,
+    "header": {
+        "description": "§6§lAethelLib §r§8| §fIndustrial Asset Vector\n§7Obsidian-Glass UI Protocol v2.1.0",
+        "name": "§6Aethel§fLib §7[RP]",
+        "uuid": "a7b8c9d0-1234-5678-90ab-cdef12345678",
+        "version": [1, 0, 0],
+        "min_engine_version": [1, 21, 0]
+    },
+    "modules": [
+        {
+            "description": "AethelLib Industrial UI Assets",
+            "type": "resources",
+            "uuid": "b8c9d0e1-2345-6789-01bc-def234567890",
+            "version": [1, 0, 0]
+        }
+    ]
+}

@@ -25,7 +25,9 @@ export const ShopListCommand = {
 
         let items = [];
         if (category === "all") {
-            items = Object.keys(MINECRAFT_ITEMS).map(id => ({
+            items = Object.keys(MINECRAFT_ITEMS)
+                .filter(id => MINECRAFT_ITEMS[id].category !== "admin")
+                .map(id => ({
                 id,
                 name: getItemDisplayName(id),
                 price: getItemPrice(id, 1)
@@ -104,6 +106,11 @@ export const ShopBuyCommand = {
 
         const itemId = parseItemId(itemInput);
         const quantity = qtyOverride !== undefined ? qtyOverride : 1;
+
+        if (MINECRAFT_ITEMS[itemId]?.category === "admin") {
+            player.sendMessage(`${Lang.PREFIX}§c✗ You cannot purchase restricted items.`);
+            return;
+        }
 
         if (quantity <= 0 || quantity > 999) {
             player.sendMessage(`${Lang.PREFIX}§c✗ Quantity must be between 1 and 999.`);

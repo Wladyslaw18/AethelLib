@@ -10,7 +10,7 @@ import { UIUtils } from "../UIUtils.js"
 export async function showCreateHomeUI(player) {
     const form = new Kernel.ModalFormData()
         .title(Lang.GOLD + "SET HOME")
-        .textField("Anchor Name:", "e.g. Base 1", "Home")
+        .textField("Anchor Name:", "e.g. Base 1")
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {

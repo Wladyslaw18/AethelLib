@@ -25,7 +25,7 @@ Kernel.system.runInterval(() => {
 // | resolves the Ticks-Per-Second by comparing the time delta between the    |
 // | first and last samples in our 1-second window.                           |
 // ----------------------------------------------------------------------------
-function getRealTPS() {
+export function getRealTPS() {
     if (tickTimes.length < 2) return 20
     const elapsed = tickTimes[tickTimes.length - 1] - tickTimes[0]
     // prevent division by zero or negative time.

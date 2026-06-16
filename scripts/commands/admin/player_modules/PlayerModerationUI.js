@@ -3,6 +3,12 @@ import { UIUtils } from "../../../ui/UIUtils.js"
 import { ValidationHelper } from "../../../utils/ValidationHelper.js"
 
 export async function showKickUI(player, target, backCallback) {
+    if (player.id === target.id) {
+        player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot kick yourself!");
+        await backCallback();
+        return;
+    }
+
     const form = new Kernel.ModalFormData()
         .title("\u00A7e\u00A7lKick Player")
         // @ts-ignore
@@ -26,6 +32,12 @@ export async function showKickUI(player, target, backCallback) {
 }
 
 export async function showBanUI(player, target, backCallback) {
+    if (player.id === target.id) {
+        player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot ban yourself!");
+        await backCallback();
+        return;
+    }
+
     const BanManager = Kernel.get("banManager")
     const form = new Kernel.ModalFormData()
         .title("\u00A7e\u00A7lBan Player")
@@ -44,6 +56,12 @@ export async function showBanUI(player, target, backCallback) {
 }
 
 export async function showMuteUI(player, target, backCallback) {
+    if (player.id === target.id) {
+        player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot mute yourself!");
+        await backCallback();
+        return;
+    }
+
     const MuteStore = Kernel.get("muteStore")
     const form = new Kernel.ModalFormData()
         .title("\u00A7e\u00A7lMute Player")
