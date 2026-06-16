@@ -29,7 +29,7 @@ Scenario 1: "plugin for my friend's server" → AGPL. Free forever. Share if you
 
 Scenario 2: "selling a plugin" → AGPL. Free forever. Don't touch core files.
 
-Scenario 3: "fork AethelLib and sell the whole thing" → NOPE. Need ACL. Read ACL.md for terms.
+Scenario 3: "fork AethelLib and sell the whole thing as Proprietary" → NOPE. Need ACL. Read ACL.md for terms.
 
 Scenario 4: "running servers with custom mods commercially" → ACL required after 40 days. Read ACL.md.
 
