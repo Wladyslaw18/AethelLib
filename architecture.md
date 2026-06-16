@@ -8,12 +8,11 @@
 >
 > _The root entry points, global types, and deployment utilities that orchestrate the repository._
 
-```
-AethelLib/
+```text
+scripts/
 ├── ⚙ main.js                          # Main entry point that initializes the kernel and modules
 ├── ⚙ Configuration.js                 # Global configuration settings and constants for the add-on
-├── ▤ types.js                         # Shared type definitions for intellisense and codebase strictness
-
+└── ▤ types.js                         # Shared type definitions for intellisense and codebase strictness
 ```
 
 ---
@@ -310,4 +309,4 @@ Commands are dispatched using `/scriptevent ae:test_cmd`.
 *   **Input Pipe**: Stdin input is forwarded to the bedrock server using standard streams.
 *   **Impostor Entity**: The server executes the logic against a virtual client object with full permissions.
 *   **Trace Extraction**: Script errors print stack lines to console output.
-```
+
