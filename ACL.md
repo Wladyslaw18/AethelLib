@@ -1,5 +1,5 @@
 ================================================================================
-Aegis Commercial License (ALC)
+Aegis Commercial License (ACL)
 Version 1.1  Effective 6/6/2026
 ================================================================================
 Copyright © 2026 Aethelgrad Studio. All Rights Reserved.
