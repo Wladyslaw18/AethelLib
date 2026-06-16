@@ -1,8 +1,8 @@
-﻿{
+{
     "format_version": 2,
     "header": {
-        "description": "§6§lAethelLib §r§8| §fIndustrial Asset Vector\n§7Obsidian-Glass UI Protocol v2.1.0",
-        "name": "§6Aethel§fLib §7[RP]",
+        "name": "§6§lAethel§fLib §r§8• §7[RP] v1.0.0",
+        "description": "§8⚜ §6§lAethel§fLib §r§7- Obsidian-Glass UI Protocol §8[RP]§r\n§8» §fIndustrial Asset Vector §7v2.1.0",
         "uuid": "a7b8c9d0-1234-5678-90ab-cdef12345678",
         "version": [1, 0, 0],
         "min_engine_version": [1, 21, 0]
