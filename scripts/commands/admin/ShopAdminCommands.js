@@ -71,5 +71,46 @@ export const ShopAdminCommands = [
 
             player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully created category \u00A7b${id} \u00A7fwith icon \u00A7e${icon} \u00A7f(Priority: ${priority}).`);
         }
+    },
+    {
+        name: "shopcatrm",
+        description: "Removes a shop category and all of its assets.",
+        usage: "/ae:shopcatrm <id>",
+        permission: "admin.shop",
+        category: "ADMIN",
+        execute(_data, player, args) {
+            if (args.length < 1) {
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:shopcatrm <id>");
+                return;
+            }
+
+            const id = args[0].toUpperCase();
+            const success = ShopRegistry.removeCategory(id);
+
+            if (success) {
+                player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully removed category \u00A7b${id} \u00A7fand all its registered assets.`);
+            } else {
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77Category \u00A7e${id} \u00A77not found.`);
+            }
+        }
+    },
+    {
+        name: "shopcatls",
+        description: "Lists all active shop categories.",
+        usage: "/ae:shopcatls",
+        permission: "admin.shop",
+        category: "ADMIN",
+        execute(_data, player, args) {
+            const categories = ShopRegistry.getCategories();
+            if (categories.length === 0) {
+                player.sendMessage("\u00A7c\u00A7l» \u00A77No shop categories registered.");
+                return;
+            }
+
+            player.sendMessage("\u00A76\u00A7l=== ACTIVE SHOP CATEGORIES ===");
+            categories.forEach(cat => {
+                player.sendMessage(`\u00A7e- \u00A7b${cat.id} \u00A77(Priority: ${cat.priority}, Icon: ${cat.icon})`);
+            });
+        }
     }
 ];

@@ -37,7 +37,7 @@ export const ShopListCommand = {
         }
 
         if (items.length === 0) {
-            player.sendMessage(`${Lang.PREFIX}§c✗ No items found in category '${category}'.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] No items found in category '${category}'.`);
             return;
         }
 
@@ -73,7 +73,7 @@ export const ShopSearchCommand = {
 
         const results = searchItems(query);
         if (results.length === 0) {
-            player.sendMessage(`${Lang.PREFIX}§c✗ No items matched your search query.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] No items matched your search query.`);
             return;
         }
 
@@ -108,12 +108,12 @@ export const ShopBuyCommand = {
         const quantity = qtyOverride !== undefined ? qtyOverride : 1;
 
         if (MINECRAFT_ITEMS[itemId]?.category === "admin") {
-            player.sendMessage(`${Lang.PREFIX}§c✗ You cannot purchase restricted items.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] You cannot purchase restricted items.`);
             return;
         }
 
         if (quantity <= 0 || quantity > 999) {
-            player.sendMessage(`${Lang.PREFIX}§c✗ Quantity must be between 1 and 999.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] Quantity must be between 1 and 999.`);
             return;
         }
 
@@ -123,7 +123,7 @@ export const ShopBuyCommand = {
         const EconomyStore = Kernel.get("economy");
         const balance = EconomyStore.getBalance(player);
         if (balance < price) {
-            player.sendMessage(`${Lang.PREFIX}§c✗ Insufficient liquidity. Need §e$${price.toLocaleString()}§c but you got §e$${balance.toLocaleString()}§c.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] Insufficient liquidity. Need §e$${price.toLocaleString()}§c but you got §e$${balance.toLocaleString()}§c.`);
             return;
         }
 
@@ -220,7 +220,7 @@ export const ShopCartCommand = {
             const result = ShopCartInstance.removeFromCart(player, itemId, qty);
             player.sendMessage(`${Lang.PREFIX}${result.message}`);
         } else {
-            player.sendMessage(`${Lang.PREFIX}§c✗ Unknown cart action.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] Unknown cart action.`);
         }
     }
 };
@@ -236,21 +236,21 @@ export const ShopCheckoutCommand = {
     execute(_data, player, _args) {
         const summary = ShopCartInstance.getCartSummary(player);
         if (summary.count === 0) {
-            player.sendMessage(`${Lang.PREFIX}§c✗ Your cart is empty!`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] Your cart is empty!`);
             return;
         }
 
         const EconomyStore = Kernel.get("economy");
         const balance = EconomyStore.getBalance(player);
         if (balance < summary.totalPrice) {
-            player.sendMessage(`${Lang.PREFIX}§c✗ Insufficient liquidity. Need §e$${summary.totalPrice.toLocaleString()}§c, have §e$${balance.toLocaleString()}§c.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] Insufficient liquidity. Need §e$${summary.totalPrice.toLocaleString()}§c, have §e$${balance.toLocaleString()}§c.`);
             return;
         }
 
         const inventoryComp = player.getComponent("minecraft:inventory") || player.getComponent("inventory");
         const inventory = inventoryComp?.container;
         if (!inventory) {
-            player.sendMessage(`${Lang.PREFIX}§c✗ Transaction failed: Cannot access inventory.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] Transaction failed: Cannot access inventory.`);
             return;
         }
 
@@ -261,7 +261,7 @@ export const ShopCheckoutCommand = {
         }
 
         if (!hasInventorySpace(inventory, demands)) {
-            player.sendMessage(`${Lang.PREFIX}§c✗ Transaction failed: Not enough inventory space for all cart items.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] Transaction failed: Not enough inventory space for all cart items.`);
             return;
         }
 
@@ -274,7 +274,7 @@ export const ShopCheckoutCommand = {
             const innerInvComp = p.getComponent("minecraft:inventory") || p.getComponent("inventory");
             const innerInv = innerInvComp?.container;
             if (!innerInv) {
-                p.sendMessage(`${Lang.PREFIX}§c✗ Transaction failed: Cannot access inventory.`);
+                p.sendMessage(`${Lang.PREFIX}§c[X] Transaction failed: Cannot access inventory.`);
                 return;
             }
 
@@ -285,7 +285,7 @@ export const ShopCheckoutCommand = {
             }
 
             if (!hasInventorySpace(innerInv, innerDemands)) {
-                p.sendMessage(`${Lang.PREFIX}§c✗ Transaction failed: Not enough inventory space for all cart items.`);
+                p.sendMessage(`${Lang.PREFIX}§c[X] Transaction failed: Not enough inventory space for all cart items.`);
                 return;
             }
 
@@ -300,9 +300,9 @@ export const ShopCheckoutCommand = {
 
             if (successCount === innerCart.size) {
                 ShopCartInstance.clearCart(p);
-                p.sendMessage(`${Lang.PREFIX}§a§l✓ Cart checkout completed successfully!`);
+                p.sendMessage(`${Lang.PREFIX}§a§l[OK] Cart checkout completed successfully!`);
             } else {
-                p.sendMessage(`${Lang.PREFIX}§e⚜ Partial checkout completed. Remaining items kept in cart.`);
+                p.sendMessage(`${Lang.PREFIX}§e[!] Partial checkout completed. Remaining items kept in cart.`);
             }
         });
     }

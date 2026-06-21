@@ -138,7 +138,7 @@ export async function executeBuyTransaction(player, itemId, quantity) {
     const balance = EconomyStore.getBalance(player);
     if (balance < totalCost) {
         console.warn(`[Shop] [✦] Transaction aborted: player=${player.name} has insufficient balance ($${balance} < $${totalCost})`);
-        player.sendMessage(`${Lang.PREFIX}§c✗ Transaction failed: Insufficient funds.`);
+        player.sendMessage(`${Lang.PREFIX}§c[X] Transaction failed: Insufficient funds.`);
         return false;
     }
 
@@ -146,24 +146,24 @@ export async function executeBuyTransaction(player, itemId, quantity) {
     const inventory = inventoryComp?.container;
     if (!inventory) {
         console.warn(`[Shop] [✦] Transaction aborted: player=${player.name} inventory component missing`);
-        player.sendMessage(`${Lang.PREFIX}§c✗ Transaction failed: Cannot access inventory.`);
+        player.sendMessage(`${Lang.PREFIX}§c[X] Transaction failed: Cannot access inventory.`);
         return false;
     }
 
     if (!hasInventorySpace(inventory, { [itemId]: quantity })) {
         const availableSpace = getAvailableSpace(inventory, itemId);
         console.warn(`[Shop] [✦] Transaction aborted: player=${player.name} has insufficient inventory space (need=${quantity}, space=${availableSpace})`);
-        player.sendMessage(`${Lang.PREFIX}§c✗ Transaction failed: Not enough inventory space. Need space for ${quantity}, but only have space for ${availableSpace}.`);
+        player.sendMessage(`${Lang.PREFIX}§c[X] Transaction failed: Not enough inventory space. Need space for ${quantity}, but only have space for ${availableSpace}.`);
         return false;
     }
 
-    console.warn(`[Shop] [⚜] Checks passed. Debiting $${totalCost} from ${player.name}...`);
+    console.warn(`[Shop] [!] Checks passed. Debiting $${totalCost} from ${player.name}...`);
 
     // Debit funds
     const debited = await EconomyStore.removeMoney(player, totalCost);
     if (!debited) {
         console.warn(`[Shop] [✦] Transaction aborted: economy debit failed for player=${player.name}`);
-        player.sendMessage(`${Lang.PREFIX}§c✗ Transaction failed: Account sync error.`);
+        player.sendMessage(`${Lang.PREFIX}§c[X] Transaction failed: Account sync error.`);
         return false;
     }
 
@@ -184,8 +184,8 @@ export async function executeBuyTransaction(player, itemId, quantity) {
                 const refund = getItemPrice(itemId, failed);
                 await EconomyStore.addMoney(player, refund);
                 
-                console.warn(`[Shop] [⚜] Partial delivery for ${player.name}: delivered=${quantity - remaining + amountToGive - failed}, failed=${failed}, refunded=$${refund}`);
-                player.sendMessage(`${Lang.PREFIX}§e⚜ Partial Delivery: Delivered ${quantity - remaining + amountToGive - failed}x, refunded $${refund.toLocaleString()}.`);
+                console.warn(`[Shop] [!] Partial delivery for ${player.name}: delivered=${quantity - remaining + amountToGive - failed}, failed=${failed}, refunded=$${refund}`);
+                player.sendMessage(`${Lang.PREFIX}§e[!] Partial Delivery: Delivered ${quantity - remaining + amountToGive - failed}x, refunded $${refund.toLocaleString()}.`);
                 return true;
             }
             remaining -= amountToGive;
@@ -194,11 +194,11 @@ export async function executeBuyTransaction(player, itemId, quantity) {
         // Complete failure safety refund
         await EconomyStore.addMoney(player, totalCost);
         console.warn(`[Shop] [✦] Delivery exception for ${player.name}: ${err.message || err}. Full refund of $${totalCost} processed.`);
-        player.sendMessage(`${Lang.PREFIX}§c✗ Delivery system failed. Your account has been refunded.`);
+        player.sendMessage(`${Lang.PREFIX}§c[X] Delivery system failed. Your account has been refunded.`);
         return false;
     }
 
-    console.warn(`[Shop] [⚜] Purchase transaction fully completed for ${player.name}: ${quantity}x ${itemId}`);
-    player.sendMessage(`${Lang.PREFIX}§a§l✓ Procured ${quantity}x ${itemName} for §e$${totalCost.toLocaleString()}§a!`);
+    console.warn(`[Shop] [!] Purchase transaction fully completed for ${player.name}: ${quantity}x ${itemId}`);
+    player.sendMessage(`${Lang.PREFIX}§a§l[OK] Procured ${quantity}x ${itemName} for §e$${totalCost.toLocaleString()}§a!`);
     return true;
 }

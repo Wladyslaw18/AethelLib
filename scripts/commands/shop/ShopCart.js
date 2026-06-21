@@ -16,31 +16,31 @@ class ShopCart {
     }
 
     addToCart(player, itemId, quantity) {
-        if (quantity <= 0) return { success: false, message: "⚜ Quantity must be positive!" };
+        if (quantity <= 0) return { success: false, message: "[!] Quantity must be positive!" };
         const cart = this.getCart(player);
         const current = cart.get(itemId) || 0;
         const total = current + quantity;
 
-        if (total > 999) return { success: false, message: "⚜ Cannot exceed 999 units of a single item type!" };
+        if (total > 999) return { success: false, message: "[!] Cannot exceed 999 units of a single item type!" };
 
         cart.set(itemId, total);
         this.saveCart(player, cart);
         return {
             success: true,
-            message: `⚜ Added ${quantity}x ${getItemDisplayName(itemId)} to cart. Total: ${total}`,
+            message: `[!] Added ${quantity}x ${getItemDisplayName(itemId)} to cart. Total: ${total}`,
             newQty: total
         };
     }
 
     removeFromCart(player, itemId, quantity = null) {
         const cart = this.getCart(player);
-        if (!cart.has(itemId)) return { success: false, message: "⚜ Item is not in your cart!" };
+        if (!cart.has(itemId)) return { success: false, message: "[!] Item is not in your cart!" };
 
         const current = cart.get(itemId);
         if (quantity === null || quantity >= current) {
             cart.delete(itemId);
             this.saveCart(player, cart);
-            return { success: true, message: `⚜ Removed ${getItemDisplayName(itemId)} from cart.` };
+            return { success: true, message: `[!] Removed ${getItemDisplayName(itemId)} from cart.` };
         }
 
         const remaining = current - quantity;
@@ -48,14 +48,14 @@ class ShopCart {
         this.saveCart(player, cart);
         return {
             success: true,
-            message: `⚜ Removed ${quantity}x ${getItemDisplayName(itemId)}. Remaining: ${remaining}`
+            message: `[!] Removed ${quantity}x ${getItemDisplayName(itemId)}. Remaining: ${remaining}`
         };
     }
 
     clearCart(player) {
         const PlayerStore = Kernel.get("playerStore");
         PlayerStore.set(player, "shop:cart", {});
-        return { success: true, message: "⚜ Cart cleared. Fresh start!" };
+        return { success: true, message: "[!] Cart cleared. Fresh start!" };
     }
 
     getCartSummary(player) {

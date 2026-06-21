@@ -20,7 +20,7 @@ export function createPendingTransaction(player, details, callback) {
             if (player.isValid) {
                 try {
                     player.setDynamicProperty("ae:pending_shop", undefined);
-                    player.sendMessage(`${Lang.PREFIX}§c✗ Purchase confirmation expired.`);
+                    player.sendMessage(`${Lang.PREFIX}§c[X] Purchase confirmation expired.`);
                 } catch (e) {
                     console.error("[Shop] Failed to notify player of expired transaction: " + e);
                 }
@@ -136,10 +136,10 @@ world.beforeEvents.chatSend.subscribe((event) => {
             if (typeof transaction.callback === "function") {
                 transaction.callback(player, false);
             }
-            player.sendMessage(`${Lang.PREFIX}§c✗ Purchase cancelled.`);
+            player.sendMessage(`${Lang.PREFIX}§c[X] Purchase cancelled.`);
         } else {
             // Invalid entry - keep locked, send instructions
-            player.sendMessage(`${Lang.PREFIX}§c⚜ Please type §lY§r§c to confirm or §lN§r§c to cancel!`);
+            player.sendMessage(`${Lang.PREFIX}§c[!] Please type §lY§r§c to confirm or §lN§r§c to cancel!`);
         }
     });
 });

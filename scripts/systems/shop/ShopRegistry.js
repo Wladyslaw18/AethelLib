@@ -54,6 +54,33 @@ export const ShopRegistry = {
     },
 
     /**
+     * Removes a category from the industrial manifest.
+     */
+    removeCategory(id) {
+        this._loadCategories();
+        const upperId = id.toUpperCase();
+        if (this._categories.has(upperId)) {
+            this._categories.delete(upperId);
+            this._saveCategories();
+
+            // Clean up all sharded assets and prices in the category
+            const Database = Kernel.get("database");
+            if (Database) {
+                const collectionName = `shop:assets:${upperId}`;
+                const indexKey = `${collectionName}:index`;
+                const itemIds = Database.get(indexKey) || [];
+                itemIds.forEach(itemId => {
+                    Database.deleteSharded(collectionName, itemId);
+                    Database.delete(`shop:price:${itemId}`);
+                });
+                Database.delete(indexKey);
+            }
+            return true;
+        }
+        return false;
+    },
+
+    /**
      * Registers an asset via a light pointer directly into the database.
      * @param {string} category 
      * @param {string} itemId 
