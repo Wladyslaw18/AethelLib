@@ -1,7 +1,8 @@
 export const RepairCommand = {
-    name: "arepair",
+    name: "repair",
+    aliases: ["arepair"],
     description: "Repair the item in your hand",
-    usage: "/ae:arepair",
+    usage: "/ae:repair",
     permission: "essentials.repair",
     category: "WORLD",
     native: false,
