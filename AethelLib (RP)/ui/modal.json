@@ -1,0 +1,9 @@
+{
+  "namespace": "modal",
+
+  "modal_background_image": {
+    "type": "image",
+    "texture": "textures/ui/dialog_background",
+    "size": [ "100%", "100%" ]
+  }
+}

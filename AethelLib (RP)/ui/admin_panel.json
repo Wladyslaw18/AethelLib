@@ -1,4 +1,4 @@
-﻿{
+{
   "namespace": "admin_panel",
 
   "admin_panel_content": {
@@ -103,21 +103,7 @@
     "size": [ "100% - 8px", "100% - 8px" ],
     "controls": [
       {
-        "btn@aethel_ui.aero_button": {
-          "$button_text": "#form_button_text",
-          "$pressed_button_name": "button.form_button_click",
-          "bindings": [
-            {
-              "binding_name": "#form_button_text",
-              "binding_type": "collection",
-              "binding_collection_name": "form_buttons"
-            },
-            {
-              "binding_type": "collection_details",
-              "binding_collection_name": "form_buttons"
-            }
-          ]
-        }
+        "btn@aethel_ui.aero_button": {}
       }
     ]
   }

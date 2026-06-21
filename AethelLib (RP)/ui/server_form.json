@@ -1,51 +1,17 @@
-﻿{
+{
   "namespace": "server_form",
+  "imports": [
+    "ui/common.json",
+    "ui/common_dialogs.json",
+    "ui/aethel_ui.json",
+    "ui/modal.json"
+  ],
 
   "server_form_factory": {
     "type": "factory",
     "control_ids": {
-      "custom_form": "@server_form.custom_form",
       "long_form": "@server_form.long_form"
     }
-  },
-
-  "custom_form": {
-    "type": "panel",
-    "size": ["100%", "100%"],
-    "controls": [
-      {
-        "dialog_frame": {
-          "type": "panel",
-          "size": [352, 270],
-          "anchor_from": "center",
-          "anchor_to": "center",
-          "controls": [
-            { "main_bg@common_dialogs.main_panel": { "layer": -1 } },
-            {
-              "close_button@common.close_button": {
-                "anchor_from": "top_right",
-                "anchor_to": "top_right",
-                "offset": [0, 0],
-                "layer": 6
-              }
-            },
-            { "title@aethel_ui.aethel_label": {} },
-            { "body@aethel_ui.aethel_body": {} },
-            {
-              "content_panel": {
-                "type": "panel",
-                "offset": [14, 60],
-                "size": [324, 180],
-                "layer": 2,
-                "controls": [
-                  { "content@common_dialogs.main_panel": { "size": ["100%", "100%"] } }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    ]
   },
 
   "long_form": {
@@ -59,7 +25,7 @@
           "anchor_from": "center",
           "anchor_to": "center",
           "controls": [
-            { "main_bg@common_dialogs.main_panel": { "layer": -1 } },
+            { "main_bg@common_dialogs.main_panel": {} },
             {
               "close_button@common.close_button": {
                 "anchor_from": "top_right",

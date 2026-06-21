@@ -1,9 +1,9 @@
-﻿{
+{
   "ui_defs": [
     "ui/aethel_ui.json",
-    "ui/server_form.json",
     "ui/admin_panel.json",
     "ui/rank_creation.json",
-    "ui/rank_edit.json"
+    "ui/rank_edit.json",
+    "ui/server_form.json"
   ]
 }
