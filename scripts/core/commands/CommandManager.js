@@ -15,6 +15,7 @@ export const CommandManager = {
     _primaryNS: "ae",
     // the alias namespace prefix.
     _aliasNS: "ae", 
+    _startupTa: null,
 
     init() {
         // don't do this twice. please. my brain is already leaking out of my ears.
@@ -23,7 +24,8 @@ export const CommandManager = {
 
         // we have to wait for the startup event to grab the custom command registry.
         // the engine is super picky and will refuse to let us register things once ticking.
-        Kernel.system.beforeEvents.startup.subscribe((ev) => this._injectNativeRegistry(ev));
+        this._startupTa = (ev) => this._injectNativeRegistry(ev);
+        Kernel.system.beforeEvents.startup.subscribe(this._startupTa);
 
         console.log(`[CommandManager] Registry online. Namespace: /${this._primaryNS}:`);
     },
@@ -176,42 +178,7 @@ Registry.getAll().forEach(name => {
         console.log(`[CommandManager] Native C++ Command Registry sync complete`);
     },
 
-    _deriveParams(params, isOptional) {
-        if (!params || !Array.isArray(params)) return [];
-        const Registry = Kernel.get("commandRegistry");
-        return params
-            .filter(p => !!p.optional === isOptional)
-            .map(p => {
-                let pType = p.type;
-                let enumName = null;
-
-                if (typeof pType === "string") {
-                    const standardType = this._mapParamType(pType);
-                    if (standardType) {
-                        pType = standardType;
-                    } else if (Registry && Registry.hasEnum && Registry.hasEnum(pType)) {
-                        // THE "HOLY GRAIL" ENUM CONFIGURATION:
-                        enumName = pType.includes(":") ? pType : `${this._primaryNS}:${pType}`;
-                        pType = Kernel.CustomCommandParamType.Enum;
-                    } else {
-                        pType = Kernel.CustomCommandParamType.String;
-                    }
-                }
-
-                const derived = {
-                    name: p.name,
-                    type: pType
-                };
-
-                if (enumName) {
-                    // Provide both properties to satisfy different engine beta versions.
-                    derived.enumName = enumName;
-                    derived.enum = enumName;
-                }
-
-                return derived;
-            });
-    },
+    // _deriveParams has been deprecated and inlined into _buildConfig for single-pass O(N) execution.
 
     _mapParamType(type) {
         switch(type?.toLowerCase()) {
@@ -296,7 +263,7 @@ Registry.getAll().forEach(name => {
             const isLegacy = !cmd.params && !!cmd.parameters;
 
             let rawArgs = args;
-            if (vector === "NATIVE" && args.length === 1 && typeof args[0] === "object" && args[0] !== null && typeof args[0].isValid !== "function" && !args[0].id && !args[0].typeId) {
+            if (vector === "NATIVE" && args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0]) && typeof args[0].isValid !== "function" && !args[0].id && !args[0].typeId) {
                 const argsObj = args[0];
                 rawArgs = paramsList ? paramsList.map(param => argsObj[param.name]) : [];
             }
@@ -377,14 +344,11 @@ Registry.getAll().forEach(name => {
             // If the original parameter was NOT marked optional, but the user didn't pass it (or it's undefined),
             // show the usage syntax and stop execution.
             if (paramsList) {
-                const allArgsEmpty = cleanArgs.length === 0 || cleanArgs.every(arg => arg === undefined || arg === null || arg === "");
-                if (!allArgsEmpty) {
-                    for (let i = 0; i < paramsList.length; i++) {
-                        const paramDef = paramsList[i];
-                        if (paramDef && paramDef.optional === false && cleanArgs[i] === undefined) {
-                            player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${cmd.usage || ("/" + this._primaryNS + ":" + cmd.name)}`);
-                            return;
-                        }
+                for (let i = 0; i < paramsList.length; i++) {
+                    const paramDef = paramsList[i];
+                    if (paramDef && paramDef.optional === false && (cleanArgs[i] === undefined || cleanArgs[i] === null || cleanArgs[i] === "")) {
+                        player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${cmd.usage || ("/" + this._primaryNS + ":" + cmd.name)}`);
+                        return;
                     }
                 }
             }
@@ -439,8 +403,44 @@ Registry.getAll().forEach(name => {
     },
 
     _buildConfig(finalName, def, paramsList) {
-        const mandatory = this._deriveParams(paramsList, false);
-        const optional = this._deriveParams(paramsList, true);
+        const mandatory = [];
+        const optional = [];
+
+        if (paramsList && Array.isArray(paramsList)) {
+            const Registry = Kernel.get("commandRegistry");
+            paramsList.forEach(p => {
+                let pType = p.type;
+                let enumName = null;
+
+                if (typeof pType === "string") {
+                    const standardType = this._mapParamType(pType);
+                    if (standardType) {
+                        pType = standardType;
+                    } else if (Registry && Registry.hasEnum && Registry.hasEnum(pType)) {
+                        enumName = pType.includes(":") ? pType : `${this._primaryNS}:${pType}`;
+                        pType = Kernel.CustomCommandParamType.Enum;
+                    } else {
+                        pType = Kernel.CustomCommandParamType.String;
+                    }
+                }
+
+                const derived = {
+                    name: p.name,
+                    type: pType
+                };
+
+                if (enumName) {
+                    derived.enumName = enumName;
+                    derived.enum = enumName;
+                }
+
+                if (p.optional) {
+                    optional.push(derived);
+                } else {
+                    mandatory.push(derived);
+                }
+            });
+        }
 
         return {
             name: finalName,
@@ -451,5 +451,14 @@ Registry.getAll().forEach(name => {
         };
     },
 
-    refreshAliases() {}
+    refreshAliases() {},
+    
+    shutdown() {
+        if (this._startupTa) {
+            try { Kernel.system.beforeEvents.startup.unsubscribe(this._startupTa); } catch(e) {}
+            this._startupTa = null;
+        }
+        this._initialized = false;
+        console.log(`[CommandManager] Offline.`);
+    }
 };

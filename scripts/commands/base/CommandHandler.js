@@ -38,6 +38,10 @@ const COMMAND_SYSTEM_MAPPINGS = {
     "shopinfo": "shopSystem",
     "shopcart": "shopSystem",
     "shopcheckout": "shopSystem",
+    "shopadd": "shopSystem",
+    "shopcatmk": "shopSystem",
+    "shopcatrm": "shopSystem",
+    "shopcatls": "shopSystem",
     // Quick Sell
     "sell": "sellSystem",
     // Auction
@@ -426,17 +430,84 @@ export const CommandHandler = {
                 return
             }
 
-            // Enterprise Safeguard: Validate that all required parameters are provided.
+            // Enterprise Safeguard: Validate that all required parameters are provided and typed correctly.
             const paramsList = command.params || command.parameters;
             if (paramsList) {
-                const allArgsEmpty = args.length === 0 || args.every(arg => arg === undefined || arg === null || arg === "");
-                if (!allArgsEmpty) {
-                    for (let i = 0; i < paramsList.length; i++) {
-                        const paramDef = paramsList[i];
-                        if (paramDef && paramDef.optional === false && (args[i] === undefined || args[i] === null || args[i] === "")) {
-                            player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${command.usage || ("/" + commandName)}`);
-                            this._recordCommandStats(commandName, false, Date.now() - startTime, "missing_args")
-                            return;
+                for (let i = 0; i < paramsList.length; i++) {
+                    const paramDef = paramsList[i];
+                    if (!paramDef) continue;
+
+                    const argVal = args[i];
+
+                    // 1. Missing mandatory parameter check
+                    if (paramDef.optional === false && (argVal === undefined || argVal === null || argVal === "")) {
+                        player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${command.usage || ("/" + commandName)}`);
+                        this._recordCommandStats(commandName, false, Date.now() - startTime, "missing_args");
+                        return;
+                    }
+
+                    // 2. Type validation for provided arguments
+                    if (argVal !== undefined && argVal !== null && argVal !== "") {
+                        const type = paramDef.type;
+                        if (typeof type === "string") {
+                            const lowerType = type.toLowerCase();
+
+                            // Integer validation
+                            if (lowerType === "int" || lowerType === "integer") {
+                                const num = Number(argVal);
+                                if (isNaN(num) || !Number.isInteger(num)) {
+                                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid value for \u00A7e${paramDef.name}\u00A77. Must be a valid integer.`);
+                                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${command.usage || ("/" + commandName)}`);
+                                    this._recordCommandStats(commandName, false, Date.now() - startTime, "invalid_type");
+                                    return;
+                                }
+                            }
+
+                            // Float validation
+                            else if (lowerType === "float" || lowerType === "double" || lowerType === "number") {
+                                const num = Number(argVal);
+                                if (isNaN(num)) {
+                                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid value for \u00A7e${paramDef.name}\u00A77. Must be a valid number.`);
+                                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${command.usage || ("/" + commandName)}`);
+                                    this._recordCommandStats(commandName, false, Date.now() - startTime, "invalid_type");
+                                    return;
+                                }
+                            }
+
+                            // Boolean validation
+                            else if (lowerType === "bool" || lowerType === "boolean") {
+                                const valStr = String(argVal).toLowerCase();
+                                if (valStr !== "true" && valStr !== "false" && valStr !== "1" && valStr !== "0") {
+                                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid value for \u00A7e${paramDef.name}\u00A77. Must be true or false.`);
+                                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${command.usage || ("/" + commandName)}`);
+                                    this._recordCommandStats(commandName, false, Date.now() - startTime, "invalid_type");
+                                    return;
+                                }
+                            }
+
+                            // Custom Enum validation
+                            else {
+                                const getRegistryEnum = (typeStr) => {
+                                    if (CommandRegistry && typeof CommandRegistry.hasEnum === "function" && CommandRegistry.hasEnum(typeStr)) {
+                                        return CommandRegistry.getEnum(typeStr);
+                                    }
+                                    if (CommandRegistry && typeof CommandRegistry.getAllEnums === "function") {
+                                        const match = CommandRegistry.getAllEnums().find(k => k.toLowerCase() === typeStr.toLowerCase());
+                                        if (match) return CommandRegistry.getEnum(match);
+                                    }
+                                    return null;
+                                };
+                                const enumValues = getRegistryEnum(type);
+                                if (enumValues) {
+                                    const valStr = String(argVal).toLowerCase();
+                                    if (!enumValues.map(v => String(v).toLowerCase()).includes(valStr)) {
+                                        player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid value for \u00A7e${paramDef.name}\u00A77. Choose from: \u00A7e${enumValues.join("\u00A77, \u00A7e")}`);
+                                        player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${command.usage || ("/" + commandName)}`);
+                                        this._recordCommandStats(commandName, false, Date.now() - startTime, "invalid_enum");
+                                        return;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
