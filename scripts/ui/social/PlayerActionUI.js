@@ -43,7 +43,7 @@ export async function showPlayerInteractionUI(player, target) {
 async function showPayUI(player, target) {
     const form = new Kernel.ModalFormData()
         .title(Lang.GOLD + "PAY")
-        .textField(`Credits to ${target.name}:`, "Amount", "0")
+        .textField(`Credits to ${target.name}:`, "Amount", { defaultValue: "0" })
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {
@@ -59,7 +59,7 @@ async function showPayUI(player, target) {
 async function showMessageUI(player, target) {
     const form = new Kernel.ModalFormData()
         .title(Lang.GOLD + "MESSAGE")
-        .textField(`To ${target.name}:`, "Message content...", "")
+        .textField(`To ${target.name}:`, "Message content...", { defaultValue: "" })
     
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) {

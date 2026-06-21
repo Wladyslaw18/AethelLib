@@ -76,7 +76,7 @@ export async function showMainGUI(player) {
     if (!SettingsStore || SettingsStore.get("moneySystem")) {
         menuVector.push({
             text: "\u00A76\u00A7lECONOMY\n\u00A78Check balance, pay, withdraw",
-            icon: "textures/ui/pay",
+            icon: "textures/items/gold_ingot",
             action: async () => {
                 const { showEconomyMenu } = await import("./economy/EconomyUI.js");
                 Kernel.system.run(() => showEconomyMenu(player));

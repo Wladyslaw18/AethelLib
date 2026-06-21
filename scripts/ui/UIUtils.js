@@ -1,35 +1,54 @@
 import { Kernel } from "../core/Kernel.js";
 
 export class UIUtils {
+    // Thread-safety set to lock players from opening duplicate forms
+    static activePlayers = new Set();
+
     /**
-     * Shows a form to a player, handling busy states and retries.
+     * Shows a form to a player, handling busy states, retries, and double-open prevention.
      * @param {import("@minecraft/server").Player} player 
      * @param {any} form 
-     * @param {number} retries 
+
      * @returns {Promise<any>}
      */
-    static async showForm(player, form, retries = 5) {
-        // Yield to ensure any command/chat/previous UI has fully closed on the client.
-        await new Promise(resolve => Kernel.system.runTimeout(resolve, 5));
-
-        for (let i = 0; i < retries; i++) {
-            if (!player || !player.isValid) return { canceled: true };
-            try {
-                const response = await form.show(player);
-                if (response.canceled && response.cancelationReason === "UserBusy") {
-                    throw new Error("UserBusy");
-                }
-                return response;
-            } catch (error) {
-                if (i === retries - 1) {
-                    console.error(`[UIUtils] Form show failed after ${retries} attempts: ${error}`);
-                    return { canceled: true };
-                }
-                // Wait 10 ticks (500ms) before retrying
-                await new Promise(resolve => Kernel.system.runTimeout(resolve, 10));
-            }
+    static async showForm(player, formOrBuilder) {
+        if (!player || !player.isValid) return { canceled: true };
+        
+        // locks prevent double-open execution loops
+        if (this.activePlayers.has(player.id)) {
+            return { canceled: true, cancelationReason: "UserBusy" };
         }
-        return { canceled: true };
+        this.activePlayers.add(player.id);
+
+        try {
+            // let previous windows close
+            await new Promise(resolve => Kernel.system.runTimeout(resolve, 10));
+
+            // loop until chat is fully closed
+            while (true) {
+                // native forms mutate on failure — rebuild if possible
+                const form = typeof formOrBuilder === "function" ? formOrBuilder() : formOrBuilder;
+                const response = await form.show(player);
+                
+                if (response.cancelationReason !== "UserBusy") {
+                    return response;
+                }
+                
+                // can't retry static forms — bail out
+                if (typeof formOrBuilder !== "function") {
+                    return response;
+                }
+                
+                // wait before retry
+                await new Promise(resolve => Kernel.system.runTimeout(resolve, 5));
+            }
+        } catch (error) {
+            console.error(`[UIUtils] Form show failed: ${error}`);
+            return { canceled: true };
+        } finally {
+            // always release lock
+            this.activePlayers.delete(player.id);
+        }
     }
 
     /**
@@ -39,5 +58,10 @@ export class UIUtils {
         Kernel.system.run(() => uiFunc(player));
     }
 }
+
+// Clean up locks when players leave the server to prevent permanent lockouts
+Kernel.world.afterEvents.playerLeave.subscribe((event) => {
+    UIUtils.activePlayers.delete(event.playerId);
+});
 
 

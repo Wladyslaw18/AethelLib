@@ -101,7 +101,7 @@ export async function showCreateUI(player) {
 
         .textField(`Start Bid ($):\n\u00A78(Listing ${item.typeId.replace("minecraft:", "").toUpperCase()} x${item.amount})\u00A7r`, "100")
         .textField("Buy Now ($) [0 to disable]:", "1000")
-        .slider("Duration (Hours):", 1, 48, 1, 24)
+        .slider("Duration (Hours):", 1, 48, { valueStep: 1, defaultValue: 24 })
 
     const res = await UIUtils.showForm(player, form)
     if (res.canceled) return
