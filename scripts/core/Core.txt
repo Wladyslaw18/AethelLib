@@ -1,0 +1,4893 @@
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\Kernel.js ===
+import * as mc from "@minecraft/server";
+import * as mcui from "@minecraft/server-ui";
+import { TickScheduler } from "./scheduler/TickScheduler.js";
+import { SignalBus } from "./signalbus/SignalBus.js";
+import { DependencySorter } from "../utils/DependencySorter.js";
+
+// ----------------------------------------------------------------------------
+// | class: Kernel                                                            |
+// | the central nervous system. if this fails, we all go home.               |
+// | handles service registration, plugin lifecycles, and native api proxies. |
+// ----------------------------------------------------------------------------
+export class Kernel {
+    // ----------------------------------------------------------------------------
+    // | static properties                                                        |
+    // | just some maps to keep track of stuff. standard boilerplate.             |
+    // ----------------------------------------------------------------------------
+    
+    // holds the actual system instances (economy, db, etc)
+    static #systems = new Map();
+    // holds metadata for external plugins
+    static #plugins = new Map();
+    // holds services that plugins want to share with each other
+    static #serviceProviders = new Map();
+    // holds disabled systems
+    static #disabledSystems = new Set();
+    static #systemProxy = null;
+
+    // ----------------------------------------------------------------------------
+    // | native proxies                                                           |
+    // | wrapping these so we don't have to import @minecraft/server everywhere.  |
+    // | also makes it easier to mock things if we ever get unit tests (doubt).   |
+    // ----------------------------------------------------------------------------
+    
+    // the world object. basically everything that exists.
+    static get world() { return mc.world; }
+    // the system object. handles ticks and run loops.
+    static get system() {
+        if (!this.#systemProxy) {
+            try {
+                this.#systemProxy = new Proxy(mc.system, {
+                    get(target, prop) {
+                        if (prop === "currentTick") {
+                            try {
+                                const tick = target.currentTick;
+                                if (typeof tick === "number") return tick;
+                            } catch (e) {}
+                            return Math.floor(Date.now() / 50);
+                        }
+                        const val = Reflect.get(target, prop);
+                        if (typeof val === "function") return val.bind(target);
+                        return val;
+                    }
+                });
+            } catch (e) {
+                return mc.system;
+            }
+        }
+        return this.#systemProxy;
+    }
+    // helper to see how many services are currently alive.
+    static get size() { return this.#systems.size; }
+    // helper to see all registered systems
+    static get systems() { return this.#systems; }
+    // helper to see all disabled systems
+    static get disabledSystems() { return this.#disabledSystems; }
+
+    // ----------------------------------------------------------------------------
+    // | type proxies                                                             |
+    // | because typing out mc.ItemStack 100 times is a waste of life.            |
+    // ----------------------------------------------------------------------------
+    static get ItemStack() { return mc.ItemStack; }
+    static get EntityComponentTypes() { return mc.EntityComponentTypes; }
+    static get SignSide() { return mc.SignSide; }
+    static get CustomCommandStatus() { return mc.CustomCommandStatus; }
+    static get CustomCommandParamType() { return mc.CustomCommandParamType; }
+    static get CommandPermissionLevel() { return mc.CommandPermissionLevel; }
+    static get GameMode() { return mc.GameMode; }
+    static get EquipmentSlot() { return mc.EquipmentSlot; }
+    static get BlockPermutation() { return mc.BlockPermutation; }
+    static get BlockComponentTypes() { return mc.BlockComponentTypes; }
+    static get InputPermissionCategory() { return mc.InputPermissionCategory; }
+
+    // ----------------------------------------------------------------------------
+    // | ui proxies                                                               |
+    // | server-ui forms. standard stuff for player interaction.                  |
+    // ----------------------------------------------------------------------------
+    static get ActionFormData() { return mcui.ActionFormData; }
+    static get ModalFormData() { return mcui.ModalFormData; }
+    static get MessageFormData() { return mcui.MessageFormData; }
+
+    // ----------------------------------------------------------------------------
+    // | method: register                                                         |
+    // | put a service into the kernel. don't register the same id twice.         |
+    // ----------------------------------------------------------------------------
+    static register(id, instance) {
+        // check if we're about to overwrite something important
+        if (this.#systems.has(id)) {
+            console.warn(`[Kernel] Service collision: identifier '${id}' is already registered. Overwriting.`);
+        }
+        // slap it in the map
+        this.#systems.set(id, instance);
+        // let the console know we did something
+        console.log("[Kernel] Service registered: " + id);
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: registerPlugin                                                   |
+    // | the entrance for external mods. gives them a sandbox to play in.         |
+    // | tracks their commands and listeners so we can kill them if needed.        |
+    // ----------------------------------------------------------------------------
+    static registerPlugin(manifest, logic) {
+        // basic validation. if they didn't give us an id, we're done here.
+        if (!manifest.id || !logic) {
+            console.error("[Kernel] Missing ID or Logic for plugin.");
+            return;
+        }
+
+        // we need to track everything the plugin does. 
+        // if the plugin unloads, we need to nuke all its residue.
+        const pluginState = {
+            id: manifest.id,
+            activeCommands:[],
+            activeIntervals: [],
+            activeListeners:[]
+        };
+
+        // this is the object we hand to the plugin. 
+        // it's their only way to talk to the kernel safely.
+        const context = {
+            id: manifest.id,
+            name: manifest.name || manifest.id,
+            version: manifest.version,
+            
+            // register a command under the plugin's name.
+            registerCommand: (command) => {
+                if (!command) {
+                    console.error(`[${manifest.id}] Failed to register command: Command object is null or undefined.`);
+                    return;
+                }
+                // get the global registry
+                const registry = this.get("commandRegistry");
+                if (!registry) return console.error(`[${manifest.id}] Failed to register command: Registry not found.`);
+                // add it to the registry
+                registry.register(command);
+                // track it so we can unregister it later
+                pluginState.activeCommands.push(command.name || "unnamed");
+            },
+
+            // set an interval that auto-cleans on plugin shutdown.
+            setInterval: (callback, ticks) => {
+                // schedule the tick task
+                const id = TickScheduler.schedule(callback, ticks, { name: `${manifest.id}_interval` });
+                // keep the id for the cleanup crew
+                pluginState.activeIntervals.push(id);
+                return id;
+            },
+
+            // listen for signals. also auto-cleans.
+            onSignal: (event, callback) => {
+                // subscribe to the signal bus
+                const unsubscribe = SignalBus.on(event, callback);
+                // keep the unsubscribe function
+                pluginState.activeListeners.push(unsubscribe);
+            },
+
+            // find a service.
+            getService: (id) => this.get(id) || this.#serviceProviders.get(id),
+            
+            // share a service with other plugins.
+            exposeService: (id, instance) => {
+                // put it in the public provider map
+                this.#serviceProviders.set(id, instance);
+                console.log(`[Kernel] Service Exposed: ${id} by ${manifest.id}`);
+            },
+
+            // standard logging that includes the plugin id.
+            log: (msg) => console.log(`\u00A78[\u00A7b${manifest.id}\u00A78] \u00A7f${msg}`),
+            error: (msg) => console.error(`\u00A78[\u00A7c${manifest.id}\u00A78] \u00A7cERROR: ${msg}`)
+        };
+
+        // save the plugin data in our master map.
+        this.#plugins.set(manifest.id, { manifest, logic, context, state: "STAGED", tracker: pluginState });
+        console.log(`[Kernel] Plugin staged: ${manifest.id} v${manifest.version}`);
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: unloadPlugin                                                     |
+    // | the decommission sequence. wipes a plugin from existence.                |
+    // | clears its intervals, listeners, and commands.                           |
+    // ----------------------------------------------------------------------------
+    static unloadPlugin(id) {
+        // find the plugin in the map
+        const plugin = this.#plugins.get(id);
+        if (!plugin) return;
+
+        // start the shutdown log
+        plugin.context.log("unloading...");
+
+        // if the plugin has custom shutdown logic, run it now.
+        if (typeof plugin.logic.onDisable === "function") {
+            plugin.logic.onDisable(plugin.context);
+        }
+
+        // clear all the tick intervals they scheduled.
+        if (plugin.tracker && plugin.tracker.activeIntervals) {
+            plugin.tracker.activeIntervals.forEach(taskId => TickScheduler.cancel(taskId));
+        }
+        
+        // nuke all the event listeners they registered.
+        if (plugin.tracker && plugin.tracker.activeListeners) {
+            plugin.tracker.activeListeners.forEach(unsub => unsub());
+        }
+
+        // unregister all their commands from the global registry.
+        const registry = this.get("commandRegistry");
+        if (registry && plugin.tracker && plugin.tracker.activeCommands) {
+            plugin.tracker.activeCommands.forEach(cmd => registry.unregister(cmd));
+        }
+
+        // mark it as disabled and delete it from the active map.
+        plugin.state = "DISABLED";
+        this.#plugins.delete(id);
+        console.log(`[Kernel] Purged plugin: ${id}`);
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: get                                                              |
+    // | fetch a service by its id. checks core systems then plugins.             |
+    // | returns a Null Object proxy if the system is registered but disabled.    |
+    // ----------------------------------------------------------------------------
+    static get(id) {
+        if (this.#disabledSystems.has(id)) {
+            const instance = this.#systems.get(id) || this.#serviceProviders.get(id);
+            return this.#createNullProxy(id, instance);
+        }
+        // try to find it in core systems first, then the plugin service providers.
+        return this.#systems.get(id) || this.#serviceProviders.get(id);
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: #createNullProxy                                                 |
+    // | creates a robust Null Object Pattern proxy to prevent TypeError crashes. |
+    // | returns 0, false, empty arrays, or Promises based on method heuristics.   |
+    // ----------------------------------------------------------------------------
+    static #createNullProxy(id, instance) {
+        const target = instance || {};
+        
+        return new Proxy(target, {
+            get(obj, prop, receiver) {
+                // bypass special properties and promise checks
+                if (prop === "then") return undefined;
+                if (prop === "toJSON") return () => null;
+                if (prop === "valueOf") return () => 0;
+                if (prop === "toString") return () => `[DisabledSystemProxy:${id}]`;
+                if (prop === Symbol.toPrimitive) {
+                    return (hint) => {
+                        if (hint === "number") return 0;
+                        if (hint === "string") return "";
+                        return false;
+                    };
+                }
+
+                let originalValue;
+                try {
+                    originalValue = obj[prop];
+                } catch (e) {
+                    // fall through
+                }
+
+                if (typeof originalValue === "function") {
+                    return (...args) => {
+                        const name = String(prop).toLowerCase();
+                        
+                        // Check if it's a generator function
+                        if (originalValue.constructor.name === "GeneratorFunction") {
+                            return (function*() {})();
+                        }
+
+                        // Heuristic check: is it an async method?
+                        const isAsync = originalValue.constructor.name === "AsyncFunction" || 
+                                        name.startsWith("async") || 
+                                        name.includes("transaction") || 
+                                        name.includes("transfer") || 
+                                        name.includes("setbalance") || 
+                                        name.includes("addmoney") || 
+                                        name.includes("removemoney") || 
+                                        name.includes("hasenough");
+
+                        // Resolve default value based on method name patterns
+                        let val;
+                        if (name.startsWith("get") || name.includes("balance") || name.includes("count") || name.includes("price") || name.includes("size") || name.includes("amount")) {
+                            if (name.includes("player") || name.includes("account") || name.includes("system") || name.includes("service")) {
+                                val = null;
+                            } else if (name.includes("leaderboard") || name.includes("balances") || name.includes("list") || name.includes("all")) {
+                                val = [];
+                            } else {
+                                val = 0;
+                            }
+                        } else if (name.startsWith("is") || name.startsWith("has") || name.startsWith("can") || name.startsWith("pay") || name.startsWith("charge") || name.startsWith("withdraw") || name.startsWith("deposit") || name.startsWith("save") || name.startsWith("set") || name.startsWith("delete") || name.startsWith("remove") || name.startsWith("add") || name.startsWith("update") || name.startsWith("disable") || name.startsWith("enable") || name.startsWith("transfer")) {
+                            val = false;
+                        } else {
+                            val = undefined;
+                        }
+
+                        return isAsync ? Promise.resolve(val) : val;
+                    };
+                }
+
+                // If they access non-function properties directly
+                const name = String(prop).toLowerCase();
+                if (name.includes("balance") || name.includes("limit") || name.includes("default")) {
+                    return 0;
+                }
+
+                return undefined;
+            }
+        });
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: has                                                              |
+    // | quick check to see if a service exists.                                  |
+    // ----------------------------------------------------------------------------
+    static has(id) {
+        if (this.#disabledSystems.has(id)) return false;
+        // check both maps.
+        return this.#systems.has(id) || this.#serviceProviders.has(id);
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: disableSystem                                                    |
+    // | dynamically disables a core system and runs its shutdown hooks.           |
+    // ----------------------------------------------------------------------------
+    static disableSystem(id) {
+        if (this.#disabledSystems.has(id)) return false;
+
+        // Retrieve instance directly to bypass disabled check
+        const instance = this.#systems.get(id) || this.#serviceProviders.get(id);
+        if (instance) {
+            try {
+                if (typeof instance.shutdown === "function") {
+                    instance.shutdown();
+                } else if (typeof instance.onDisable === "function") {
+                    instance.onDisable();
+                } else if (typeof instance.disable === "function") {
+                    instance.disable();
+                }
+            } catch (e) {
+                console.error(`[Kernel] Error during system '${id}' shutdown hook: ${e}`);
+            }
+        }
+        this.#disabledSystems.add(id);
+        return true;
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: enableSystem                                                     |
+    // | dynamically enables a disabled core system and runs its init hooks.      |
+    // ----------------------------------------------------------------------------
+    static enableSystem(id) {
+        if (!this.#disabledSystems.has(id)) return false;
+
+        this.#disabledSystems.delete(id);
+
+        // Retrieve instance directly to bypass disabled check
+        const instance = this.#systems.get(id) || this.#serviceProviders.get(id);
+        if (instance) {
+            try {
+                if (typeof instance.init === "function") {
+                    instance.init();
+                } else if (typeof instance.onEnable === "function") {
+                    instance.onEnable();
+                } else if (typeof instance.enable === "function") {
+                    instance.enable();
+                }
+            } catch (e) {
+                console.error(`[Kernel] Error during system '${id}' init hook: ${e}`);
+            }
+        }
+        return true;
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: bootPlugins                                                      |
+    // | the big bang. starts every registered plugin in the right order.         |
+    // | uses a dependency sorter so we don't crash.                              |
+    // ----------------------------------------------------------------------------
+    static bootPlugins() {
+        console.log("[Kernel] booting plugins...");
+        
+        // sort the plugins so dependencies load first.
+        let sorted = [];
+        try {
+            sorted = this._sortPlugins();
+        } catch (error) {
+            console.error(`[Kernel] DEPENDENCY_SORT_FAILED: Circular dependencies or references detected. Falling back to staging order.`, error);
+            sorted = Array.from(this.#plugins.keys());
+        }
+        let successCount = 0;
+
+        // iterate through the sorted list and init each one.
+        for (const id of sorted) {
+            const plugin = this.#plugins.get(id);
+            try {
+                // call the plugin's main logic or onInit hook.
+                if (typeof plugin.logic === "function") {
+                    plugin.logic(plugin.context);
+                } else if (plugin.logic.onInit) {
+                    plugin.logic.onInit(plugin.context);
+                }
+                
+                // if we got here, it's alive.
+                plugin.state = "ACTIVE";
+                successCount++;
+            } catch (error) {
+                // something went wrong. kill it.
+                console.error(`[Kernel] FATAL ERROR in plugin '${id}':`, error);
+                plugin.state = "FAILED";
+            }
+        }
+        
+        // finish up the log.
+        console.log(`[Kernel] Boot complete. Plugins: ${successCount}/${this.#plugins.size}`);
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: _sortPlugins                                                     |
+    // | internal helper to sort plugins based on their dependency list.          |
+    // | prevents circular dependencies and load-order issues.                    |
+    // ----------------------------------------------------------------------------
+    static _sortPlugins() {
+        return DependencySorter.sort(Array.from(this.#plugins.keys()), {
+            getDependencies: (id) => this.#plugins.get(id)?.manifest?.dependencies || [],
+            hasNode: (id) => this.#plugins.has(id),
+            onMissingDependency: (id, dep) => {
+                console.warn(`[Kernel] Warning: Dependency '${dep}' is missing and will be skipped.`);
+            },
+            errorMessagePrefix: "Circular dependency detected: "
+        });
+    }
+}
+
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\LifecycleController.js ===
+/**
+ * INDUSTRIAL_LIFECYCLE_CONTROLLER
+ * ----------------------------------------------------------------------------
+ * Prevents double-execution and memory leaks from multiple system 
+ * initializations during script reloads.
+ */
+
+export class LifecycleController {
+    static _locks = new Map();
+    static _disposers = new Map();
+
+    /**
+     * Attempts to acquire a boot-lock for a system.
+     * @param {string} systemId Unique identifier for the system.
+     * @returns {boolean} True if lock acquired, false if already locked.
+     */
+    static boot(systemId) {
+        if (this._locks.has(systemId)) {
+            console.warn(`[Lifecycle] System '${systemId}' already active. Blocking re-init.`);
+            return false;
+        }
+        this._locks.set(systemId, true);
+        return true;
+    }
+
+    /**
+     * Registers a disposer function to be called on shutdown.
+     * @param {string} systemId 
+     * @param {Function} disposer 
+     */
+    static registerDisposer(systemId, disposer) {
+        this._disposers.set(systemId, disposer);
+    }
+
+    /**
+     * Shuts down a system and clears its lock.
+     * @param {string} systemId 
+     */
+    static shutdown(systemId) {
+        const disposer = this._disposers.get(systemId);
+        if (disposer) {
+            try {
+                disposer();
+            } catch (e) {
+                console.error(`[Lifecycle] Shutdown failure for system '${systemId}': ${e}`);
+            }
+            this._disposers.delete(systemId);
+        }
+        this._locks.delete(systemId);
+    }
+
+    /**
+     * Global shutdown sequence for all registered systems.
+     */
+    static shutdownAll() {
+        for (const systemId of this._disposers.keys()) {
+            this.shutdown(systemId);
+        }
+    }
+}
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\abstractions\ICommand.js ===
+/*
+ * ICOMMAND_CONTRACT_INTERFACE
+ * ----------------------------------------------------------------------------
+ * This is the master interface for the Command Architecture. Any module 
+ * attempting to register with the CommandRegistry MUST satisfy these 
+ * getters and methods.
+ *
+ * PHILOSOPHY: If you don't implement these, the registry will throw a 
+ * Runtime Error and crash the boot sequence. This is a design-time 
+ * contract to prevent 'half-baked' commands from entering the ecosystem.
+ */
+
+class ICommand {
+    /* 
+     * IDENTIFIER_TOKEN
+     * The primary key used for command resolution in the O(1) Map. 
+     */
+    get name() {
+        throw new Error("[ContractViolation] 'name' getter is non-optional.");
+    }
+
+    /* 
+     * METADATA_DESCRIPTION
+     * Raw string used for the help-manual generation. 
+     */
+    get description() {
+        throw new Error("[ContractViolation] 'description' getter is non-optional.");
+    }
+
+    /* 
+     * SYNTAX_HINT
+     * The usage string displayed during incorrect parameter input. 
+     */
+    get usage() {
+        throw new Error("[ContractViolation] 'usage' getter is non-optional.");
+    }
+
+    /* 
+     * PERMISSION_NODE
+     * The auth-node required for the RBAC handshake. 
+     */
+    get permission() {
+        throw new Error("[ContractViolation] 'permission' getter is non-optional.");
+    }
+
+    /* 
+     * REGISTRY_CATEGORY
+     * Used for grouping commands in the /help UI. 
+     */
+    get category() {
+        throw new Error("[ContractViolation] 'category' getter is non-optional.");
+    }
+
+    /*
+     * EXECUTION_LOGIC_GATE
+     * ----------------------------------------------------------------------------
+     * The entry point for the command execution. This method handles the 
+     * transformation of raw strings into actual game-state changes. 
+     *
+     * @param {Object} data - The internal command metadata.
+     * @param {Player} player - The originating actor.
+     * @param {string[]} args - The raw parameter array.
+     */
+    async execute(data, player, args) {
+        void data; void player; void args;
+        throw new Error("[ContractViolation] 'execute' method is non-optional.");
+    }
+}
+
+export { ICommand }
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\abstractions\IStore.js ===
+/*
+ * ISTORE_PERSISTENCE_CONTRACT
+ * ----------------------------------------------------------------------------
+ * This interface defines the mandatory methods for any module attempting 
+ * to act as a persistent-data buffer. We enforce a standardized CRUD 
+ * model to ensure that the DatabaseManager can proxy calls without 
+ * knowing the underlying storage implementation (JSON, Scoreboard, etc).
+ *
+ * PHILOSOPHY: All operations are asynchronous to prevent blocking the 
+ * main server thread during large buffer flushes.
+ */
+
+class IStore {
+    /* 
+     * DATA_RETRIEVAL_VECTOR
+     * Fetches a value from the persistent store. Includes a mandatory 
+     * defaultValue parameter to prevent undefined-reference crashes in 
+     * downstream modules.
+     */
+    async get(key, defaultValue) {
+        void key; void defaultValue
+        throw new Error("[ContractViolation] 'get' method must be implemented.");
+    }
+
+    /* 
+     * DATA_INJECTION_VECTOR
+     * Commits a value to the persistent store. Returns a boolean status 
+     * to indicate if the write operation was successful.
+     */
+    async set(key, value) {
+        void key; void value
+        throw new Error("[ContractViolation] 'set' method must be implemented.");
+    }
+
+    /* 
+     * DATA_PURGE_VECTOR
+     * Removes a key-value pair from the persistent store.
+     */
+    async delete(key) {
+        void key
+        throw new Error("[ContractViolation] 'delete' method must be implemented.");
+    }
+
+    /* 
+     * KEY_EXISTENCE_PROBE
+     * Checks if a specific key has an active entry in the store.
+     */
+    async has(key) {
+        void key
+        throw new Error("[ContractViolation] 'has' method must be implemented.");
+    }
+
+    /* 
+     * MASTER_WIPE_PROTOCOL
+     * Nukes every single entry in the store. This is a destructive 
+     * operation and must be implemented with caution.
+     */
+    async clear() {
+        throw new Error("[ContractViolation] 'clear' method must be implemented.");
+    }
+}
+
+export { IStore }
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\abstractions\ISystem.js ===
+/*
+ * ISYSTEM_LIFECYCLE_CONTRACT
+ * ----------------------------------------------------------------------------
+ * This interface defines the mandatory lifecycle methods for any module 
+ * registered with the Titanium Kernel. We enforce a standardized 
+ * init/update/shutdown flow to ensure that the engine can orchestrate 
+ * system states deterministically.
+ *
+ * PHILOSOPHY: Systems must be able to initialize their state, process 
+ * tick-based logic, and clean up their buffers during a shutdown event.
+ */
+
+class ISystem {
+    /* 
+     * SYSTEM_BOOTSTRAP_VECTOR
+     * ----------------------------------------------------------------------------
+     * Triggered during the Kernel.init() phase. This is where the system 
+     * handshakes with its dependencies and loads its initial state.
+     */
+    async initialize(config) {
+        void config
+        throw new Error("[ContractViolation] 'initialize' method must be implemented.");
+    }
+
+    /* 
+     * TICK_ORCHESTRATION_LOOP
+     * ----------------------------------------------------------------------------
+     * Called every tick by the Master Scheduler. This is where the hot-path 
+     * logic resides. If your update method exceeds 5ms, I will personally 
+     * refactor your soul.
+     */
+    async update(tick) {
+        void tick
+        throw new Error("[ContractViolation] 'update' method must be implemented.");
+    }
+
+    /* 
+     * GRACEFUL_TERMINATION_PROTOCOL
+     * ----------------------------------------------------------------------------
+     * Triggered during server shutdown or hot-reload. This is where you 
+     * flush buffers and unsubscribe from event buses to prevent memory 
+     * leaks.
+     */
+    async shutdown() {
+        throw new Error("[ContractViolation] 'shutdown' method must be implemented.");
+    }
+
+    /* 
+     * DATA_STATE_ACCESSOR
+     * Returns the internal state-buffer of the system for auditing purposes.
+     */
+    get data() {
+        throw new Error("[ContractViolation] 'data' getter must be implemented.");
+    }
+}
+
+export { ISystem }
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\cache\CacheManager.js ===
+import { system } from "@minecraft/server";
+
+// ----------------------------------------------------------------------------
+// | class: CacheManager                                                      |
+// | a centralized memory buffering system.                                   |
+// | keeps hot data in-memory so we don't have to keep hitting the slow disk. |
+// | implements TTL (expiration) and LRU (size limit) eviction.               |
+// ----------------------------------------------------------------------------
+export class CacheManager {
+    // ----------------------------------------------------------------------------
+    // | static properties                                                        |
+    // | global registry for all cache instances.                                  |
+    // ----------------------------------------------------------------------------
+    
+    // holds the actual cache metadata (the maps, settings, stats).
+    static #caches = new Map()
+    // handle for the global cleanup timer that sweeps all caches.
+    static #globalCleanupInterval = null
+    
+    // ----------------------------------------------------------------------------
+    // | method: createCache                                                      |
+    // | spawns a new isolated cache buffer with its own settings.                |
+    // | sets up a background worker for that specific cache.                     |
+    // ----------------------------------------------------------------------------
+    static createCache(name, options = {}) {
+        // the actual storage map.
+        const cache = new Map()
+        // tracks when each key was last used for the LRU eviction policy.
+        const accessOrder = new Map() 
+        // how long data stays valid (default 5 seconds).
+        const ttl = options.ttl || 5000 
+        // maximum number of items allowed in the map.
+        const maxSize = options.maxSize || 1000
+        // how often the background cleanup runs (default 1 minute).
+        const cleanupInterval = options.cleanupInterval || 60000 
+        
+        // ----------------------------------------------------------------------------
+        // | background cleanup                                                       |
+        // | periodically clears out expired stuff and enforces size limits.           |
+        // ----------------------------------------------------------------------------
+        const cleanup = system.runInterval(() => {
+            // call the internal cleanup helper.
+            this.#cleanupCache(cache, accessOrder, ttl, maxSize)
+        }, Math.floor(cleanupInterval / 50))
+        
+        // save the metadata in our global registry.
+        this.#caches.set(name, { 
+            cache, 
+            accessOrder, 
+            cleanup, 
+            options: { ttl, maxSize, cleanupInterval },
+            // keep track of how well the cache is performing.
+            stats: {
+                hits: 0,
+                misses: 0,
+                sets: 0,
+                deletes: 0,
+                cleanups: 0
+            }
+        })
+        
+        // make sure the global cleanup worker is running.
+        this.#startGlobalCleanup()
+        
+        // return the public interface for this cache.
+        return {
+            // ----------------------------------------------------------------------------
+            // | get                                                                      |
+            // | fetch a value. updates LRU stamp. deletes if expired.                    |
+            // ----------------------------------------------------------------------------
+            get: (key) => {
+                // get the metadata for this cache.
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return null
+                
+                // try to find the entry.
+                const entry = cacheMeta.cache.get(key)
+                // check if it exists and hasn't expired yet.
+                if (entry && Date.now() - entry.timestamp <= ttl) {
+                    // update the access time so it doesn't get evicted by LRU.
+                    cacheMeta.accessOrder.set(key, Date.now())
+                    // increment hit counter.
+                    cacheMeta.stats.hits++
+                    return entry.value
+                }
+                
+                // if it exists but is expired, nuke it now.
+                if (entry) {
+                    cacheMeta.cache.delete(key)
+                    cacheMeta.accessOrder.delete(key)
+                }
+                
+                // increment miss counter.
+                cacheMeta.stats.misses++
+                return null
+            },
+            
+            // ----------------------------------------------------------------------------
+            // | set                                                                      |
+            // | adds a value. kicks out the oldest item if the cache is full.            |
+            // ----------------------------------------------------------------------------
+            set: (key, value) => {
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return
+                
+                // check if we're at the limit and adding a NEW key.
+                if (cacheMeta.cache.size >= maxSize && !cacheMeta.cache.has(key)) {
+                    // kick out the least recently used item.
+                    this.#evictLRU(cacheMeta.cache, cacheMeta.accessOrder, 1)
+                }
+                
+                // save the value with the current timestamp.
+                cacheMeta.cache.set(key, { 
+                    value, 
+                    timestamp: Date.now() 
+                })
+                // update the access order.
+                cacheMeta.accessOrder.set(key, Date.now())
+                // increment set counter.
+                cacheMeta.stats.sets++
+            },
+            
+            // remove a specific key.
+            delete: (key) => {
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return false
+                
+                const deleted = cacheMeta.cache.delete(key)
+                cacheMeta.accessOrder.delete(key)
+                
+                if (deleted) {
+                    cacheMeta.stats.deletes++
+                }
+                
+                return deleted
+            },
+            
+            // wipe everything.
+            clear: () => {
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return
+                
+                cacheMeta.cache.clear()
+                cacheMeta.accessOrder.clear()
+            },
+            
+            // ----------------------------------------------------------------------------
+            // | invalidate                                                               |
+            // | clear all keys that match a specific regex pattern.                      |
+            // ----------------------------------------------------------------------------
+            invalidate: (pattern) => {
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return 0
+                
+                // convert string to regex if needed.
+                const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern)
+                let deleted = 0
+                
+                // loop through every key. slow but effective.
+                for (const [key] of cacheMeta.cache) {
+                    if (regex.test(key)) {
+                        cacheMeta.cache.delete(key)
+                        cacheMeta.accessOrder.delete(key)
+                        deleted++
+                    }
+                }
+                
+                cacheMeta.stats.deletes += deleted
+                return deleted
+            },
+            
+            // get performance metrics.
+            getStats: () => {
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return null
+                
+                const totalRequests = cacheMeta.stats.hits + cacheMeta.stats.misses
+                const hitRate = totalRequests > 0 ? 
+                    Math.round((cacheMeta.stats.hits / totalRequests) * 100) : 0
+                
+                return {
+                    ...cacheMeta.stats,
+                    size: cacheMeta.cache.size,
+                    maxSize,
+                    hitRate,
+                    // guess how much memory we're using.
+                    memoryUsage: this.#estimateMemoryUsage(cacheMeta.cache)
+                }
+            },
+            
+            // check if a key exists and is valid.
+            has: (key) => {
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return false
+                
+                const entry = cacheMeta.cache.get(key)
+                return !!(entry && Date.now() - entry.timestamp <= ttl)
+            },
+            
+            // get list of all keys.
+            keys: () => {
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return []
+                
+                return Array.from(cacheMeta.cache.keys())
+            },
+            
+            // current size.
+            size: () => {
+                const cacheMeta = this.#caches.get(name)
+                return cacheMeta ? cacheMeta.cache.size : 0
+            },
+            
+            // get memory footprint in bytes.
+            getMemoryFootprint: () => {
+                const cacheMeta = this.#caches.get(name)
+                if (!cacheMeta) return 0
+                let total = 0
+                for (const [key, entry] of cacheMeta.cache) {
+                    total += key.length * 2
+                    if (entry.value !== undefined && entry.value !== null) {
+                        try {
+                            total += JSON.stringify(entry.value).length * 2
+                        } catch {}
+                    }
+                }
+                return total
+            }
+        }
+    }
+    
+    // ----------------------------------------------------------------------------
+    // | method: #cleanupCache                                                    |
+    // | internal helper to sweep a specific cache for expired data.              |
+    // | also forces the cache down to 80% size if it's over the limit.           |
+    // ----------------------------------------------------------------------------
+    static #cleanupCache(cache, accessOrder, ttl, maxSize) {
+        const now = Date.now()
+        let cleaned = 0
+        
+        // delete anything that passed its expiration date.
+        for (const [key, entry] of cache) {
+            if (now - entry.timestamp > ttl) {
+                cache.delete(key)
+                accessOrder.delete(key)
+                cleaned++
+            }
+        }
+        
+        // if we're still over the limit, kick out the oldest stuff.
+        if (cache.size > maxSize) {
+            // target 80% capacity to avoid immediate re-cleanup.
+            const toRemove = cache.size - Math.floor(maxSize * 0.8)
+            cleaned += this.#evictLRU(cache, accessOrder, toRemove)
+        }
+        
+        return cleaned
+    }
+    
+    // ----------------------------------------------------------------------------
+    // | method: #evictLRU                                                        |
+    // | internal helper to kick out the 'count' oldest items.                    |
+    // ----------------------------------------------------------------------------
+    static #evictLRU(cache, accessOrder, count) {
+        // sort by access timestamp (ascending).
+        const entries = Array.from(accessOrder.entries())
+            .sort((a, b) => a[1] - b[1]) 
+            .slice(0, count)
+        
+        // delete the losers.
+        entries.forEach(([key]) => {
+            cache.delete(key)
+            accessOrder.delete(key)
+        })
+        
+        return entries.length
+    }
+    
+    // ----------------------------------------------------------------------------
+    // | method: #estimateMemoryUsage                                             |
+    // | rough guess of memory usage in bytes.                                    |
+    // ----------------------------------------------------------------------------
+    static #estimateMemoryUsage(cache) {
+        // assume ~128 bytes per entry on average. probably wrong.
+        return cache.size * 128 
+    }
+    
+    // start the 5-minute global cleanup interval.
+    static #startGlobalCleanup() {
+        if (this.#globalCleanupInterval) return
+        
+        this.#globalCleanupInterval = system.runInterval(() => {
+            this.#globalCleanup()
+        }, 6000) 
+    }
+    
+    // loop through every cache and trigger a cleanup.
+    static #globalCleanup() {
+        let totalCleaned = 0
+        
+        for (const [_name, cacheMeta] of this.#caches) {
+            const cleaned = this.#cleanupCache(
+                cacheMeta.cache, 
+                cacheMeta.accessOrder, 
+                cacheMeta.options.ttl, 
+                cacheMeta.options.maxSize
+            )
+            
+            if (cleaned > 0) {
+                cacheMeta.stats.cleanups++
+                totalCleaned += cleaned
+            }
+        }
+        
+        if (totalCleaned > 0) {
+            console.log(`[CacheManager] Global cleanup: removed ${totalCleaned} entries.`);
+        }
+    }
+    
+    // get stats for all caches combined.
+    static getGlobalStats() {
+        const stats = {
+            totalCaches: this.#caches.size,
+            totalEntries: 0,
+            totalMemoryUsage: 0,
+            averageHitRate: 0,
+            caches: {}
+        }
+        
+        let totalHitRate = 0
+        let cacheCount = 0
+        
+        for (const [name, cacheMeta] of this.#caches) {
+            const cacheStats = {
+                size: cacheMeta.cache.size,
+                maxSize: cacheMeta.options.maxSize,
+                hits: cacheMeta.stats.hits,
+                misses: cacheMeta.stats.misses,
+                hitRate: 0,
+                memoryUsage: this.#estimateMemoryUsage(cacheMeta.cache)
+            }
+            
+            const totalRequests = cacheStats.hits + cacheStats.misses
+            if (totalRequests > 0) {
+                cacheStats.hitRate = Math.round((cacheStats.hits / totalRequests) * 100)
+                totalHitRate += cacheStats.hitRate
+                cacheCount++
+            }
+            
+            stats.caches[name] = cacheStats
+            stats.totalEntries += cacheStats.size
+            stats.totalMemoryUsage += cacheStats.memoryUsage
+        }
+        
+        if (cacheCount > 0) {
+            stats.averageHitRate = Math.round(totalHitRate / cacheCount)
+        }
+        
+        return stats
+    }
+    
+    // delete a specific cache instance.
+    static destroyCache(name) {
+        const cacheMeta = this.#caches.get(name)
+        if (!cacheMeta) return false
+        
+        system.clearRun(cacheMeta.cleanup)
+        cacheMeta.cache.clear()
+        cacheMeta.accessOrder.clear()
+        this.#caches.delete(name)
+        
+        return true
+    }
+    
+    // wipe everything from the registry.
+    static destroyAll() {
+        for (const [_name, cacheMeta] of this.#caches) {
+            system.clearRun(cacheMeta.cleanup)
+            cacheMeta.cache.clear()
+            cacheMeta.accessOrder.clear()
+        }
+        
+        if (this.#globalCleanupInterval) {
+            system.clearRun(this.#globalCleanupInterval)
+            this.#globalCleanupInterval = null
+        }
+        
+        this.#caches.clear()
+    }
+    
+    // get names of all active caches.
+    static getCacheNames() {
+        return Array.from(this.#caches.keys())
+    }
+    
+    // check if a cache exists.
+    static hasCache(name) {
+        return this.#caches.has(name)
+    }
+}
+
+// ----------------------------------------------------------------------------
+// | default caches                                                           |
+// | pre-configured buffers for core systems.                                  |
+// ----------------------------------------------------------------------------
+
+// small cache for player metadata.
+export const PlayerCache = CacheManager.createCache("players", { 
+    ttl: 5000, 
+    maxSize: 500, 
+    cleanupInterval: 30000 
+})
+
+// cache for shop prices.
+export const ShopCache = CacheManager.createCache("shop", { 
+    ttl: 30000, 
+    maxSize: 50, 
+    cleanupInterval: 60000 
+})
+
+// cache for rank metadata.
+export const RankCache = CacheManager.createCache("ranks", { 
+    ttl: 60000, 
+    maxSize: 10, 
+    cleanupInterval: 120000 
+})
+
+// large cache for permission nodes.
+export const PermissionCache = CacheManager.createCache("permissions", { 
+    ttl: 5000, 
+    maxSize: 1000, 
+    cleanupInterval: 30000 
+})
+
+// large cache for /reply command targets.
+export const ReplyCache = CacheManager.createCache("replies", {
+    ttl: 300000, // 5m TTL
+    maxSize: 2000,
+    cleanupInterval: 60000
+})
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\commands\CommandManager.js ===
+import { Kernel } from "../Kernel.js";
+import { PlayerUtils } from "../../utils/PlayerUtils.js";
+import { Database } from "../datastore/DatabaseManager.js";
+import { DEFAULT_RANKS } from "../../data/RankConfig.js";
+
+// ----------------------------------------------------------------------------
+// | object: CommandManager                                                   |
+// | bridges custom commands with bedrock's native C++ command engine.       |
+// | chat events are slow and full of string regex sadness. this is way better. |
+// ----------------------------------------------------------------------------
+export const CommandManager = {
+    // track if we've already done the handshakes.
+    _initialized: false,
+    // the default command prefix/namespace.
+    _primaryNS: "ae",
+    // the alias namespace prefix.
+    _aliasNS: "ae", 
+
+    init() {
+        // don't do this twice. please. my brain is already leaking out of my ears.
+        if (this._initialized) return;
+        this._initialized = true;
+
+        // we have to wait for the startup event to grab the custom command registry.
+        // the engine is super picky and will refuse to let us register things once ticking.
+        Kernel.system.beforeEvents.startup.subscribe((ev) => this._injectNativeRegistry(ev));
+
+        console.log(`[CommandManager] Registry online. Namespace: /${this._primaryNS}:`);
+    },
+
+    _injectNativeRegistry(event) {
+        const Registry = Kernel.get("commandRegistry");
+        const nativeReg = event.customCommandRegistry;
+        if (!Registry || !nativeReg) return;
+
+        // --- ENUM_REGISTRATION_PIPELINE ---
+        // Populate 'rank' enum from database store or static defaults (Safe for Startup phase)
+        try {
+            const RankStore = Kernel.get("rankStore");
+            let ranksList = DEFAULT_RANKS.map(r => r.id);
+            if (RankStore) {
+                const dbRanks = RankStore.getAllRanks() || {};
+                const dbRankIds = Object.keys(dbRanks);
+                if (dbRankIds.length > 0) {
+                    ranksList = dbRankIds;
+                }
+            }
+            Registry.registerEnum("rank", ranksList);
+        } catch (e) {
+            try {
+                const staticRanks = DEFAULT_RANKS.map(r => r.id);
+                Registry.registerEnum("rank", staticRanks);
+            } catch (e2) { }
+        }
+
+        // Populate 'systemName' enum
+        try {
+            const staticSystems = [
+                "database", "playerStore", "worldStore", "rankStore", "keys", "settings",
+                "economy", "shopStore", "chestShopStore", "ranks", "chat", "banManager",
+                "permissions", "formatter", "muteStore", "messageStore", "homeStore",
+                "warpStore", "tpaStore", "tpaHandshake", "tpaService", "teleportService",
+                "signalBus", "placeholders", "claimStore", "floatingTextStore"
+            ];
+            const kernelSystems = Array.from(Kernel.systems.keys()).filter(k => k !== "commandRegistry" && k !== "commandManager");
+            const allSystems = Array.from(new Set([...staticSystems, ...kernelSystems]));
+            Registry.registerEnum("systemName", allSystems);
+        } catch (e) {
+            console.error(`[CommandManager] Failed to register systemName enum: ${e}`);
+        }
+
+        // Populate 'permission' enum
+        Registry.registerEnum("permission", [
+            "admin", "admin.system", "essentials.home", "essentials.sethome", "essentials.delhome", 
+            "essentials.tpa", "essentials.tpaccept", "essentials.tpadeny", "essentials.tpacancel",
+            "essentials.pay", "essentials.money", "essentials.withdraw", "essentials.shop",
+            "essentials.sell", "essentials.rtp", "essentials.back", "essentials.menu",
+            "essentials.auction", "essentials.calculate", "essentials.report", "essentials.tps",
+            "essentials.chat.color", "essentials.admin.inspect", "essentials.admin.invsee", 
+            "essentials.admin.ft", "essentials.admin.reports", "essentials.admin.economy", 
+            "essentials.admin.ranks", "home.limit", "home.cooldown", "teleport.wait",
+            // Sharded / Extended permission nodes:
+            "admin.panel", "admin.ban", "admin.broadcast", "admin.economy", "admin.floatingtext",
+            "admin.invsee", "admin.kick", "admin.landsetting", "admin.log", "admin.mute",
+            "admin.ranks", "admin.resetdata", "admin.sellsetting", "admin.setting", "admin.shopsetting",
+            "admin.warp", "admin.tp", "admin.gm.c", "admin.gm.s", "admin.gm.sp", "admin.gm.a",
+            "land.claim", "land.unclaim", "land.invite", "land.kick", "land.transfer", "land.setting",
+            "limit.land", "limit.home",
+            "chestshop.create.sell", "chestshop.create.buy", "chestshop.sell", "chestshop.buy",
+            "cooldown.chat", "cooldown.back", "cooldown.tpa", "cooldown.home", "cooldown.warp",
+            "cooldown.rtp", "cooldown.command",
+            "cost.back", "cost.tpa", "cost.home", "cost.warp", "cost.rtp",
+            "essentials.help", "essentials.info", "essentials.credit", "essentials.default"
+        ]);
+
+        // Populate 'chatcolor' enum
+        Registry.registerEnum("chatcolor", [
+            "black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple",
+            "gold", "gray", "dark_gray", "blue", "green", "aqua", "red", "light_purple",
+            "yellow", "white", "rainbow", "bold", "strikethrough", "underline", "italic", "reset"
+        ]);
+
+        // Sync all enums to the native C++ engine
+        Registry.getAllEnums().forEach(enumName => {
+            try {
+                const values = Registry.getEnum(enumName);
+                // CRITICAL: Namespacing is MANDATORY for custom enums in this engine version.
+                const namespacedName = enumName.includes(":") ? enumName : `${this._primaryNS}:${enumName}`;
+                nativeReg.registerEnum(namespacedName, values);
+                console.log(`[CommandManager] ENUM_SYNC: ${namespacedName} (${values.length} values)`);
+            } catch (e) {
+                console.error(`[CommandManager] ENUM_SYNC_FAILURE [${enumName}]: ${e}`);
+            }
+        });
+
+        const registeredNames = new Set();
+// --- COMMAND_REGISTRATION_PIPELINE ---
+Registry.getAll().forEach(name => {
+    const def = Registry.get(name);
+    if (!def) return;
+
+    if (def.chatRaw === true) {
+        console.log(`[CommandManager] Skipping native registration for chatRaw command: ${name}`);
+        return;
+    }
+
+    // Resolve parameters
+    let paramsList = def.params || def.parameters || [];
+
+    // --- CHATRAW_SKIP_GUARD ---
+    // chatRaw commands are registered natively via the chaotic-buffer strategy
+    // so they show up in autocomplete/suggestions, but their execution is handled
+    // by joining split args.
+
+    // --- SELECTIVE_NATIVE_AUTOCOMPLETE_STRATEGY ---
+    // For commands that are truly chaotic (symbols/infinite args), 
+    // we use Buffer Registration (8 optional strings).
+    // This tricks the native engine into letting the symbols pass to our interceptor.
+    const chaoticCommands = ["calculate", "calc"];
+    if (chaoticCommands.includes(name.toLowerCase())) {
+        paramsList = [
+            { name: "t1", type: "string", optional: true },
+            { name: "t2", type: "string", optional: true },
+            { name: "t3", type: "string", optional: true },
+            { name: "t4", type: "string", optional: true },
+            { name: "t5", type: "string", optional: true },
+            { name: "t6", type: "string", optional: true },
+            { name: "t7", type: "string", optional: true },
+            { name: "t8", type: "string", optional: true }
+        ];
+    } else if (def.native === false && paramsList.length > 5) {
+
+        paramsList = [];
+    }
+            const namespacedName = name.includes(":") ? name : `${this._primaryNS}:${name}`;
+            const lowerNS = namespacedName.toLowerCase();
+            
+            if (!registeredNames.has(lowerNS)) {
+                registeredNames.add(lowerNS);
+                const configs = this._generateConfigs(namespacedName, def, paramsList);
+                configs.forEach(config => this._registerSingle(nativeReg, config, def));
+            }
+            
+            // Register aliases
+            if (def.aliases && Array.isArray(def.aliases)) {
+                def.aliases.forEach(alias => {
+                    const aliasNS = alias.includes(":") ? alias : `${this._aliasNS}:${alias}`;
+                    if (registeredNames.has(aliasNS.toLowerCase())) return;
+                    registeredNames.add(aliasNS.toLowerCase());
+                    const aliasConfigs = this._generateConfigs(aliasNS, def, paramsList);
+                    aliasConfigs.forEach(config => this._registerSingle(nativeReg, config, def));
+                });
+            }
+        });
+
+        console.log(`[CommandManager] Native C++ Command Registry sync complete`);
+    },
+
+    // _deriveParams has been deprecated and inlined into _buildConfig for single-pass O(N) execution.
+
+    _mapParamType(type) {
+        switch(type?.toLowerCase()) {
+            case "player":
+            case "playerselector":
+                return Kernel.CustomCommandParamType.PlayerSelector; 
+            case "entity":
+            case "entityselector":
+                return Kernel.CustomCommandParamType.EntitySelector;
+            case "block":
+            case "blocktype":
+                return Kernel.CustomCommandParamType.BlockType;
+            case "entitytype":
+                return Kernel.CustomCommandParamType.EntityType;
+            case "item":
+            case "itemtype":
+                return Kernel.CustomCommandParamType.ItemType;
+            case "location":
+                return Kernel.CustomCommandParamType.Location;
+            case "float":
+            case "double":
+                return Kernel.CustomCommandParamType.Float;
+            case "int":
+            case "integer":
+                return Kernel.CustomCommandParamType.Integer;
+            case "bool":
+            case "boolean":
+                return Kernel.CustomCommandParamType.Boolean;
+            case "string":
+                return Kernel.CustomCommandParamType.String;
+            case "enum":
+                return Kernel.CustomCommandParamType.Enum;
+            default:
+                return null;
+        }
+    },
+
+    _registerSingle(registry, config, def) {
+        try {
+            // bedrock calls this function when a player runs the command.
+            registry.registerCommand(config, (origin, ...args) => {
+                // dispatch directly to our execution loop.
+                this._dispatch(origin.sourceEntity, def, args, "NATIVE");
+                // C++ demands we return a success status, so here you go.
+                return { status: Kernel.CustomCommandStatus.Success };
+            });
+        } catch (e) {
+            console.error(`[CommandManager] FAILED_INJECTION [${config.name}]: ${e}`);
+        }
+    },
+
+    _dispatch(player, cmd, args, vector) {
+        // command block or server console running this? ignore for now. players only.
+        if (!player) return;
+
+        try {
+            const PM = Kernel.get("permissions");
+            
+            // RBAC gate: verify clearance level before letting them do anything.
+            if (!this._checkAuth(player, cmd.permission)) {
+                player.sendMessage(`\u00A7c\u00A7l» \u00A77You lack the clearance level for this vector.`);
+                return;
+            }
+
+            // Cooldown logic: stop players from spamming heavy SQL/DB database queries.
+            const cooldownSec = PM ? (PM.getPermission(player, "command.cooldown") ?? 0) : 0;
+            if (cooldownSec > 0) {
+                const now = Kernel.system.currentTick;
+                const last = player.getDynamicProperty("ae:last_cmd_tick") ?? 0;
+                const diff = now - Number(last);
+                
+                // 20 ticks per second. basic math.
+                if (diff < cooldownSec * 20) {
+                    const remaining = Math.ceil((cooldownSec * 20 - diff) / 20);
+                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Slow down! Wait \u00A7e${remaining}s \u00A77before using another command.`);
+                    return;
+                }
+                player.setDynamicProperty("ae:last_cmd_tick", now);
+            }
+
+            const paramsList = cmd.params || cmd.parameters;
+            const isLegacy = !cmd.params && !!cmd.parameters;
+
+            let rawArgs = args;
+            if (vector === "NATIVE" && args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0]) && typeof args[0].isValid !== "function" && !args[0].id && !args[0].typeId) {
+                const argsObj = args[0];
+                rawArgs = paramsList ? paramsList.map(param => argsObj[param.name]) : [];
+            }
+
+            const cleanArgs = rawArgs.map((arg, index) => {
+                if (arg === undefined) return undefined;
+
+                const paramDef = paramsList ? paramsList[index] : null;
+                if (!paramDef) return arg;
+
+                const pType = paramDef.type;
+
+                // Cast number parameters back to string if the original command parameter expects a string
+                const isOriginalString = pType === "string" || pType === Kernel.CustomCommandParamType.String;
+                if (isOriginalString && typeof arg === "number") {
+                    arg = String(arg);
+                }
+                const isPlayerSelector = pType === Kernel.CustomCommandParamType.PlayerSelector || 
+                    (typeof pType === "string" && pType.toLowerCase() === "player");
+                const isEntitySelector = pType === Kernel.CustomCommandParamType.EntitySelector || 
+                    (typeof pType === "string" && pType.toLowerCase() === "entity");
+                const isLocation = pType === Kernel.CustomCommandParamType.Location || 
+                    (typeof pType === "string" && pType.toLowerCase() === "location");
+                const isBlockType = pType === Kernel.CustomCommandParamType.BlockType || 
+                    (typeof pType === "string" && pType.toLowerCase() === "block");
+                const isEntityType = pType === Kernel.CustomCommandParamType.EntityType || 
+                    (typeof pType === "string" && pType.toLowerCase() === "entitytype");
+                const isItemType = pType === Kernel.CustomCommandParamType.ItemType || 
+                    (typeof pType === "string" && pType.toLowerCase() === "item");
+
+                // Target Selectors (unpack the array)
+                if (isPlayerSelector || isEntitySelector) {
+                    const resolved = Array.isArray(arg) ? arg[0] : arg;
+                    if (isLegacy) {
+                        if (isPlayerSelector) {
+                            return resolved?.name || String(arg);
+                        } else {
+                            return resolved?.nameTag || resolved?.typeId || String(arg);
+                        }
+                    }
+                    return resolved;
+                }
+
+                // Locations (for legacy coords, stringify to "x y z")
+                if (isLocation) {
+                    if (isLegacy) {
+                        if (arg && typeof arg === "object" && "x" in arg) {
+                            return `${Math.floor(arg.x)} ${Math.floor(arg.y)} ${Math.floor(arg.z)}`;
+                        }
+                        return String(arg);
+                    }
+                    return arg;
+                }
+
+                // Type Objects (for legacy, return the string id)
+                if (isBlockType || isEntityType || isItemType) {
+                    if (isLegacy) {
+                        return arg?.id || String(arg);
+                    }
+                    return arg;
+                }
+
+                // Numbers and booleans
+                if (typeof arg === "number" || typeof arg === "boolean") {
+                    return arg;
+                }
+
+                // Generic objects fallback
+                if (typeof arg === "object" && arg !== null) {
+                    if (arg.name) return isLegacy ? arg.name : arg;
+                    return arg;
+                }
+
+                return String(arg);
+            });
+
+            // Automatic mandatory arguments validation.
+            // If the original parameter was NOT marked optional, but the user didn't pass it (or it's undefined),
+            // show the usage syntax and stop execution.
+            if (paramsList) {
+                const allArgsEmpty = cleanArgs.length === 0 || cleanArgs.every(arg => arg === undefined || arg === null || arg === "");
+                if (!allArgsEmpty) {
+                    for (let i = 0; i < paramsList.length; i++) {
+                        const paramDef = paramsList[i];
+                        if (paramDef && paramDef.optional === false && cleanArgs[i] === undefined) {
+                            player.sendMessage(`\u00A7c\u00A7l» \u00A77Usage: ${cmd.usage || ("/" + this._primaryNS + ":" + cmd.name)}`);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // system.run ensures we are safely locked inside the ticking thread loop.
+            Kernel.system.run(() => {
+                try {
+                    if (typeof cmd.execute === "function") {
+                        cmd.execute(null, player, cleanArgs);
+                    } else if (typeof cmd.callback === "function") {
+                        cmd.callback({ sourceEntity: player, sourceType: "Entity", vector }, cleanArgs);
+                    }
+                } catch (execError) {
+                    console.error(`[CommandManager] EXECUTION_CRASH [${cmd.name}]:`, execError);
+                    player.sendMessage(`\u00A7c\u00A7l» \u00A77Command execution failed due to an internal error.`);
+                }
+            });
+        } catch (dispatchError) {
+            console.error(`[CommandManager] DISPATCH_CRASH [${cmd.name}]:`, dispatchError);
+        }
+    },
+
+    _resolvePlayer(query) {
+        return PlayerUtils.findPlayer(query);
+    },
+
+    _checkAuth(player, perm) {
+        if (!perm) return true;
+        const PM = Kernel.get("permissions");
+        if (!PM) return player.hasTag("admin");
+        return PM.hasPermission(player, perm);
+    },
+
+    _mapPerms() {
+        return Kernel.CommandPermissionLevel.Any;
+    },
+
+    _generateConfigs(finalName, def, paramsList) {
+        if (!paramsList || paramsList.length === 0) {
+            return [{
+                name: finalName,
+                description: def.description || "Aethelgrad Command Vector",
+                permissionLevel: Kernel.CommandPermissionLevel.Any,
+                mandatoryParameters: [],
+                optionalParameters: [
+                    { name: "args", type: Kernel.CustomCommandParamType.String }
+                ]
+            }];
+        }
+
+        return [this._buildConfig(finalName, def, paramsList)];
+    },
+
+    _buildConfig(finalName, def, paramsList) {
+        const mandatory = [];
+        const optional = [];
+
+        if (paramsList && Array.isArray(paramsList)) {
+            const Registry = Kernel.get("commandRegistry");
+            paramsList.forEach(p => {
+                let pType = p.type;
+                let enumName = null;
+
+                if (typeof pType === "string") {
+                    const standardType = this._mapParamType(pType);
+                    if (standardType) {
+                        pType = standardType;
+                    } else if (Registry && Registry.hasEnum && Registry.hasEnum(pType)) {
+                        enumName = pType.includes(":") ? pType : `${this._primaryNS}:${pType}`;
+                        pType = Kernel.CustomCommandParamType.Enum;
+                    } else {
+                        pType = Kernel.CustomCommandParamType.String;
+                    }
+                }
+
+                const derived = {
+                    name: p.name,
+                    type: pType
+                };
+
+                if (enumName) {
+                    derived.enumName = enumName;
+                    derived.enum = enumName;
+                }
+
+                if (p.optional) {
+                    optional.push(derived);
+                } else {
+                    mandatory.push(derived);
+                }
+            });
+        }
+
+        return {
+            name: finalName,
+            description: def.description || "Aethelgrad Command Vector",
+            permissionLevel: Kernel.CommandPermissionLevel.Any,
+            mandatoryParameters: mandatory,
+            optionalParameters: optional
+        };
+    },
+
+    refreshAliases() {}
+};
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\datastore\DatabaseManager.js ===
+import { Kernel } from "../Kernel.js"
+
+// ----------------------------------------------------------------------------
+// | class: DatabaseManager                                                   |
+// | manages persistent data using bedrock's dynamic properties.              |
+// | uses a cache-aside strategy and debounced writes to keep things fast.    |
+// | handles sharding for data that exceeds the native 32KB limit.            |
+// ----------------------------------------------------------------------------
+export class DatabaseManager {
+    // ----------------------------------------------------------------------------
+    // | constructor                                                              |
+    // | setup the maps and constants. bedrock properties are limited, so we need  |
+    // | to be smart about how we store things.                                   |
+    // ----------------------------------------------------------------------------
+    constructor() {
+        // in-memory data cache. avoids reading from the world every time.
+        this.cache = new Map() 
+        // keys that have been modified and need to be written to the world.
+        this.dirtyKeys = new Set() 
+        // handle for the debounce timer.
+        this.writeTimeout = null
+        // wait 5 seconds before flushing to disk to avoid lag spikes.
+        this.WRITE_DELAY = 5000 
+        // bedrock's limit is technically 32kb, but we leave some breathing room.
+        this.MAX_PROPERTY_SIZE = 30000 
+        // how many items to keep in a single sharded slice.
+        this.SHARD_SIZE = 50 
+        
+        // keeps track of sequential operations for entities to prevent race conditions.
+        this.transactionQueues = new Map() 
+        
+        // tracks if the ghost purger is already running to prevent overlap.
+        this.isPurgingGhosts = false
+        
+        // start the background tasks.
+        this.initialize()
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: initialize                                                       |
+    // | setup periodic cleanup and flush on shutdown.                            |
+    // ----------------------------------------------------------------------------
+    initialize() {
+        // run cleanup every 20 minutes to clear the cache.
+        Kernel.system.runInterval(() => {
+            this.cleanupExpiredData()
+        }, 20 * 60 * 20) 
+        
+        // make sure everything is saved before the server stops.
+        Kernel.system.beforeEvents.shutdown.subscribe(() => {
+            this.flushAll()
+        })
+
+        // Recover WAL and run migration on boot!
+        Kernel.system.run(async () => {
+            await this.resolvePendingWal()
+            await this.runOneTimeIndexMigration()
+        })
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: get                                                              |
+    // | fetch data by key. checks cache first, then world storage.               |
+    // ----------------------------------------------------------------------------
+    get(key) {
+        // check the memory buffer first. O(1) speed.
+        if (this.cache.has(key)) {
+            const data = this.cache.get(key)
+            // Move to the end of insertion order (most recently used)
+            this.cache.delete(key)
+            this.cache.set(key, data)
+            return data
+        }
+
+        // if not in cache, load it from the actual world properties.
+        const data = this.loadFromStorage(key)
+        if (data !== null) {
+            // save it in cache so the next call is fast.
+            this.cache.set(key, data)
+        }
+        return data
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: set                                                              |
+    // | save data. updates cache and schedules a background write.               |
+    // ----------------------------------------------------------------------------
+    set(key, value) {
+        try {
+            // update the memory buffer immediately.
+            // delete first if it already exists to move it to the end of insertion order.
+            if (this.cache.has(key)) {
+                this.cache.delete(key)
+            }
+            this.cache.set(key, value)
+            
+            // Hard cap cache memory (LRU eviction of clean keys)
+            if (this.cache.size > 1500) {
+                let evicted = 0
+                for (const [k, _] of this.cache.entries()) {
+                    if (evicted >= 200) break
+                    if (k !== key && !this.dirtyKeys.has(k) && !this.isProtectedKey(k)) {
+                        this.cache.delete(k)
+                        evicted++
+                    }
+                }
+            }
+
+            // mark the key as 'dirty' so it gets flushed to disk later.
+            this.dirtyKeys.add(key)
+            // schedule the write task if it isn't already running.
+            this.scheduleWrite()
+            return true
+        } catch (error) {
+            // if we fail here, the data is only in memory and will be lost on crash.
+            console.error(`[DatabaseManager] COMMIT_FAILURE for '${key}': ${error}`)
+            return false
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: delete                                                           |
+    // | remove data from everywhere.                                             |
+    // ----------------------------------------------------------------------------
+    delete(key) {
+        try {
+            // remove from memory.
+            this.cache.delete(key)
+            // remove from the dirty set so we don't try to save it.
+            this.dirtyKeys.delete(key)
+            // actually remove it from bedrock's world storage.
+            Kernel.world.setDynamicProperty(key, undefined)
+            return true
+        } catch (error) {
+            console.error(`[DatabaseManager] DECOMMISSION_FAILURE for '${key}': ${error}`)
+            return false
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: getSharded                                                       |
+    // | handles collections of items that are split across multiple keys.        |
+    // ----------------------------------------------------------------------------
+    getSharded(collectionName, itemId = null) {
+        // if we just want one item, go get it directly.
+        if (itemId) {
+            return this.get(`${collectionName}:item:${itemId}`)
+        }
+
+        // otherwise, load the index and fetch everything.
+        const indexKey = `${collectionName}:index`
+        const index = this.get(indexKey) || []
+        
+        const collection = []
+        for (const id of index) {
+            const item = this.get(`${collectionName}:item:${id}`)
+            if (item) {
+                collection.push(item)
+            }
+        }
+        
+        return collection
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: setSharded                                                       |
+    // | saves an item into a sharded collection. updates the index too.          |
+    // ----------------------------------------------------------------------------
+    setSharded(collectionName, itemId, data) {
+        try {
+            // save the item itself.
+            this.set(`${collectionName}:item:${itemId}`, data)
+            
+            // update the collection index so we know this item exists.
+            const indexKey = `${collectionName}:index`
+            const index = this.get(indexKey) || []
+            
+            // if it's a new item, add it to the list.
+            if (!index.includes(itemId)) {
+                index.push(itemId)
+                this.set(indexKey, index)
+            }
+            
+            return true
+        } catch (error) {
+            console.error(`[DatabaseManager] SHARDED_COMMIT_FAILURE: ${error}`)
+            return false
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: deleteSharded                                                    |
+    // | removes an item from a sharded collection and cleans up its residue.     |
+    // ----------------------------------------------------------------------------
+    deleteSharded(collectionName, itemId) {
+        try {
+            const key = `${collectionName}:item:${itemId}`
+            
+            // check if this item was sharded (split across multiple keys).
+            const indexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
+            if (typeof indexData === "string") {
+                try {
+                    // parse the shard index and nuke all the segments.
+                    const index = JSON.parse(indexData)
+                    for (let i = 0; i < index.shardCount; i++) {
+                        Kernel.world.setDynamicProperty(`${key}:shard_${index.version}_${i}`, undefined)
+                    }
+                    // clear the shard index itself.
+                    Kernel.world.setDynamicProperty(`${key}:shard_index`, undefined)
+                } catch (e) {
+                    console.error(`[DatabaseManager] ORPHAN_NUKE_FAILURE for '${key}': ${e}`)
+                }
+            }
+            
+            // delete the main key.
+            this.delete(key)
+            
+            // remove from the collection index.
+            const indexKey = `${collectionName}:index`
+            let index = this.get(indexKey) || []
+            index = index.filter(id => id !== itemId)
+            this.set(indexKey, index)
+            
+            return true
+        } catch (error) {
+            console.error(`[DatabaseManager] SHARDED_DECOMMISSION_FAILURE: ${error}`)
+            return false
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: transaction                                                      |
+    // | forces operations to run one-by-one for a specific player.                |
+    // | prevents balance dupes and race conditions during async operations.      |
+    // ----------------------------------------------------------------------------
+    async transaction(playerId, operation) {
+        // get or create a promise chain for this player.
+        if (!this.transactionQueues.has(playerId)) {
+            this.transactionQueues.set(playerId, Promise.resolve())
+        }
+
+        const queue = this.transactionQueues.get(playerId)
+        
+        // append the new operation to the end of the chain.
+        const newOperation = queue.then(async () => {
+            try {
+                // run the actual logic.
+                return await operation()
+            } catch (error) {
+                // if it fails, log it but keep the chain moving.
+                console.error(`[DatabaseManager] TRANSACTION_COLLAPSE for '${playerId}': ${error}`)
+                throw error
+            }
+        })
+
+        // update the queue with the new tail.
+        this.transactionQueues.set(playerId, newOperation)
+        
+        // when the operation finishes, check if we can clear the queue entry to save memory.
+        newOperation.finally(() => {
+            if (this.transactionQueues.get(playerId) === newOperation) {
+                this.transactionQueues.delete(playerId)
+            }
+        })
+
+        return newOperation
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: loadFromStorage                                                  |
+    // | internal helper to read from the world. handles sharding detection.      |
+    // ----------------------------------------------------------------------------
+    loadFromStorage(key) {
+        try {
+            // priority 1: check if this data was split into shards.
+            const indexKey = `${key}:shard_index`
+            if (Kernel.world.getDynamicProperty(indexKey)) {
+                return this.loadSharded(key)
+            }
+
+            // priority 2: standard single-key resolution.
+            const raw = Kernel.world.getDynamicProperty(key)
+            if (typeof raw !== "string") return null
+            try {
+                return JSON.parse(raw)
+            } catch (err) {
+                console.error(`[DatabaseManager] JSON_PARSE_CORRUPT for '${key}': ${err}`)
+                return null
+            }
+        } catch (error) {
+            console.error(`[DatabaseManager] RETRIEVAL_FAILURE for '${key}': ${error}`)
+            return null
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: scheduleWrite                                                    |
+    // | debounces write requests so we don't spam the world storage.            |
+    // ----------------------------------------------------------------------------
+    scheduleWrite() {
+        // if a write is already pending, cancel it and restart the timer.
+        if (this.writeTimeout) {
+            Kernel.system.clearRun(this.writeTimeout)
+        }
+
+        // wait for the delay before flushing.
+        this.writeTimeout = Kernel.system.runTimeout(() => {
+            this.flushDirty()
+        }, Math.max(1, Math.floor(this.WRITE_DELAY / 50)))
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: flushDirty                                                       |
+    // | the physical write operation. moves data from memory to world.           |
+    // ----------------------------------------------------------------------------
+    flushDirty() {
+        // copy the keys and clear the set so new changes can be tracked.
+        const keysToWrite = Array.from(this.dirtyKeys)
+        this.dirtyKeys.clear()
+
+        let shardedWriteOccurred = false
+
+        for (const key of keysToWrite) {
+            // only write if the data actually exists in cache.
+            if (this.cache.has(key)) {
+                try {
+                    const data = this.cache.get(key)
+                    const serialized = JSON.stringify(data)
+                    
+                    // check if the string is too long for a single property.
+                    if (serialized.length > this.MAX_PROPERTY_SIZE) {
+                        // use the sharding protocol to split it up.
+                        this.shardAndWrite(key, data)
+                        shardedWriteOccurred = true
+                    } else {
+                        // normal write.
+                        Kernel.world.setDynamicProperty(key, serialized)
+                    }
+                } catch (error) {
+                    console.error(`[DatabaseManager] FLUSH_FAILURE for '${key}': ${error}`)
+                }
+            }
+        }
+
+        // Run ghost purge if we sharded something
+        if (shardedWriteOccurred && !this.isPurgingGhosts) {
+            this.isPurgingGhosts = true
+            Kernel.system.runJob(this.ghostCleanupGenerator())
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: shardAndWrite                                                    |
+    // | the sharding protocol. splits large payloads into versions buffers.      |
+    // | uses a double-buffering strategy (v1/v2) for atomic commits.             |
+    // ----------------------------------------------------------------------------
+    shardAndWrite(key, data) {
+        // serialize the data once.
+        const serialized = JSON.stringify(data)
+        const chars = Array.from(serialized)
+        const shards = []
+        const charLimit = Math.floor(this.MAX_PROPERTY_SIZE / 2) // safe character count for multi-byte UTF-8
+        
+        // cut the string into safe character-based pieces.
+        for (let i = 0; i < chars.length; i += charLimit) {
+            shards.push(chars.slice(i, i + charLimit).join(""))
+        }
+
+        // check which version is currently active so we can write to the other one.
+        const currentIndexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
+        let nextVersion = "v1"
+        if (typeof currentIndexData === "string") {
+            try {
+                const currentIndex = JSON.parse(currentIndexData)
+                nextVersion = currentIndex.version === "v1" ? "v2" : "v1"
+            } catch (e) { /* fallback to v1 */ }
+        }
+
+        // step 1: write all segments to the inactive buffer.
+        for (let i = 0; i < shards.length; i++) {
+            Kernel.world.setDynamicProperty(`${key}:shard_${nextVersion}_${i}`, shards[i])
+        }
+
+        // step 2: update the index to point to the new version.
+        Kernel.world.setDynamicProperty(`${key}:shard_index`, JSON.stringify({
+            shardCount: shards.length,
+            timestamp: Date.now(),
+            version: nextVersion
+        }))
+        
+        console.log(`[DatabaseManager] SHARDING_COMPLETE: '${key}' [${nextVersion}] split into ${shards.length} segments.`);
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: loadSharded                                                      |
+    // | reads sharded data and reconstructs the original string.                 |
+    // ----------------------------------------------------------------------------
+    loadSharded(key) {
+        try {
+            // get the index metadata.
+            const indexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
+            if (!indexData) return null
+
+            const index = typeof indexData === "string" ? JSON.parse(indexData) : null
+            if (!index || !index.version) return null
+            
+            const shards = []
+            const version = index.version
+
+            // fetch each slice in order.
+            for (let i = 0; i < index.shardCount; i++) {
+                const shard = Kernel.world.getDynamicProperty(`${key}:shard_${version}_${i}`)
+                // if any slice is missing, the whole thing is corrupt.
+                if (typeof shard !== "string") {
+                    console.error(`[DatabaseManager] CRITICAL_INTEGRITY_FAILURE: Shard ${i} [${version}] missing for '${key}'`)
+                    return null
+                }
+                shards.push(shard)
+            }
+
+            // join the shards and parse the json.
+            return JSON.parse(shards.join(''))
+        } catch (error) {
+            console.error(`[DatabaseManager] SHARD_LOAD_FAILURE for '${key}': ${error}`)
+            return null
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: ghostCleanupGenerator                                            |
+    // | INDUSTRIAL_GHOST_PURGE_VECTOR                                            |
+    // | Scans the dynamic property registry for superseded sharded versions.     |
+    // | If a newer equivalent (v2) is confirmed in the index, the older version  |
+    // | (v1) is terminated with extreme prejudice.                               |
+    // ----------------------------------------------------------------------------
+    *ghostCleanupGenerator() {
+        const allIds = Kernel.world.getDynamicPropertyIds();
+        const processedBases = new Set();
+
+        for (let i = 0; i < allIds.length; i++) {
+            // Yield every 50 properties to keep TPS at 20.0 kinda
+            if (i % 50 === 0) yield;
+
+            const id = allIds[i];
+            if (!id.endsWith(":shard_index")) continue;
+
+            const baseKey = id.replace(":shard_index", "");
+            if (processedBases.has(baseKey)) continue;
+            processedBases.add(baseKey);
+
+            const indexRaw = Kernel.world.getDynamicProperty(id);
+            if (typeof indexRaw !== "string") continue;
+            
+            let index;
+            try {
+                index = JSON.parse(indexRaw);
+            } catch (e) {
+                continue;
+            }
+            
+            const activeVersion = index.version; // e.g., "v2"
+            if (!activeVersion) continue;
+            
+            const deadVersion = activeVersion === "v1" ? "v2" : "v1";
+
+            /* 
+             * REALITY_SWEEP
+             * Find all shards belonging to the DEAD version and nuke them.
+             */
+            const searchPattern = `${baseKey}:shard_${deadVersion}_`;
+            for (const shardId of allIds) {
+                if (shardId.startsWith(searchPattern)) {
+                    // Double check index did not change mid-yield
+                    const currentIndexRaw = Kernel.world.getDynamicProperty(id);
+                    if (typeof currentIndexRaw === "string") {
+                        try {
+                            const curIndex = JSON.parse(currentIndexRaw);
+                            if (curIndex.version === deadVersion) {
+                                // If the current active version has switched to deadVersion, DO NOT delete it!
+                                continue;
+                            }
+                        } catch {}
+                    }
+                    Kernel.world.setDynamicProperty(shardId, undefined);
+                }
+            }
+        }
+        console.log("[AethelOS] GHOST_PURGE_COMPLETE | Registry Stabilized.");
+        this.isPurgingGhosts = false;
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: flushAll                                                         |
+    // | immediate write of all dirty keys. used during shutdown.                 |
+    // ----------------------------------------------------------------------------
+    flushAll() {
+        this.flushDirty()
+    }
+
+    isProtectedKey(key) {
+        if (!key) return false
+        const lowerKey = key.toLowerCase()
+        return (
+            lowerKey.startsWith("ae:settings") ||
+            lowerKey.startsWith("settings") ||
+            lowerKey.endsWith(":index") ||
+            lowerKey.startsWith("ae:ranks") ||
+            lowerKey.startsWith("ae:warps") ||
+            lowerKey.startsWith("ae:claims") ||
+            lowerKey.includes("rank:") ||
+            lowerKey.includes("warp:") ||
+            lowerKey.includes("claim:")
+        )
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: cleanupExpiredData                                               |
+    // | purges the memory cache to prevent the heap from exploding.              |
+    // | keeps dirty keys so we don't lose unsaved changes.                       |
+    // ----------------------------------------------------------------------------
+    cleanupExpiredData() {
+        // if the cache is getting too big (1000 entries).
+        if (this.cache.size > 1000) {
+            // iterate and delete old entries directly to avoid massive array copies.
+            // we keep anything that is dirty (unsaved) regardless of age.
+            let count = 0;
+            const targetSize = 500;
+            const toDelete = this.cache.size - targetSize;
+            
+            for (const [key, _value] of this.cache) {
+                if (count >= toDelete) break;
+                // Do not evict if it is a dirty key or a protected configuration key
+                if (!this.dirtyKeys.has(key) && !this.isProtectedKey(key)) {
+                    this.cache.delete(key);
+                    count++;
+                }
+            }
+        }
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: getStats                                                         |
+    // | monitoring helper.                                                       |
+    // ----------------------------------------------------------------------------
+    getStats() {
+        return {
+            cacheSize: this.cache.size,
+            dirtyKeys: this.dirtyKeys.size,
+            transactionQueues: this.transactionQueues.size
+        }
+    }
+
+    /**
+     * Writes a WAL entry to persistent world storage synchronously.
+     */
+    writeWal(senderId, receiverId, amount, senderOriginalBalance, receiverOriginalBalance) {
+        const walEntry = {
+            senderId,
+            receiverId,
+            amount,
+            senderOriginalBalance,
+            receiverOriginalBalance,
+            timestamp: Date.now()
+        };
+        Kernel.world.setDynamicProperty("ae:wal", JSON.stringify(walEntry));
+    }
+
+    /**
+     * Clears the WAL entry.
+     */
+    clearWal() {
+        Kernel.world.setDynamicProperty("ae:wal", undefined);
+    }
+
+    /**
+     * Scans the persistent world storage for unresolved transactions and recovers/rolls them back.
+     */
+    async resolvePendingWal() {
+        try {
+            const rawWal = Kernel.world.getDynamicProperty("ae:wal");
+            if (typeof rawWal !== "string") return;
+
+            console.warn(`[DatabaseManager] [WAL] Unresolved write-ahead log entry found! Recovering...`);
+            const wal = JSON.parse(rawWal);
+            if (!wal || !wal.senderId || !wal.receiverId || !wal.amount) {
+                Kernel.world.setDynamicProperty("ae:wal", undefined);
+                return;
+            }
+
+            const PlayerStore = Kernel.get("playerStore");
+            const StoreKeys = Kernel.get("keys");
+            if (!PlayerStore || !StoreKeys) {
+                console.error(`[DatabaseManager] [WAL] PlayerStore or StoreKeys not available during WAL recovery!`);
+                return;
+            }
+
+            const sender = { id: wal.senderId };
+            const receiver = { id: wal.receiverId };
+            const amount = wal.amount;
+
+            const senderBalanceKey = StoreKeys.money(sender.id);
+            const receiverBalanceKey = StoreKeys.money(receiver.id);
+
+            const currentSenderBalance = PlayerStore.get(sender, senderBalanceKey) ?? 1000;
+            const currentReceiverBalance = PlayerStore.get(receiver, receiverBalanceKey) ?? 1000;
+
+            console.log(`[DatabaseManager] [WAL] Sender '${sender.id}' current balance: ${currentSenderBalance} (expected original: ${wal.senderOriginalBalance})`);
+            console.log(`[DatabaseManager] [WAL] Receiver '${receiver.id}' current balance: ${currentReceiverBalance} (expected original: ${wal.receiverOriginalBalance})`);
+
+            if (currentSenderBalance === wal.senderOriginalBalance - amount && currentReceiverBalance === wal.receiverOriginalBalance) {
+                console.warn(`[DatabaseManager] [WAL] Transaction was partially completed (sender debited but receiver not credited). Rolling back...`);
+                PlayerStore.set(sender, senderBalanceKey, wal.senderOriginalBalance);
+                
+                const { JournaledDb } = await import("./JournaledDatabase.js");
+                JournaledDb.flush();
+                this.flushDirty();
+            } else if (currentSenderBalance === wal.senderOriginalBalance - amount && currentReceiverBalance === wal.receiverOriginalBalance + amount) {
+                console.log(`[DatabaseManager] [WAL] Transaction was fully completed. Clearing log.`);
+            } else if (currentSenderBalance === wal.senderOriginalBalance && currentReceiverBalance === wal.receiverOriginalBalance) {
+                console.log(`[DatabaseManager] [WAL] Transaction had not started. Clearing log.`);
+            } else {
+                console.warn(`[DatabaseManager] [WAL] Mismatched state detected. Performing full rollback to original balances.`);
+                PlayerStore.set(sender, senderBalanceKey, wal.senderOriginalBalance);
+                PlayerStore.set(receiver, receiverBalanceKey, wal.receiverOriginalBalance);
+                
+                const { JournaledDb } = await import("./JournaledDatabase.js");
+                JournaledDb.flush();
+                this.flushDirty();
+            }
+
+            Kernel.world.setDynamicProperty("ae:wal", undefined);
+            console.log(`[DatabaseManager] [WAL] Recovery complete and WAL cleared.`);
+        } catch (error) {
+            console.error(`[DatabaseManager] [WAL] Error during recovery process: ${error}`);
+        }
+    }
+
+    /**
+     * One-time background migration to parse historical data and build indexes.
+     */
+    async runOneTimeIndexMigration() {
+        try {
+            const isMigrated = this.get("ae:index_migrated")
+            if (isMigrated) return
+
+            console.warn("[DatabaseManager] [Migration] Running one-time database index migration...");
+            const allIds = Kernel.world.getDynamicPropertyIds()
+            
+            const playerIndex = new Set()
+            const namePattern = /^player:(.+):name$/
+            const msgPattern = /^audit:msg:(.+)$/
+
+            for (let i = 0; i < allIds.length; i++) {
+                // Yield periodically to prevent blocking the tick
+                if (i % 100 === 0) {
+                    await new Promise(resolve => Kernel.system.run(resolve))
+                }
+
+                const propId = allIds[i]
+                
+                // 1. Process player name mapping & UUID register
+                const nameMatch = propId.match(namePattern)
+                if (nameMatch) {
+                    const uuid = nameMatch[1]
+                    const name = this.get(propId)
+                    if (typeof name === "string" && name.trim().length > 0) {
+                        this.set(`playername:${name.toLowerCase()}`, uuid)
+                        playerIndex.add(uuid)
+                    }
+                }
+
+                // 2. Process conversation message keys
+                const msgMatch = propId.match(msgPattern)
+                if (msgMatch) {
+                    const pairId = msgMatch[1]
+                    const parts = pairId.split("_")
+                    if (parts.length === 2) {
+                        const [idA, idB] = parts
+                        
+                        const convsA = this.get(`audit:convs:${idA}`) || []
+                        if (!convsA.includes(idB)) {
+                            convsA.push(idB)
+                            this.set(`audit:convs:${idA}`, convsA)
+                        }
+                        
+                        const convsB = this.get(`audit:convs:${idB}`) || []
+                        if (!convsB.includes(idA)) {
+                            convsB.push(idA)
+                            this.set(`audit:convs:${idB}`, convsB)
+                        }
+                    }
+                }
+            }
+
+            // Save player ledger index
+            if (playerIndex.size > 0) {
+                const existingIndex = this.get("ae:player_index") || []
+                const mergedIndex = Array.from(new Set([...existingIndex, ...playerIndex]))
+                this.set("ae:player_index", mergedIndex)
+            }
+
+            this.set("ae:index_migrated", true)
+            this.flushDirty()
+            console.warn("[DatabaseManager] [Migration] Database index migration completed successfully!");
+        } catch (error) {
+            console.error(`[DatabaseManager] [Migration] Index migration failed: ${error}`)
+        }
+    }
+}
+
+// export the singleton instance.
+export const Database = new DatabaseManager()
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\datastore\JournaledDatabase.js ===
+import { Kernel } from "../Kernel.js";
+import { Database } from "./DatabaseManager.js";
+
+/**
+ * Buffer-aside persistence layer.
+ * Buffers updates in memory Map to minimize disk writes, flushing in batches.
+ * Hardened with isolated transaction-key flushing to prevent state bleeds.
+ */
+class JournaledDatabase {
+    constructor() {
+        this.journal = new Map();
+        this.isDirty = false;
+        this._startFlushCycle();
+    }
+
+    get(key) {
+        if (this.journal.has(key)) {
+            return this.journal.get(key);
+        }
+        return Database.get(key);
+    }
+
+    set(key, value) {
+        this.journal.set(key, value);
+        this.isDirty = true;
+        return true;
+    }
+
+    delete(key) {
+        this.journal.set(key, undefined);
+        this.isDirty = true;
+        return true;
+    }
+
+    /**
+     * Flushes ONLY specific keys from the journal buffer.
+     * Used to preserve player-isolation during transactions.
+     */
+    flushKeys(keysToFlush) {
+        for (const key of keysToFlush) {
+            if (this.journal.has(key)) {
+                const value = this.journal.get(key);
+                if (value === undefined) {
+                    Database.delete(key);
+                } else {
+                    Database.set(key, value);
+                }
+                this.journal.delete(key);
+            }
+        }
+    }
+
+    flush() {
+        if (!this.isDirty) return;
+
+        for (const [key, value] of this.journal.entries()) {
+            if (value === undefined) {
+                Database.delete(key);
+            } else {
+                Database.set(key, value);
+            }
+        }
+
+        this.journal.clear();
+        this.isDirty = false;
+        console.log("[Datastore] JOURNAL_FLUSH_COMPLETE");
+    }
+
+    _startFlushCycle() {
+        Kernel.system.runInterval(() => {
+            this.flush();
+        }, 200); // Flush every 10 seconds (200 ticks)
+    }
+
+    async transaction(playerId, operation) {
+        // Isolate keys belonging only to the transacting player
+        const playerPrefix = `player:${playerId}:`;
+        const keysToIsolate = Array.from(this.journal.keys()).filter(key => key.startsWith(playerPrefix));
+
+        // Flush ONLY the transacting player's buffered changes before locking
+        this.flushKeys(keysToIsolate);
+
+        const result = await Database.transaction(playerId, operation);
+
+        // Re-evaluate and flush ONLY the transacting player's changes after the lock
+        const postKeys = Array.from(this.journal.keys()).filter(key => key.startsWith(playerPrefix));
+        this.flushKeys(postKeys);
+
+        return result;
+    }
+
+    getSharded(collection, id) { return Database.getSharded(collection, id); }
+    setSharded(collection, id, value) { return Database.setSharded(collection, id, value); }
+    deleteSharded(collection, id) { return Database.deleteSharded(collection, id); }
+
+    getMemoryFootprint() {
+        let total = 0;
+        // sum journal entries
+        for (const [key, value] of this.journal.entries()) {
+            total += key.length * 2;
+            if (value !== undefined && value !== null) {
+                try {
+                    total += JSON.stringify(value).length * 2;
+                } catch {}
+            }
+        }
+        // sum Database cache entries
+        for (const [key, value] of Database.cache.entries()) {
+            total += key.length * 2;
+            if (value !== undefined && value !== null) {
+                try {
+                    total += JSON.stringify(value).length * 2;
+                } catch {}
+            }
+        }
+        return total;
+    }
+}
+
+export const JournaledDb = new JournaledDatabase();
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\events\MasterDispatcher.js ===
+import { Kernel } from "../Kernel.js";
+import { Configuration } from "../../Configuration.js";
+import { SpatialCache } from "../../systems/protection/SpatialCache.js";
+
+const PERMISSIONS = { BUILD: 1, CONTAINERS: 2, DOORS: 4, REDSTONE: 8, MOB_INTERACT: 16, CRAFTING: 32 };
+const CONTAINER_BLOCKS = new Set(["chest", "barrel", "trapped_chest", "shulker", "hopper", "dropper", "dispenser", "furnace", "blast_furnace", "smoker", "brewing_stand"]);
+const DOOR_BLOCKS = new Set(["door", "gate", "trapdoor"]);
+const REDSTONE_BLOCKS = new Set(["lever", "button", "pressure_plate", "daylight_detector", "tripwire_hook", "repeater", "comparator"]);
+const CRAFTING_BLOCKS = new Set(["crafting_table", "smithing_table", "cartography_table", "loom", "stonecutter", "grindstone", "anvil", "enchanting_table"]);
+
+function classifyBlock(typeId) {
+    for (const keyword of CONTAINER_BLOCKS) if (typeId.includes(keyword)) return PERMISSIONS.CONTAINERS;
+    for (const keyword of DOOR_BLOCKS) if (typeId.includes(keyword)) return PERMISSIONS.DOORS;
+    for (const keyword of REDSTONE_BLOCKS) if (typeId.includes(keyword)) return PERMISSIONS.REDSTONE;
+    for (const keyword of CRAFTING_BLOCKS) if (typeId.includes(keyword)) return PERMISSIONS.CRAFTING;
+    return 0;
+}
+
+function isGod(player) {
+    const tags = player.getTags();
+    return Configuration.SUPER_ADMIN_TAGS.some(tag => tags.includes(tag));
+}
+
+export const MasterDispatcher = {
+    _initialized: false,
+
+    init() {
+        if (this._initialized) return;
+        this._initialized = true;
+
+        // Unified Interact Gate
+        Kernel.world.beforeEvents.playerInteractWithBlock.subscribe((ev) => {
+            const { player, block, itemStack } = ev;
+            if (isGod(player)) return;
+
+            // 1. Placement Check (Hold block-like items)
+            if (itemStack && (itemStack.typeId.includes("_block") || itemStack.typeId.includes("stone") || itemStack.typeId.includes("planks") || itemStack.typeId.includes("dirt") || itemStack.typeId.includes("log"))) {
+                if (!SpatialCache.canBuild(player, block.location)) {
+                    ev.cancel = true;
+                    player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77You cannot build here!");
+                    return;
+                }
+            }
+
+            // 2. Classified Block Check
+            const required = classifyBlock(block.typeId);
+            if (required !== 0 && !SpatialCache.hasPermission(player, block.location, required)) {
+                ev.cancel = true;
+                player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77You cannot interact with this!");
+                return;
+            }
+
+            // 3. Infrastructure Routing
+            const shopStore = Kernel.get("chestShopStore");
+            if (shopStore && shopStore.isShop(block.location)) {
+                Kernel.get("signalBus").emit("internal:shopInteract", ev);
+                return;
+            }
+
+            Kernel.get("signalBus").emit("external:blockInteract", ev);
+        });
+
+        // Unified Break Gate
+        Kernel.world.beforeEvents.playerBreakBlock.subscribe((ev) => {
+            const { player, block } = ev;
+            if (isGod(player)) return;
+
+            if (!SpatialCache.canBuild(player, block.location)) {
+                ev.cancel = true;
+                player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77You cannot build here!");
+            }
+        });
+
+        // Unified Entity Interact Gate
+        Kernel.world.beforeEvents.playerInteractWithEntity.subscribe((ev) => {
+            const { player, target } = ev;
+            if (isGod(player) || !target?.location) return;
+
+            if (!SpatialCache.hasPermission(player, target.location, PERMISSIONS.MOB_INTERACT)) {
+                ev.cancel = true;
+                player.onScreenDisplay.setActionBar("\u00A7c\u00A7l» \u00A77You cannot interact with mobs here!");
+            }
+        });
+    }
+};
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\permissions\PermissionData.js ===
+/**
+ * Stores and manages rank and permission data using a Structure of Arrays (SoA) layout.
+ * This ensures high performance for permission lookups.
+ */
+export class PermissionData {
+    constructor() {
+        // Core rank data arrays
+        this.rankIds = []           
+        this.rankOrders = []        
+        this.rankNames = []         
+        this.rankColors = []        
+        this.rankChatColors = []    
+        this.rankHideRanks = []
+        this.rankIndexMap = new Map() // O(1) lookup for rank indices
+
+        // Bitflag maps for permissions
+        this.permissionFlags = new Map()  
+        this.permissionValues = new Map()  
+
+        // Cache for player rank resolutions
+        this.playerRanks = new Map()       
+        this.playerRankCache = new Map()   
+        this.CACHE_TTL = 5000 
+    }
+
+    /**
+     * Add a new rank to the data structure
+     */
+    addRank(rankId, order, name, color, chatColor, hideRanks = false) {
+        if (this.rankIndexMap.has(rankId)) return
+
+        const index = this.rankIds.length
+        this.rankIndexMap.set(rankId, index)
+
+        this.rankIds.push(rankId)
+        this.rankOrders.push(order)
+        this.rankNames.push(name)
+        this.rankColors.push(color)
+        this.rankChatColors.push(chatColor)
+        this.rankHideRanks.push(hideRanks)
+
+        for (const [_perm, flags] of this.permissionFlags) {
+            flags[index] = 0
+        }
+
+        for (const [_perm, values] of this.permissionValues) {
+            values[index] = 0
+        }
+
+        console.log(`[PermissionData] RANK_INJECTED: ${rankId} [IDX_${index}]`);
+    }
+
+    /* 
+     * AUTH_NODE_CALIBRATION_VECTOR
+     * Sets a permission bit or numeric value for a specific rank index.
+     */
+    setPermission(rankId, permission, value) {
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return false
+
+        const setVal = (perm) => {
+            if (typeof value === 'boolean') {
+                let flags = this.permissionFlags.get(perm)
+                if (!flags) {
+                    flags = new Array(this.rankIds.length).fill(0)
+                    this.permissionFlags.set(perm, flags)
+                }
+                flags[index] = value ? 1 : 0
+            } else {
+                let values = this.permissionValues.get(perm)
+                if (!values) {
+                    values = new Array(this.rankIds.length).fill(0)
+                    this.permissionValues.set(perm, values)
+                }
+                values[index] = value
+            }
+        }
+
+        setVal(permission)
+
+        const parts = permission.split('.')
+        if (parts.length === 2) {
+            setVal(`${parts[1]}.${parts[0]}`)
+        }
+
+        this.invalidatePlayerCache()
+        return true
+    }
+
+    /* 
+     * AUTH_NODE_QUERY_VECTOR
+     */
+    getPermission(rankId, permission) {
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return null
+
+        const flags = this.permissionFlags.get(permission)
+        if (flags) {
+            return flags[index] === 1
+        }
+
+        const values = this.permissionValues.get(permission)
+        if (values) {
+            return values[index]
+        }
+
+        return null
+    }
+
+    /* 
+     * RANK_MANIFEST_QUERY
+     */
+    getRankPermissions(rankId) {
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return {}
+
+        const permissions = {}
+        for (const [perm, flags] of this.permissionFlags) {
+            permissions[perm] = flags[index] === 1
+        }
+        for (const [perm, values] of this.permissionValues) {
+            permissions[perm] = values[index]
+        }
+        return permissions
+    }
+
+    /* 
+     * ENTITY_AUTH_RESOLUTION_ENGINE
+     * Computes the effective permission for an entity by scanning its 
+     * assigned ranks. O(R) where R is the number of ranks.
+     */
+    getPlayerPermission(playerId, permission) {
+        const ranks = this.getPlayerRanks(playerId)
+        if (!ranks.length) return false
+
+        for (const rankId of ranks) {
+            const value = this.getPermission(rankId, permission)
+            if (value !== null && value !== false) {
+                return value
+            }
+        }
+
+        return false
+    }
+
+    /* 
+     * ENTITY_MANIFEST_QUERY_PIPELINE
+     */
+    getPlayerRanks(playerId) {
+        const cached = this.playerRankCache.get(playerId)
+        if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+            return cached.ranks
+        }
+
+        const ranks = this._computePlayerRanks(playerId)
+        this.playerRankCache.set(playerId, {
+            ranks,
+            timestamp: Date.now()
+        })
+        return ranks
+    }
+
+    /* 
+     * HIERARCHY_COMPUTATION_PROTOCOL
+     * Sorts entity ranks based on their industrial weight. O(N log N).
+     */
+    _computePlayerRanks(playerId) {
+        const ranks = this.playerRanks.get(playerId) || []
+
+        return ranks
+            .filter(rankId => {
+                return this.rankIndexMap.has(rankId)
+            })
+            .sort((a, b) => {
+                const indexA = this.rankIndexMap.get(a)
+                const indexB = this.rankIndexMap.get(b)
+                return this.rankOrders[indexB] - this.rankOrders[indexA]
+            })
+    }
+
+    /* 
+     * PEAK_CLEARANCE_RESOLVER
+     */
+    getHighestRank(playerId) {
+        const ranks = this.getPlayerRanks(playerId)
+        if (ranks.length === 0) return null
+        return this.getRankInfo(ranks[0])
+    }
+
+    /* 
+     * HIERARCHY_VALIDATION_GATE
+     */
+    canActOn(actorId, targetId) {
+        const actorHighest = this.getHighestRank(actorId)
+        const targetHighest = this.getHighestRank(targetId)
+
+        if (!actorHighest) return false
+        if (!targetHighest) return true 
+
+        return actorHighest.order > targetHighest.order
+    }
+
+    /* 
+     * IDENTITY_CALIBRATION_VECTOR
+     */
+    setPlayerRanks(playerId, rankIds) {
+        this.playerRanks.set(playerId, [...rankIds])
+        this.invalidatePlayerCache(playerId)
+    }
+
+    /* 
+     * VOLATILE_BUFFER_TERMINATION
+     */
+    invalidatePlayerCache(playerId = null) {
+        if (playerId) {
+            this.playerRankCache.delete(playerId)
+        } else {
+            this.playerRankCache.clear()
+        }
+    }
+
+    /* 
+     * MANIFEST_DATA_ACCESSOR
+     */
+    getRankInfo(rankId) {
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return null
+
+        return {
+            id: rankId,
+            order: this.rankOrders[index],
+            name: this.rankNames[index],
+            color: this.rankColors[index],
+            chatColor: this.rankChatColors[index],
+            hideRanks: this.rankHideRanks[index] ?? false,
+            permissions: this.getRankPermissions(rankId)
+        }
+    }
+
+    /* 
+     * GLOBAL_HIERARCHY_QUERY
+     */
+    getAllRanks() {
+        const ranks = []
+        for (let i = 0; i < this.rankIds.length; i++) {
+            ranks.push({
+                id: this.rankIds[i],
+                order: this.rankOrders[i],
+                name: this.rankNames[i],
+                color: this.rankColors[i],
+                chatColor: this.rankChatColors[i],
+                hideRanks: this.rankHideRanks[i] ?? false,
+                permissions: this.getRankPermissions(this.rankIds[i])
+            })
+        }
+        return ranks.sort((a, b) => b.order - a.order) 
+    }
+
+    /* 
+     * RANK_DECOMMISSION_PROTOCOL
+     * Splicing from the SoA arrays to remove a rank from the entire 
+     * industrial manifest.
+     */
+    removeRank(rankId) {
+        const index = this.rankIndexMap.get(rankId)
+        if (index === undefined) return false
+
+        this.rankIds.splice(index, 1)
+        this.rankOrders.splice(index, 1)
+        this.rankNames.splice(index, 1)
+        this.rankColors.splice(index, 1)
+        this.rankChatColors.splice(index, 1)
+        this.rankHideRanks.splice(index, 1)
+        this.rankIndexMap.delete(rankId)
+
+        // Re-index remaining ranks
+        for (let i = index; i < this.rankIds.length; i++) {
+            this.rankIndexMap.set(this.rankIds[i], i)
+        }
+
+        for (const flags of this.permissionFlags.values()) {
+            flags.splice(index, 1)
+        }
+        for (const values of this.permissionValues.values()) {
+            values.splice(index, 1)
+        }
+
+        this.invalidatePlayerCache()
+        return true
+    }
+
+    /* 
+     * ANALYTICS_VECTOR
+     */
+    getStats() {
+        return {
+            totalRanks: this.rankIds.length,
+            totalPermissions: this.permissionFlags.size + this.permissionValues.size,
+            cachedPlayers: this.playerRankCache.size,
+            totalPlayers: this.playerRanks.size
+        }
+    }
+
+    /* 
+     * MAINTENANCE_SANITIZATION_PROTOCOL
+     */
+    cleanup() {
+        const now = Date.now()
+        let cleaned = 0
+
+        for (const [playerId, cache] of this.playerRankCache) {
+            if (now - cache.timestamp > this.CACHE_TTL) {
+                this.playerRankCache.delete(playerId)
+                cleaned++
+            }
+        }
+
+        if (cleaned > 0) {
+            console.log(`[PermissionData] SANITIZATION: ${cleaned} stale cache-entries purged.`);
+        }
+    }
+}
+
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\permissions\PermissionManager.js ===
+import { PermissionData } from "./PermissionData.js"
+import { Kernel } from "../Kernel.js"
+import { Configuration } from "../../Configuration.js"
+
+/**
+ * Manages player permissions and rank hierarchies.
+ * Uses a 5-second cache to keep performance high.
+ */
+export class PermissionManager {
+    static #instance = null
+    static #data = new PermissionData() // Master storage for all rank data
+    static #playerCache = new Map() // Cache for resolved player permissions
+    static #CACHE_TTL = 5000 
+    static #stats = {
+        cacheHits: 0,
+        cacheMisses: 0,
+        totalChecks: 0
+    }
+    
+    static getInstance() {
+        if (!this.#instance) {
+            this.#instance = new PermissionManager()
+        }
+        return this.#instance
+    }
+    
+    constructor() {
+        this.startCleanupTask()
+        
+        // Clear permission cache on player disconnect to prevent ID-reuse hijacking!
+        Kernel.world.afterEvents.playerLeave.subscribe((ev) => {
+            this.invalidatePlayerCache(ev.playerId);
+        });
+    }
+
+    /**
+     * Load ranks from the store and register them
+     */
+    init() {
+        const RankStore = Kernel.get("rankStore")
+        if (!RankStore) {
+            console.error("[PermissionManager] FATAL: RankStore registry unreachable.");
+            return
+        }
+
+        const allRanks = RankStore.getAllRanks()
+
+        // 1. Wipe memory of deleted/superseded ranks to synchronize layout state
+        PermissionManager.#data = new PermissionData()
+
+        for (const [tag, data] of Object.entries(allRanks)) {
+            // 2. Safety guard: ignore undefined rank definitions
+            if (!data) continue
+
+            PermissionManager.#data.addRank(
+                tag, 
+                data.order || 0, 
+                data.name || tag, 
+                data.colorName || "\u00A77", 
+                data.colorText || "\u00A77",
+                data.hideRanks || false
+            )
+
+            if (data.permissions) {
+                for (const [perm, value] of Object.entries(data.permissions)) {
+                    PermissionManager.#data.setPermission(tag, perm, value)
+                }
+            }
+        }
+
+        console.log(`[PermissionManager] RBAC_NODES_INJECTED: ${Object.keys(allRanks).length}`);
+    }
+
+    /*
+    /*
+     * CACHE_RESOLVER_VECTOR
+     */
+    _getOrComputeCache(player) {
+        let cache = PermissionManager.#playerCache.get(player.id)
+        if (cache && Date.now() - cache.timestamp < PermissionManager.#CACHE_TTL) {
+            PermissionManager.#stats.cacheHits++
+            return cache
+        }
+        
+        PermissionManager.#stats.cacheMisses++
+        
+        const isSuperAdmin = this._isSuperAdmin(player)
+        if (isSuperAdmin) {
+            cache = {
+                permissions: new Map(),
+                isSuperAdmin: true,
+                timestamp: Date.now()
+            }
+            PermissionManager.#playerCache.set(player.id, cache)
+            return cache
+        }
+
+        this.syncPlayerRanks(player)
+        const permissions = this.#computePermissions(player)
+        
+        cache = {
+            permissions,
+            isSuperAdmin: false,
+            timestamp: Date.now()
+        }
+        PermissionManager.#playerCache.set(player.id, cache)
+        return cache
+    }
+
+    /*
+     * VALUE_RETRIEVAL_VECTOR
+     * Fetches the raw permission value (boolean or number) for a player.
+     * Implements admin bypass mechanics where admins get Infinity limits and 0 cooldowns.
+     */
+    getPermission(player, key) {
+        const cache = this._getOrComputeCache(player)
+        
+        const isAdmin = cache.isSuperAdmin || cache.permissions.get("admin") === true
+        
+        if (isAdmin) {
+            if (key.endsWith(".limit") || key.includes("limit")) {
+                return Infinity
+            }
+            if (key.endsWith(".cooldown") || key.includes("cooldown") || 
+                key.endsWith(".wait") || key.includes("wait") || 
+                key.endsWith(".cost") || key.includes("cost")) {
+                return 0
+            }
+            return true
+        }
+        
+        let val = cache.permissions.get(key)
+        if (val === undefined) {
+            const parts = key.split('.')
+            if (parts.length === 2) {
+                val = cache.permissions.get(`${parts[1]}.${parts[0]}`)
+            }
+        }
+
+        const aliases = {
+            "essentials.admin": "admin.panel",
+            "essentials.ban": "admin.ban",
+            "essentials.admin.ban": "admin.ban",
+            "essentials.kick": "admin.kick",
+            "essentials.admin.mute": "admin.mute",
+            "essentials.admin.reports": "admin.reports",
+            "essentials.admin.ft": "admin.floatingtext",
+            "essentials.admin.invsee": "admin.invsee",
+            "essentials.admin.ranks": "admin.ranks",
+            "essentials.admin.economy": "admin.economy",
+            "admin.shop": "admin.shopsetting",
+            "admin.system": "admin.setting",
+            "admin.plugin": "admin.setting",
+            "admin.broadcast.reset": "admin.broadcast"
+        }
+
+        if (val === undefined && aliases[key]) {
+            val = cache.permissions.get(aliases[key])
+        }
+
+        if (val === undefined && key === "essentials.gamemode") {
+            if (cache.permissions.get("admin.gm.c") === true ||
+                cache.permissions.get("admin.gm.s") === true ||
+                cache.permissions.get("admin.gm.sp") === true ||
+                cache.permissions.get("admin.gm.a") === true) {
+                val = true
+            }
+        }
+
+        return val
+    }
+
+    hasPermission(player, permission) {
+        PermissionManager.#stats.totalChecks++
+        const val = this.getPermission(player, permission)
+        return val ?? false
+    }
+
+
+    /*
+     * RANK_SYNCHRONIZATION_PROTOCOL
+     * Maps entity-tags into the PermissionData registry for real-time 
+     * identity calibration.
+     */
+    syncPlayerRanks(player) {
+        const tags = player.getTags()
+        PermissionManager.#data.setPlayerRanks(player.id, tags)
+    }
+
+    /*
+     * HIERARCHY_WEIGHT_RESOLVER
+     */
+    getHighestRank(player) {
+        // 🛑 SHADOW_CLEARANCE: Gods have infinite power, but no hardcoded visual manifest.
+        return PermissionManager.#data.getHighestRank(player.id)
+    }
+
+    /*
+     * HIERARCHY_VALIDATION_GATE
+     * Prevents lower-ranking staff from performing actions on 
+     * higher-clearance entities.
+     */
+    canActOn(actor, target) {
+        const actorSA = this._isSuperAdmin(actor)
+        const targetSA = this._isSuperAdmin(target)
+        
+        if (actorSA) return true
+        if (targetSA) return false
+
+        this.syncPlayerRanks(actor)
+        this.syncPlayerRanks(target)
+
+        return PermissionManager.#data.canActOn(actor.id, target.id)
+    }
+
+    /*
+     * AUTH_NODE_COMPUTATION_ENGINE
+     * Merges permissions across all assigned ranks. Higher weights 
+     * override lower weights.
+     */
+    #computePermissions(player) {
+        const permissions = new Map()
+        const playerRanks = PermissionManager.#data.getPlayerRanks(player.id)
+        
+        const RankStore = Kernel.get("rankStore")
+        const allRanks = RankStore ? RankStore.getAllRanks() : {}
+
+        const resolveRankPermissionsRecursive = (rankId, visited = new Set()) => {
+            if (visited.has(rankId)) return {}
+            visited.add(rankId)
+
+            const rankData = allRanks[rankId]
+            if (!rankData) return {}
+
+            const merged = {}
+            if (rankData.inherits) {
+                Object.assign(merged, resolveRankPermissionsRecursive(rankData.inherits, visited))
+            }
+
+            if (rankData.permissions) {
+                for (const [perm, value] of Object.entries(rankData.permissions)) {
+                    merged[perm] = value
+                    const parts = perm.split('.')
+                    if (parts.length === 2) {
+                        merged[`${parts[1]}.${parts[0]}`] = value
+                    }
+                }
+            }
+            return merged
+        }
+
+        const isNumeric = (k) => k.includes("limit") || k.includes("cooldown") || k.includes("wait") || k.includes("cost");
+
+        // SCAN_HIERARCHY: Highest rank takes priority
+        for (const rankId of playerRanks) {
+            const rankPerms = resolveRankPermissionsRecursive(rankId)
+            
+            for (const [perm, value] of Object.entries(rankPerms)) {
+                if (permissions.has(perm)) continue
+
+                if (isNumeric(perm)) {
+                    if (typeof value === 'number') {
+                        permissions.set(perm, value)
+                    }
+                } else {
+                    // 3-STATE_LOGIC_RESOLUTION
+                    // 1 or true IS ALLOW
+                    // 2 or false IS DENY
+                    // 0 or null IS NO_ACTION (inherit)
+                    if (value === 1 || value === true) {
+                        permissions.set(perm, true)
+                    } else if (value === 2 || value === false) {
+                        permissions.set(perm, false)
+                    } else if (typeof value === 'number') {
+                        permissions.set(perm, value)
+                    }
+                }
+            }
+        }
+        
+        // BASELINE_FALLBACK: If node is still unresolved, check the 'member' rank
+        const memberRank = resolveRankPermissionsRecursive("member")
+        for (const [perm, value] of Object.entries(memberRank)) {
+            if (!permissions.has(perm)) {
+                if (isNumeric(perm)) {
+                    if (typeof value === 'number') {
+                        permissions.set(perm, value)
+                    }
+                } else {
+                    if (typeof value === 'number') {
+                        if (value > 2) {
+                            // Large number = numeric config (cooldown seconds, home limit, etc.) - store as-is
+                            permissions.set(perm, value)
+                        } else if (value === 1) {
+                            permissions.set(perm, true)   // 1 = Allow
+                        } else if (value === 2) {
+                            permissions.set(perm, false)  // 2 = Deny
+                        }
+                    } else if (typeof value === 'boolean') {
+                        permissions.set(perm, value)
+                    }
+                }
+            }
+        }
+
+        return permissions
+    }
+    
+    /* 
+     * BUFFER_TERMINATION_PROTOCOL
+     */
+    invalidatePlayerCache(playerId = null) {
+        if (playerId) {
+            PermissionManager.#playerCache.delete(playerId)
+        } else {
+            PermissionManager.#playerCache.clear()
+        }
+    }
+    
+    /* 
+     * MAINTENANCE_SCHEDULER
+     */
+    startCleanupTask() {
+        Kernel.system.runInterval(() => {
+            PermissionManager.#data.cleanup()
+            this.cleanupExpiredCache()
+        }, 6000) 
+    }
+    
+    /* 
+     * MEMORY_SANITY_PROTOCOL
+     */
+    cleanupExpiredCache() {
+        const now = Date.now()
+        for (const [playerId, cache] of PermissionManager.#playerCache) {
+            if (now - cache.timestamp > PermissionManager.#CACHE_TTL) {
+                PermissionManager.#playerCache.delete(playerId)
+            }
+        }
+    }
+
+    /*
+     * SUPER_ADMIN_TOKEN_PROBE
+     */
+    _isSuperAdmin(player) {
+        const tags = player.getTags()
+        return Configuration.SUPER_ADMIN_TAGS.some(tag => tags.includes(tag))
+    }
+
+    /*
+     * ANALYTICS_ACCESSOR
+     */
+    getStats() {
+        const cacheHitRate = PermissionManager.#stats.totalChecks > 0 ? 
+            Math.round((PermissionManager.#stats.cacheHits / PermissionManager.#stats.totalChecks) * 100) : 0
+            
+        return {
+            ...PermissionManager.#stats,
+            cacheHitRate,
+            cachedPlayers: PermissionManager.#playerCache.size,
+            dataStats: PermissionManager.#data.getStats()
+        }
+    }
+}
+
+export const PermissionManagerInstance = PermissionManager.getInstance()
+
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\plugins\PluginManager.js ===
+import { Kernel } from "../Kernel.js"
+import { DependencySorter } from "../../utils/DependencySorter.js"
+
+// central nervous system for external modules.
+// handles dep resolution, api sharing, and prevents plugins from nuking each other's databases.
+export const PluginManager = {
+    _plugins: new Map(),
+    _apis: new Map(), // the service mesh. where plugins dump their public functions.
+    _commandManifests: new Map(), // pluginId -> { manifest, commands, logic }
+
+    _createContext(manifest) {
+        const activeIntervals = [];
+        const activeTimeouts = [];
+        const activeListeners = [];
+
+        const context = {
+            manifest,
+            // db wrapper. forces a prefix so plugins don't overwrite each other's keys.
+            db: {
+                get: (key) => Kernel.get("database").get(`plugin:${manifest.id}:${key}`),
+                set: (key, val) => Kernel.get("database").set(`plugin:${manifest.id}:${key}`, val),
+                delete: (key) => Kernel.get("database").delete(`plugin:${manifest.id}:${key}`)
+            },
+            // api exposure. how plugins talk to each other without circular imports.
+            exportAPI: (apiObject) => {
+                this._apis.set(manifest.id, apiObject);
+                console.log(`[PluginManager] API bound: ${manifest.id}`);
+            },
+            // api consumption. throws if the dependency isn't loaded yet.
+            requireAPI: (pluginId) => {
+                if (!this._apis.has(pluginId)) {
+                    throw new Error(`[PluginManager] Missing API for dependency: ${pluginId}. Check load order.`);
+                }
+                return this._apis.get(pluginId);
+            },
+            // safe core access
+            getService: (id) => Kernel.get(id),
+            registerCommand: (cmd) => {
+                const registry = Kernel.get("commandRegistry");
+                if (!registry) {
+                    console.error(`[PluginManager] Failed to register command for '${manifest.id}': commandRegistry is offline.`);
+                    return;
+                }
+                registry.register(cmd);
+            },
+            log: (msg) => console.log(`\u00A78[\u00A7b${manifest.id}\u00A78] \u00A7f${msg}`),
+            error: (msg) => console.error(`\u00A78[\u00A7c${manifest.id}\u00A78] \u00A7cERROR: ${msg}`),
+
+            // Proxied Engine interfaces (Stable Proxy Pattern + Preemptive Resource Registry)
+            system: new Proxy({}, {
+                get(dummyTarget, prop) {
+                    if (prop === "runInterval") {
+                        return (callback, ticks) => {
+                            const id = Kernel.system.runInterval(callback, ticks);
+                            activeIntervals.push(id);
+                            return id;
+                        };
+                    }
+                    if (prop === "runTimeout") {
+                        return (callback, ticks) => {
+                            const id = Kernel.system.runTimeout(callback, ticks);
+                            activeTimeouts.push(id);
+                            return id;
+                        };
+                    }
+                    if (prop === "clearRun") {
+                        return (id) => {
+                            Kernel.system.clearRun(id);
+                            const intIdx = activeIntervals.indexOf(id);
+                            if (intIdx !== -1) activeIntervals.splice(intIdx, 1);
+                            const timeoutIdx = activeTimeouts.indexOf(id);
+                            if (timeoutIdx !== -1) activeTimeouts.splice(timeoutIdx, 1);
+                        };
+                    }
+                    const val = Kernel.system[prop];
+                    if (typeof val === "function") return val.bind(Kernel.system);
+                    return val;
+                }
+            }),
+
+            world: new Proxy({}, {
+                get(dummyTarget, prop) {
+                    if (prop === "afterEvents") {
+                        return new Proxy({}, {
+                            get(eventsDummyTarget, eventName) {
+                                const originalEvent = Kernel.world.afterEvents[eventName];
+                                if (originalEvent && typeof originalEvent.subscribe === "function") {
+                                    return {
+                                        subscribe: (callback, options) => {
+                                            if (options !== undefined) {
+                                                originalEvent.subscribe(callback, options);
+                                            } else {
+                                                originalEvent.subscribe(callback);
+                                            }
+                                            const unsubscribe = () => originalEvent.unsubscribe(callback);
+                                            activeListeners.push(unsubscribe);
+                                            return callback;
+                                        },
+                                        unsubscribe: (callback) => {
+                                            originalEvent.unsubscribe(callback);
+                                        }
+                                    };
+                                }
+                                return originalEvent;
+                            }
+                        });
+                    }
+                    if (prop === "beforeEvents") {
+                        return new Proxy({}, {
+                            get(eventsDummyTarget, eventName) {
+                                const originalEvent = Kernel.world.beforeEvents[eventName];
+                                if (originalEvent && typeof originalEvent.subscribe === "function") {
+                                    return {
+                                        subscribe: (callback, options) => {
+                                            if (options !== undefined) {
+                                                originalEvent.subscribe(callback, options);
+                                            } else {
+                                                originalEvent.subscribe(callback);
+                                            }
+                                            const unsubscribe = () => originalEvent.unsubscribe(callback);
+                                            activeListeners.push(unsubscribe);
+                                            return callback;
+                                        },
+                                        unsubscribe: (callback) => {
+                                            originalEvent.unsubscribe(callback);
+                                        }
+                                    };
+                                }
+                                return originalEvent;
+                            }
+                        });
+                    }
+                    const val = Kernel.world[prop];
+                    if (typeof val === "function") return val.bind(Kernel.world);
+                    return val;
+                }
+            })
+        };
+
+        // Attach resources tracking to the context object privately
+        context._resources = { activeIntervals, activeTimeouts, activeListeners };
+        return context;
+    },
+
+    /**
+     * Phase 0: Synchronously extract command definitions from a plugin module
+     * Does NOT execute onEnable – only reads static command objects.
+     */
+    async extractCommands(pluginDef) {
+        try {
+            const module = await pluginDef.loader();
+            const manifest = module.manifest;
+            const logic = module.main || module.default;
+
+            if (!manifest || !logic) {
+                console.error(`[PluginManager] FATAL: Module at '${pluginDef.path}' is missing exports. Check manifest/main.`);
+                return null;
+            }
+
+            // Extract commands from the plugin's exported command objects
+            const commands = [];
+            if (typeof module.getCommands === 'function') {
+                commands.push(...module.getCommands());
+            } else if (typeof logic.getCommands === 'function') {
+                commands.push(...logic.getCommands());
+            } else {
+                // Fallback: scan for exported command objects (convention: *Command.js exports)
+                for (const key of Object.keys(module)) {
+                    if (key.endsWith('Command') && module[key] && typeof module[key].execute === 'function') {
+                        commands.push(module[key]);
+                    }
+                }
+            }
+
+            this._commandManifests.set(manifest.id, { manifest, commands, logic });
+            
+            // Set initial state
+            this._plugins.set(manifest.id, {
+                manifest,
+                logic,
+                context: this._createContext(manifest),
+                state: "LOADED"
+            });
+
+            return manifest.id;
+        } catch (error) {
+            console.error(`[PluginManager] IMPORT CRASH '${pluginDef.path}':`, error);
+            return null;
+        }
+    },
+
+    /**
+     * Phase 0: Register all extracted commands to native engine
+     * Called synchronously before initCommands()
+     */
+    stageAllSync() {
+        for (const [id, data] of this._commandManifests.entries()) {
+            const { manifest, commands, logic } = data;
+            const plugin = this._plugins.get(id);
+            if (!plugin) continue;
+            
+            const context = plugin.context;
+
+            // Allow manual registration via onStage hook if they prefer it over getCommands
+            if (typeof logic.onStage === "function") {
+                try {
+                    logic.onStage(context);
+                } catch(e) {
+                    console.error(`[PluginManager] onStage Crash in ${id}: ${e}`);
+                }
+            }
+
+            // Register extracted commands automatically
+            for (const cmd of commands) {
+                if (!cmd) continue;
+                try {
+                    cmd.context = context; // Inject context for proxy pattern
+                    context.registerCommand(cmd); // talks to CommandRegistry
+                } catch (e) {
+                    console.error(`[PluginManager] Failed to register command ${cmd?.name || "unknown"} from ${manifest.id}: ${e}`);
+                }
+            }
+            
+            plugin.state = "STAGED";
+        }
+    },
+
+    /**
+     * Phase 2: Async enable – load databases, listeners, etc.
+     */
+    async enableAll() {
+        console.log(`[PluginManager] Resolving dependency graph...`);
+        let sortedIds = [];
+        try {
+            sortedIds = this._resolveDependencies();
+        } catch (error) {
+            console.error(`[PluginManager] DEPENDENCY_RESOLUTION_CRASH: Graph resolution failed due to circular bounds. Falling back to raw load order.`, error);
+            sortedIds = Array.from(this._plugins.keys());
+        }
+        
+        let successCount = 0;
+        
+        // boot sequence. strictly ordered to prevent undefined references.
+        for (const id of sortedIds) {
+            const plugin = this._plugins.get(id);
+            if (!plugin) continue;
+
+            try {
+                plugin.state = "ENABLING";
+                
+                // support both class-based lifecycle hooks and raw functions.
+                if (typeof plugin.logic.onEnable === "function") {
+                    await plugin.logic.onEnable(plugin.context);
+                } else if (typeof plugin.logic === "function") {
+                    await plugin.logic(plugin.context);
+                }
+
+                plugin.state = "ACTIVE";
+                successCount++;
+            } catch (error) {
+                console.error(`[PluginManager] BOOT FAILURE in '${id}':`, error);
+                plugin.state = "FAILED";
+            }
+        }
+        console.log(`[PluginManager] System Online. Active modules: ${successCount}/${this._plugins.size}`);
+    },
+
+    _resolveDependencies() {
+        return DependencySorter.sort(Array.from(this._plugins.keys()), {
+            getDependencies: (id) => this._plugins.get(id)?.manifest?.dependencies || [],
+            hasNode: (id) => this._plugins.has(id),
+            onMissingDependency: (id, dep) => {
+                console.warn(`[PluginManager] WARNING: '${id}' requires missing module '${dep}'. Expect crashes.`);
+            },
+            errorMessagePrefix: "CIRCULAR DEPENDENCY DETECTED: "
+        });
+    },
+
+    async reloadPlugin(pluginId) {
+        // Find matching active plugin by id (e.g. "aethel:core_economy") or path (e.g. "CoreEconomy")
+        let activePluginId = null;
+        let matchedDef = null;
+
+        for (const [id, plugin] of this._plugins.entries()) {
+            if (id === pluginId || id.toLowerCase() === pluginId.toLowerCase()) {
+                activePluginId = id;
+                break;
+            }
+            if (plugin.manifest.name && plugin.manifest.name.toLowerCase() === pluginId.toLowerCase()) {
+                activePluginId = id;
+                break;
+            }
+        }
+
+        // Search in pluginDefs
+        const { pluginDefs } = await import("../../plugins/PluginLoader.js");
+        for (const def of pluginDefs) {
+            if (def.path === pluginId || def.path.toLowerCase() === pluginId.toLowerCase()) {
+                matchedDef = def;
+                break;
+            }
+        }
+
+        // If we found an active plugin ID but no matchedDef, match by name mapping
+        if (activePluginId && !matchedDef) {
+            const suffix = activePluginId.split(":")[1]; // e.g. "core_economy"
+            matchedDef = pluginDefs.find(d => {
+                const normPath = d.path.toLowerCase().replace(/_/g, "");
+                const normSuffix = suffix?.toLowerCase().replace(/_/g, "");
+                return normPath === normSuffix || normPath.includes(normSuffix) || normSuffix.includes(normPath);
+            });
+        }
+
+        if (!matchedDef) {
+            throw new Error(`Plugin definition for '${pluginId}' not found in PluginLoader.`);
+        }
+
+        const targetId = activePluginId || matchedDef.path;
+
+        // 1. Unload the plugin if it's currently active/staged
+        if (this._plugins.has(targetId)) {
+            const plugin = this._plugins.get(targetId);
+            
+            // Run onDisable
+            if (plugin.state === "ACTIVE" && typeof plugin.logic.onDisable === "function") {
+                try {
+                    await plugin.logic.onDisable(plugin.context);
+                } catch (e) {
+                    console.error(`[PluginManager] Error disabling plugin '${targetId}' during reload: ${e}`);
+                }
+            }
+
+            // Unregister commands
+            const registry = Kernel.get("commandRegistry");
+            const commandData = this._commandManifests.get(targetId);
+            if (registry && commandData && commandData.commands) {
+                for (const cmd of commandData.commands) {
+                    if (cmd && cmd.name) {
+                        registry.unregister(cmd.name);
+                    }
+                }
+            }
+
+            // Preemptive Resource Registry cleanup (intervals, timeouts, listeners)
+            const context = plugin.context;
+            if (context && context._resources) {
+                const { activeIntervals, activeTimeouts, activeListeners } = context._resources;
+
+                activeIntervals.forEach(id => {
+                    try { Kernel.system.clearRun(id); } catch (e) {
+                        console.error(`[PluginManager] Failed clearing interval during reload of ${targetId}: ${e}`);
+                    }
+                });
+
+                activeTimeouts.forEach(id => {
+                    try { Kernel.system.clearRun(id); } catch (e) {
+                        console.error(`[PluginManager] Failed clearing timeout during reload of ${targetId}: ${e}`);
+                    }
+                });
+
+                activeListeners.forEach(unsubscribe => {
+                    try { unsubscribe(); } catch (e) {
+                        console.error(`[PluginManager] Failed unsubscribing event listener during reload of ${targetId}: ${e}`);
+                    }
+                });
+            }
+
+            // Remove from maps
+            this._plugins.delete(targetId);
+            this._commandManifests.delete(targetId);
+            this._apis.delete(targetId);
+        }
+
+        // 2. Dynamic import with cache-buster timestamp query parameter
+        let module;
+        try {
+            const cacheBusterPath = `../../plugins/${matchedDef.path}/index.js?t=${Date.now()}`;
+            module = await import(cacheBusterPath);
+        } catch (err) {
+            console.warn(`[PluginManager] Cache-busting dynamic import failed: ${err}. Falling back to standard loader.`);
+            module = await matchedDef.loader();
+        }
+
+        const manifest = module.manifest;
+        const logic = module.main || module.default;
+
+        if (!manifest || !logic) {
+            throw new Error(`Plugin module at '${matchedDef.path}' is missing exports (manifest/main).`);
+        }
+
+        const newId = manifest.id;
+
+        // Extract commands
+        const commands = [];
+        if (typeof module.getCommands === 'function') {
+            commands.push(...module.getCommands());
+        } else if (typeof logic.getCommands === 'function') {
+            commands.push(...logic.getCommands());
+        } else {
+            for (const key of Object.keys(module)) {
+                if (key.endsWith('Command') && module[key] && typeof module[key].execute === 'function') {
+                    commands.push(module[key]);
+                }
+            }
+        }
+
+        this._commandManifests.set(newId, { manifest, commands, logic });
+
+        const context = this._createContext(manifest);
+        this._plugins.set(newId, {
+            manifest,
+            logic,
+            context,
+            state: "LOADED"
+        });
+
+        // Stage commands (register them)
+        if (typeof logic.onStage === "function") {
+            try {
+                logic.onStage(context);
+            } catch(e) {
+                console.error(`[PluginManager] onStage Crash in ${newId}: ${e}`);
+            }
+        }
+
+        for (const cmd of commands) {
+            if (!cmd) continue;
+            cmd.context = context;
+            context.registerCommand(cmd);
+        }
+
+        this._plugins.get(newId).state = "STAGED";
+
+        // Enable plugin (onEnable)
+        this._plugins.get(newId).state = "ENABLING";
+        if (typeof logic.onEnable === "function") {
+            await logic.onEnable(context);
+        } else if (typeof logic === "function") {
+            await logic(context);
+        }
+
+        this._plugins.get(newId).state = "ACTIVE";
+        console.log(`[PluginManager] Plugin '${newId}' successfully hot-reloaded!`);
+        return newId;
+    }
+}
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\scheduler\TickScheduler.js ===
+import { Kernel } from "../Kernel.js";
+
+/*
+ * INDUSTRIAL_TICK_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * The temporal heartbeat of the AethelLib ecosystem. Orchestrates 
+ * tick-based task execution with built-in rate-limiting, exponential 
+ * backoff, and performance telemetry.
+ *
+ * PHILOSOPHY: Time is the scarcest resource. Every tick must be 
+ * utilized with maximum efficiency. Use the priority-node to ensure 
+ * critical tasks are never deferred.
+ */
+export class TickScheduler {
+    static #tasks = new Map() // ACTIVE_TASK_REGISTRY
+    static #nextId = 0
+    static #running = true
+    static #stats = {
+        totalTasks: 0,
+        activeTasks: 0,
+        completedTasks: 0,
+        failedTasks: 0,
+        averageExecutionTime: 0
+    }
+    static #executionTimes = new Float32Array(500) // TELEMETRY_CIRCULAR_BUFFER
+    static #executionIndex = 0
+    static #executionCount = 0
+    static #executionSum = 0
+    
+    /* 
+     * TASK_INJECTION_PROTOCOL
+     * Schedules a recurring execution vector. Supports conditional 
+     * gating and rate-limiting.
+     */
+    static schedule(callback, intervalTicks, options = {}) {
+        const id = ++this.#nextId
+        let lastRun = 0
+        
+        const task = {
+            id,
+            callback,
+            intervalTicks,
+            options: {
+                condition: options.condition || (() => true),
+                maxPerSecond: options.maxPerSecond || null,
+                stopOnError: options.stopOnError || false,
+                priority: options.priority || 0,
+                name: options.name || `TASK_${id}`,
+                maxRetries: options.maxRetries || 0,
+                retryDelay: options.retryDelay || 1000
+            },
+            stats: {
+                executions: 0,
+                errors: 0,
+                lastExecution: 0,
+                averageTime: 0,
+                totalExecutionTime: 0
+            },
+            retries: 0,
+            running: true
+        }
+        
+        const ta = Kernel.system.runInterval(() => {
+            if (!this.#running || !task.running) return
+            
+            if (!task.options.condition()) return
+            
+            if (task.options.maxPerSecond) {
+                const now = Date.now()
+                if (now - lastRun < (1000 / task.options.maxPerSecond)) return
+                lastRun = now
+            }
+            
+            const startTime = Date.now()
+            try {
+                callback()
+                const executionTime = Date.now() - startTime
+                this.#updateTaskStats(task, executionTime, false)
+                task.retries = 0 
+            } catch (error) {
+                const executionTime = Date.now() - startTime
+                this.#updateTaskStats(task, executionTime, true, error)
+                if (task.retries < task.options.maxRetries) {
+                    task.retries++
+                } else {
+                    if (task.options.stopOnError) this.cancel(id)
+                }
+            }
+        }, intervalTicks)
+        
+        task.ta = ta
+        this.#tasks.set(id, task)
+        this.#stats.totalTasks++
+        this.#stats.activeTasks++
+        
+        return id
+    }
+    
+    /* 
+     * BACKOFF_ORCHESTRATION_PROTOCOL
+     */
+    static scheduleWithBackoff(callback, initialDelay, maxDelay, options = {}) {
+        let delay = initialDelay
+        let failures = 0
+        
+        const run = async () => {
+            try {
+                await callback()
+                failures = 0
+                delay = initialDelay
+                if (options.recurring) this.schedule(run, Math.floor(delay / 50), options)
+            } catch (error) {
+                failures++
+                delay = Math.min(delay * 2, maxDelay)
+                Kernel.system.runTimeout(run, Math.max(1, Math.floor(delay / 50)))
+            }
+        }
+        
+        return this.schedule(run, Math.floor(initialDelay / 50), options)
+    }
+    
+    /* 
+     * SINGLE-USE_TIMEOUT_PROTOCOL
+     */
+    static scheduleTimeout(callback, delayTicks, options = {}) {
+        const id = ++this.#nextId
+        
+        const task = {
+            id,
+            callback,
+            options: { ...options, name: options.name || `TIMEOUT_${id}` },
+            stats: { executions: 0, errors: 0, lastExecution: 0, averageTime: 0, totalExecutionTime: 0 },
+            running: true,
+            timeout: true
+        }
+        
+        const ta = Kernel.system.runTimeout(() => {
+            if (!this.#running || !task.running) return
+            const startTime = Date.now()
+            try {
+                callback()
+                const executionTime = Date.now() - startTime
+                this.#updateTaskStats(task, executionTime, false)
+                this.#tasks.delete(id)
+                this.#stats.activeTasks--
+                this.#stats.completedTasks++
+            } catch (error) {
+                const executionTime = Date.now() - startTime
+                this.#updateTaskStats(task, executionTime, true, error)
+                this.#stats.activeTasks--
+                this.#stats.failedTasks++
+                if (!options.stopOnError) this.#tasks.delete(id)
+            }
+        }, delayTicks)
+        
+        task.ta = ta
+        this.#tasks.set(id, task)
+        this.#stats.totalTasks++
+        this.#stats.activeTasks++
+        
+        return id
+    }
+    
+    /* 
+     * TASK_DECOMMISSION_PROTOCOL
+     */
+    static cancel(id) {
+        const task = this.#tasks.get(id)
+        if (!task) return false
+        task.running = false
+        Kernel.system.clearRun(task.ta)
+        this.#tasks.delete(id)
+        this.#stats.activeTasks--
+        this.#stats.completedTasks++
+        return true
+    }
+    
+    /* 
+     * GLOBAL_TEMPORAL_HALT
+     */
+    static pause() { this.#running = false }
+    static resume() { this.#running = true }
+    
+    static cancelAll() {
+        for (const [_id, task] of this.#tasks) {
+            task.running = false
+            Kernel.system.clearRun(task.ta)
+        }
+        this.#tasks.clear()
+        this.#stats.activeTasks = 0
+    }
+    
+    /* 
+     * TELEMETRY_PROTOCOL
+     */
+    static #updateTaskStats(task, executionTime, error, _errorObj = null) {
+        task.stats.executions++
+        task.stats.lastExecution = Date.now()
+        task.stats.totalExecutionTime += executionTime
+        task.stats.averageTime = task.stats.totalExecutionTime / task.stats.executions
+        
+        if (error) {
+            task.stats.errors++
+            this.#stats.failedTasks++
+        }
+        
+        // update circular buffer and sum for O(1) average calculation
+        if (this.#executionCount === this.#executionTimes.length) {
+            this.#executionSum -= this.#executionTimes[this.#executionIndex]
+        } else {
+            this.#executionCount++
+        }
+        
+        this.#executionTimes[this.#executionIndex] = executionTime
+        this.#executionSum += executionTime
+        this.#executionIndex = (this.#executionIndex + 1) % this.#executionTimes.length
+        
+        this.#stats.averageExecutionTime = this.#executionCount > 0 ? this.#executionSum / this.#executionCount : 0
+    }
+    
+    /* 
+     * TASK_QUERY_VECTORS
+     */
+    static getActiveTasks() {
+        return Array.from(this.#tasks.values()).map(task => ({
+            id: task.id,
+            name: task.options.name,
+            intervalTicks: task.intervalTicks,
+            running: task.running,
+            stats: { ...task.stats },
+            retries: task.retries,
+            isTimeout: task.timeout || false
+        }))
+    }
+    
+    static getStats() {
+        return {
+            ...this.#stats,
+            averageExecutionTime: Math.round(this.#stats.averageExecutionTime),
+            running: this.#running,
+            executionTimes: this.#executionCount
+        }
+    }
+}
+
+/* 
+ * PRE-CONFIGURED_INDUSTRIAL_SCHEDULERS
+ */
+export const CommonSchedulers = {
+    scheduleBroadcast: (callback, intervalSeconds = 120) => {
+        return TickScheduler.schedule(callback, 20 * intervalSeconds, {
+            name: "BROADCAST_VECTOR",
+            maxRetries: 3,
+            condition: () => Kernel.world.getAllPlayers().length > 0
+        })
+    },
+    
+    scheduleCleanup: (callback, intervalMinutes = 20) => {
+        return TickScheduler.schedule(callback, 20 * 60 * intervalMinutes, {
+            name: "MAINTENANCE_PURGE",
+            maxRetries: 2,
+            priority: -1 
+        })
+    },
+    
+    scheduleCacheInvalidation: (callback, intervalSeconds = 5) => {
+        return TickScheduler.schedule(callback, 20 * intervalSeconds, {
+            name: "CACHE_TERMINATION",
+            maxPerSecond: 10,
+            maxRetries: 1
+        })
+    },
+    
+    schedulePlayerUpdates: (callback, intervalSeconds = 10) => {
+        return TickScheduler.schedule(callback, 20 * intervalSeconds, {
+            name: "ENTITY_STATE_SYNC",
+            condition: () => Kernel.world.getAllPlayers().length > 0,
+            maxRetries: 2
+        })
+    }
+}
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\services\CleanupService.js ===
+import { Kernel } from "../Kernel.js";
+
+/*
+ * INDUSTRIAL_CLEANUP_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * A high-performance maintenance engine designed to prevent memory-leaks 
+ * and data-buffer saturation. Orchestrates the de-registration of entity 
+ * data across multiple industrial sub-systems upon session termination.
+ *
+ * PHILOSOPHY: Stale data is technical debt. When an entity leaves the 
+ * buffer, its associated state must be purged to maintain Kernel.system 
+ * integrity.
+ */
+export class CleanupService {
+    constructor() {
+        this.cleanupHandlers = new Map() // REGISTRY_OF_PURGE_VECTORS
+        this.initialize()
+    }
+
+    /*
+     * SERVICE_BOOTSTRAP_PROTOCOL
+     * Subscribes to the playerLeave event to trigger session-specific 
+     * sanitization and schedules periodic global maintenance.
+     */
+    initialize() {
+        Kernel.world.afterEvents.playerLeave.subscribe((event) => {
+            this.handlePlayerLeave(event.playerId, event.playerName)
+        })
+
+        Kernel.system.runInterval(() => {
+            this.performPeriodicCleanup()
+        }, 5 * 60 * 20) // 5-minute industrial interval
+    }
+
+    /*
+     * PURGE_VECTOR_REGISTRATION
+     * Injects a sub-Kernel.system specific cleanup closure into the registry.
+     */
+    registerCleanupHandler(systemName, cleanupFunction) {
+        this.cleanupHandlers.set(systemName, cleanupFunction)
+    }
+
+    /*
+     * PURGE_VECTOR_DE-REGISTRATION
+     */
+    unregisterCleanupHandler(systemName) {
+        this.cleanupHandlers.delete(systemName)
+    }
+
+    /*
+     * SESSION_TERMINATION_HANDLER
+     * Orchestrates the execution of all registered cleanup vectors for 
+     * a specific entity-id.
+     */
+    handlePlayerLeave(playerId, playerName) {
+        console.log(`[CleanupService] TERMINATING_SESSION: ${playerName} [ID: ${playerId}]`);
+
+        for (const [systemName, cleanupFunction] of this.cleanupHandlers) {
+            try {
+                cleanupFunction(playerId)
+            } catch (error) {
+                console.error(`[CleanupService] PURGE_FAILURE for '${systemName}': ${error}`);
+            }
+        }
+
+        this.cleanupPlayerData(playerId)
+    }
+
+    /* 
+     * BUILT-IN_PURGE_VECTORS
+     */
+    cleanupPlayerData(playerId) {
+        void playerId
+    }
+
+    /* 
+     * GLOBAL_SANITIZATION_PROTOCOL
+     */
+    performPeriodicCleanup() {
+        // TODO: Orchestrate global maintenance tasks.
+    }
+
+    /* 
+     * ANALYTICS_ACCESSOR
+     */
+    getStats() {
+        return {
+            registeredHandlers: this.cleanupHandlers.size
+        }
+    }
+
+    /* 
+     * EMERGENCY_PURGE_ORCHESTRATOR
+     */
+    forceCleanupAll() {
+        console.log("[CleanupService] EMERGENCY_TOTAL_PURGE_TRIGGERED");
+    }
+}
+
+export const CleanupServiceInstance = new CleanupService()
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\signalbus\SignalBus.js ===
+/**
+ * Event bus for cross-module communication.
+ * Allows modules to stay decoupled by using signals instead of direct calls.
+ */
+class SignalBus {
+    // List of registered event listeners
+    static #listeners = new Map()
+
+    /**
+     * Subscribe to an event
+     */
+    static on(event, callback) {
+        if (!this.#listeners.has(event)) {
+            this.#listeners.set(event, [])
+        }
+        
+        this.#listeners.get(event).push(callback)
+        
+        return () => this.off(event, callback)
+    }
+
+    /*
+     * Unsubscribe from an event
+     */
+    static off(event, callback) {
+        const listeners = this.#listeners.get(event)
+        if (!listeners) return false
+        
+        const index = listeners.indexOf(callback)
+        if (index === -1) return false
+        
+        listeners.splice(index, 1)
+        return true
+    }
+
+    /*
+     * Emit a signal to all listeners
+     */
+    static emit(event, ...args) {
+        const listeners = this.#listeners.get(event)
+        if (!listeners) return
+        
+        for (const callback of listeners) {
+            try {
+                callback(...args)
+            } catch (error) {
+                console.error(`[SignalBus] Error in signal '${event}': ${error}`);
+            }
+        }
+    }
+
+    /*
+     * Listen for a signal once
+     */
+    static once(event, callback) {
+        const onceCallback = (...args) => {
+            this.off(event, onceCallback)
+            callback(...args)
+        }
+        
+        return this.on(event, onceCallback)
+    }
+
+    /*
+     * Clear all listeners
+     */
+    static clear(event) {
+        if (event) {
+            this.#listeners.delete(event)
+        } else {
+            this.#listeners.clear()
+        }
+    }
+
+    /*
+     * Get the number of listeners for an event
+     */
+    static listenerCount(event) {
+        const listeners = this.#listeners.get(event)
+        return listeners ? listeners.length : 0
+    }
+
+}
+
+export { SignalBus }
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\store\BatchStore.js ===
+import { Kernel } from "../Kernel.js"
+
+/**
+ * Collects and flushes database operations in batches.
+ * This reduces the overhead of frequent writes and JSON serialization.
+ */
+export class BatchStore {
+    static #batches = new Map() // Operations waiting to be flushed
+    static #flushTimeouts = new Map() // Debounce timers
+    static #DEFAULT_DELAY = 100 // Wait time before flushing
+    static #MAX_BATCH_SIZE = 50 // Max ops before forced flush
+    static #stats = {
+        totalOperations: 0,
+        totalBatches: 0,
+        totalFlushes: 0,
+        averageBatchSize: 0
+    }
+    
+    /**
+     * Initialize a new batch for a specific store
+     */
+    static startBatch(storeName) {
+        if (!this.#batches.has(storeName)) {
+            this.#batches.set(storeName, new Map())
+        }
+    }
+    
+    /*
+     * OPERATION_QUEUE_VECTOR
+     * ----------------------------------------------------------------------------
+     * Injects a data operation into the batch buffer. If the buffer size 
+     * reaches the MAX_BATCH_SIZE threshold, it triggers an immediate 
+     * flush to maintain system stability.
+     */
+    static queue(storeName, key, value, options = {}) {
+        let batch = this.#batches.get(storeName)
+        if (!batch) {
+            batch = new Map()
+            this.#batches.set(storeName, batch)
+        }
+        
+        batch.set(key, {
+            value,
+            timestamp: Date.now(),
+            priority: options.priority || 0,
+            operation: options.operation || 'set'
+        })
+        
+        this.#stats.totalOperations++
+        
+        if (batch.size >= this.#MAX_BATCH_SIZE) {
+            this.#flush(storeName)
+        } else {
+            this.#scheduleFlush(storeName)
+        }
+    }
+    
+    static queuePlayer(player, key, value, options = {}) {
+        this.queue('players', `${player.id}:${key}`, value, options)
+    }
+    
+    static queueWorld(key, value, options = {}) {
+        this.queue('world', key, value, options)
+    }
+    
+    /*
+     * DEBOUNCED_FLUSH_SCHEDULER
+     */
+    static #scheduleFlush(storeName) {
+        if (this.#flushTimeouts.has(storeName)) return
+        
+        const timeout = Kernel.system.runTimeout(() => {
+            this.#flush(storeName)
+        }, Math.max(1, Math.floor(this.#DEFAULT_DELAY / 50))) 
+        
+        this.#flushTimeouts.set(storeName, timeout)
+    }
+    
+    /*
+     * TRANSACTION_COMMIT_LOOP
+     * ----------------------------------------------------------------------------
+     * Resolves the pending batch buffer. Operations are sorted by priority 
+     * (highest first) and timestamp (earliest first) to ensure deterministic 
+     * execution order.
+     */
+    static async #flush(storeName) {
+        const batch = this.#batches.get(storeName)
+        if (!batch || batch.size === 0) return
+        
+        this.#flushTimeouts.delete(storeName)
+        this.#batches.delete(storeName)
+        
+        const operations = Array.from(batch.entries())
+            .map(([key, data]) => ({ key, ...data }))
+            .sort((a, b) => {
+                if (a.priority !== b.priority) {
+                    return b.priority - a.priority 
+                }
+                return a.timestamp - b.timestamp 
+            })
+        
+        this.#stats.totalBatches++
+        this.#stats.totalFlushes++
+        this.#stats.averageBatchSize = Math.round(this.#stats.totalOperations / this.#stats.totalBatches)
+        
+        try {
+            await this.#executeBatch(operations, storeName)
+            
+            Kernel.system.run(() => {
+                console.log(`[BatchStore] FLUSH_COMPLETE | Store: ${storeName} | Ops: ${operations.length}`);
+            })
+            
+        } catch (error) {
+            console.error(`[BatchStore] FATAL_FLUSH_ERROR for ${storeName}:`, error)
+            
+            /* 
+             * RECOVERY_PROTOCOL
+             * If a high-priority operation fails, we re-queue it to prevent 
+             * catastrophic data loss.
+             */
+            if (operations.some(op => op.priority >= 10)) {
+                operations.forEach(op => {
+                    if (op.priority >= 10) {
+                        this.queue(storeName, op.key, op.value, { priority: op.priority })
+                    }
+                })
+            }
+        }
+    }
+    
+    /*
+     * BATCH_ROUTING_ENGINE
+     * ----------------------------------------------------------------------------
+     * Decouples player-specific operations from global-world operations. 
+     * This allows for targeted execution in the respective stores.
+     */
+    static async #executeBatch(operations, _storeName) {
+        const playerOps = []
+        const worldOps = []
+        
+        operations.forEach(op => {
+            if (op.key.includes(':')) {
+                const [playerId, ...keyParts] = op.key.split(':')
+                playerOps.push({
+                    playerId,
+                    key: keyParts.join(':'),
+                    value: op.value,
+                    operation: op.operation
+                })
+            } else {
+                worldOps.push(op)
+            }
+        })
+        
+        if (playerOps.length > 0) {
+            await this.#executePlayerBatch(playerOps)
+        }
+        
+        if (worldOps.length > 0) {
+            await this.#executeWorldBatch(worldOps)
+        }
+    }
+    
+    /*
+     * PLAYER_TRANSACTION_LOOP
+     * ----------------------------------------------------------------------------
+     * Bypasses the journaled buffer completely to execute safe, direct database writes.
+     * Writes directly to the persistent Database layer to eliminate circular latency.
+     */
+    static async #executePlayerBatch(operations) {
+        const playerGroups = new Map()
+        const Database = Kernel.get("database") // FIX: Query raw database instead of store proxies
+        
+        operations.forEach(op => {
+            if (!playerGroups.has(op.playerId)) {
+                playerGroups.set(op.playerId, [])
+            }
+            playerGroups.get(op.playerId).push(op)
+        })
+        
+        for (const [playerId, playerOps] of playerGroups) {
+            try {
+                for (const op of playerOps) {
+                    const fullKey = `player:${playerId}:${op.key}`
+                    if (op.operation === 'delete') {
+                        Database.delete(fullKey)
+                    } else {
+                        Database.set(fullKey, op.value)
+                    }
+                }
+            } catch (error) {
+                console.error(`[BatchStore] PLAYER_BATCH_FAILURE for ${playerId}:`, error)
+            }
+        }
+    }
+    
+    /* 
+     * WORLD_TRANSACTION_LOOP
+     */
+    static async #executeWorldBatch(operations) {
+        const Database = Kernel.get("database") // FIX: Query raw database instead of store proxies
+        for (const op of operations) {
+            try {
+                if (op.operation === 'delete') {
+                    Database.delete(op.key)
+                } else {
+                    Database.set(op.key, op.value)
+                }
+            } catch (error) {
+                console.error(`[BatchStore] WORLD_BATCH_FAILURE for ${op.key}:`, error)
+            }
+        }
+    }
+    
+    /* 
+     * EMERGENCY_FLUSH_PROTOCOL
+     */
+    static async flushAll() {
+        const storeNames = Array.from(this.#batches.keys())
+        const flushPromises = storeNames.map(storeName => this.#flush(storeName))
+        
+        await Promise.allSettled(flushPromises)
+        
+        for (const timeout of this.#flushTimeouts.values()) {
+            Kernel.system.clearRun(timeout)
+        }
+        this.#flushTimeouts.clear()
+    }
+    
+    /* 
+     * ANALYTICS_ACCESSOR
+     */
+    static getStats() {
+        const pendingOperations = Array.from(this.#batches.values())
+            .reduce((total, batch) => total + batch.size, 0)
+        
+        return {
+            ...this.#stats,
+            pendingOperations,
+            activeBatches: this.#batches.size,
+            pendingFlushes: this.#flushTimeouts.size
+        }
+    }
+    
+    static resetStats() {
+        this.#stats = {
+            totalOperations: 0,
+            totalBatches: 0,
+            totalFlushes: 0,
+            averageBatchSize: 0
+        }
+    }
+    
+    static getPendingOperations(storeName) {
+        const batch = this.#batches.get(storeName)
+        if (!batch) return []
+        
+        return Array.from(batch.entries())
+            .map(([key, data]) => ({ key, ...data }))
+    }
+    
+    /* 
+     * BATCH_TERMINATION_PROTOCOL
+     */
+    static cancelBatch(storeName) {
+        const batch = this.#batches.get(storeName)
+        const timeout = this.#flushTimeouts.get(storeName)
+        
+        let cancelled = 0
+        
+        if (batch) {
+            cancelled = batch.size
+            batch.clear()
+            this.#batches.delete(storeName)
+        }
+        
+        if (timeout) {
+            Kernel.system.clearRun(timeout)
+            this.#flushTimeouts.delete(storeName)
+        }
+        
+        return cancelled
+    }
+    
+    static hasPending(storeName) {
+        const batch = this.#batches.get(storeName)
+        return batch && batch.size > 0
+    }
+    
+    static getPendingStores() {
+        return Array.from(this.#batches.keys()).filter(name => this.hasPending(name))
+    }
+    
+    /* 
+     * PARAMETER_CALIBRATION
+     */
+    static configure(config) {
+        if (config.defaultDelay !== undefined) {
+            this.#DEFAULT_DELAY = config.defaultDelay
+        }
+        if (config.maxBatchSize !== undefined) {
+            this.#MAX_BATCH_SIZE = config.maxBatchSize
+        }
+    }
+}
+
+/* 
+ * SHUTDOWN_SAFETY_HOOK
+ * Ensures all pending transactions are committed before the server process 
+ * terminates.
+ */
+Kernel.system.beforeEvents.startup.subscribe((ev) => {
+    Kernel.system.beforeEvents.shutdown.subscribe(() => {
+        BatchStore.flushAll()
+    })
+})
+
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\store\MessageStore.js ===
+import { Kernel } from "../Kernel.js"
+
+// ----------------------------------------------------------------------------
+// | class: MessageStore                                                      |
+// | INDUSTRIAL_COMMUNICATION_ARCHIVE                                         |
+// | Persists P2P packets for administrative audit.                           |
+// | Uses sharded vectors to prevent registry overflow.                       |
+// | Implements debounced flushing to prevent TPS death on heavy chat load.   |
+// ----------------------------------------------------------------------------
+export class MessageStore {
+    // memory buffer to hold messages before writing to the physical database.
+    static #buffer = new Map()
+    static #initialized = false
+
+    // ----------------------------------------------------------------------------
+    // | method: init                                                             |
+    // | starts the debounced flush cycle. runs every 60 seconds.                 |
+    // ----------------------------------------------------------------------------
+    static init() {
+        if (this.#initialized) return
+        this.#initialized = true
+
+        // flush every 60 seconds (1200 ticks at 20tps)
+        Kernel.system.runInterval(() => {
+            this.flush()
+        }, 1200)
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: logPrivateMessage                                                |
+    // | pushes a new evidence packet to the memory buffer.                       |
+    // ----------------------------------------------------------------------------
+    static logPrivateMessage(packet) {
+        if (!this.#initialized) this.init()
+
+        const pairId = [packet.senderId, packet.receiverId].sort().join("_")
+        
+        if (!this.#buffer.has(pairId)) {
+            this.#buffer.set(pairId, [])
+        }
+        
+        this.#buffer.get(pairId).push(packet)
+    }
+
+    // ----------------------------------------------------------------------------
+    // | method: flush                                                            |
+    // | commits the buffered evidence to the physical shard store.               |
+    // ----------------------------------------------------------------------------
+    static flush() {
+        if (this.#buffer.size === 0) return
+
+        const db = Kernel.get("database")
+        if (!db) return
+        
+        for (const [pairId, newLogs] of this.#buffer.entries()) {
+            const logKey = `audit:msg:${pairId}`
+            
+            // get existing logs for this pair from the physical db.
+            let existingLogs = db.get(logKey) || []
+            
+            // push the new evidence.
+            existingLogs.push(...newLogs)
+
+            // CIRCULAR_BUFFER_LIMIT: keep only the last 500 messages.
+            if (existingLogs.length > 500) {
+                existingLogs = existingLogs.slice(-500)
+            }
+
+            // commit to the sharded DB (Władysław's sharding saves the day here!).
+            db.set(logKey, existingLogs)
+
+            // Maintain O(1) conversation partner indexes for both players
+            const parts = pairId.split("_")
+            if (parts.length === 2) {
+                const [idA, idB] = parts
+                
+                const convsA = db.get(`audit:convs:${idA}`) || []
+                if (!convsA.includes(idB)) {
+                    convsA.push(idB)
+                    db.set(`audit:convs:${idA}`, convsA)
+                }
+                
+                const convsB = db.get(`audit:convs:${idB}`) || []
+                if (!convsB.includes(idA)) {
+                    convsB.push(idA)
+                    db.set(`audit:convs:${idB}`, convsB)
+                }
+            }
+        }
+
+        // clear the buffer for the next cycle.
+        this.#buffer.clear()
+    }
+}
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\store\PlayerStore.js ===
+import { Kernel } from "../Kernel.js";
+import { JournaledDb } from "../datastore/JournaledDatabase.js"
+
+/*
+ * ENTITY_SPECIFIC_STORAGE_PROXY
+ */
+
+// Keep name mapping synchronized for offline resolution
+Kernel.world.afterEvents.playerSpawn.subscribe((ev) => {
+    const { player } = ev
+    
+    // 1. Maintain case-insensitive name-to-UUID index and handle name changes
+    const oldName = JournaledDb.get(`player:${player.id}:name`)
+    if (oldName && oldName.toLowerCase() !== player.name.toLowerCase()) {
+        JournaledDb.delete(`playername:${oldName.toLowerCase()}`)
+    }
+    
+    JournaledDb.set(`player:${player.id}:name`, player.name)
+    JournaledDb.set(`playername:${player.name.toLowerCase()}`, player.id)
+    
+    // 2. Track registered players list
+    const allUuids = JournaledDb.get("ae:player_index") || []
+    if (!allUuids.includes(player.id)) {
+        allUuids.push(player.id)
+        JournaledDb.set("ae:player_index", allUuids)
+    }
+})
+
+export const PlayerStore = {
+
+    /* 
+     * ENTITY_BOUND_QUERY_VECTOR
+     * Resolves the entity-specific key and performs an O(1) lookup 
+     * via the DatabaseManager.
+     */
+    get: (player, key) => {
+        const id = typeof player === "string" ? player : player?.id
+        if (!id) return null
+        const fullKey = `player:${id}:${key}`
+        return JournaledDb.get(fullKey)
+    },
+
+    /* 
+     * ENTITY_BOUND_COMMIT_VECTOR
+     */
+    set: (player, key, value) => {
+        const id = typeof player === "string" ? player : player?.id
+        if (!id) return false
+        const fullKey = `player:${id}:${key}`
+        return JournaledDb.set(fullKey, value)
+    },
+
+    /* 
+     * ENTITY_BOUND_DECOMMISSION_VECTOR
+     */
+    delete: (player, key) => {
+        const id = typeof player === "string" ? player : player?.id
+        if (!id) return false
+        const fullKey = `player:${id}:${key}`
+        return JournaledDb.delete(fullKey)
+    },
+
+    /* 
+     * ATOMIC_TRANSACTION_ORCHESTRATOR
+     * Proxies the transaction request to ensure sequential execution for 
+     * the specific entity UUID. This is the industrial standard for 
+     * preventing financial-buffer race conditions.
+     */
+    transaction: (player, operation) => {
+        const id = typeof player === "string" ? player : player?.id
+        return JournaledDb.transaction(id, operation)
+    }
+}
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\store\SettingsStore.js ===
+import { WorldStore } from "./WorldStore.js"
+
+/**
+ * SettingsStore - Centralized configuration management
+ * ----------------------------------------------------------------------------
+ * Persists all global system toggles and configuration strings.
+ */
+
+const DEFAULT_SETTINGS = {
+    // Systems
+    moneySystem: true,
+    homeSystem: true,
+    tpaSystem: true,
+    warpSystem: true,
+    backSystem: true,
+    rtpSystem: true,
+    shopSystem: true,
+    sellSystem: true,
+    auctionSystem: true,
+    withdrawSystem: true,
+    messageSystem: true,
+    combatSystem: true,
+    landSystem: true,
+    
+    // Configs
+    starterMoney: "1000",
+    maxMoney: "1e+32",
+    commandPrefix: "-",
+    currencyPrefix: "$",
+    earnMoneyfromMobs: true,
+    RTPRange: "1000",
+    tpaSystemWithUI: true,
+    serverInfo: "Made by Wladyslaw",
+    joinMessage: "Welcome to Aethelgrad!",
+    showRankOnMessage: true,
+    showRankOnNameTag: true,
+    notifyEarnMoneyInChat: true,
+
+    // Configurable parameters from Configuration
+    menuItemId: "minecraft:compass",
+    superAdminTags: ["Admin", "admin", "AE", "op"],
+    defaultRank: "member",
+    maxHomes: 5,
+    tpaExpiration: 60,
+    currencySymbol: "$",
+    defaultClaimRadius: 1,
+    bannedItems: [
+        "minecraft:lava_bucket", "minecraft:water_bucket", "minecraft:powder_snow_bucket",
+        "minecraft:cod_bucket", "minecraft:salmon_bucket", "minecraft:pufferfish_bucket",
+        "minecraft:tropical_fish_bucket", "minecraft:tadpole_bucket", "minecraft:axolotl_bucket",
+        "minecraft:glow_squid_bucket", "minecraft:tnt"
+    ],
+    hostileMobs: [
+        "minecraft:zombie", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton",
+        "minecraft:stray", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider",
+        "minecraft:enderman", "minecraft:endermite", "minecraft:witch", "minecraft:vindicator",
+        "minecraft:evoker", "minecraft:pillager", "minecraft:ravager", "minecraft:illusioner",
+        "minecraft:slime", "minecraft:magma_cube", "minecraft:phantom", "minecraft:guardian",
+        "minecraft:elder_guardian", "minecraft:hoglin", "minecraft:zoglin"
+    ]
+}
+
+const STORAGE_KEY = "ae:settings"
+
+export const SettingsStore = {
+    DEFAULT_SETTINGS,
+    /**
+     * Get a setting value
+     * @param {keyof typeof DEFAULT_SETTINGS} key 
+     */
+    get: (key) => {
+        try {
+            const settings = WorldStore.get(STORAGE_KEY) || {}
+            return settings[key] !== undefined ? settings[key] : DEFAULT_SETTINGS[key]
+        } catch {
+            return DEFAULT_SETTINGS[key]
+        }
+    },
+
+    /**
+     * Set a setting value
+     * @param {keyof typeof DEFAULT_SETTINGS} key 
+     * @param {any} value 
+     */
+    set: (key, value) => {
+        try {
+            const settings = WorldStore.get(STORAGE_KEY) || {}
+            settings[key] = value
+            WorldStore.set(STORAGE_KEY, settings)
+        } catch (e) {
+            console.error(`[SettingsStore] set failed for ${key}:`, e)
+        }
+    },
+
+    /**
+     * Get all settings
+     */
+    getAll: () => {
+        try {
+            const settings = WorldStore.get(STORAGE_KEY) || {}
+            return { ...DEFAULT_SETTINGS, ...settings }
+        } catch {
+            return { ...DEFAULT_SETTINGS }
+        }
+    },
+
+    /**
+     * Update multiple settings
+     */
+    updateAll: (newSettings) => {
+        try {
+            const settings = WorldStore.get(STORAGE_KEY) || {}
+            const merged = { ...settings, ...newSettings }
+            WorldStore.set(STORAGE_KEY, merged)
+        } catch (e) {
+            console.error(`[SettingsStore] updateAll failed:`, e)
+        }
+    }
+}
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\store\StoreKeys.js ===
+/*
+ * GLOBAL_NAMESPACE_ORCHESTRATOR
+ * ----------------------------------------------------------------------------
+ * Centralized key-factory for the AethelLib persistence layer. 
+ *
+ * PHILOSOPHY: Standardized naming conventions are mandatory to prevent 
+ * catastrophic key-collisions in the world dynamic property buffer. 
+ * Every entry must follow the 'DOMAIN:SUBDOMAIN:ID' hierarchy.
+ */
+export const StoreKeys = {
+    /* FINANCIAL_DATA_IDENTIFIERS */
+    money: (playerId) => `money:${playerId}`,
+
+    /* SPATIAL_REGISTRY_POINTERS */
+    home: (playerId, name) => `home:${playerId}:${name}`,
+    homeList: (playerId) => `homeList:${playerId}`,
+
+    /* AUTH_AND_ROLE_IDENTIFIERS */
+    rankDef: (rankTag) => `rank:def:${rankTag}`,
+    rankList: () => `rank:list`,
+
+    /* SECURITY_ENFORCEMENT_POINTERS */
+    ban: (playerId) => `ban:${playerId}`,
+    mute: (playerId) => `mute:${playerId}`,
+
+    /* GLOBAL_WARP_REGISTRY */
+    warp: (name) => `warp:${name}`,
+    warpList: () => `warp:list`,
+
+    /* INDUSTRIAL_ZONE_PROTECTION_PARAMETERS */
+    hubCenter: () => `hub:center`,
+    hubRadius: () => `hub:radius`,
+    hubBannedItems: () => `hub:bannedItems`,
+
+    /* 
+     * SPATIAL_NPC_ANCHORS
+     * Hard-coded pointers for the industrial hub entities.
+     */
+    npc: {
+        hubCenter: () => `npc:hub:center`,
+        hubSpawn: () => `npc:hub:spawn`,
+        kitNPC: () => `npc:kit`,
+        teleportNPC: () => `npc:teleport`
+    },
+
+    /* 
+     * HARD_CODED_SPATIAL_CONSTANTS
+     * Baseline coordinate data used as a failsafe if the database is purged.
+     */
+    defaultCoordinates: {
+        HUB_CENTER: { x: 9027, y: 100, z: 8978 },
+        HUB_SPAWN: { x: 9026.52, y: 236, z: 9033.47 }
+    },
+
+    /* SESSION_METRICS_IDENTIFIERS */
+    firstJoin: (playerId) => `session:firstJoin:${playerId}`,
+    playtime: (playerId) => `session:playtime:${playerId}`,
+    lastSeen: (playerId) => `session:lastSeen:${playerId}`,
+}
+
+
+// === FILE: C:\Users\User\Documents\Aethelgrad\Aethelgrad Essentials\scripts\core\store\WorldStore.js ===
+import { JournaledDb } from "../datastore/JournaledDatabase.js"
+
+/*
+ * GLOBAL_PERSISTENCE_PROXY
+ * ----------------------------------------------------------------------------
+ * A high-performance abstraction layer for managing global server state. 
+ * Orchestrates buffered access to the world's persistent registry via the 
+ * DatabaseManager.
+ *
+ * PHILOSOPHY: Global state is the industrial memory of the world. 
+ * Use the collection-vectors to manage large datasets without 
+ * saturating the native property-limit.
+ */
+export const WorldStore = {
+    /* 
+     * GLOBAL_QUERY_VECTOR
+     */
+    get: (key) => {
+        return JournaledDb.get(key)
+    },
+
+    /* 
+     * GLOBAL_COMMIT_VECTOR
+     */
+    set: (key, value) => {
+        return JournaledDb.set(key, value)
+    },
+
+    /* 
+     * GLOBAL_DECOMMISSION_VECTOR
+     */
+    delete: (key) => {
+        return JournaledDb.delete(key)
+    },
+
+    /* 
+     * SHARDED_COLLECTION_QUERY_VECTOR
+     * Bridges the sharding-protocol from the DatabaseManager to facilitate 
+     * the retrieval of large industrial manifests.
+     */
+    getCollection: (collectionName, itemId = null) => {
+        return JournaledDb.getSharded(collectionName, itemId)
+    },
+
+    /* 
+     * SHARDED_COLLECTION_COMMIT_VECTOR
+     */
+    setCollection: (collectionName, itemId, data) => {
+        return JournaledDb.setSharded(collectionName, itemId, data)
+    },
+
+    /* 
+     * SHARDED_COLLECTION_DECOMMISSION_VECTOR
+     */
+    deleteCollection: (collectionName, itemId) => {
+        return JournaledDb.deleteSharded(collectionName, itemId)
+    }
+}
