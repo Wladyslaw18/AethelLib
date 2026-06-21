@@ -22,7 +22,7 @@ def get_source_of_truth_defaults():
     manifest_path = os.path.join(PROJECT_ROOT, "manifest.json")
     
     default_channel = "BETA"
-    default_version = "2.8.0"
+    default_version = "2.9.0"
     source_of_truth = "Default Fallback"
     
     if os.path.exists(nodemodules_json_path):

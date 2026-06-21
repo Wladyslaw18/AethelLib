@@ -170,7 +170,7 @@ New-Item -ItemType Directory -Path $RP_Temp -Force | Out-Null
 
 # Copy Behavior Pack assets
 Write-Host "[Packager] Copying Behavior Pack assets..." -ForegroundColor Blue
-$BP_Files = @("manifest.json", "pack_icon.png", "scripts", "entities")
+$BP_Files = @("manifest.json", "pack_icon.png", "scripts", "entities", "LICENSE", "ACL.md")
 foreach ($Item in $BP_Files) {
     $Source = Join-Path $ProjectRoot $Item
     if (Test-Path $Source) {
@@ -183,6 +183,15 @@ Write-Host "[Packager] Copying Resource Pack assets..." -ForegroundColor Blue
 $RP_Source = Join-Path $ProjectRoot "AethelLib (RP)"
 if (Test-Path $RP_Source) {
     Copy-Item -Path "$RP_Source\*" -Destination $RP_Temp -Recurse -Force
+}
+
+# Copy licenses to Resource Pack
+$LicenseFiles = @("LICENSE", "ACL.md")
+foreach ($License in $LicenseFiles) {
+    $Source = Join-Path $ProjectRoot $License
+    if (Test-Path $Source) {
+        Copy-Item -Path $Source -Destination $RP_Temp -Force
+    }
 }
 
 # Compress packs using ZipFile (standard ZIP, not ZIP64)

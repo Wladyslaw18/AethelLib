@@ -205,6 +205,20 @@ function Sync-Packs {
             Copy-Item -Path "$RP_Source\*" -Destination $RP_DEST -Recurse -Force
         }
         
+        # Clean local client's server resource pack cache to force dynamic re-download on join 😤
+        $CachePaths = @(
+            "$env:LOCALAPPDATA\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\server_resource_packs",
+            "$env:LOCALAPPDATA\Packages\Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe\LocalState\games\com.mojang\server_resource_packs",
+            "$env:APPDATA\Minecraft Bedrock\users\*\games\com.mojang\server_resource_packs",
+            "$env:APPDATA\Minecraft Bedrock Preview\users\*\games\com.mojang\server_resource_packs"
+        )
+        foreach ($Path in $CachePaths) {
+            if (Test-Path $Path) {
+                Remove-Item -Path "$Path\*" -Recurse -Force -ErrorAction SilentlyContinue
+                Ok "Cleared cache path: $Path"
+            }
+        }
+        
         Ok "Packs (BP + RP) synced to BDS"
     } catch {
         Err "Sync failed: $_"
@@ -313,6 +327,7 @@ Write-Host "  +------------------------------------------+" -ForegroundColor Gre
 Write-Host ""
 
 Sync-Packs
+Start-Sleep -Milliseconds 500
 Start-BDS
 
 # ── Main loop ────────────────────────────────────────────────
@@ -374,6 +389,7 @@ try {
                     $script:pendingRestart = $false
                     Warn "Change detected - syncing and restarting BDS..."
                     Sync-Packs
+                    Start-Sleep -Milliseconds 500
                     Start-BDS
                 }
             }

@@ -12,12 +12,12 @@ $ProjectRoot = Split-Path -Parent -Path $PSScriptRoot
 $ScriptsDir = Join-Path $ProjectRoot "scripts"
 
 $DefaultChannel = "BETA"
-$DefaultVersion = "2.8.0"
+$DefaultVersion = "2.9.0"
 
 # Source of truth resolution: try to load from node_modules first, then project manifest.json
 $NodeModulesServerJson = Join-Path $ProjectRoot "node_modules/@minecraft/server/package.json"
 $DefaultChannel = "BETA"
-$DefaultVersion = "2.8.0"
+$DefaultVersion = "2.9.0"
 $SourceOfTruth = "Default Fallback"
 
 if (Test-Path $NodeModulesServerJson) {
