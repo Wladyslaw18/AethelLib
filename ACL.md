@@ -1,20 +1,22 @@
 ================================================================================
 Aegis Commercial License (ACL)
-Version 1.1  Effective 6/6/2026
-================================================================================
+Version 1.2  Effective June 17, 2026
 Copyright © 2026 Aethelgrad Studio. All Rights Reserved.
 ================================================================================
 
-IMPORTANT NOTICE & MANIFESTATION OF ASSENT
-This license is designed to be generous for non-commercial, academic, hobby, 
-and open-source use. However, **Article 7 contains commercial enforcement terms**. 
-By downloading, installing, compiling, executing, modifying, contributing to, 
-linking, or otherwise using the Work (including as a dependency, part of a Minecraft 
-add-on, mod, pack, server, or development environment) even once, you manifest 
-your assent to this License and agree to be bound by all of its terms, including 
-Article 7 if you are a Commercial Entity. If you do not agree to these terms, 
-you have no right to use the Work, and you must immediately cease all use and 
-delete all copies of the Work.
+NOTICE OF DUAL-LICENSING ARCHITECTURE & ELECTION OF TERMS
+--------------------------------------------------------------------------------
+This Work is simultaneously distributed under two separate and distinct 
+licensing frameworks: (1) the open-source GNU Affero General Public License 
+version 3.0 (AGPLv3), and (2) this proprietary Aegis Commercial License (ACL). 
+
+Commercial utilization of the Work is permitted under either framework. However, 
+any user who does not wish to comply with the public disclosure and network-
+copyleft obligations of the AGPLv3 must elect to utilize the Work under the 
+terms of this ACL. By utilizing the Work under this document, the Licensee 
+explicitly waives the right to rely on AGPLv3 permissions for the current 
+deployment and binds itself to the proprietary conditions, fee structures, and 
+enforcement mechanisms detailed herein.
 
 ================================================================================
 PREAMBLE – WHY THIS LICENSE EXISTS
@@ -42,8 +44,9 @@ ARTICLE 1 – BASIC FREEDOMS (FOR EVERYONE)
     humanitarian efforts.
 
 1.2 You may link the Work into larger programs ("Combined Works") and distribute 
-    those Combined Works under terms of your choice (including proprietary), 
-    provided you comply with modification and attribution rules.
+    or commercially deploy over a network ("SaaS / Cloud Hosting") those Combined 
+    Works under terms of your choice (including proprietary), provided you comply 
+    with modification and attribution rules.
 
 1.3 This grant is perpetual, worldwide, royalty-free, and non-exclusive for 
     qualifying non-commercial use.
@@ -60,6 +63,7 @@ ARTICLE 2 – DEFINITIONS
     (b) aggregate venture funding exceeding $1,000,000 USD, or
     (c) publicly traded status, or
     (d) government or non-profit operating budget exceeding $10,000,000 USD.
+    Any entity that would otherwise qualify as non-commercial but is operating as a core infrastructure component, white-label service, or direct dependent of a Commercial Entity shall itself be classified as a Commercial Entity under this License.
 
 2.3 "Licensee" includes the direct user and any parent, subsidiary, affiliate, 
     or entity under common control (>50% ownership).
@@ -92,9 +96,9 @@ ARTICLE 3 – MODIFICATION AND DISTRIBUTION
     - Clearly document your changes
     - License your modifications under this License
 
-3.2 You may distribute Combined Works under your own terms (including 
-    proprietary), as long as the core Work and its modifications remain under 
-    this license.
+3.2 You may distribute or commercially deploy over a network ("SaaS / Cloud Hosting") 
+    Combined Works under your own terms (including proprietary), as long as the 
+    core Work and its modifications remain under this license.
 
 ================================================================================
 ARTICLE 4 – WARRANTY DISCLAIMER
@@ -138,7 +142,7 @@ production deployment by a Commercial Entity requires a paid license.
 | Enterprise          | $20M+              | Custom     | Custom                |
 
 Serverless: $50 per 1,000,000 invocations (or 10% of cloud provider’s published 
-price per million, whichever is lower).
+price per million, whichever is lower). For the purposes of Section 7.3, a "Serverless Invocation" is defined as either a single execution trigger of a cloud function or every 1,000 internal function/API calls made to the Work within a persistent execution context, whichever counts higher.
 
 7.4 **Record Retention**
 Licensee shall retain records sufficient to verify compliance for three (3) 
@@ -154,18 +158,19 @@ within 30 days allows court-ordered production at Licensee’s expense.
 - Unauthorized commercial use: **150%** of owed fees for the entire period of use (prorated monthly).
 - Willful violation after written notice and failure to cure within 30 days: **200%**.
 
-7.7 **Anti-Cloning & Reverse-Engineering Covenant**
-Licensee acknowledges that the Work contains proprietary architecture, data structures, and logic. As a material condition of this license, Licensee agrees not to, and shall not permit any third party to:
-(a) reverse-engineer, decompile, or disassemble the Work, or
-(b) use knowledge of the Work's internal structures, proprietary APIs, or undocumented behavior obtained via access to the Work to create, develop, or distribute a competing or functionally compatible drop-in replacement software program (including clean-room re-implementations intended to bypass the commercial terms of this License).
-Any software developed in breach of this covenant shall be contractually treated as a breach of this License, and Licensor reserves all rights to seek injunctive relief and liquidated damages under Section 7.6.
+7.7 **Covenant Against Reverse Engineering, Derivative Re-Implementation, and Clean-Room Mimicry**
+The Licensee hereby unconditionally acknowledges, agrees, and stipulates that the Work constitutes, embodies, and contains valuable proprietary architecture, trade secrets, confidential logic, and trade-dress style technical designs. As a material, non-severable condition precedent to the rights granted under this License, the Licensee covenants and agrees that it shall not, and shall actively prevent any third party, affiliate, or representative from attempting to:
+(a) deconstruct, decompile, disassemble, translate, or otherwise reverse-engineer the Work, or
+(b) utilize, directly or indirectly, any proprietary knowledge, API signatures, architectural schematics, structural designs, or technical documentation of the Work obtained via access to the Work, to conceptualize, author, test, build, deploy, or distribute any competing, functionally compatible, or drop-in replacement software utility (expressly including, but not limited to, clean-room re-implementations or specification-driven development models intended or designed to bypass the commercial scope, fee structures, or licensing terms of this License).
+Any software, codebase, or application developed, compiled, or distributed in violation of this restrictive covenant shall, as a matter of law, be contractually classified as a direct material breach of this License. In addition to any other remedies available at law or equity, the Licensor reserves the absolute, non-waivable right to seek immediate, ex parte injunctive relief to halt the distribution or execution of such derivative software, alongside the liquidation of damages as computed under Section 7.6.
+
 
 7.8 **Assignment**
 This license is personal to the Licensee. Any assignment, merger, or change of 
 control without Licensor’s written consent voids the commercial license.
 
 7.9 **Governing Law & Jurisdiction**
-This License shall be governed by, interpreted, and enforced in accordance with the laws of the country, state, or province of the Licensor’s primary place of business or residence, without regard to its conflict of law provisions. Any legal action, suit, or proceeding arising under or relating to this License shall be brought exclusively in the competent courts located in the Licensor’s primary jurisdiction. Notwithstanding the foregoing, the Licensor reserves the right to bring enforcement proceedings or seek injunctive relief in any court of competent jurisdiction where the Licensee is incorporated, resides, conducts business, or holds assets. The prevailing party in any action to enforce this License shall be entitled to recover its reasonable attorneys' fees and legal costs.
+This License shall be governed by, interpreted, and enforced in accordance with the laws of the country, state, or province of the Licensor’s primary place of business or residence, without regard to its conflict of law provisions. Any legal action, suit, or proceeding arising under or relating to this License shall be brought exclusively in the competent courts located in the Licensor’s primary jurisdiction. Notwithstanding the foregoing, the Licensor reserves the right to bring enforcement proceedings or seek injunctive relief in any court of competent jurisdiction where the Licensee is incorporated, resides, conducts business, or holds assets. The prevailing party in any action to enforce this License shall be entitled to recover its reasonable attorneys' fees and legal costs. The Licensee hereby explicitly waives any objection to personal jurisdiction or venue in the Licensor's primary jurisdiction and agrees that a judgment obtained there may be entered and enforced in any court of competent jurisdiction worldwide.
 
 7.10 **Termination**
 Non-payment after 14 days’ notice terminates commercial rights. Licensee must 
