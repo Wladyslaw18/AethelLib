@@ -24,10 +24,10 @@ parameters: [
  * SUBCOMMAND_ROUTING_ENGINE
  */
 async execute(_data, player, args) {
-    if (args.length < 1) {
-        player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:rankadmin <subcommand>");
+        if (args.length < 1) {
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:rankadmin <subcommand>");
 
-            player.sendMessage("\u00A78- create <tag> <name> <order> <color>");
+            player.sendMessage("\u00A78- create <tag> <name> <order>");
             player.sendMessage("\u00A78- delete <tag>");
             player.sendMessage("\u00A78- add <player> <tag>");
             player.sendMessage("\u00A78- remove <player> <tag>");
@@ -76,13 +76,13 @@ async execute(_data, player, args) {
  * RANK_MANIFEST_INJECTION_HANDLER
  */
 async function handleCreate(player, args) {
-    if (args.length < 4) {
-        player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:rankadmin create <tag> <name> <order> <color>");
+    if (args.length < 3) {
+        player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:rankadmin create <tag> <name> <order>");
         return
     }
 
 
-    const [tag, displayName, orderStr, colorCode] = args
+    const [tag, displayName, orderStr] = args
 
     if (!/^[a-zA-Z0-9_]+$/.test(tag)) {
         player.sendMessage("\u00A7c\u00A7l» \u00A77Rank tag must be alphanumeric.");
@@ -106,8 +106,6 @@ async function handleCreate(player, args) {
     const rankData = {
         name: displayName,
         order: order,
-        colorText: colorCode,
-        colorName: colorCode,
         hideRanks: false,
         permissions: {},
         inherits: null
@@ -216,13 +214,13 @@ async function handleRemove(player, args) {
 async function handleEdit(player, args) {
     if (args.length < 3) {
         player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:rankadmin edit <tag> <field> <value>");
-        player.sendMessage("\u00A78- Fields: name, color, order");
+        player.sendMessage("\u00A78- Fields: name, order");
         return
     }
 
 
     const [tag, field, value] = args
-    const allowedFields = ["name", "color", "order"]
+    const allowedFields = ["name", "order"]
     if (!allowedFields.includes(field)) {
         player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid field: '${field}'`);
         return
@@ -242,10 +240,6 @@ async function handleEdit(player, args) {
         case "name":
             updatedRank.name = value
             updatedRank.displayName = value
-            break
-        case "color":
-            updatedRank.colorText = value
-            updatedRank.colorName = value
             break
         case "order":
             const order = parseInt(value)
@@ -282,7 +276,7 @@ async function handleList(player) {
     player.sendMessage(" ")
     player.sendMessage("\u00A76\u00A7lServer Ranks")
     Object.entries(ranks).forEach(([tag, rank]) => {
-        player.sendMessage(`\u00A77- ${tag}: ${rank.colorText}${rank.name} \u00A78(Order: ${rank.order})`)
+        player.sendMessage(`\u00A77- ${tag}: ${rank.name} \u00A78(Order: ${rank.order})`)
     })
     player.sendMessage(" ")
 }
@@ -309,9 +303,8 @@ async function handleInfo(player, args) {
 
     player.sendMessage(" ")
     player.sendMessage(`\u00A76\u00A7lRank Info: \u00A7f${tag}`)
-    player.sendMessage(`\u00A77Display: ${rank.colorText}${rank.name}`)
+    player.sendMessage(`\u00A77Display: ${rank.name}`)
     player.sendMessage(`\u00A77Order: \u00A7e${rank.order}`)
-    player.sendMessage(`\u00A77Color: \u00A7e${rank.colorText}`)
     player.sendMessage(`\u00A77Permissions: \u00A7f${JSON.stringify(rank.permissions, null, 2)}`)
     player.sendMessage(" ")
 }

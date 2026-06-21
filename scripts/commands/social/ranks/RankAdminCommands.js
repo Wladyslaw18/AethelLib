@@ -1,5 +1,5 @@
 import { Kernel } from "../../../core/Kernel.js"
-import { RankUI } from "../../../ui/social/ranks/RankUI.js"
+
 import { RankSystem } from "../../../systems/social/ranks/RankSystem.js"
 import { PlayerUtils } from "../../../utils/PlayerUtils.js"
 
@@ -13,21 +13,20 @@ export const RankAdminCommands = [
     // Command-line or visual creation of rank nodes.
     {
         name: "createrank",
-        aliases: ["createranks", "crrank"],
+        aliases: ["createranks", "crrank", "ccrank"],
         description: "Creates a rank via command-line or UI",
-        usage: "/ae:createrank [rankTag] [order] [chatColor] [nameColor] [displayName]",
+        usage: "/ae:createrank [rankTag] [order] [displayName]",
         permission: "essentials.admin.ranks",
         category: "SOCIAL",
         parameters: [
             { name: "rankTag", type: "string", optional: true },
             { name: "order", type: "int", optional: true },
-            { name: "chatColor", type: "string", optional: true },
-            { name: "nameColor", type: "string", optional: true },
             { name: "displayName", type: "string", optional: true }
         ],
         async execute(data, player, args) {
             if (!args || args.length === 0 || args[0] === undefined) {
-                Kernel.system.run(() => RankUI.showCreateRank(player))
+                const { RankCreateForm } = await import("../../../ui/social/ranks/RankCreateForm.js");
+                Kernel.system.run(() => RankCreateForm.showCreateRank(player))
                 return
             }
 
@@ -43,15 +42,11 @@ export const RankAdminCommands = [
             }
 
             const order = args[1] !== undefined ? parseInt(args[1]) : 1
-            const chatColor = (args[2] || "\u00A7f").replace(/&/g, "\u00A7")
-            const nameColor = (args[3] || "\u00A7f").replace(/&/g, "\u00A7")
-            const displayName = args[4] ? args.slice(4).join(" ").replace(/&/g, "\u00A7") : tag
+            const displayName = args[2] ? args.slice(2).join(" ").replace(/&/g, "\u00A7") : tag
 
             if (RankSystem.createRank(tag, {
                 name: displayName,
                 order: isNaN(order) ? 1 : order,
-                colorText: chatColor,
-                colorName: nameColor,
                 hideRanks: false,
                 permissions: {}
             })) {
@@ -148,29 +143,6 @@ export const RankAdminCommands = [
             player.sendMessage(`\u00A7a\u00A7l» \u00A7fSet order of \u00A7b${tag}\u00A7f to \u00A7e${order}\u00A7f.`)
         }
     },
-    // --- Vector: rcolor ---
-    // Sliced visual management.
-    {
-        name: "rcolor",
-        description: "Set rank colors",
-        usage: "/ae:rcolor <rankTag> <chatColor> [nameColor]",
-        permission: "essentials.admin.ranks",
-        category: "SOCIAL",
-        native: false,
-        parameters: [
-            { name: "rankTag", type: "string", optional: false },
-            { name: "chatColor", type: "string", optional: false }
-        ],
-        async execute(data, player, args) {
-            const [tag, cColor, nColor] = args
-            const rank = RankSystem.getRank(tag)
-            if (!rank) return
-            rank.colorText = cColor.replace(/&/g, "\u00A7")
-            rank.colorName = (nColor || cColor).replace(/&/g, "\u00A7")
-            RankSystem.updateRank(tag, rank)
-            player.sendMessage(`\u00A7a\u00A7l» \u00A7fUpdated color for rank \u00A7b${tag}\u00A7f.`)
-        }
-    },
     // --- Vector: rname ---
     // Sliced display name management.
     {
@@ -194,20 +166,20 @@ export const RankAdminCommands = [
             player.sendMessage(`\u00A7a\u00A7l» \u00A7fSet display name of \u00A7b${tag}\u00A7f to \u00A7e${name}\u00A7f.`)
         }
     },
-    // --- Vector: addranks ---
-    // Injects a rank tag into a player entity and invalidates their permission cache.
+    // --- Vector: assignranks ---
+    // Assigns a rank tag to a player entity and invalidates their permission cache.
     {
-        name: "addranks",
-        aliases: ["setrank"],
+        name: "assignranks",
+        aliases: ["setrank", "addranks"],
         description: "Assigns a rank to a player",
-        usage: "/ae:addranks <player> <rankTag>",
+        usage: "/ae:assignranks <player> [rankTag]",
         permission: "essentials.admin.ranks",
         category: "SOCIAL",
         parameters: [
             { name: "player", type: "player", optional: false },
-            { name: "rankTag", type: "rank", optional: false }
+            { name: "rankTag", type: "rank", optional: true }
         ],
-        execute(data, player, args) {
+        async execute(data, player, args) {
             const target = args[0];
             const rankTag = args[1];
 
@@ -218,6 +190,12 @@ export const RankAdminCommands = [
             if (!targetPlayer) {
                 player.sendMessage("\u00A7c\u00A7l» \u00A77Player not found.")
                 return
+            }
+
+            if (rankTag === undefined) {
+                const { RankAssignUI } = await import("../../../ui/social/ranks/RankAssignUI.js");
+                Kernel.system.run(() => RankAssignUI.showAssignRank(player, targetPlayer));
+                return;
             }
 
             // verify the rank actually exists in the global registry.
@@ -334,7 +312,8 @@ export const RankAdminCommands = [
         ],
         async execute(data, player, args) {
             if (!args || args.length === 0 || args[0] === undefined) {
-                Kernel.system.run(() => RankUI.showEditRanks(player));
+                const { RankManagerMenu } = await import("../../../ui/social/ranks/RankManagerMenu.js");
+                Kernel.system.run(() => RankManagerMenu.showRankList(player));
                 return;
             }
 
@@ -347,7 +326,6 @@ export const RankAdminCommands = [
                     player.sendMessage("\u00A77Or use sharded commands:");
                     player.sendMessage("\u00A7f- /ae:rperm <rankTag> <node> <allow|deny|inherit>");
                     player.sendMessage("\u00A7f- /ae:rorder <rankTag> <priority>");
-                    player.sendMessage("\u00A7f- /ae:rcolor <rankTag> <chatColor> [nameColor]");
                     player.sendMessage("\u00A7f- /ae:rname <rankTag> <displayName>");
                     player.sendMessage("\u00A77Available permissions list:");
                     player.sendMessage("\u00A7e- Cooldowns: \u00A7fcooldown.chat, cooldown.back, cooldown.tpa, cooldown.home, cooldown.warp, cooldown.rtp, cooldown.command");
@@ -364,7 +342,8 @@ export const RankAdminCommands = [
                     player.sendMessage(`\u00A7cRank '${tag}' does not exist.`);
                     return;
                 }
-                Kernel.system.run(() => RankUI.showEditRankActions(player, tag));
+                const { RankActionMenu } = await import("../../../ui/social/ranks/RankActionMenu.js");
+                Kernel.system.run(() => RankActionMenu.showRankActions(player, tag));
                 return;
             }
 
@@ -414,8 +393,6 @@ function displayRankDetails(player, tag, rank) {
     player.sendMessage(`\u00A7b==== Rank Info: \u00A7e${tag} \u00A7b====`)
     player.sendMessage(`\u00A77Display Name: \u00A7f${rank.name || tag}`)
     player.sendMessage(`\u00A77Order/Priority: \u00A7e${rank.order}`)
-    player.sendMessage(`\u00A77Chat Color: \u00A7f${rank.colorText || "None"}`)
-    player.sendMessage(`\u00A77Name Color: \u00A7f${rank.colorName || "None"}`)
     
     const perms = rank.permissions || {}
     const nodes = Object.keys(perms)

@@ -63,19 +63,32 @@ export const RankSystem = {
         }
 
         // Auto-assign default 'member' rank to players on join if they don't have any rank tags
+        // We delay this check by 20 ticks (1 second) to allow Bedrock to load player tags from disk first!
         Kernel.world.afterEvents.playerSpawn.subscribe((ev) => {
             const { player } = ev;
             if (!player || !player.isValid) return;
             
-            const allRanks = RankStore.getAllRanks() || {};
-            const rankKeys = Object.keys(allRanks);
-            const tags = player.getTags();
-            const hasRank = tags.some(tag => rankKeys.includes(tag));
-            
-            if (!hasRank) {
-                player.addTag("member");
-                console.log(`[RankSystem] Assigned default rank 'member' to joining player: ${player.name}`);
-            }
+            const playerId = player.id;
+            Kernel.system.runTimeout(() => {
+                const activePlayer = Kernel.world.getAllPlayers().find(p => p.id === playerId);
+                if (!activePlayer || !activePlayer.isValid) return;
+
+                const allRanks = RankStore.getAllRanks() || {};
+                const rankKeys = Object.keys(allRanks);
+                const tags = activePlayer.getTags();
+                const hasRank = tags.some(tag => rankKeys.includes(tag));
+                
+                if (!hasRank) {
+                    activePlayer.addTag("member");
+                    console.log(`[RankSystem] Assigned default rank 'member' to joining player: ${activePlayer.name}`);
+                    
+                    // Force invalidate cache to compute new permissions instantly
+                    const PM = Kernel.get("permissions");
+                    if (PM) {
+                        PM.invalidatePlayerCache(playerId);
+                    }
+                }
+            }, 20);
         });
 
         // Scan and auto-assign to online players for hot reloads
@@ -91,9 +104,38 @@ export const RankSystem = {
                 if (!hasRank) {
                     player.addTag("member");
                     console.log(`[RankSystem] Verified/Assigned default rank 'member' to online player: ${player.name}`);
+                    const PM = Kernel.get("permissions");
+                    if (PM) {
+                        PM.invalidatePlayerCache(player.id);
+                    }
                 }
             }
-        }, 20);
+        }, 40);
+
+        // Failsafe: periodically check online players and assign default member rank if they have no rank tag
+        Kernel.system.runInterval(() => {
+            try {
+                const allRanks = RankStore.getAllRanks() || {};
+                const rankKeys = Object.keys(allRanks);
+                
+                for (const player of Kernel.world.getAllPlayers()) {
+                    if (!player.isValid) continue;
+                    const tags = player.getTags();
+                    const hasRank = tags.some(tag => rankKeys.includes(tag));
+                    
+                    if (!hasRank) {
+                        player.addTag("member");
+                        console.log(`[RankSystem] Failsafe: Assigned default rank 'member' to player: ${player.name}`);
+                        const PM = Kernel.get("permissions");
+                        if (PM) {
+                            PM.invalidatePlayerCache(player.id);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("[RankSystem] Failsafe rank check error:", e);
+            }
+        }, 1200); // Check every 60 seconds
 
         // Synchronize PermissionManager with the persistent store
         PermissionManager.init()
