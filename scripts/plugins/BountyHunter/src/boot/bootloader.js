@@ -2,6 +2,7 @@ import { BountyData } from "../storage/BountyData.js";
 import { EconomyBridge } from "../economy/EconomyBridge.js";
 import { BountySystem } from "../systems/BountySystem.js";
 import { getKillstreak } from "../../../../systems/combat/Killstreaks.js";
+import { PlayerUtils } from "../../../../utils/PlayerUtils.js";
 
 // ----------------------------------------------------------------------------
 // | module: bootloader                                                       |
@@ -84,8 +85,10 @@ export const PlaceBountyCommand = {
                 return;
             }
 
-            const isObj = typeof args[0] === "object" && args[0] !== null;
-            const target = isObj ? args[0] : this.context.world.getAllPlayers().find(p => p.name.toLowerCase() === String(args[0]).toLowerCase());
+            let target = args[0];
+            if (target !== undefined && target !== null) {
+                target = PlayerUtils.findPlayer(target);
+            }
             const targetName = target ? target.name : String(args[0]);
 
             if (!target) {
