@@ -66,7 +66,7 @@ async function showBlockedPlayersUI(player) {
     }
 
     for (const entry of blockedList) {
-        form.button(`\u00A7cUnblock: \u00A7f${entry.name}`, "textures/ui/delete");
+        form.button(`\u00A7cUnblock: \u00A7f${entry.name}`, "textures/ui/trash_default");
     }
     form.button("\u00A7a+ Block a Player", "textures/ui/plus");
     form.button("\u00A7cBACK", "textures/ui/refresh");

@@ -36,30 +36,41 @@ export const TpaService = {
         )
 
         if (requestId) {
-            sender.sendMessage(`\u00A7a\u00A7l» \u00A7fTPA request sent to \u00A7e${target.name}\u00A7f.`);
-            target.sendMessage(`\u00A76\u00A7l» \u00A7e${sender.name} \u00A77wants to teleport to you!`);
+            const isHere = type === "tpahere";
+            const senderMsg = isHere 
+                ? `\u00A7a\u00A7l» \u00A7fTPAHere request sent to \u00A7e${target.name}\u00A7f.`
+                : `\u00A7a\u00A7l» \u00A7fTPA request sent to \u00A7e${target.name}\u00A7f.`;
+            const targetMsg = isHere
+                ? `\u00A76\u00A7l» \u00A7e${sender.name} \u00A77wants you to teleport to them!`
+                : `\u00A76\u00A7l» \u00A7e${sender.name} \u00A77wants to teleport to you!`;
+
+            sender.sendMessage(senderMsg);
+            target.sendMessage(targetMsg);
             target.sendMessage(`\u00A77Type \u00A7f/ael:tpaccept \u00A77to accept or \u00A7f/ael:tpadeny \u00A77to deny.`);
 
             if (TPAStore.getUIToggle(target.id)) {
                 Kernel.system.run(async () => {
                     try {
-                        const { MessageFormData } = Kernel
+                        const { MessageFormData } = Kernel;
+                        const bodyMsg = isHere
+                            ? `\u00A7e${sender.name} \u00A77wants you to teleport to them.`
+                            : `\u00A7e${sender.name} \u00A77wants to teleport to you.`;
                         const form = new MessageFormData()
                             .title("\u00A76\u00A7lTeleport Request")
-                            .body(`\u00A7e${sender.name} \u00A77wants to teleport to you.`)
+                            .body(bodyMsg)
                             .button1("\u00A7aAccept")
-                            .button2("\u00A7cDeny")
+                            .button2("\u00A7cDeny");
 
-                        const res = await UIUtils.showForm(target, form)
+                        const res = await UIUtils.showForm(target, form);
                         if (!res.canceled && res.selection === 0) {
-                            this.acceptRequest(target)
+                            this.acceptRequest(target);
                         } else if (!res.canceled && res.selection === 1) {
-                            this.denyRequest(target)
+                            this.denyRequest(target);
                         }
                     } catch (error) {
-                        console.error(`[TpaService] UI_THREAD_COLLAPSE: ${error}`)
+                        console.error(`[TpaService] UI_THREAD_COLLAPSE: ${error}`);
                     }
-                })
+                });
             }
         }
         return !!requestId

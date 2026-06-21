@@ -18,8 +18,8 @@ export const TPAHereCommand = {
     // command category.
     category: "teleport",
     // native parameter definitions.
-    parameters: [
-        { name: "player", type: "player", optional: false }
+    params: [
+        { name: "player", type: Kernel.CustomCommandParamType.PlayerSelector, optional: false }
     ],
 
     // ----------------------------------------------------------------------------
@@ -54,11 +54,6 @@ export const TPAHereCommand = {
         // step 1: initialize handshake.
         // send a "tpahere" type request (target moves to sender).
         const TpaService = Kernel.get("tpaService")
-        const success = TpaService.sendRequest(player, targetPlayer, "tpahere")
-
-        if (success) {
-            // confirmation output.
-            player.sendMessage(`\u00A7a\u00A7l» \u00A7fTPAHere request sent to \u00A7e${targetPlayer.name}\u00A7f.`);
-        }
+        await TpaService.sendRequest(player, targetPlayer, "tpahere")
     }
 }
