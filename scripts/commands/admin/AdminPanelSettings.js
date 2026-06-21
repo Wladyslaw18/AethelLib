@@ -18,7 +18,7 @@ export async function showServerSettings(player) {
     const form = new Kernel.ActionFormData()
         .title("\u00A76\u00A7lSYSTEM SETTINGS")
         .body("\u00A77Select a configuration category to modify global server variables.")
-        .button("\u00A7eCore Configuration\n\u00A78Money bounds, prefixes, text info", "textures/ui/settings_glyph_complex")
+        .button("\u00A7eCore Configuration\n\u00A78Money bounds, prefixes, text info", "textures/ui/settings_glyph")
         .button("\u00A7aSystem Modules\n\u00A78Toggle core mechanics and subsystems", "textures/ui/world_glyph")
         .button("\u00A7bGameplay & Features\n\u00A78PVP, cooldowns, display options", "textures/ui/sword_glyph")
         .button("\u00A7dAsset Manifests\n\u00A78Banned items and hostile mobs", "textures/ui/hammer_anvil")
@@ -230,7 +230,7 @@ async function showRankEditMenu(player, rankTag, backCallback) {
 
     const form = new Kernel.ActionFormData()
         .title(`\u00A7e\u00A7lRank: ${rankTag}`)
-        .body(`\u00A77Name: ${rank.colorText || ""}${rank.name}\n\u00A77Order: \u00A7e${rank.order}`)
+        .body(`\u00A77Name: ${rank.name}\n\u00A77Order: \u00A7e${rank.order}`)
         .button("\u00A7aModify Permission Nodes\n\u00A78Edit or delete existing permissions")
         .button("\u00A7bAdd Permission Node\n\u00A78Add a new permission to this rank")
         .button("\u00A7cBACK")

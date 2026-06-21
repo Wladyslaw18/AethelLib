@@ -12,7 +12,7 @@
 
 import { Kernel } from "../../core/Kernel.js"
 import { showPlayerManagement } from "./AdminPanelPlayers.js"
-import { showServerSettings } from "./AdminPanelSettings.js"
+import { showServerSettings } from "./settings/AdminSettingsMenu.js"
 import { showBannedPlayers } from "./AdminPanelBanned.js"
 import { showEconomyControl } from "./AdminPanelEconomy.js"
 import { showSystemToggles } from "./AdminPanelSystemToggles.js"
@@ -20,7 +20,7 @@ import { showAdminReportUI } from "./AdminReportUI.js"
 import { UIUtils } from "../UIUtils.js"
 import { getRealTPS } from "../../commands/general/TPSCommand.js"
 import { SettingsStore } from "../../core/store/SettingsStore.js"
-import { Lang } from "../Lang.js"
+
 
 export async function showAdminPanel(player) {
     const PermissionManager = Kernel.get("permissions");
@@ -49,7 +49,7 @@ export async function showAdminPanel(player) {
         if (settings[k] !== false) enabledCount++;
     }
 
-    const form = new Kernel.ActionFormData()
+    const res = await UIUtils.showForm(player, () => new Kernel.ActionFormData()
         .title("§6ADMIN §fCONTROL CENTER")
         .body(`§aUsername: §f${player.name}\n§aUptime: §f${uptimeStr}\n§aPlayers: §f${onlinePlayers}\n§aTPS: §f${tps}\n§aSystems: §f${enabledCount}/${systemKeys.length} active`)
         .button("§eSystem Toggles\n§7Enable/disable all subsystems", "textures/ui/world_glyph")
@@ -58,10 +58,9 @@ export async function showAdminPanel(player) {
         .button("§cReports Queue\n§7Review player reports", "textures/items/iron_axe")
         .button("§bBanned Players\n§7View and manage bans", "textures/ui/cancel")
         .button("§6Rank Manager\n§7Modify permissions and roles", "textures/ui/op")
-        .button("§6Global Settings\n§7Core config, gameplay, assets", "textures/ui/settings_glyph_complex")
-        .button("§7§l[BACK]", "textures/ui/refresh");
-
-    const res = await UIUtils.showForm(player, form);
+        .button("§6Global Settings\n§7Core config, gameplay, assets", "textures/items/comparator")
+        .button("§7§l[BACK]", "textures/ui/refresh")
+    );
     if (res.canceled || res.selection === 7) return;
 
     switch (res.selection) {
@@ -71,8 +70,8 @@ export async function showAdminPanel(player) {
         case 3: await showAdminReportUI(player); break;
         case 4: await showBannedPlayers(player); break;
         case 5: {
-            const { RankUI } = await import("../social/ranks/RankUI.js");
-            await RankUI.showRankList(player, () => showAdminPanel(player));
+            const { RankManagerMenu } = await import("../social/ranks/RankManagerMenu.js");
+            await RankManagerMenu.showRankList(player, () => showAdminPanel(player));
             break;
         }
         case 6: await showServerSettings(player); break;

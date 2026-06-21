@@ -14,8 +14,13 @@ import { Kernel } from "../../core/Kernel.js"
 
 // Proxy function to satisfy relative imports from other legacy commands files
 export async function showAdminPanel(player) {
-    const { showAdminPanel: showUI } = await import("../../ui/admin/AdminPanelMain.js")
-    return showUI(player)
+    try {
+        const { showAdminPanel: showUI } = await import("../../ui/admin/AdminPanelMain.js");
+        return showUI(player);
+    } catch (e) {
+        player.sendMessage("§c[AdminPanel] Failed to load UI: " + e.message);
+        console.error("AdminPanel UI Load Error:", e, e.stack);
+    }
 }
 
 // ----------------------------------------------------------------------------
