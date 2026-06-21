@@ -2,6 +2,16 @@
   <img src="Laagle.png" width="150" alt="AethelLib Logo" />
   <h1>⚜︎ AethelLib</h1>
   <p><i>"Built at 3am. Tested in production. Regretted nothing."</i></p>
+
+  ### 📊 Telemetry Dashboard
+  
+  | Metric | Value | Metric | Value |
+  | :--- | :--- | :--- | :--- |
+  | ⭐ **Stars** | [![](https://img.shields.io/github/stars/Wladyslaw18/AethelLib?style=flat-square&labelColor=24292e&color=gold)](https://github.com/Wladyslaw18/AethelLib/stargazers) | 🍴 **Forks** | [![](https://img.shields.io/github/forks/Wladyslaw18/AethelLib?style=flat-square&labelColor=24292e&color=blue)](https://github.com/Wladyslaw18/AethelLib/network/members) |
+  | 👁️ **Watchers** | [![](https://img.shields.io/github/watchers/Wladyslaw18/AethelLib?style=flat-square&labelColor=24292e&color=teal)](https://github.com/Wladyslaw18/AethelLib/watchers) | ⚖️ **License** | [![](https://img.shields.io/badge/License-AGPL--3.0-d93f0b?style=flat-square)](https://github.com/Wladyslaw18/AethelLib/blob/main/LICENSE) |
+  | 🏷️ **Version** | `v1.1.0` | 🎮 **Engine Target** | `1.26.30` (Beta APIs) |
+  | 🐛 **Open Issues** | [![](https://img.shields.io/github/issues/Wladyslaw18/AethelLib?style=flat-square&color=red)](https://github.com/Wladyslaw18/AethelLib/issues) | 📦 **Repo Size** | ![](https://img.shields.io/github/repo-size/Wladyslaw18/AethelLib?style=flat-square&color=blueviolet) |
+
 </div>
 
 AethelLib is a hard-coded shield for people who want to build things that **don't crash the server every time a player joins.** It's a stable foundation that handles the messy data-cleanup so you don't have to.
