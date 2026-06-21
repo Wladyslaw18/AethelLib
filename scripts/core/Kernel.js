@@ -2,6 +2,7 @@ import * as mc from "@minecraft/server";
 import * as mcui from "@minecraft/server-ui";
 import { TickScheduler } from "./scheduler/TickScheduler.js";
 import { SignalBus } from "./signalbus/SignalBus.js";
+import { DependencySorter } from "../utils/DependencySorter.js";
 
 // ----------------------------------------------------------------------------
 // | class: Kernel                                                            |
@@ -20,8 +21,9 @@ export class Kernel {
     static #plugins = new Map();
     // holds services that plugins want to share with each other
     static #serviceProviders = new Map();
-    // holds disabled systems
     static #disabledSystems = new Set();
+    static #systemProxy = null;
+    static #nullFunctions = new Map();
 
     // ----------------------------------------------------------------------------
     // | native proxies                                                           |
@@ -32,7 +34,29 @@ export class Kernel {
     // the world object. basically everything that exists.
     static get world() { return mc.world; }
     // the system object. handles ticks and run loops.
-    static get system() { return mc.system; }
+    static get system() {
+        if (!this.#systemProxy) {
+            try {
+                this.#systemProxy = new Proxy(mc.system, {
+                    get(target, prop) {
+                        if (prop === "currentTick") {
+                            try {
+                                const tick = target.currentTick;
+                                if (typeof tick === "number") return tick;
+                            } catch (e) {}
+                            return Math.floor(Date.now() / 50);
+                        }
+                        const val = Reflect.get(target, prop);
+                        if (typeof val === "function") return val.bind(target);
+                        return val;
+                    }
+                });
+            } catch (e) {
+                return mc.system;
+            }
+        }
+        return this.#systemProxy;
+    }
     // helper to see how many services are currently alive.
     static get size() { return this.#systems.size; }
     // helper to see all registered systems
@@ -63,6 +87,60 @@ export class Kernel {
     static get ActionFormData() { return mcui.ActionFormData; }
     static get ModalFormData() { return mcui.ModalFormData; }
     static get MessageFormData() { return mcui.MessageFormData; }
+
+    /**
+     * Wrap a native Bedrock Entity or Player in a Stable Safe Proxy.
+     * Prevents InvalidEntityError C++ crashes when interacting with disconnected players or unloaded entities.
+     */
+    static wrapEntity(entity) {
+        if (!entity || typeof entity !== "object") return entity;
+        
+        // If it's already a safe proxy, don't wrap it again
+        if (entity.__rawEntity__) return entity;
+
+        return new Proxy(entity, {
+            get(target, prop, receiver) {
+                if (prop === "__rawEntity__") return target;
+
+                let isValid = false;
+                try {
+                    isValid = target.isValid;
+                } catch (e) {}
+
+                if (!isValid) {
+                    if (prop === "isValid") return false;
+                    if (prop === "location") return { x: 0, y: 0, z: 0 };
+                    if (prop === "dimension") {
+                        return {
+                            id: "minecraft:overworld",
+                            runCommand: () => ({ successCount: 0 }),
+                            runCommandAsync: () => Promise.resolve({ successCount: 0 }),
+                            getBlock: () => null,
+                            spawnEntity: () => null
+                        };
+                    }
+                    if (prop === "name" || prop === "nameTag" || prop === "id" || prop === "typeId") {
+                        try { return target[prop]; } catch (e) { return ""; }
+                    }
+                    
+                    const dummyVal = undefined;
+                    try {
+                        const original = target[prop];
+                        if (typeof original === "function") {
+                            return () => dummyVal;
+                        }
+                    } catch (e) {}
+                    return dummyVal;
+                }
+
+                const val = Reflect.get(target, prop, receiver);
+                if (typeof val === "function") {
+                    return val.bind(target);
+                }
+                return val;
+            }
+        });
+    }
 
     // ----------------------------------------------------------------------------
     // | method: register                                                         |
@@ -244,7 +322,11 @@ export class Kernel {
                 }
 
                 if (typeof originalValue === "function") {
-                    return (...args) => {
+                    if (Kernel.#nullFunctions.has(prop)) {
+                        return Kernel.#nullFunctions.get(prop);
+                    }
+                    
+                    const fn = (...args) => {
                         const name = String(prop).toLowerCase();
                         
                         // Check if it's a generator function
@@ -280,6 +362,9 @@ export class Kernel {
 
                         return isAsync ? Promise.resolve(val) : val;
                     };
+                    
+                    Kernel.#nullFunctions.set(prop, fn);
+                    return fn;
                 }
 
                 // If they access non-function properties directly
@@ -405,45 +490,14 @@ export class Kernel {
     // | prevents circular dependencies and load-order issues.                    |
     // ----------------------------------------------------------------------------
     static _sortPlugins() {
-        // get all the plugin ids
-        const nodes = Array.from(this.#plugins.keys());
-        const sorted = [];
-        const visited = new Set();
-        const visiting = new Set();
-
-        // recursive visit function for the graph.
-        const visit = (id) => {
-            if (!this.#plugins.has(id)) {
-                console.warn(`[Kernel] Warning: Dependency '${id}' is missing and will be skipped.`);
-                return;
-            }
-            // if we're visiting it while already visiting it, we have a circle. bad.
-            if (visiting.has(id)) throw new Error(`Circular dependency detected: ${id}`);
-            // already done this one.
-            if (visited.has(id)) return;
-
-            // start visiting.
-            visiting.add(id);
-            const plugin = this.#plugins.get(id);
-            // check for dependencies in the manifest.
-            if (plugin?.manifest.dependencies) {
-                for (const dep of plugin.manifest.dependencies) {
-                    // visit every dependency before we finish this one.
-                    visit(dep);
-                }
-            }
-            // finished visiting.
-            visiting.delete(id);
-            // mark as processed.
-            visited.add(id);
-            // add to the sorted list.
-            sorted.push(id);
-        };
-
-        // run the visit on every node.
-        nodes.forEach(id => visit(id));
-        // return the result.
-        return sorted;
+        return DependencySorter.sort(Array.from(this.#plugins.keys()), {
+            getDependencies: (id) => this.#plugins.get(id)?.manifest?.dependencies || [],
+            hasNode: (id) => this.#plugins.has(id),
+            onMissingDependency: (id, dep) => {
+                console.warn(`[Kernel] Warning: Dependency '${dep}' is missing and will be skipped.`);
+            },
+            errorMessagePrefix: "Circular dependency detected: "
+        });
     }
 }
 
