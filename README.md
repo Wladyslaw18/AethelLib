@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Laagle.png" width="130" alt="AethelLib Logo" />
+  <img src="Laagle.png" width="150" alt="AethelLib Logo" />
   <h1>⚜︎ AethelLib</h1>
   <p><i>"Built at 3am. Tested in production. Regretted nothing."</i></p>
 </div>
