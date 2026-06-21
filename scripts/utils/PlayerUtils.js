@@ -57,12 +57,33 @@ export const PlayerUtils = {
         if (!identifier) return null
         
         // if the caller passed an object that is already a player, just give it back.
-        if (identifier !== null && typeof identifier === 'object' && 'name' in identifier && 'id' in identifier) return identifier;
+        if (identifier !== null && typeof identifier === 'object' && (typeof identifier.name === 'string' || typeof identifier.id === 'string' || typeof identifier.isValid === 'boolean')) {
+            if (!identifier.isValid) {
+                const activePlayer = Kernel.world.getAllPlayers().find(p => p.id === identifier.id);
+                if (activePlayer) return Kernel.wrapEntity(activePlayer);
+            }
+            return Kernel.wrapEntity(identifier);
+        }
         
         // ensure the input is a string.
         if (typeof identifier !== 'string') return null;
 
-        const lowerId = identifier.toLowerCase()
+        // Clean quotes from the identifier if present (Bedrock quotes names with numbers/special chars)
+        let cleanId = identifier.trim();
+        if (cleanId.length >= 2) {
+            const first = cleanId[0];
+            const last = cleanId[cleanId.length - 1];
+            if ((first === '"' || last === '"' || first === "'" || last === "'") && (first === last || cleanId.startsWith('"') && cleanId.endsWith('"') || cleanId.startsWith("'") && cleanId.endsWith("'"))) {
+                // Strip the bounding quotes
+                if ((first === '"' || first === "'") && first === last) {
+                    cleanId = cleanId.slice(1, -1).trim();
+                } else {
+                    cleanId = cleanId.replace(/^['"]|['"]$/g, '').trim();
+                }
+            }
+        }
+
+        const lowerId = cleanId.toLowerCase()
 
         // step 1: O(1) lookup for exact name.
         let nameMatch = nameCache.get(lowerId)
@@ -75,14 +96,14 @@ export const PlayerUtils = {
                 nameMatch = activePlayer;
             }
         }
-        if (nameMatch?.isValid) return nameMatch
+        if (nameMatch?.isValid) return Kernel.wrapEntity(nameMatch)
 
         // step 2: look for an exact ID match.
-        const foundName = [...idToNameCache.entries()].find(([id, _name]) => id === identifier)
+        const foundName = [...idToNameCache.entries()].find(([id, _name]) => id === cleanId)
         if (foundName) {
             let p = nameCache.get(foundName[1])
             if (p && !p.isValid) {
-                const activePlayer = Kernel.world.getAllPlayers().find(pl => pl.id === identifier);
+                const activePlayer = Kernel.world.getAllPlayers().find(pl => pl.id === cleanId);
                 if (activePlayer) {
                     const lowerName = activePlayer.name.toLowerCase();
                     nameCache.set(lowerName, activePlayer);
@@ -90,15 +111,23 @@ export const PlayerUtils = {
                     p = activePlayer;
                 }
             }
-            if (p?.isValid) return p
+            if (p?.isValid) return Kernel.wrapEntity(p)
         }
 
-        // step 3: fallback to partial matching.
+        // step 3: fallback to exact name matching from active players list directly (bypasses stale cache)
+        const activePlayers = Kernel.world.getAllPlayers()
+        const exactMatch = activePlayers.find(p => p.name.toLowerCase() === lowerId)
+        if (exactMatch) {
+            nameCache.set(lowerId, exactMatch);
+            idToNameCache.set(exactMatch.id, lowerId);
+            return Kernel.wrapEntity(exactMatch);
+        }
+
+        // step 4: fallback to partial matching.
         // if a player's name contains the search string, return them.
-        const players = Kernel.world.getAllPlayers()
-        const partial = players.filter(p => p.name.toLowerCase().includes(lowerId))
+        const partial = activePlayers.filter(p => p.name.toLowerCase().includes(lowerId))
         // only return if there is exactly one match. 
-        if (partial.length === 1) return partial[0]
+        if (partial.length === 1) return Kernel.wrapEntity(partial[0])
 
         // nobody found.
         return null
@@ -113,8 +142,14 @@ export const PlayerUtils = {
         if (!args || args.length === 0) return { player: null, consumedArgs: 0 }
 
         // if the native command parser already gave us a player object.
-        if (typeof args[0] === 'object' && args[0] !== null && args[0].name) {
-            return { player: args[0], consumedArgs: 1 }
+        const possiblePlayer = Array.isArray(args[0]) ? args[0][0] : args[0];
+        if (typeof possiblePlayer === 'object' && possiblePlayer !== null && possiblePlayer.name) {
+            let p = possiblePlayer;
+            if (!p.isValid) {
+                const activePlayer = Kernel.world.getAllPlayers().find(pl => pl.id === p.id);
+                if (activePlayer) p = activePlayer;
+            }
+            return { player: Kernel.wrapEntity(p), consumedArgs: 1 }
         }
 
         // ✦ Quote parsing: detect if the first argument starts with a quote
@@ -135,7 +170,7 @@ export const PlayerUtils = {
                 const stripped = joined.slice(1, -1);
                 const target = this.findPlayer(stripped);
                 if (target) {
-                    return { player: target, consumedArgs: closingIndex + 1 };
+                    return { player: Kernel.wrapEntity(target), consumedArgs: closingIndex + 1 };
                 }
             }
         }
@@ -163,10 +198,10 @@ export const PlayerUtils = {
         }
 
         if (longestExactMatch) {
-            return { player: longestExactMatch, consumedArgs: consumedExact }
+            return { player: Kernel.wrapEntity(longestExactMatch), consumedArgs: consumedExact }
         }
 
-        return { player: longestPartialMatch, consumedArgs: consumedPartial }
+        return { player: Kernel.wrapEntity(longestPartialMatch), consumedArgs: consumedPartial }
     },
 
     // ----------------------------------------------------------------------------
