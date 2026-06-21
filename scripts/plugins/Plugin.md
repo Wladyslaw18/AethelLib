@@ -11,43 +11,62 @@ AethelLib treats code like a citizen. An isolated process with declared dependen
 
 A true plugin loader does not load files alphabetically or rely on manual file ordering. It resolves execution paths mathematically.
 
-AethelLib's PluginManager.js implements a Directed Acyclic Graph (DAG) topological sort using a 3-state depth-first search (DFS) with recursive cycle detection:
-javascript
-
-_resolveDependencies() {
-    const nodes = Array.from(this._plugins.keys());
-    const sorted = [];
-    const visited = new Set();
-    const visiting = new Set();
-
-    const visit = (id) => {
-        if (visiting.has(id)) throw new Error(`CIRCULAR DEPENDENCY DETECTED: ${id}`);
-        if (visited.has(id)) return;
-
-        visiting.add(id);
-        const plugin = this._plugins.get(id);
+AethelLib's codebase utilizes a unified, generic DFS-based `DependencySorter` class (located in `scripts/utils/DependencySorter.js`) to sort plugin execution paths mathematically:
+```javascript
+// DependencySorter.js
+export class DependencySorter {
+    static sort(nodes, options) {
+        const sorted = [];
+        const visited = new Set();
+        const visiting = new Set();
         
-        if (plugin?.manifest.dependencies) {
-            for (const dep of plugin.manifest.dependencies) {
-                if (!this._plugins.has(dep)) {
-                    console.warn(`[PluginManager] Warning: '${id}' requires missing module '${dep}'.`);
-                    continue;
+        const getDependencies = options.getDependencies;
+        const hasNode = options.hasNode;
+        const onMissingDependency = options.onMissingDependency || (() => {});
+        const errorMessagePrefix = options.errorMessagePrefix || "Circular dependency detected: ";
+
+        const visit = (id) => {
+            if (!hasNode(id)) return;
+            if (visiting.has(id)) throw new Error(`${errorMessagePrefix}${id}`);
+            if (visited.has(id)) return;
+
+            visiting.add(id);
+            const deps = getDependencies(id);
+            if (deps) {
+                for (const dep of deps) {
+                    if (!hasNode(dep)) {
+                        onMissingDependency(id, dep);
+                        continue;
+                    }
+                    visit(dep);
                 }
-                visit(dep);
             }
-        }
-        
-        visiting.delete(id);
-        visited.add(id);
-        sorted.push(id);
-    };
+            visiting.delete(id);
+            visited.add(id);
+            sorted.push(id);
+        };
 
-    nodes.forEach(id => {
-        if (!visited.has(id)) visit(id);
-    });
-    
-    return sorted;
+        for (const id of nodes) {
+            if (!visited.has(id)) visit(id);
+        }
+        return sorted;
+    }
 }
+```
+
+The `PluginManager` and `Kernel` query the sorter dynamically:
+```javascript
+_resolveDependencies() {
+    return DependencySorter.sort(Array.from(this._plugins.keys()), {
+        getDependencies: (id) => this._plugins.get(id)?.manifest?.dependencies || [],
+        hasNode: (id) => this._plugins.has(id),
+        onMissingDependency: (id, dep) => {
+            console.warn(`[PluginManager] WARNING: '${id}' requires missing module '${dep}'. Expect crashes.`);
+        },
+        errorMessagePrefix: "CIRCULAR DEPENDENCY DETECTED: "
+    });
+}
+```
 
 ⚡︎ Why this is a first: Without topological sorting, your loading system is just a file list. AethelLib is the first to bring graph theory to Bedrock, ensuring that if Plugin B requires Plugin A, the system mathematically guarantees A is fully compiled and loaded before B attempts to initialize.
 ☨ PROCESS LIFECYCLE MANAGEMENT (onEnable / onDisable)

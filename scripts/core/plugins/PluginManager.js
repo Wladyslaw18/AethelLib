@@ -1,4 +1,5 @@
 import { Kernel } from "../Kernel.js"
+import { DependencySorter } from "../../utils/DependencySorter.js"
 
 // central nervous system for external modules.
 // handles dep resolution, api sharing, and prevents plugins from nuking each other's databases.
@@ -8,7 +9,41 @@ export const PluginManager = {
     _commandManifests: new Map(), // pluginId -> { manifest, commands, logic }
 
     _createContext(manifest) {
-        return {
+        const activeIntervals = [];
+        const activeTimeouts = [];
+        const activeListeners = [];
+
+        // Pre-create event proxies once per context to prevent GC pressure
+        const createEventProxy = (sourceObj) => new Proxy({}, {
+            get(eventsDummyTarget, eventName) {
+                const originalEvent = sourceObj[eventName];
+                if (originalEvent && typeof originalEvent.subscribe === "function") {
+                    return {
+                        subscribe: (callback, options) => {
+                            if (options !== undefined) {
+                                originalEvent.subscribe(callback, options);
+                            } else {
+                                originalEvent.subscribe(callback);
+                            }
+                            const unsubscribe = () => {
+                                try { originalEvent.unsubscribe(callback); } catch(e) {}
+                            };
+                            activeListeners.push(unsubscribe);
+                            return callback;
+                        },
+                        unsubscribe: (callback) => {
+                            try { originalEvent.unsubscribe(callback); } catch(e) {}
+                        }
+                    };
+                }
+                return originalEvent;
+            }
+        });
+
+        const cachedBeforeEvents = createEventProxy(Kernel.world.beforeEvents);
+        const cachedAfterEvents = createEventProxy(Kernel.world.afterEvents);
+
+        const context = {
             manifest,
             // db wrapper. forces a prefix so plugins don't overwrite each other's keys.
             db: {
@@ -40,10 +75,53 @@ export const PluginManager = {
             },
             log: (msg) => console.log(`\u00A78[\u00A7b${manifest.id}\u00A78] \u00A7f${msg}`),
             error: (msg) => console.error(`\u00A78[\u00A7c${manifest.id}\u00A78] \u00A7cERROR: ${msg}`),
-            // raw engine access proxy
-            world: Kernel.world,
-            system: Kernel.system
+
+            // Proxied Engine interfaces (Stable Proxy Pattern + Preemptive Resource Registry)
+            system: new Proxy({}, {
+                get(dummyTarget, prop) {
+                    if (prop === "runInterval") {
+                        return (callback, ticks) => {
+                            const id = Kernel.system.runInterval(callback, ticks);
+                            activeIntervals.push(id);
+                            return id;
+                        };
+                    }
+                    if (prop === "runTimeout") {
+                        return (callback, ticks) => {
+                            const id = Kernel.system.runTimeout(callback, ticks);
+                            activeTimeouts.push(id);
+                            return id;
+                        };
+                    }
+                    if (prop === "clearRun") {
+                        return (id) => {
+                            Kernel.system.clearRun(id);
+                            const intIdx = activeIntervals.indexOf(id);
+                            if (intIdx !== -1) activeIntervals.splice(intIdx, 1);
+                            const timeoutIdx = activeTimeouts.indexOf(id);
+                            if (timeoutIdx !== -1) activeTimeouts.splice(timeoutIdx, 1);
+                        };
+                    }
+                    const val = Kernel.system[prop];
+                    if (typeof val === "function") return val.bind(Kernel.system);
+                    return val;
+                }
+            }),
+
+            world: new Proxy({}, {
+                get(dummyTarget, prop) {
+                    if (prop === "afterEvents") return cachedAfterEvents;
+                    if (prop === "beforeEvents") return cachedBeforeEvents;
+                    const val = Kernel.world[prop];
+                    if (typeof val === "function") return val.bind(Kernel.world);
+                    return val;
+                }
+            })
         };
+
+        // Attach resources tracking to the context object privately
+        context._resources = { activeIntervals, activeTimeouts, activeListeners };
+        return context;
     },
 
     /**
@@ -169,42 +247,15 @@ export const PluginManager = {
         console.log(`[PluginManager] System Online. Active modules: ${successCount}/${this._plugins.size}`);
     },
 
-    // topological sort.
-    // if plugin A needs B, and B needs A, this will throw and stop the server from hanging permanently.
     _resolveDependencies() {
-        const nodes = Array.from(this._plugins.keys());
-        const sorted = [];
-        const visited = new Set();
-        const visiting = new Set();
-
-        const visit = (id) => {
-            if (visiting.has(id)) throw new Error(`CIRCULAR DEPENDENCY DETECTED: ${id}. Fix your manifests.`);
-            if (visited.has(id)) return;
-
-            visiting.add(id);
-            const plugin = this._plugins.get(id);
-            
-            if (plugin?.manifest.dependencies) {
-                for (const dep of plugin.manifest.dependencies) {
-                    if (!this._plugins.has(dep)) {
-                        console.warn(`[PluginManager] WARNING: '${id}' requires missing module '${dep}'. Expect crashes.`);
-                        continue;
-                    }
-                    // recursive dive to ensure the dependency loads first.
-                    visit(dep); 
-                }
-            }
-            
-            visiting.delete(id);
-            visited.add(id);
-            sorted.push(id);
-        };
-
-        nodes.forEach(id => {
-            if (!visited.has(id)) visit(id);
+        return DependencySorter.sort(Array.from(this._plugins.keys()), {
+            getDependencies: (id) => this._plugins.get(id)?.manifest?.dependencies || [],
+            hasNode: (id) => this._plugins.has(id),
+            onMissingDependency: (id, dep) => {
+                console.warn(`[PluginManager] WARNING: '${id}' requires missing module '${dep}'. Expect crashes.`);
+            },
+            errorMessagePrefix: "CIRCULAR DEPENDENCY DETECTED: "
         });
-        
-        return sorted;
     },
 
     async reloadPlugin(pluginId) {
@@ -270,6 +321,30 @@ export const PluginManager = {
                         registry.unregister(cmd.name);
                     }
                 }
+            }
+
+            // Preemptive Resource Registry cleanup (intervals, timeouts, listeners)
+            const context = plugin.context;
+            if (context && context._resources) {
+                const { activeIntervals, activeTimeouts, activeListeners } = context._resources;
+
+                activeIntervals.forEach(id => {
+                    try { Kernel.system.clearRun(id); } catch (e) {
+                        console.error(`[PluginManager] Failed clearing interval during reload of ${targetId}: ${e}`);
+                    }
+                });
+
+                activeTimeouts.forEach(id => {
+                    try { Kernel.system.clearRun(id); } catch (e) {
+                        console.error(`[PluginManager] Failed clearing timeout during reload of ${targetId}: ${e}`);
+                    }
+                });
+
+                activeListeners.forEach(unsubscribe => {
+                    try { unsubscribe(); } catch (e) {
+                        console.error(`[PluginManager] Failed unsubscribing event listener during reload of ${targetId}: ${e}`);
+                    }
+                });
             }
 
             // Remove from maps
