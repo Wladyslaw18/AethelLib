@@ -10,7 +10,24 @@ export class PermissionManager {
     static #instance = null
     static #data = new PermissionData() // Master storage for all rank data
     static #playerCache = new Map() // Cache for resolved player permissions
-    static #CACHE_TTL = 5000 
+    static #resolvedRanks = new Map() // Pre-computed rank inheritance tree
+    static #CACHE_TTL = 30000 
+    static #aliases = {
+        "essentials.admin": "admin.panel",
+        "essentials.ban": "admin.ban",
+        "essentials.admin.ban": "admin.ban",
+        "essentials.kick": "admin.kick",
+        "essentials.admin.mute": "admin.mute",
+        "essentials.admin.reports": "admin.reports",
+        "essentials.admin.ft": "admin.floatingtext",
+        "essentials.admin.invsee": "admin.invsee",
+        "essentials.admin.ranks": "admin.ranks",
+        "essentials.admin.economy": "admin.economy",
+        "admin.shop": "admin.shopsetting",
+        "admin.system": "admin.setting",
+        "admin.plugin": "admin.setting",
+        "admin.broadcast.reset": "admin.broadcast"
+    }
     static #stats = {
         cacheHits: 0,
         cacheMisses: 0,
@@ -26,6 +43,11 @@ export class PermissionManager {
     
     constructor() {
         this.startCleanupTask()
+        
+        // Clear permission cache on player disconnect to prevent ID-reuse hijacking!
+        Kernel.world.afterEvents.playerLeave.subscribe((ev) => {
+            this.invalidatePlayerCache(ev.playerId);
+        });
     }
 
     /**
@@ -61,6 +83,37 @@ export class PermissionManager {
                     PermissionManager.#data.setPermission(tag, perm, value)
                 }
             }
+        }
+
+        // 3. Pre-compute full inheritance tree for O(1) resolution
+        PermissionManager.#resolvedRanks.clear()
+        
+        const resolveRank = (rankId, visited = new Set()) => {
+            if (visited.has(rankId)) return {}
+            visited.add(rankId)
+
+            const rankData = allRanks[rankId]
+            if (!rankData) return {}
+
+            const merged = {}
+            if (rankData.inherits) {
+                Object.assign(merged, resolveRank(rankData.inherits, visited))
+            }
+
+            if (rankData.permissions) {
+                for (const [perm, value] of Object.entries(rankData.permissions)) {
+                    merged[perm] = value
+                    const parts = perm.split('.')
+                    if (parts.length === 2) {
+                        merged[`${parts[1]}.${parts[0]}`] = value
+                    }
+                }
+            }
+            return merged
+        }
+
+        for (const rankId of Object.keys(allRanks)) {
+            PermissionManager.#resolvedRanks.set(rankId, resolveRank(rankId))
         }
 
         console.log(`[PermissionManager] RBAC_NODES_INJECTED: ${Object.keys(allRanks).length}`);
@@ -125,32 +178,12 @@ export class PermissionManager {
         }
         
         let val = cache.permissions.get(key)
+        
         if (val === undefined) {
-            const parts = key.split('.')
-            if (parts.length === 2) {
-                val = cache.permissions.get(`${parts[1]}.${parts[0]}`)
+            const alias = PermissionManager.#aliases[key]
+            if (alias) {
+                val = cache.permissions.get(alias)
             }
-        }
-
-        const aliases = {
-            "essentials.admin": "admin.panel",
-            "essentials.ban": "admin.ban",
-            "essentials.admin.ban": "admin.ban",
-            "essentials.kick": "admin.kick",
-            "essentials.admin.mute": "admin.mute",
-            "essentials.admin.reports": "admin.reports",
-            "essentials.admin.ft": "admin.floatingtext",
-            "essentials.admin.invsee": "admin.invsee",
-            "essentials.admin.ranks": "admin.ranks",
-            "essentials.admin.economy": "admin.economy",
-            "admin.shop": "admin.shopsetting",
-            "admin.system": "admin.setting",
-            "admin.plugin": "admin.setting",
-            "admin.broadcast.reset": "admin.broadcast"
-        }
-
-        if (val === undefined && aliases[key]) {
-            val = cache.permissions.get(aliases[key])
         }
 
         if (val === undefined && key === "essentials.gamemode") {
@@ -178,6 +211,7 @@ export class PermissionManager {
      * identity calibration.
      */
     syncPlayerRanks(player) {
+        if (!player || !player.id || typeof player.getTags !== 'function') return;
         const tags = player.getTags()
         PermissionManager.#data.setPlayerRanks(player.id, tags)
     }
@@ -217,38 +251,11 @@ export class PermissionManager {
         const permissions = new Map()
         const playerRanks = PermissionManager.#data.getPlayerRanks(player.id)
         
-        const RankStore = Kernel.get("rankStore")
-        const allRanks = RankStore ? RankStore.getAllRanks() : {}
-
-        const resolveRankPermissionsRecursive = (rankId, visited = new Set()) => {
-            if (visited.has(rankId)) return {}
-            visited.add(rankId)
-
-            const rankData = allRanks[rankId]
-            if (!rankData) return {}
-
-            const merged = {}
-            if (rankData.inherits) {
-                Object.assign(merged, resolveRankPermissionsRecursive(rankData.inherits, visited))
-            }
-
-            if (rankData.permissions) {
-                for (const [perm, val] of Object.entries(rankData.permissions)) {
-                    merged[perm] = val
-                    const parts = perm.split('.')
-                    if (parts.length === 2) {
-                        merged[`${parts[1]}.${parts[0]}`] = val
-                    }
-                }
-            }
-            return merged
-        }
-
         const isNumeric = (k) => k.includes("limit") || k.includes("cooldown") || k.includes("wait") || k.includes("cost");
 
         // SCAN_HIERARCHY: Highest rank takes priority
         for (const rankId of playerRanks) {
-            const rankPerms = resolveRankPermissionsRecursive(rankId)
+            const rankPerms = PermissionManager.#resolvedRanks.get(rankId) || {}
             
             for (const [perm, value] of Object.entries(rankPerms)) {
                 if (permissions.has(perm)) continue
@@ -274,7 +281,7 @@ export class PermissionManager {
         }
         
         // BASELINE_FALLBACK: If node is still unresolved, check the 'member' rank
-        const memberRank = resolveRankPermissionsRecursive("member")
+        const memberRank = PermissionManager.#resolvedRanks.get("member") || {}
         for (const [perm, value] of Object.entries(memberRank)) {
             if (!permissions.has(perm)) {
                 if (isNumeric(perm)) {
