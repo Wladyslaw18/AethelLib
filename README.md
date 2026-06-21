@@ -1,6 +1,8 @@
-# ⚜&#xFE0E; AethelLib
-
-> *"Built at 3am. Tested in production. Regretted nothing."*
+<div align="center">
+  <img src="Laagle.png" width="130" alt="AethelLib Logo" />
+  <h1>⚜︎ AethelLib</h1>
+  <p><i>"Built at 3am. Tested in production. Regretted nothing."</i></p>
+</div>
 
 AethelLib is a hard-coded shield for people who want to build things that **don't crash the server every time a player joins.** It's a stable foundation that handles the messy data-cleanup so you don't have to.
 
