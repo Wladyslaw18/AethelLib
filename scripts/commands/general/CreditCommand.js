@@ -38,7 +38,7 @@ export const CreditCommand = {
         player.sendMessage("\u00A78━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         // system philosophy footer.
         player.sendMessage("\u00A77Optimized for high-performance survival gameplay.")
-        player.sendMessage("\u00A77Version: \u00A7e1.26.20 \u00A77| \u00A7fClean Build")
+        player.sendMessage("\u00A77Version: \u00A7e1.26.30 \u00A77| \u00A7fClean Build")
         player.sendMessage(" ")
     }
 }
