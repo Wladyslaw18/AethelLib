@@ -90,7 +90,7 @@ export const SpatialCache = {
                 try {
                     const inventory = player.getComponent("minecraft:inventory");
                     const container = inventory?.container;
-                    const item = container?.getItem(player.selectedSlot);
+                    const item = container?.getItem(player.selectedSlotIndex);
                     if (item && item.typeId === "minecraft:stick") {
                         const loc = player.location;
                         const lastRender = this.lastStickRenders.get(player.id);

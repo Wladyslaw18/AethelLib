@@ -219,9 +219,13 @@ export class CacheManager {
                 for (const [key, entry] of cacheMeta.cache) {
                     total += key.length * 2
                     if (entry.value !== undefined && entry.value !== null) {
-                        try {
-                            total += JSON.stringify(entry.value).length * 2
-                        } catch {}
+                        if (typeof entry.value === 'string') {
+                            total += entry.value.length * 2;
+                        } else if (typeof entry.value === 'number' || typeof entry.value === 'boolean') {
+                            total += 8;
+                        } else {
+                            total += 128; // basic object estimate without heavy traversal
+                        }
                     }
                 }
                 return total
