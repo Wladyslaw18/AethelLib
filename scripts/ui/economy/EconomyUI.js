@@ -14,9 +14,9 @@ export async function showEconomyMenu(player) {
     const form = new Kernel.ActionFormData()
         .title("\u00A76\u00A7lECONOMY MENU")
         .body(`\u00A77Your Balance: \u00A7a$${balance.toLocaleString()}\n\n\u00A77Manage your funds or view the richest players.`)
-        .button("\u00A7ePay Player", "textures/ui/pay")
-        .button("\u00A7bRichest Players (Top 10)", "textures/ui/topmoney")
-        .button("\u00A7aWithdraw Banknote", "textures/ui/withdraw")
+        .button("\u00A7ePay Player", "textures/items/gold_ingot")
+        .button("\u00A7bRichest Players (Top 10)", "textures/items/gold_block")
+        .button("\u00A7aWithdraw Banknote", "textures/items/paper")
         .button("\u00A7cBACK", "textures/ui/refresh");
 
     const res = await UIUtils.showForm(player, form);
@@ -69,7 +69,7 @@ async function showPayPlayerUI(player) {
     }
 
     let targetPlayer = Kernel.world.getAllPlayers().find(p => p.id === targetId);
-    if (!targetPlayer) targetPlayer = { id: targetId, name: targetName };
+    if (!targetPlayer) targetPlayer = /** @type {any} */ ({ id: targetId, name: targetName });
 
     await showPayAmountUI(player, targetPlayer);
 }
@@ -78,7 +78,7 @@ async function showPayAmountUI(player, targetPlayer) {
     const form = new Kernel.ModalFormData()
         .title(`\u00A76\u00A7lPAY: ${targetPlayer.name}`)
         .textField("Amount to pay:", "e.g. 500")
-        .toggle("Verify Transaction", true);
+        .toggle("Verify Transaction", { defaultValue: true });
 
     const res = await UIUtils.showForm(player, form);
     if (res.canceled) {

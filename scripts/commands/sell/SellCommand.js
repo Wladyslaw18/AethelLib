@@ -1,6 +1,7 @@
 import { Kernel } from "../../core/Kernel.js";
 import { SellStore } from "../../systems/sell/SellStore.js"
 import { MINECRAFT_ITEMS } from "../../data/minecraft-items.js"
+import { UIUtils } from "../../ui/UIUtils.js";
 
 // ----------------------------------------------------------------------------
 // | object: SellCommand                                                      |
@@ -83,7 +84,7 @@ function showSellMenu(player) {
 
     // execute on next tick to satisfy engine UI constraints.
     Kernel.system.run(async () => {
-        const res = await form.show(player)
+        const res = await UIUtils.showForm(player, form)
         if (res.canceled) return
         if (res.selection === 0) quickSell(player)
         else showBrowseInventory(player)
@@ -97,7 +98,7 @@ function showSellMenu(player) {
 function quickSell(player) {
     try {
         // fetch item from current slot.
-        const selectedItem = player.getComponent(Kernel.EntityComponentTypes.Inventory).container.getItem(player.selectedSlot)
+        const selectedItem = player.getComponent(Kernel.EntityComponentTypes.Inventory).container.getItem(player.selectedSlotIndex)
         if (!selectedItem) {
             player.sendMessage("\u00A7c\u00A7l» \u00A77No item in hand.");
             return
@@ -179,7 +180,7 @@ function showBrowseInventory(player) {
         })
 
         Kernel.system.run(async () => {
-            const res = await form.show(player)
+            const res = await UIUtils.showForm(player, form)
             if (res.canceled) return
             // if an item is selected, open the quantity specification dialog.
             if (res.selection >= 0 && res.selection < items.length) {
@@ -206,7 +207,7 @@ function showSellDialog(player, item) {
         .textField("Quantity to sell:", "Enter quantity...")
 
     Kernel.system.run(async () => {
-        const res = await form.show(player)
+        const res = await UIUtils.showForm(player, form)
         if (res.canceled) return
         // parse quantity from input field index 4.
         const quantity = parseInt(String(res.formValues[4]))

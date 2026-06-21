@@ -63,7 +63,7 @@ export const EconomyCommand = {
                 break
             case "reset":
                 // revert to industrial default balance.
-                await handleReset(player, target)
+                await handleReset(player, target, args[2])
                 break
             default:
                 player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid action. Use give, take, set, or reset.");
@@ -151,12 +151,22 @@ async function handleSet(executor, target, amountStr) {
 // | function: handleReset                                                    |
 // | buffer reset handler. restores account to the system default.            |
 // ----------------------------------------------------------------------------
-async function handleReset(executor, target) {
+async function handleReset(executor, target, amountStr) {
     try {
+        let amount = EconomyStore.DEFAULT_BALANCE;
+        if (amountStr !== undefined && amountStr !== null && amountStr !== "") {
+            const parsed = Math.floor(Number(amountStr));
+            if (!isNaN(parsed) && parsed >= 0) {
+                amount = parsed;
+            } else {
+                executor.sendMessage("\u00A7c\u00A7l» \u00A77Please provide a valid amount.");
+                return;
+            }
+        }
         // query the store for the constant default balance.
-        const success = await EconomyStore.setBalance(target, EconomyStore.DEFAULT_BALANCE)
+        const success = await EconomyStore.setBalance(target, amount)
         if (success) {
-            executor.sendMessage(`\u00A7a\u00A7l» \u00A7fReset \u00A7e${target.name}\u00A7f's balance to \u00A7e$${EconomyStore.DEFAULT_BALANCE.toLocaleString()}\u00A7f.`);
+            executor.sendMessage(`\u00A7a\u00A7l» \u00A7fReset \u00A7e${target.name}\u00A7f's balance to \u00A7e$${amount.toLocaleString()}\u00A7f.`);
             target.sendMessage("\u00A7a\u00A7l» \u00A7fYour balance was reset by an admin.");
         } else {
             executor.sendMessage("\u00A7c\u00A7l» \u00A77Failed to reset balance.");

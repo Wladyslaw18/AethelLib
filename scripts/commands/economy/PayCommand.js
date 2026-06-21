@@ -1,5 +1,6 @@
 import { Kernel } from "../../core/Kernel.js"
 import { EconomyStore } from "../../systems/economy/EconomyStore.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 // ----------------------------------------------------------------------------
 // | object: PayCommand                                                       |
@@ -20,8 +21,13 @@ export const PayCommand = {
     ],
 
     async execute(_data, player, args) {
-        // args[0] is a Player object! args[1] is an actual Integer! C++ is pure magic.
-        const [targetPlayer, amount] = args;
+        let targetPlayer = args[0];
+        const amount = args[1];
+
+        // Resolve targetPlayer robustly (handles autocomplete Player objects, raw/quoted strings, etc.)
+        if (targetPlayer !== undefined && targetPlayer !== null) {
+            targetPlayer = PlayerUtils.findPlayer(targetPlayer);
+        }
 
         if (!targetPlayer || amount === undefined) {
             player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:pay <player> <amount>");
