@@ -65,11 +65,7 @@ export class DatabaseManager {
     get(key) {
         // check the memory buffer first. O(1) speed.
         if (this.cache.has(key)) {
-            const data = this.cache.get(key)
-            // Move to the end of insertion order (most recently used)
-            this.cache.delete(key)
-            this.cache.set(key, data)
-            return data
+            return this.cache.get(key)
         }
 
         // if not in cache, load it from the actual world properties.
@@ -87,6 +83,11 @@ export class DatabaseManager {
     // ----------------------------------------------------------------------------
     set(key, value) {
         try {
+            if (typeof key !== 'string' || !/^[a-zA-Z0-9_:.-]+$/.test(key)) {
+                console.error(`[DatabaseManager] Invalid key format: ${key}`)
+                return false
+            }
+
             // update the memory buffer immediately.
             // delete first if it already exists to move it to the end of insertion order.
             if (this.cache.has(key)) {
@@ -357,13 +358,26 @@ export class DatabaseManager {
     shardAndWrite(key, data) {
         // serialize the data once.
         const serialized = JSON.stringify(data)
-        const chars = Array.from(serialized)
         const shards = []
         const charLimit = Math.floor(this.MAX_PROPERTY_SIZE / 2) // safe character count for multi-byte UTF-8
         
-        // cut the string into safe character-based pieces.
-        for (let i = 0; i < chars.length; i += charLimit) {
-            shards.push(chars.slice(i, i + charLimit).join(""))
+        // cut the string into safe character-based pieces using surrogate-pair-safe slicing.
+        // This avoids converting the entire string to a character array, saving massive memory allocations.
+        const len = serialized.length
+        for (let i = 0; i < len; ) {
+            let end = i + charLimit
+            if (end < len) {
+                // If the character before the boundary is a high surrogate (0xD800 to 0xDBFF),
+                // decrement boundary by 1 to keep the surrogate pair together in the next shard.
+                const codeBefore = serialized.charCodeAt(end - 1)
+                if (codeBefore >= 0xD800 && codeBefore <= 0xDBFF) {
+                    end--
+                }
+            } else {
+                end = len
+            }
+            shards.push(serialized.slice(i, end))
+            i = end
         }
 
         // check which version is currently active so we can write to the other one.
@@ -462,6 +476,28 @@ export class DatabaseManager {
             if (!activeVersion) continue;
             
             const deadVersion = activeVersion === "v1" ? "v2" : "v1";
+
+            // Verify active version is stable and not corrupted before nuking the dead one
+            const testLoad = this.loadSharded(baseKey);
+            if (testLoad === null) {
+                console.error(`[DatabaseManager] CRITICAL: Active shard [${activeVersion}] for '${baseKey}' is corrupted! Attempting recovery...`);
+                const deadShardPattern = `${baseKey}:shard_${deadVersion}_`;
+                const deadShards = allIds.filter(sid => sid.startsWith(deadShardPattern));
+                
+                if (deadShards.length > 0) {
+                    try {
+                        Kernel.world.setDynamicProperty(id, JSON.stringify({
+                            shardCount: deadShards.length,
+                            timestamp: Date.now(),
+                            version: deadVersion
+                        }));
+                        console.warn(`[DatabaseManager] ROLLBACK SUCCESSFUL: '${baseKey}' reverted to stable [${deadVersion}] with ${deadShards.length} shards.`);
+                    } catch (e) {
+                        console.error(`[DatabaseManager] ROLLBACK FAILED for '${baseKey}': ${e}`);
+                    }
+                }
+                continue; // Skip purging dead shards as they are now active recovered shards
+            }
 
             /* 
              * REALITY_SWEEP
@@ -619,9 +655,7 @@ export class DatabaseManager {
             } else if (currentSenderBalance === wal.senderOriginalBalance && currentReceiverBalance === wal.receiverOriginalBalance) {
                 console.log(`[DatabaseManager] [WAL] Transaction had not started. Clearing log.`);
             } else {
-                console.warn(`[DatabaseManager] [WAL] Mismatched state detected. Performing full rollback to original balances.`);
-                PlayerStore.set(sender, senderBalanceKey, wal.senderOriginalBalance);
-                PlayerStore.set(receiver, receiverBalanceKey, wal.receiverOriginalBalance);
+                console.warn(`[DatabaseManager] [WAL] Mismatched state detected (External changes occurred). Aborting automatic rollback to prevent state corruption.`);
                 
                 const { JournaledDb } = await import("./JournaledDatabase.js");
                 JournaledDb.flush();

@@ -14,16 +14,16 @@ export class MessageStore {
 
     // ----------------------------------------------------------------------------
     // | method: init                                                             |
-    // | starts the debounced flush cycle. runs every 60 seconds.                 |
+    // | starts the debounced flush cycle. runs every 5 seconds.                  |
     // ----------------------------------------------------------------------------
     static init() {
         if (this.#initialized) return
         this.#initialized = true
 
-        // flush every 60 seconds (1200 ticks at 20tps)
+        // flush every 5 seconds (100 ticks at 20tps)
         Kernel.system.runInterval(() => {
             this.flush()
-        }, 1200)
+        }, 100)
     }
 
     // ----------------------------------------------------------------------------

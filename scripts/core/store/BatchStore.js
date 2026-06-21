@@ -1,4 +1,5 @@
 import { Kernel } from "../Kernel.js"
+import { JournaledDb } from "./JournaledDatabase.js"
 
 /**
  * Collects and flushes database operations in batches.
@@ -169,7 +170,6 @@ export class BatchStore {
      */
     static async #executePlayerBatch(operations) {
         const playerGroups = new Map()
-        const Database = Kernel.get("database") // FIX: Query raw database instead of store proxies
         
         operations.forEach(op => {
             if (!playerGroups.has(op.playerId)) {
@@ -183,9 +183,9 @@ export class BatchStore {
                 for (const op of playerOps) {
                     const fullKey = `player:${playerId}:${op.key}`
                     if (op.operation === 'delete') {
-                        Database.delete(fullKey)
+                        JournaledDb.delete(fullKey)
                     } else {
-                        Database.set(fullKey, op.value)
+                        JournaledDb.set(fullKey, op.value)
                     }
                 }
             } catch (error) {
@@ -198,13 +198,12 @@ export class BatchStore {
      * WORLD_TRANSACTION_LOOP
      */
     static async #executeWorldBatch(operations) {
-        const Database = Kernel.get("database") // FIX: Query raw database instead of store proxies
         for (const op of operations) {
             try {
                 if (op.operation === 'delete') {
-                    Database.delete(op.key)
+                    JournaledDb.delete(op.key)
                 } else {
-                    Database.set(op.key, op.value)
+                    JournaledDb.set(op.key, op.value)
                 }
             } catch (error) {
                 console.error(`[BatchStore] WORLD_BATCH_FAILURE for ${op.key}:`, error)
