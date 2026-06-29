@@ -1,0 +1,128 @@
+import { Kernel } from "../../core/Kernel.js"
+
+/*
+ * Combat Integrity
+ * ----------------------------------------------------------------------------
+ * Handles combat tagging and penalizing players who combat-log.
+ */
+
+
+const combatState = new Map() // Active combat participants
+const COMBAT_DURATION = 200 // Combat duration (10 seconds)
+
+/* 
+ * System Initialization
+ */
+export function init() {
+    /* 
+     * Combat Detection
+     * Subscribes to the entityHurt event to tag participants in combat.
+     */
+    Kernel.world.afterEvents.entityHurt.subscribe((event) => {
+
+        const hurtEntity = event.hurtEntity
+        const damagingEntity = event.damageSource?.damagingEntity
+
+        if (hurtEntity?.typeId === "minecraft:player") {
+            const currentTick = Kernel.system.currentTick
+            combatState.set(hurtEntity.id, currentTick + COMBAT_DURATION)
+
+            if (damagingEntity?.typeId === "minecraft:player") {
+                combatState.set(damagingEntity.id, currentTick + COMBAT_DURATION)
+            }
+
+            Kernel.system.run(() => {
+                if (hurtEntity.isValid && hurtEntity.typeId === "minecraft:player") {
+                    /** @type {import("@minecraft/server").Player} */ (hurtEntity).onScreenDisplay.setActionBar("§c§l» §eIn Combat! §cDo not leave! §l«")
+                }
+                if (damagingEntity?.isValid && damagingEntity.typeId === "minecraft:player") {
+                    /** @type {import("@minecraft/server").Player} */ (damagingEntity).onScreenDisplay.setActionBar("§c§l» §eIn Combat! §cDo not leave! §l«")
+                }
+            })
+
+        }
+    })
+
+    /* 
+     * Combat Logging Detection
+     * Monitors the playerLeave event. If a player leaves while 
+     * tagged, they are marked for a penalty.
+     */
+    Kernel.world.afterEvents.playerLeave.subscribe((event) => {
+        const playerId = event.playerId
+        const combatTick = combatState.get(playerId)
+        const currentTick = Kernel.system.currentTick
+
+        if (combatTick && currentTick < combatTick) {
+            const PlayerStore = Kernel.get("playerStore")
+            PlayerStore.set({ id: playerId }, "deathDebt", true)
+            combatState.delete(playerId)
+        }
+    })
+
+    /* 
+     * Combat Log Penalty
+     * Handles players who log back in after combat logging.
+     */
+    Kernel.world.afterEvents.playerSpawn.subscribe((event) => {
+
+        if (!event.initialSpawn) return
+
+        const player = event.player
+        const PlayerStore = Kernel.get("playerStore")
+        const deathDebt = PlayerStore.get(player, "deathDebt")
+
+        if (deathDebt === true) {
+            Kernel.system.runTimeout(() => {
+                if (!player.isValid) return
+
+                try {
+                    const inventory = player.getComponent("minecraft:inventory")
+                    if (inventory?.container) {
+                        inventory.container.clearAll()
+                    }
+
+                    player.kill()
+
+                    PlayerStore.set(player, "deathDebt", false)
+                    player.sendMessage("§c§l» §eCombat Logging Detected! §7Your items have been removed.");
+
+                } catch (error) {
+                    console.error(`[CombatIntegrity] PENALTY_ORCHESTRATION_FAILURE for ${player.id}:`, error)
+                }
+            }, 20)
+        }
+    })
+
+    Kernel.system.runInterval(cleanup, 200)
+}
+
+/* 
+ * ENGAGEMENT_STATUS_QUERY
+ */
+export function isInCombat(playerId) {
+    const combatTick = combatState.get(playerId)
+    return combatTick && Kernel.system.currentTick < combatTick
+}
+
+/* 
+ * TEMPORAL_ENGAGEMENT_METRIC
+ */
+export function getCombatTime(playerId) {
+    const combatTick = combatState.get(playerId)
+    if (!combatTick) return 0
+    return Math.max(0, combatTick - Kernel.system.currentTick)
+}
+
+/* 
+ * REGISTRY_MAINTENANCE_PROTOCOL
+ * Decommissions expired engagement nodes from the volatile buffer.
+ */
+export function cleanup() {
+    const currentTick = Kernel.system.currentTick
+    for (const [playerId, combatTick] of combatState.entries()) {
+        if (currentTick >= combatTick) {
+            combatState.delete(playerId)
+        }
+    }
+}

@@ -1,0 +1,6 @@
+{
+  "ui_defs": [
+    "ui/aethel_ui.json",
+    "ui/server_form.json"
+  ]
+}

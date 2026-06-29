@@ -4,7 +4,7 @@
     "_generator"  : "Aethel Build System v2.1",
     "_maintainer" : "Aethelgrad Studio",
     "_repository" : "https://github.com/Wladyslaw18/AethelLib",
-    "_stability"  : "experimental"
+    "_stability"  : "stable"
   },
 
   "format_version": 2,
@@ -15,7 +15,7 @@
     "min_engine_version" : [1, 26, 30],
     "name"               : "§6Aethel§fLib",
     "uuid"               : "c0953459-e159-42b6-9090-08b4825db606",
-    "version"            : [1, 1, 0]
+    "version"            : [1, 1, 4]
   },
 
   "dependencies": [
@@ -34,7 +34,7 @@
       "description": "Data Layer",
       "type"       : "data",
       "uuid"       : "9e894b8c-fcc5-4ac1-9980-2e39126b9865",
-      "version"    : [1, 1, 0]
+      "version"    : [1, 1, 4]
     },
     {
       "description": "Bootloader",
@@ -42,7 +42,7 @@
       "language"   : "javascript",
       "type"       : "script",
       "uuid"       : "7d8f0358-a4a8-40a6-a1e6-eccf6b3d1760",
-      "version"    : [1, 1, 0]
+      "version"    : [1, 1, 4]
     }
   ]
 }

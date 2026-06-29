@@ -1,0 +1,122 @@
+{
+  "namespace": "server_form",
+  "server_form_factory": {
+    "type": "factory",
+    "control_ids": {
+      "custom_form": "@server_form.custom_form_panel",
+      "long_form": "@server_form.long_form_panel"
+    }
+  },
+
+  "custom_form_panel": {
+    "type": "panel",
+    "controls": [
+      {
+        "aethel_background@aethel_ui.aethel_grid": {
+          "layer": 1,
+          "controls": [
+            { "title@aethel_ui.aethel_label": {} },
+            { "body@aethel_ui.aethel_body": {} },
+            {
+              "content@common_dialogs.main_panel": {
+                "offset": [14, 60],
+                "size": [324, 180],
+                "layer": 2
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+
+  "long_form_panel": {
+    "type": "panel",
+    "controls": [
+      {
+        "aethel_background@aethel_ui.aethel_grid": {
+          "layer": 1,
+          "controls": [
+            { "title@aethel_ui.aethel_label": {} },
+            { "body@aethel_ui.aethel_body": {} },
+            {
+              "grid_content": {
+                "type": "panel",
+                "bindings": [
+                  {
+                    "binding_type": "view",
+                    "source_property_name": "(not ((#title_text - '§a§e§l') = #title_text))",
+                    "target_property_name": "#visible"
+                  }
+                ],
+                "controls": [
+                  {
+                    "grid": {
+                      "type": "grid",
+                      "grid_dimensions": [9, 5],
+                      "size": [324, 180],
+                      "offset": [14, 60],
+                      "anchor_from": "top_left",
+                      "anchor_to": "top_left",
+                      "grid_item_template": "aethel_ui.grid_item",
+                      "collection_name": "form_buttons",
+                      "layer": 2
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "medium_grid_content": {
+                "type": "panel",
+                "bindings": [
+                  {
+                    "binding_type": "view",
+                    "source_property_name": "(not ((#title_text - '§a§e§m') = #title_text))",
+                    "target_property_name": "#visible"
+                  }
+                ],
+                "controls": [
+                  {
+                    "grid": {
+                      "type": "grid",
+                      "grid_dimensions": [6, 2],
+                      "size": [204, 72],
+                      "offset": [14, 60],
+                      "anchor_from": "top_left",
+                      "anchor_to": "top_left",
+                      "grid_item_template": "aethel_ui.grid_item",
+                      "collection_name": "form_buttons",
+                      "layer": 2
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "standard_action_content": {
+                "type": "panel",
+                "bindings": [
+                  {
+                    "binding_type": "view",
+                    "source_property_name": "(((#title_text - '§a§e§l') = #title_text) and ((#title_text - '§a§e§m') = #title_text))",
+                    "target_property_name": "#visible"
+                  }
+                ],
+                "controls": [
+                  {
+                    "content@common_dialogs.main_panel_no_buttons": {
+                      "layer": 2,
+                      "offset": [14, 60],
+                      "size": [324, 180]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "namespace": "aethel_ui",
+
+  "aethel_label": {
+    "type": "label",
+    "offset": [7, 10],
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "text": "#title_text",
+    "color": [1.0, 0.84, 0.0],
+    "layer": 5
+  },
+
+  "aethel_body": {
+    "type": "label",
+    "size": ["100% - 14px", "default"],
+    "offset": [7, 24],
+    "anchor_from": "top_left",
+    "anchor_to": "top_left",
+    "text": "#body_text",
+    "color": [0.8, 0.8, 0.8],
+    "layer": 5,
+    "font_scale_factor": 0.9
+  },
+
+  "aethel_grid": {
+    "type": "panel",
+    "size": ["100%c", "100%c"],
+    "controls": [
+      {
+        "background": {
+          "type": "panel",
+          "size": [352, 270],
+          "layer": 1,
+          "controls": [
+            { "main_bg@common_dialogs.main_panel": { "layer": -1 } },
+            {
+              "inv_bg": {
+                "type": "image",
+                "texture": "invUI",
+                "size": [352, 270],
+                "layer": 1
+              }
+            },
+            { "title@aethel_ui.aethel_label": { "layer": 5 } },
+            { "body@aethel_ui.aethel_body": {} },
+            {
+              "close_button@common.close_button": {
+                "anchor_from": "top_right",
+                "anchor_to": "top_right",
+                "offset": [-2, 2],
+                "layer": 6
+              }
+            },
+            {
+              "grid": {
+                "type": "grid",
+                "grid_dimensions": [9, 5],
+                "size": [324, 180],
+                "offset": [14, 60],
+                "anchor_from": "top_left",
+                "anchor_to": "top_left",
+                "grid_item_template": "aethel_ui.grid_item",
+                "collection_name": "form_buttons",
+                "layer": 2
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+
+  "medium_grid": {
+    "type": "panel",
+    "size": ["100%c", "100%c"],
+    "controls": [
+      {
+        "background": {
+          "type": "panel",
+          "size": [232, 160],
+          "layer": 1,
+          "controls": [
+            { "main_bg@common_dialogs.main_panel": { "layer": -1 } },
+            { "title@aethel_ui.aethel_label": {} },
+            { "body@aethel_ui.aethel_body": { "size": [218, "default"] } },
+            {
+              "close_button@common.close_button": {
+                "anchor_from": "top_right",
+                "anchor_to": "top_right",
+                "offset": [-2, 2],
+                "layer": 6
+              }
+            },
+            {
+              "grid": {
+                "type": "grid",
+                "grid_dimensions": [6, 2],
+                "size": [204, 72],
+                "offset": [14, 60],
+                "anchor_from": "top_left",
+                "anchor_to": "top_left",
+                "grid_item_template": "aethel_ui.grid_item",
+                "collection_name": "form_buttons",
+                "layer": 2
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+
+  "grid_item": {
+    "type": "panel",
+    "size": [36, 46],
+    "controls": [
+      {
+        "button@common.button": {
+          "$pressed_button_name": "button.form_button_click",
+          "size": [32, 32],
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "controls": [
+            {
+              "default": {
+                "type": "panel",
+                "controls": [
+                  {
+                    "item_icon": {
+                      "type": "image",
+                      "size": [24, 24],
+                      "layer": 3,
+                      "bindings": [
+                        {
+                          "binding_name": "#form_button_texture",
+                          "binding_name_override": "#texture",
+                          "binding_type": "collection",
+                          "binding_collection_name": "form_buttons"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "hover": {
+                "type": "image",
+                "texture": "textures/ui/highlight_slot",
+                "size": [34, 34],
+                "layer": 4
+              }
+            }
+          ]
+        }
+      },
+      {
+        "label": {
+          "type": "label",
+          "size": [36, 10],
+          "offset": [0, 34],
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "text": "#form_button_text",
+          "color": [0.7, 0.7, 0.7],
+          "layer": 5,
+          "font_scale_factor": 0.5,
+          "bindings": [
+            {
+              "binding_name": "#form_button_text",
+              "binding_type": "collection",
+              "binding_collection_name": "form_buttons"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

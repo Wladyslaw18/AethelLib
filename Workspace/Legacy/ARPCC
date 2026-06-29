@@ -1,0 +1,487 @@
+================================================================================
+AEGIS RECIPROCAL PUBLIC CODE COVENANT (ARPCC) TEST
+Version 3.2
+Effective Date: June 6, 2026
+Copyright © 2026 The Licensor (as defined herein). All Rights Reserved.
+================================================================================
+
+Permission is granted to copy and distribute verbatim copies of this license
+document, but modification is not permitted.
+
+================================================================================
+IMPORTANT NOTICE
+================================================================================
+
+THIS IS A LEGALLY BINDING CONTRACT. BY DOWNLOADING, INSTALLING, COPYING,
+MODIFYING, DISTRIBUTING, OR OTHERWISE USING THE WORK (AS DEFINED BELOW),
+YOU ACCEPT ALL TERMS AND CONDITIONS OF THIS COVENANT. IF YOU DO NOT AGREE,
+YOU MAY NOT USE THE WORK AND MUST DELETE ALL COPIES IN YOUR POSSESSION.
+
+================================================================================
+PREAMBLE
+================================================================================
+
+This Covenant balances the freedom of open source collaboration with the
+sustainability of continued software maintenance. Individuals, academics,
+hobbyists, and non-commercial open source projects receive perpetual,
+royalty-free access. Commercial entities that derive economic value from
+the Work are required to contribute to its ongoing development through
+reasonable licensing fees. This ensures the Work remains free for those
+who cannot pay while allowing those who benefit commercially to support
+the project. The terms below define the precise boundaries of these rights
+and obligations.
+
+================================================================================
+ARTICLE 1: DEFINITIONS
+================================================================================
+
+1.1 "Work" shall mean the software source code, object code, documentation,
+configuration files, and all associated materials made available by the
+Licensor under this Covenant, including any updates, patches, or new versions
+thereof.
+
+1.2 "Licensor" shall mean the individual(s) or legal entity/entities designated
+as the copyright holder(s) in the copyright notice of the Work, or as designated
+in a standardized license configuration file (e.g., `license-config.json` or
+`package.json`) included in the root directory of the Work.
+
+1.3 "Recipient" or "You" shall mean any individual or legal entity that
+obtains access to the Work, downloads the Work, installs the Work, compiles
+the Work, executes the Work, copies the Work, modifies the Work, distributes
+the Work, or otherwise uses the Work in any manner. For purposes of this
+definition, "legal entity" includes any parent company, subsidiary, affiliate,
+or other entity under common control exceeding fifty percent (50%) ownership,
+and all such entities shall be treated as a single Recipient for purposes
+of determining compliance with this Covenant.
+
+1.4 "Derivative Work" shall mean any work that, based on clear and convincing
+evidence of substantial copying of original protected expression of the Work
+under applicable copyright law, is determined to be a copy or adaptation of
+the Work. Substantial similarity shall be determined under the ordinary
+observer test. A Derivative Work includes, without limitation, translation
+of the Work to another programming language, or modification of the Work's
+structure, sequence, or organization.
+
+    1.4.1 Evidence of Copying. For purposes of substantial similarity analysis,
+    the court or arbitrator may consider structural similarity of application
+    programming interfaces, including method signatures, class hierarchies,
+    and input-output patterns, as circumstantial evidence of copying. The
+    Licensor must show by clear and convincing evidence that the alleged
+    Derivative Work incorporates protected elements of the original structure,
+    sequence, or organization of the Work. This analysis shall not apply to
+    any structural elements that: (i) are functionally required for
+    interoperability with standard industry protocols or external platform
+    specifications; (ii) are dictated by efficiency or hardware constraints
+    under the merger doctrine; or (iii) constitute scenes à faire common to
+    the problem domain. The Recipient may rebut any allegation of copying by
+    showing: (i) independent creation documented by dated design records;
+    (ii) that any similarities result from standard programming practices or
+    industry conventions; or (iii) that the application programming interfaces
+    at issue are not protected under applicable copyright law. Nothing in
+    this Section 1.4 shall eliminate the independent creation defense or
+    shift the ultimate burden of proof from the Licensor.
+
+1.5 "Application" shall mean any work that makes use of an interface provided
+by the Work but which is not otherwise based on the Work. For purposes of
+this definition, defining a subclass of a class defined by the Work shall be
+deemed a mode of using an interface provided by the Work.
+
+1.6 "Combined Work" shall mean any software architecture produced by combining,
+linking, or otherwise routing data to or from an Application and the Work,
+regardless of the mechanism of integration, boundary isolation, or runtime
+environment.
+
+1.7 "Commercial Entity" shall mean: (a) any Recipient with annual revenue
+exceeding the applicable threshold published by Licensor at the official
+repository for the Work; (b) any entity with aggregate venture capital funding,
+angel investment, venture debt, or simple agreements for future equity
+exceeding the applicable threshold published by Licensor at the official
+repository for the Work; (c) any publicly traded entity; or (d) any government
+agency, state-owned enterprise, or registered non-profit organization with
+an operating budget exceeding ten million United States dollars ($10,000,000 USD).
+Use of the Work exclusively for personal projects, hobbyist development,
+academic instruction or research at degree-granting institutions, or non-profit
+humanitarian aid shall be exempt from Commercial Entity status and shall be
+governed exclusively by the non-commercial grant set forth in Section 2.1.
+
+1.8 "Annual Revenue" shall mean the gross revenue in United States dollars or
+equivalent of the Recipient's entire legal entity, aggregated across all parent
+company, subsidiary, and affiliate layers.
+
+1.9 "Developer Seat" shall mean any individual human developer, software
+engineer, or contractor who, on behalf of the Recipient, directly modifies,
+compiles, or actively maintains a software application integrating the Work.
+A Developer Seat expressly excludes: (a) individuals whose only interaction
+with the Work consists of code review without write access to the codebase;
+(b) automated build systems and continuous integration pipelines; and (c)
+contractors whose total engagement with the Work is less than forty (40) hours
+per calendar year. Developer Seat counts shall be calculated as the maximum
+number of qualifying individuals in any thirty (30) day period during the
+applicable license term.
+
+================================================================================
+ARTICLE 2: LICENSE GRANTS
+================================================================================
+
+2.1 Non-Commercial Grant. Recipients that are not Commercial Entities are
+hereby granted a perpetual, worldwide, non-exclusive, royalty-free copyright
+license to reproduce, copy, distribute, and prepare Derivative Works of the
+Work for non-commercial purposes only. Any distribution of the Work or
+Derivative Works under this Section 2.1 must include a complete copy of this
+Covenant.
+
+2.2 Commercial Evaluation Period. Commercial Entities are hereby granted a
+limited, royalty-free, non-transferable internal evaluation license for a
+period of forty (40) calendar days from the date of first access to the Work
+(the "Evaluation Period"). Continued use of the Work by a Commercial Entity
+beyond the Evaluation Period is prohibited without a separate paid Commercial
+License, except as provided in Section 2.3 below.
+
+2.3 Non-Monetization Exemption. A Commercial Entity shall be exempt from the
+requirement to purchase a paid Commercial License and may instead use the Work
+under the terms of the non-commercial grant set forth in Section 2.1, provided
+that: (a) the integrating Application or Combined Work is distributed fully
+public and open source under this Covenant or an Open Source Initiative-approved
+license; and (b) the Commercial Entity derives absolutely zero gross revenue,
+indirect monetization, advertising revenue, subscription fees, paid licensing,
+or financial return of any form from the distribution, hosting, execution, or
+operation of the Application or Combined Work. Any monetization of the
+integrating work, whether direct or indirect, shall immediately void this
+exemption retroactively to the first date of deployment, and the Commercial
+Entity shall be liable for all license fees that would have accrued during
+the period of such unauthorized monetization.
+
+2.4 Share-Alike Reciprocity for Core Modifications. Any Recipient that modifies
+the core source code of the Work must make such modifications publicly available
+under the terms of this Covenant. For purposes of this Section 2.4, "core source
+code" means any file that is part of the Work as originally distributed by
+Licensor, excluding configuration files, build scripts, and example code.
+Notwithstanding the foregoing, a Recipient may convey a Combined Work under
+terms of its own choosing, including proprietary commercial terms, provided
+that: (a) the Recipient does not modify the core source code of the Work
+itself; and (b) the Recipient permits modification of the portions of the
+Work contained in the Combined Work and reverse engineering solely of the
+Work for debugging such modifications.
+
+    2.4.1 Network Interaction Trigger. If You make the functionality of the Work or
+    any Derivative Work available to third parties over a network (including via APIs,
+    microservices, remote procedure calls, or inter-process communication), You must
+    either distribute the entire calling application under the terms of this Covenant
+    (or an Open Source Initiative-approved license), or purchase a paid Commercial
+    License under Article 3. For the avoidance of doubt, if You purchase a valid
+    Commercial License, the calling application and any integrating systems may
+    remain proprietary, and the Developer Seat count under Section 1.9 shall be
+    calculated based solely on the individuals who directly modify, compile, or
+    maintain the portion of the application or service that interfaces with the Work.
+
+2.5 Patent License. Subject to the terms and conditions of this Covenant,
+Licensor and its contributors hereby grant to Recipient a perpetual, worldwide,
+non-exclusive, no-charge, royalty-free, irrevocable patent license to make,
+have made, use, offer to sell, sell, import, and otherwise transfer the Work,
+solely with respect to patent claims necessarily infringed by the Work.
+If Recipient or any of its affiliates initiates patent litigation against
+Licensor alleging infringement by the Work, then any patent license granted
+to Recipient under this Section 2.5 shall terminate sixty (60) days after
+written notice from Licensor, unless Recipient withdraws such litigation
+within that period.
+
+================================================================================
+ARTICLE 3: COMMERCIAL TERMS
+================================================================================
+
+3.1 Paid License Required. Commercial Entities that continue to use the Work
+after the expiration of the forty (40) day Evaluation Period set forth in
+Section 2.2, and that do not qualify for the Non-Monetization Exemption under
+Section 2.3, must purchase a Commercial License from Licensor. Commercial
+License fees shall be calculated based on: (a) the Recipient's revenue tier
+as published at the official repository for the Work; (b) the number of
+Developer Seats as defined in Section 1.9; and (c) serverless invocations as
+defined in Section 3.2, if applicable. Licensor may update pricing and tier
+thresholds with sixty (60) days' written notice published at the official
+repository for the Work.
+
+3.2 Serverless Consumption Tariff. For deployments of the Work in serverless
+or cloud function execution environments, the Developer Seat calculation in
+Section 3.1 may be substituted by a consumption tariff of fifty United States
+dollars ($50.00 USD) per one million (1,000,000) monthly invocations. An
+"invocation" shall mean each distinct execution of a serverless function
+containing the Work that runs to completion or timeout. The following
+invocations shall be excluded from calculation: (a) health check requests
+designated by a configurable header; (b) failed invocations lasting less than
+one hundred (100) milliseconds; and (c) test invocations clearly identified
+via environment variable. Invocations shall be aggregated monthly across all
+functions, regions, and cloud providers used by Recipient. The consumption
+tariff shall be subject to a maximum cap of one hundred thousand United States
+dollars ($100,000 USD) per calendar year per Recipient. Invocations exceeding
+one hundred million (100,000,000) per month shall be discounted by fifty
+percent (50%) to twenty-five United States dollars ($25.00 USD) per one million
+(1,000,000) monthly invocations.
+
+3.3 Surcharges for Non-Compliance. If a Recipient voluntarily discloses
+non-compliant commercial use to Licensor prior to receiving any notice of
+breach from Licensor (a "Voluntary Self-Audit"), Licensor shall grant a
+retroactive Commercial License in exchange for payment of a compliance
+surcharge equal to one hundred twenty percent (120%) of the standard license
+fees for the period of unauthorized use. If Licensor discovers non-compliance
+without a Voluntary Self-Audit, and the court or arbitrator makes a specific
+finding of bad faith, willful infringement, or intentional underreporting
+by the Recipient, the Recipient shall pay a remediation surcharge equal to
+one hundred fifty percent (150%) of the standard license fees for the period
+of unauthorized use, in addition to any other remedies available under this
+Covenant or applicable law. In the event of a good-faith dispute over contract
+interpretation or an administrative calculation variance resulting in
+underreporting of less than five percent (5%), the standard license fee rate
+shall apply with no surcharge.
+
+3.4 High-Revenue Attribution. Any commercial product or service generating
+annual revenue exceeding five hundred thousand United States dollars
+($500,000 USD) that incorporates the Work shall include the following
+attribution notice in a clear, legible manner in its public documentation or
+user-accessible credits: "This product incorporates code licensed under the
+Aegis Reciprocal Public Code Covenant (ARPCC)." For digital products,
+a hyperlink to the full license text at the official repository shall suffice.
+
+================================================================================
+ARTICLE 4: COMPLIANCE AND ENFORCEMENT
+================================================================================
+
+4.1 Annual Certification. Each Commercial Entity subject to a paid Commercial
+License shall deliver to Licensor, within ninety (90) days of each anniversary
+of first access to the Work, a signed certificate certifying the following
+information for the preceding twelve (12) month period: (a) the maximum
+number of Developer Seats; (b) total serverless invocations; and (c) the
+Recipient's current revenue tier. The certificate shall be signed by an
+authorized executive officer of the Recipient, acting solely in their
+corporate capacity.
+
+4.2 Audit Rights. For any Commercial Entity using the Work, or any Recipient
+subject to a certification under Section 4.1, the Licensor may, no more than
+once per calendar year, trigger an audit of the Recipient's compliance with this
+Covenant. Audits may be triggered only upon written notice based on verifiable,
+public-facing technical evidence of integration (including but not limited to
+frontend bundle analysis, public API endpoints, package registry metadata, or
+dependency manifests). The audit shall be conducted during normal business hours
+by an independent certified public accountant upon thirty (30) days' written
+notice to Recipient. If the audit reveals underreporting of license fees by more
+than five percent (5%), the Recipient shall bear the reasonable costs of the
+audit. Recipient may redact proprietary, privileged, or personal data protected
+by applicable data protection laws, but must provide sufficient information to
+verify compliance.
+
+4.3 Corporate Liability for Attestation. The signing officer executing the
+certification under Section 4.1 does not assume personal liability in their
+individual capacity. The corporate Recipient shall assume full, non-delegable
+liability for the accuracy of such certification. If the Recipient is found
+by a court or arbitrator to have intentionally and willfully underreported its
+seat count, serverless invocations, or revenue tier in the certification, the
+Recipient shall pay a contractually agreed corporate penalty equal to two
+hundred percent (200%) of the total license fees that should have been reported
+and paid for the applicable certification period.
+
+4.4 Liability Caps for Small Violators. Notwithstanding any other provision
+of this Covenant, total damages recoverable from a Recipient for violation
+of this Covenant shall be capped at ten thousand United States dollars
+($10,000 USD) for entities with annual revenue under five hundred thousand
+United States dollars ($500,000 USD), and at five hundred United States dollars
+($500 USD) for individuals with annual revenue under ten thousand United States
+dollars ($10,000 USD).
+
+4.5 Termination for Non-Compliance. If a Recipient fails to cure any breach
+of this Covenant within thirty (30) days of receiving written notice thereof
+from Licensor, this Covenant and all rights granted hereunder shall terminate.
+Upon termination, Recipient shall immediately cease all use of the Work and
+remove all copies from production systems. Any unpaid license fees for the
+period prior to termination shall remain due and payable immediately.
+
+================================================================================
+ARTICLE 5: DECOUPLED AND IMMUTABLE ENVIRONMENTS
+================================================================================
+
+5.1 Decoupled Environments. The architectural or runtime environment of
+deployment, including but not limited to immutable ledgers, distributed
+systems, and decentralized networks, shall not diminish or otherwise affect
+Recipient's liability or obligations under this Covenant.
+
+5.2 Decentralized Autonomous Organizations. For deployments of the Work by a
+Decentralized Autonomous Organization ("DAO") with identifiable governance
+mechanisms, liability under this Covenant shall attach only to those members
+of the DAO who: (a) voted in favor of the deployment; and (b) received
+identifiable economic benefit from such deployment. Anonymous members of a
+DAO cannot be held personally liable, but the treasury of such DAO shall be
+subject to enforcement and attachment.
+
+5.3 Immutable Deployments and Liquidated Damages. If the Work or any Derivative
+Work is deployed to a public, immutable distributed ledger (including smart
+contracts, rollups, sidecars, or other blockchain-based execution environments)
+without a valid Commercial License, the deploying entity and its affiliates
+agree to pay pre-calculated liquidated damages of one hundred thousand United
+States dollars ($100,000 USD) per calendar year. This obligation shall attach as a
+debt to any associated treasury addresses, smart contract balances, or deployer
+keys used in connection with the deployment.
+
+================================================================================
+ARTICLE 6: INTELLECTUAL PROPERTY
+================================================================================
+
+6.1 Notice Preservation. All copyright, patent, trademark, and trade secret
+notices contained within the Work must be preserved in all copies and
+Derivative Works.
+
+6.2 Trademark and Rebranding. Use of Licensor's protected trademarks, service
+marks, logos, or product names associated with the Work is prohibited except
+for nominative fair use to describe compatibility. Recipients distributing
+Derivative Works or forks of the Work must completely remove all such marks and
+apply distinct branding. Registering packages containing the Licensor's
+protected marks on public package registries, including but not limited to npm,
+PyPI, Maven Central, or similar repositories, without Licensor's prior written
+consent is strictly prohibited.
+
+================================================================================
+ARTICLE 7: GOVERNING LAW AND DISPUTE RESOLUTION
+================================================================================
+
+7.1 Governing Law and Dynamic Routing.
+    (a) Governing Law: This Covenant shall be governed by and construed in
+        accordance with the laws of the jurisdiction of the principal place of
+        business or primary residence of the Licensor at the time any dispute
+        arises, or as designated in the standardized license configuration file
+        included in the root directory of the Work (the "Home Forum"). If the
+        Licensor has no registered physical address or designated forum, the
+        Home Forum shall be: (i) Delaware, USA, if the Licensor is resident or
+        incorporated in the United States; or (ii) London, United Kingdom, if
+        the Licensor is resident or incorporated outside the United States.
+    (b) Forum Selection: Any dispute arising under or relating to this Covenant
+        shall be brought exclusively in the competent courts of the Home Forum,
+        or if such courts do not recognize reciprocal enforcement, then binding
+        arbitration under ICDR Rules. The physical seat of arbitration shall be
+        the capital city of the Home Forum (or Wilmington, Delaware if the Home
+        Forum is Delaware; or London, UK if the Home Forum is the United
+        Kingdom), but the parties agree that all submissions, filings, and
+        hearings shall be conducted virtually.
+    (c) Small Claims Exception: Either party may elect to bring claims in local
+        small claims courts of competent jurisdiction where the total monetary
+        relief sought is less than twenty-five thousand United States dollars
+        ($25,000 USD), provided such claim does not seek injunctive relief.
+
+7.2 Exclusive Jurisdiction. Subject to the Dynamic Routing provisions of Section
+7.1, any dispute arising under or relating to this Covenant shall be brought
+exclusively in the courts of the Home Forum. Recipient consents to personal
+jurisdiction in such courts and waives any objection based on forum non conveniens.
+
+7.3 Fee Shifting. The prevailing party in any dispute arising under this
+Covenant shall recover its reasonable attorneys' fees and costs, including
+internal legal department costs calculated at market rates. Recipients with
+annual revenue under two hundred fifty thousand United States dollars
+($250,000 USD) shall not be liable for Licensor's attorneys' fees unless a
+court finds that Recipient's claim or defense was frivolous, unreasonable,
+or without foundation.
+    (a) Multiplier for Willful Non-Compliance: If the prevailing party is the
+        Licensor, and the court or arbitrator makes a specific finding of bad
+        faith, willful infringement, or intentional corporate concealment by the
+        Recipient, the Recipient shall pay a multiplier of 1.5x the actual
+        reasonable fees and costs, increasing to 2.0x if the Recipient fails to
+        cure the breach within thirty (30) days of the final ruling, up to a
+        maximum cap of five million United States dollars ($5,000,000 USD).
+    (b) In the absence of a specific finding of bad faith, willful
+        infringement, or intentional corporate concealment, or if any competent
+        court or arbitrator finds the multiplier unenforceable, the prevailing
+        party shall recover its actual, reasonable attorneys' fees and costs
+        without any multiplier.
+
+7.4 Statute of Limitations. Any claim arising under this Covenant must be
+brought within two (2) years of discovery of the violation, or four (4) years
+from the actual occurrence of the violation, whichever is earlier. If applicable
+law provides a longer statute of limitations that cannot be contractually
+subject to shortening, such longer statutory period shall apply.
+
+================================================================================
+ARTICLE 8: COMPLIANCE TELEMETRY
+================================================================================
+
+8.1 Voluntary Telemetry Features. The Work may include optional compliance
+telemetry features. Such features shall be disabled by default and shall
+only transmit data if Recipient's administrator explicitly opts in and enables
+such features. Opt-in telemetry may transmit the following anonymized,
+non-personal usage data to Licensor: (a) rolling thirty (30) day count of
+unique build machines; (b) deployment environment type (container, virtual
+machine, or bare metal); and (c) geographic region at the country level.
+
+8.2 Telemetry Discount. Recipients who voluntarily enable telemetry for the
+duration of their license term shall receive a fifteen percent (15%) discount
+on annual license fees, which shall be applied retroactively to the start of
+the license term. Telemetry data shall be retained for no more than thirteen
+(13) months, or twelve (12) months after termination of the license, whichever
+is shorter. Data older than six (6) months shall be anonymized to country-level
+only and aggregated across all recipients. Telemetry data shall not be used as
+sole evidence of breach but may be used to establish reasonable suspicion of
+underpayment exceeding twenty percent (20%) of true seat count to trigger an
+audit under Section 4.2.
+
+================================================================================
+ARTICLE 9: WARRANTY DISCLAIMER AND LIMITATION OF LIABILITY
+================================================================================
+
+9.1 Disclaimer of Warranty. THE WORK IS PROVIDED ON AN "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING,
+WITHOUT LIMITATION, ANY WARRANTIES OR CONDITIONS OF TITLE, NON-INFRINGEMENT,
+MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. RECIPIENT IS SOLELY
+RESPONSIBLE FOR DETERMINING THE APPROPRIATENESS OF USING OR REDISTRIBUTING
+THE WORK.
+
+9.2 Limitation of Liability. IN NO EVENT AND UNDER NO LEGAL THEORY, WHETHER IN
+TORT (INCLUDING NEGLIGENCE), CONTRACT, OR OTHERWISE, SHALL LICENSOR BE LIABLE
+TO RECIPIENT FOR DAMAGES, INCLUDING ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL,
+OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER ARISING AS A RESULT OF THIS COVENANT
+OR THE USE OR INABILITY TO USE THE WORK, EVEN IF LICENSOR HAS BEEN ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGES.
+
+9.3 Non-Refundability. All license fees, maintenance allocations, and payments
+made to Licensor under this Covenant are final and non-refundable. Recipient
+explicitly waives any right to claim restitution, refunds, or recovery of fees
+paid under protest or during active disputes, except as ordered by a final,
+non-appealable judgment of a court of competent jurisdiction.
+
+================================================================================
+ARTICLE 10: SEVERABILITY AND MUTUAL TERMINATION
+================================================================================
+
+10.1 Standard Severability. If any provision of this Covenant is held to be
+invalid or unenforceable by a court of competent jurisdiction, such provision
+shall be reformed to the minimum extent necessary to make it valid and
+enforceable, and the remaining provisions shall remain in full force and effect.
+
+10.2 Mutual Termination on Litigation. If You or any of Your affiliates initiate
+any legal proceeding or lawsuit challenging the enforceability or validity of any
+provision of this Covenant (including Section 2.3, Section 2.4, Section 2.4.1,
+Article 3, or Section 5.2), then all licenses and rights granted to You under
+this Covenant shall terminate automatically and immediately. Upon termination,
+You must immediately cease all use of the Work, remove it from all production
+environments, and destroy all copies in Your possession. This termination
+shall apply solely to the challenging party, and all other Recipients shall
+retain their full rights under this Covenant without modification.
+
+10.3 Rationale. This Section 10.2 serves a legitimate commercial purpose:
+preventing a well-funded Recipient from strategically invalidating license
+terms for its own benefit while other Recipients remain bound. If a Recipient
+does not agree with the terms of this Covenant, its remedy is to refrain from
+using the Work, not to use the Work and then litigate to escape its obligations.
+
+================================================================================
+ARTICLE 11: MISCELLANEOUS
+================================================================================
+
+11.1 Entire Agreement. This Covenant constitutes the entire agreement between
+the parties concerning the subject matter hereof and supersedes all prior
+understandings, negotiations, or agreements, whether written or oral.
+
+11.2 No Waiver. Any failure by Licensor to enforce any right or provision of
+this Covenant shall not constitute a waiver of such right or provision, nor
+shall it affect Licensor's right to enforce such right or provision in the future.
+
+11.3 Assignment. This Covenant is personal to Recipient and may not be assigned,
+transferred, or sublicensed without Licensor's prior written consent. Any
+attempted assignment in violation of this Section 11.3 shall be void.
+
+================================================================================
+END OF COVENANT
+================================================================================

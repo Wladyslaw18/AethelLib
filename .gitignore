@@ -12,7 +12,8 @@ package-lock.json
 IndexUIBeta2.1.0.txt
 index.UId.txt
 index.d.txt
-Legacy/
+Workspace/*
+!Workspace/Legacy/
 Reference/
 tools/Output/
 AethelLib_commands*.txt
