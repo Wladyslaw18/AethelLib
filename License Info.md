@@ -73,7 +73,7 @@ Your Cool Project/
 
 One file. One line. One typo fix. You touch ANYTHING outside Plugins/?
 
-  YOUR ENTIRE PROJECT IS NOW AGPL. THE WHOLE THING. EVERY LINE. 💀
+  YOUR ENTIRE PROJECT IS NOW AGPL. THE WHOLE THING. EVERY LINE. 
 
   STAY IN THE SAFE ZONE
 
