@@ -131,7 +131,7 @@ await import("./MyPlugin/MyPlugin.js")
 
 ---
 
-## &#x2630; LICENSE (LGPL v3.0)
+## &#x2630; LICENSE (AGPL v3.0) WITH LINKING EXCEPTION
 
 - **Your Logic = Private** — Link your own top-secret, closed-source addon to AethelLib. Keep your secrets. We don't care.
 - **The Core = Public** — If you optimize the Kernel or fix a bug in the Database, you **MUST** share that back. The backbone stays strong for everyone.&#x1F592;&#xFE0E;  for more details read License Info
