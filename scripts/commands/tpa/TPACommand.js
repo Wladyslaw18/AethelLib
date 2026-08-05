@@ -18,19 +18,19 @@ export const TPACommand = {
     // command category.
     category: "teleport",
     // native parameter definitions.
-    params: [
+    parameters: [
         { name: "player", type: Kernel.CustomCommandParamType.PlayerSelector, optional: false }
     ],
 
     // ----------------------------------------------------------------------------
     // | method: execute                                                          |
-    // | the handshake initialization vector. resolves the target and triggers    |
+    // | the handshake initialization vector. resolves the target and triggers     |
     // | the request logic in the TPA service.                                   |
     // ----------------------------------------------------------------------------
     async execute(_data, player, args) {
         // basic syntax check.
         if (args.length === 0) {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:tpa <player_name>")
+            player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77Usage: /ae:tpa <player_name>")
             return
         }
 
@@ -41,13 +41,13 @@ export const TPACommand = {
 
         // check if target is online.
         if (!targetPlayer) {
-            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player not found or offline.`)
+            player.sendMessage(`\u00A7c\u00A7l\u00BB \u00A77Player not found or offline.`)
             return
         }
 
         // check for self-request block.
         if (targetPlayer.id === player.id) {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot send a TPA request to yourself.")
+            player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77You cannot send a TPA request to yourself.")
             return
         }
 

@@ -18,7 +18,7 @@ export const TPAHereCommand = {
     // command category.
     category: "teleport",
     // native parameter definitions.
-    params: [
+    parameters: [
         { name: "player", type: Kernel.CustomCommandParamType.PlayerSelector, optional: false }
     ],
 
@@ -30,7 +30,7 @@ export const TPAHereCommand = {
     async execute(_data, player, args) {
         // syntax check.
         if (args.length === 0) {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:tpahere <player>");
+            player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77Usage: /ae:tpahere <player>");
             return
         }
 
@@ -41,13 +41,13 @@ export const TPAHereCommand = {
 
         // check if target is online.
         if (!targetPlayer) {
-            player.sendMessage(`\u00A7c\u00A7l» \u00A77Player not found.`);
+            player.sendMessage(`\u00A7c\u00A7l\u00BB \u00A77Player not found.`);
             return
         }
 
         // self-request block.
         if (targetPlayer.id === player.id) {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77You cannot send a TPA request to yourself.");
+            player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77You cannot send a TPA request to yourself.");
             return
         }
 
