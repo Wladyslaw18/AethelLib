@@ -29,11 +29,12 @@ export function init() {
     SignalBus.on("economy:balanceChanged", ({ player, newBalance }) => {
         if (!player?.isValid) return
         try {
+            const rawPlayer = player.__rawEntity__ || player;
             const objective = Kernel.world.scoreboard.getObjective(OBJECTIVE_ID)
             if (objective) {
                 const clamped = Math.max(-2147483648, Math.min(2147483647, Math.floor(newBalance)))
                 // @ts-ignore
-                objective.setScore(player, clamped)
+                objective.setScore(rawPlayer, clamped)
             }
         } catch (error) {
             console.error(`[ScoreboardMirror] SYNC_FAILURE: ${error}`)
@@ -51,13 +52,14 @@ export function init() {
         Kernel.system.runTimeout(() => {
             if (!player.isValid) return
             try {
+                const rawPlayer = player.__rawEntity__ || player;
                 const EconomyStore = Kernel.get("economy")
                 const balance = EconomyStore.getBalance(player)
                 const objective = Kernel.world.scoreboard.getObjective(OBJECTIVE_ID)
                 if (objective) {
                     const clamped = Math.max(-2147483648, Math.min(2147483647, Math.floor(balance)))
                     // @ts-ignore
-                    objective.setScore(player, clamped)
+                    objective.setScore(rawPlayer, clamped)
                 }
             } catch (error) {
                 console.error(`[ScoreboardMirror] INITIAL_SYNC_FAILURE: ${error}`)

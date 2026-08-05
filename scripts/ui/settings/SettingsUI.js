@@ -30,10 +30,11 @@ export async function showSettingsUI(player) {
     // Apply scoreboard visibility
     if (!newScoreboard) {
         try {
+            const rawPlayer = player.__rawEntity__ || player;
             const objective = Kernel.world.scoreboard.getObjective("money")
             if (objective) {
                 // @ts-ignore
-                objective.setScore(player, 0)
+                objective.setScore(rawPlayer, 0)
             }
         } catch { /* ignore */ }
     }
