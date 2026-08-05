@@ -1,12 +1,12 @@
 import { Kernel } from "../../core/Kernel.js";
-import { BanknoteStore } from "../../systems/banknote/BanknoteStore.js"
-import { EconomyStore } from "../../systems/economy/EconomyStore.js"
-import { ValidationHelper } from "../../utils/ValidationHelper.js"
+import { BanknoteStore } from "../../systems/banknote/BanknoteStore.js";
+import { EconomyStore } from "../../systems/economy/EconomyStore.js";
+import { ValidationHelper } from "../../utils/ValidationHelper.js";
 
 // ----------------------------------------------------------------------------
 // | object: WithdrawCommand                                                  |
-// | converts digital liquidity into physical banknotes.                     |
-// | highly complex, inventory space counts, atomic debits. sleep is for the weak.|
+// | converts digital liquidity into physical banknotes.                      |
+// | atomic debits, strict space checks, async money transactions.           |
 // ----------------------------------------------------------------------------
 export const WithdrawCommand = {
     name: "withdraw",
@@ -15,148 +15,135 @@ export const WithdrawCommand = {
     permission: "essentials.withdraw",
     category: "economy",
     
-    // NATIVE SCHEMA DEFINITION: C++ validated!
     params: [
         { name: "amount", type: Kernel.CustomCommandParamType.Integer, optional: false }
     ],
 
-    execute(_data, player, args) {
+    async execute(_data, player, args) {
         const [amount] = args;
+        const rawPlayer = player.__rawEntity__ || player;
 
-        if (amount === undefined) {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:withdraw <amount>")
-            return
+        if (amount === undefined || typeof amount !== "number" || isNaN(amount) || !Number.isInteger(amount)) {
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:withdraw <amount> (must be a valid positive integer)");
+            return;
         }
         
-        // step 1: industrial bound validation. no float overflow exploits today.
         if (!ValidationHelper.isValidMoney(amount)) {
             player.sendMessage("\u00A7c\u00A7l» \u00A77Invalid liquidity amount. Exceeds safe bounds.");
-            return
+            return;
         }
 
-        // minimum operational boundary: withdrawals under 100 are too cheap to print.
         if (amount < 100) {
             player.sendMessage("\u00A7c\u00A7l» \u00A77Minimum withdrawal amount is \u00A7e$100");
-            return
+            return;
         }
 
-        // maximum operational boundary: printing over a mil at once breaks the economy.
         if (amount > 1000000) {
             player.sendMessage("\u00A7c\u00A7l» \u00A77Maximum withdrawal amount is \u00A7e$1,000,000");
-            return
+            return;
         }
 
-        // step 2: balance check. query persistent store to make sure they aren't broke.
-        const balance = EconomyStore.getBalance(player.id)
+        const balance = EconomyStore.getBalance(rawPlayer);
         if (balance < amount) {
             player.sendMessage(`\u00A7c\u00A7l» \u00A77Insufficient funds. You have ${BanknoteStore.formatMoney(balance)}`);
-            return
+            return;
         }
 
-        // step 3: inventory capacity check. counting slot sizes so we don't drop items on the floor.
-        const requiredSlots = Math.ceil(amount / 64000) 
-        const availableSlots = getAvailableInventorySlots(player)
+        const requiredSlots = Math.ceil(amount / 64000);
+        const availableSlots = getAvailableInventorySlots(rawPlayer);
         
         if (availableSlots < requiredSlots) {
-            player.sendMessage(`\u00A7c\u00A7l» \u00A77Not enough inventory space. Need ${requiredSlots} slots, have ${availableSlots}`);
-            return
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Not enough empty inventory space. Need ${requiredSlots} empty slot(s), have ${availableSlots}`);
+            return;
         }
 
-        // step 4: transaction execution. system.run keeps this atomic inside the tick.
-        Kernel.system.run(() => {
-            try {
-                // remove digital balance first.
-                if (!EconomyStore.removeMoney(player.id, amount)) {
-                    player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to withdraw money.");
-                    return
-                }
+        // Deduct digital money first with await
+        const debited = await EconomyStore.removeMoney(rawPlayer, amount);
+        if (!debited) {
+            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to withdraw money. Account sync error.");
+            return;
+        }
 
-                // create banknotes greedily.
-                const created = createBanknotes(player, amount)
-                
-                if (created > 0) {
-                    player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully withdrew ${BanknoteStore.formatMoney(amount)} into ${created} banknote(s)`);
-                    player.sendMessage("\u00A77Right-click banknotes to redeem them");
-                } else {
-                    // if physical banknote injection fails, refund the digital currency. transactional safety!
-                    EconomyStore.addMoney(player.id, amount)
-                    player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to create banknotes. Money refunded.");
-                }
-            } catch (error) {
-                // absolute fallback refund to prevent money disappearing. we don't want support tickets.
-                console.error(`Withdraw error: ${error}`)
-                player.sendMessage("\u00A7c\u00A7l» \u00A77An error occurred during withdrawal.");
-                EconomyStore.addMoney(player.id, amount)
+        try {
+            const created = await createBanknotes(rawPlayer, amount);
+            
+            if (created > 0) {
+                player.sendMessage(`\u00A7a\u00A7l» \u00A7fSuccessfully withdrew ${BanknoteStore.formatMoney(amount)} into ${created} banknote(s)`);
+                player.sendMessage("\u00A77Right-click banknotes to redeem them");
+            } else {
+                await EconomyStore.addMoney(rawPlayer, amount);
+                player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to create banknotes. Money refunded.");
             }
-        })
+        } catch (error) {
+            console.error(`[WithdrawCommand] Execution error: ${error}`);
+            await EconomyStore.addMoney(rawPlayer, amount);
+            player.sendMessage("\u00A7c\u00A7l» \u00A77An error occurred during withdrawal. Full refund issued.");
+        }
     }
-}
+};
 
-function createBanknotes(player, totalAmount) {
-    // Standard industrial denominations
-    const denominations = [1000000, 500000, 100000, 50000, 10000, 5000, 1000, 500, 100]
-    let remaining = totalAmount
-    let created = 0
+async function createBanknotes(player, totalAmount) {
+    const rawPlayer = player.__rawEntity__ || player;
+    const denominations = [1000000, 500000, 100000, 50000, 10000, 5000, 1000, 500, 100];
+    let remaining = totalAmount;
+    let created = 0;
 
-    // greedy denomination splitting algorithm. my CS professor would be proud.
+    const invComp = rawPlayer.getComponent(Kernel.EntityComponentTypes.Inventory);
+    const container = invComp?.container;
+    if (!container) return 0;
+
     for (const denom of denominations) {
         while (remaining >= denom) {
-            const banknote = BanknoteStore.createBanknote(denom, player.id, player.name)
+            const banknote = BanknoteStore.createBanknote(denom, rawPlayer.id, rawPlayer.name);
             
             if (!BanknoteStore.storeBanknoteData(banknote)) {
-                console.error(`Failed to store banknote data for ${banknote.id}`)
-                continue
+                console.error(`[WithdrawCommand] Failed to store banknote data for ${banknote.id}`);
+                continue;
             }
 
-            const item = new Kernel.ItemStack(BanknoteStore.getBanknoteId(), 1)
-            item.nameTag = BanknoteStore.getBanknoteName(denom)
-            item.setLore(BanknoteStore.getBanknoteLore(banknote))
-            // NOTE: setDynamicProperty throws UnsupportedFunctionalityError on stackable items (like minecraft:paper)
-            // in Bedrock. The try-catch prevents crashes, and we fall back to lore scanning in BanknoteHandler.
-            try { item.setDynamicProperty("ae:banknote_id", banknote.id) } catch (e) {}
+            const item = new Kernel.ItemStack(BanknoteStore.getBanknoteId(), 1);
+            item.nameTag = BanknoteStore.getBanknoteName(denom);
+            item.setLore(BanknoteStore.getBanknoteLore(banknote));
+            try { item.setDynamicProperty("ae:banknote_id", banknote.id); } catch (e) {}
             
-            // inventory injection. using official Kernel.EntityComponentTypes logic now.
-            const container = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container // container?.
-            const leftover = container.addItem(item)
+            const leftover = container.addItem(item);
             
             if (leftover === undefined) {
-                remaining -= denom
-                created++
+                remaining -= denom;
+                created++;
             } else {
-                // inventory overflowed. break loop immediately.
-                break
+                break;
             }
         }
         
-        if (remaining < 100) break 
+        if (remaining < 100) break;
     }
 
-    // refund what couldn't be printed due to space constraints.
     if (remaining > 0) {
-        EconomyStore.addMoney(player.id, remaining)
-        player.sendMessage(`\u00A77Could not convert ${BanknoteStore.formatMoney(remaining)} - refunded to account`);
+        await EconomyStore.addMoney(rawPlayer, remaining);
+        rawPlayer.sendMessage(`\u00A77Could not convert ${BanknoteStore.formatMoney(remaining)} - refunded to account`);
     }
 
-    return created
+    return created;
 }
 
 function getAvailableInventorySlots(player) {
     try {
-        const container = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container // container?.
-        let available = 0
-        
+        const rawPlayer = player.__rawEntity__ || player;
+        const container = rawPlayer.getComponent(Kernel.EntityComponentTypes.Inventory)?.container;
+        if (!container) return 0;
+
+        let available = 0;
         for (let i = 0; i < container.size; i++) {
-            const item = container.getItem(i)
+            const item = container.getItem(i);
             if (!item) {
-                available++
-            } else if (item.typeId === BanknoteStore.getBanknoteId() && item.amount < 64) {
-                available++
+                available++;
             }
         }
         
-        return available
+        return available;
     } catch (error) {
-        console.error(`Failed to check inventory space: ${error}`)
-        return 0
+        console.error(`[WithdrawCommand] Failed to check inventory space: ${error}`);
+        return 0;
     }
 }
