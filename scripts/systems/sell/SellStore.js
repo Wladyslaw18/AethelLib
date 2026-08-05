@@ -183,22 +183,16 @@ export class SellStore {
      */
     static givePlayerItems(player, itemId, quantity) {
         try {
-            console.warn(`[Test Debug] givePlayerItems called for ${player.id}, ${itemId}, ${quantity}`);
             const container = player.getComponent(Kernel.EntityComponentTypes.Inventory)?.container
             if (!container) {
-                console.warn(`[Test Debug] givePlayerItems: no container found!`);
                 return false
             }
             
             const { ItemStack } = Kernel
-            console.warn(`[Test Debug] givePlayerItems: creating ItemStack for ${itemId}`);
             const itemStack = new ItemStack(itemId, quantity)
-            console.warn(`[Test Debug] givePlayerItems: calling container.addItem`);
             const leftover = container.addItem(itemStack)
-            console.warn(`[Test Debug] givePlayerItems: container.addItem returned: ${leftover ? `ItemStack(amount=${leftover.amount})` : "undefined/null"}`);
             
             if (leftover && leftover.amount > 0) {
-                console.warn(`[Test Debug] givePlayerItems: calling spawnItem for leftover amount ${leftover.amount}`);
                 player.dimension.spawnItem(leftover, player.location)
             }
             player.sendMessage(`\u00A7a\u00A7l» \u00A7fRefunded \u00A7e${quantity}x ${itemId}\u00A7f.`);
