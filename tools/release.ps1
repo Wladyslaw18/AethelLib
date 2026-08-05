@@ -16,9 +16,9 @@ $ToolsDir = if ($PSScriptDir -like "*tools*") { $PSScriptDir } else { Join-Path 
 $ProjectRoot = (Get-Item $ToolsDir).Parent.FullName
 $ManifestPath = Join-Path $ProjectRoot "manifest.json"
 
-$OutputDir  = Join-Path $ToolsDir "Output"
-$BackupDir  = Join-Path $OutputDir "backups"
-$ReleaseDir = Join-Path $OutputDir "releases"
+$OutputDir  = Join-Path $ProjectRoot "releases"
+$ReleaseDir = Join-Path $ProjectRoot "releases"
+$BackupDir  = Join-Path $ProjectRoot "backups"
 $BuildDir   = Join-Path $ProjectRoot "build"
 
 # Ensure output directories exist
