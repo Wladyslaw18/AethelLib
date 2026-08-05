@@ -1,4 +1,5 @@
 import { showAuctionUI } from "../../ui/auction/AuctionUI.js"
+import { Kernel } from "../../core/Kernel.js";
 
 // ----------------------------------------------------------------------------
 // | object: AuctionCommand                                                   |

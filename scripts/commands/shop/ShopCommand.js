@@ -1,4 +1,5 @@
 import { showShopUI } from "../../ui/economy/ShopUI.js"
+import { Kernel } from "../../core/Kernel.js";
 
 // ----------------------------------------------------------------------------
 // | object: ShopCommand                                                      |
