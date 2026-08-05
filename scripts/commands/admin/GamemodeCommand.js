@@ -13,7 +13,7 @@ export const GamemodeCommand = {
     category: "Admin",
     
     // NATIVE SCHEMA DEFINITION: direct bindings!
-    params: [
+    parameters: [
         { name: "player", type: Kernel.CustomCommandParamType.PlayerSelector, optional: false },
         { name: "mode",   type: Kernel.CustomCommandParamType.String, optional: false }
     ],
@@ -23,7 +23,7 @@ export const GamemodeCommand = {
         const [target, mode] = args;
 
         if (!target || !mode) {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77Usage: /ae:gamemode <player> <mode>");
+            player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77Usage: /ae:gamemode <player> <mode>");
             player.sendMessage("\u00A78- Modes: survival, creative, adventure, spectator");
             return;
         }
@@ -32,7 +32,7 @@ export const GamemodeCommand = {
         
         // check if requested mode exists.
         if (!isValidGamemode(modeToken)) {
-            player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid mode: '\u00A7e${modeToken}\u00A77'. Use: survival, creative, adventure, spectator`);
+            player.sendMessage(`\u00A7c\u00A7l\u00BB \u00A77Invalid mode: '\u00A7e${modeToken}\u00A77'. Use: survival, creative, adventure, spectator`);
             return;
         }
 
@@ -46,7 +46,7 @@ export const GamemodeCommand = {
             };
             const permKey = shortMap[modeToken];
             if (!PM.hasPermission(player, permKey) && !PM.hasPermission(player, "essentials.gamemode")) {
-                player.sendMessage(`\u00A7c\u00A7l» \u00A77You do not have permission to switch to ${modeToken} mode.`);
+                player.sendMessage(`\u00A7c\u00A7l\u00BB \u00A77You do not have permission to switch to ${modeToken} mode.`);
                 return;
             }
         }
@@ -64,10 +64,10 @@ export const GamemodeCommand = {
                 
                 target.setGameMode(modeMap[modeToken] || Kernel.GameMode.Survival)
                 
-                target.sendMessage(`\u00A7a\u00A7l» \u00A7fYour game mode was set to \u00A7e${modeToken}\u00A7f by \u00A7e${player.name}\u00A7f.`);
-                player.sendMessage(`\u00A7a\u00A7l» \u00A7fSet \u00A7e${target.name}\u00A7f's game mode to \u00A7e${modeToken}\u00A7f.`);
+                target.sendMessage(`\u00A7a\u00A7l\u00BB \u00A7fYour game mode was set to \u00A7e${modeToken}\u00A7f by \u00A7e${player.name}\u00A7f.`);
+                player.sendMessage(`\u00A7a\u00A7l\u00BB \u00A7fSet \u00A7e${target.name}\u00A7f's game mode to \u00A7e${modeToken}\u00A7f.`);
             } catch (error) {
-                player.sendMessage(`\u00A7c\u00A7l» \u00A77Failed to change game mode for '${target.name}'.`);
+                player.sendMessage(`\u00A7c\u00A7l\u00BB \u00A77Failed to change game mode for '${target.name}'.`);
             }
         })
     }

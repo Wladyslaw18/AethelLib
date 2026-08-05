@@ -1,4 +1,4 @@
-import { Kernel } from "../../core/Kernel.js"
+﻿import { Kernel } from "../../core/Kernel.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 import { ValidationHelper } from "../../utils/ValidationHelper.js"
 
@@ -12,12 +12,12 @@ export const BanCommand = {
     description: "Permanently ban a player",
     usage: "/ae:ban <player> [duration] [reason]",
     permission: "essentials.ban",
-    category: "ADMINISTRATION",
+    category: "Admin",
     // Intercepted by script for complex string handling.
     native: false,
     
     // NATIVE SCHEMA DEFINITION
-    params: [
+    parameters: [
         { name: "player", type: "player", optional: false },
         { name: "duration", type: "string", optional: true },
         { name: "reason", type: "string", optional: true }
@@ -29,21 +29,21 @@ export const BanCommand = {
         const reason = args.slice(consumedArgs + 1).join(" ") || "Breaking the rules";
 
         if (!target) {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77Syntax Error: Player target required.");
+            player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77Syntax Error: Player target required.");
             return;
         }
 
         // step 1: hierarchy check. check if target is an OP or high-clearance dev so moderators don't ban admins.
         const PermissionManager = Kernel.get("permissions")
         if (PermissionManager && !PermissionManager.canActOn(player, target)) {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77Permission Denied: Target is more powerful than you.");
+            player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77Permission Denied: Target is more powerful than you.");
             return
         }
 
         // step 2: parse the time string. convert '1d' or '2h' to milliseconds.
         const banDuration = parseDuration(duration)
         if (banDuration === null) {
-            player.sendMessage(`\u00A7c\u00A7l» \u00A77Invalid duration: '${duration}'`);
+            player.sendMessage(`\u00A7c\u00A7l\u00BB \u00A77Invalid duration: '${duration}'`);
             return
         }
 
@@ -80,9 +80,9 @@ export const BanCommand = {
                 }
             })
 
-            player.sendMessage(`\u00A7a\u00A7l» \u00A7f${target.name} has been banned.`);
+            player.sendMessage(`\u00A7a\u00A7l\u00BB \u00A7f${target.name} has been banned.`);
         } else {
-            player.sendMessage("\u00A7c\u00A7l» \u00A77Failed to save ban record.");
+            player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77Failed to save ban record.");
         }
     }
 }
