@@ -2,38 +2,39 @@ import * as mc from "@minecraft/server";
 import * as mcui from "@minecraft/server-ui";
 import { TickScheduler } from "./scheduler/TickScheduler.js";
 import { SignalBus } from "./signalbus/SignalBus.js";
-import { DependencySorter } from "../utils/DependencySorter.js";
 
-// ----------------------------------------------------------------------------
-// | class: Kernel                                                            |
-// | the central nervous system. if this fails, we all go home.               |
-// | handles service registration, plugin lifecycles, and native api proxies. |
-// ----------------------------------------------------------------------------
+// Kernel: central service registration, plugin lifecycle management, and native API proxies.
 export class Kernel {
-    // ----------------------------------------------------------------------------
-    // | static properties                                                        |
-    // | just some maps to keep track of stuff. standard boilerplate.             |
-    // ----------------------------------------------------------------------------
-    
-    // holds the actual system instances (economy, db, etc)
+    // Registry of core system instances
     static #systems = new Map();
-    // holds metadata for external plugins
-    static #plugins = new Map();
-    // holds services that plugins want to share with each other
+    // Registry of shared services exposed by plugins
     static #serviceProviders = new Map();
+    // Set of disabled system IDs
     static #disabledSystems = new Set();
+    // Cached system proxy instance
     static #systemProxy = null;
+    // Cached null function callbacks for disabled systems
     static #nullFunctions = new Map();
 
-    // ----------------------------------------------------------------------------
-    // | native proxies                                                           |
-    // | wrapping these so we don't have to import @minecraft/server everywhere.  |
-    // | also makes it easier to mock things if we ever get unit tests (doubt).   |
-    // ----------------------------------------------------------------------------
-    
-    // the world object. basically everything that exists.
+    // Global world instance
     static get world() { return mc.world; }
-    // the system object. handles ticks and run loops.
+
+    /**
+     * Gets the system proxy for tick management.
+     * 
+     * EXPECTS:
+     * - mc.system to be defined in native environment.
+     * 
+     * GUARANTEES:
+     * - Returns a wrapped system object proxy.
+     * - Falls back to a Date-based tick calculation if currentTick throws.
+     * - Binds methods to target to avoid execution context loss.
+     * 
+     * DOES NOT PROMISE:
+     * - Match exact game tick timing under server lag.
+     * 
+     * @returns {Object} The system proxy or raw system object.
+     */
     static get system() {
         if (!this.#systemProxy) {
             try {
@@ -51,23 +52,25 @@ export class Kernel {
                         return val;
                     }
                 });
+                Object.freeze(this.#systemProxy);
             } catch (e) {
+                console.error(`[Kernel] FATAL: Failed to create system proxy: ${e}. Falling back to raw mc.system.`);
                 return mc.system;
             }
         }
         return this.#systemProxy;
     }
-    // helper to see how many services are currently alive.
+
+    // Number of active services
     static get size() { return this.#systems.size; }
-    // helper to see all registered systems
+
+    // Map of registered systems
     static get systems() { return this.#systems; }
-    // helper to see all disabled systems
+
+    // Set of disabled systems
     static get disabledSystems() { return this.#disabledSystems; }
 
-    // ----------------------------------------------------------------------------
-    // | type proxies                                                             |
-    // | because typing out mc.ItemStack 100 times is a waste of life.            |
-    // ----------------------------------------------------------------------------
+    // Native type proxies
     static get ItemStack() { return mc.ItemStack; }
     static get EntityComponentTypes() { return mc.EntityComponentTypes; }
     static get SignSide() { return mc.SignSide; }
@@ -80,22 +83,32 @@ export class Kernel {
     static get BlockComponentTypes() { return mc.BlockComponentTypes; }
     static get InputPermissionCategory() { return mc.InputPermissionCategory; }
 
-    // ----------------------------------------------------------------------------
-    // | ui proxies                                                               |
-    // | server-ui forms. standard stuff for player interaction.                  |
-    // ----------------------------------------------------------------------------
+    // Native UI proxies
     static get ActionFormData() { return mcui.ActionFormData; }
     static get ModalFormData() { return mcui.ModalFormData; }
     static get MessageFormData() { return mcui.MessageFormData; }
 
     /**
-     * Wrap a native Bedrock Entity or Player in a Stable Safe Proxy.
-     * Prevents InvalidEntityError C++ crashes when interacting with disconnected players or unloaded entities.
+     * Wraps a native entity or player in a stable safe proxy.
+     * 
+     * EXPECTS:
+     * - entity: Object representing a native Bedrock entity or player, or null.
+     * 
+     * GUARANTEES:
+     * - Returns the entity directly if it is falsy, not an object, or already wrapped.
+     * - Traps property access on the entity to prevent C++ crashes if the entity is invalid.
+     * - Provides dummy/mock fallback values for properties (isValid, location, dimension, name, etc.) if entity is invalid.
+     * 
+     * DOES NOT PROMISE:
+     * - Full functional emulation of arbitrary entity properties that are not trapped when invalid.
+     * 
+     * @param {Object} entity - The native entity to wrap.
+     * @returns {Object} The wrapped entity proxy or original entity.
      */
     static wrapEntity(entity) {
         if (!entity || typeof entity !== "object") return entity;
         
-        // If it's already a safe proxy, don't wrap it again
+        // Return entity if it is already wrapped in a safe proxy
         if (entity.__rawEntity__) return entity;
 
         return new Proxy(entity, {
@@ -133,7 +146,7 @@ export class Kernel {
                     return dummyVal;
                 }
 
-                const val = Reflect.get(target, prop, receiver);
+                const val = Reflect.get(target, prop);
                 if (typeof val === "function") {
                     return val.bind(target);
                 }
@@ -142,166 +155,81 @@ export class Kernel {
         });
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: register                                                         |
-    // | put a service into the kernel. don't register the same id twice.         |
-    // ----------------------------------------------------------------------------
+    /**
+     * Registers a core system instance in the kernel.
+     * 
+     * EXPECTS:
+     * - id: String identifier for the system (must not be empty).
+     * - instance: Object representing the system.
+     * 
+     * GUARANTEES:
+     * - Stores the instance in the internal systems map.
+     * - Logs a warning if registering over an existing identifier.
+     * 
+     * DOES NOT PROMISE:
+     * - Prevention of service overwrites if identifier collision occurs.
+     * 
+     * @param {string} id - The system identifier.
+     * @param {Object} instance - The system instance.
+     */
     static register(id, instance) {
-        // check if we're about to overwrite something important
         if (this.#systems.has(id)) {
             console.warn(`[Kernel] Service collision: identifier '${id}' is already registered. Overwriting.`);
         }
-        // slap it in the map
         this.#systems.set(id, instance);
-        // let the console know we did something
         console.log("[Kernel] Service registered: " + id);
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: registerPlugin                                                   |
-    // | the entrance for external mods. gives them a sandbox to play in.         |
-    // | tracks their commands and listeners so we can kill them if needed.        |
-    // ----------------------------------------------------------------------------
-    static registerPlugin(manifest, logic) {
-        // basic validation. if they didn't give us an id, we're done here.
-        if (!manifest.id || !logic) {
-            console.error("[Kernel] Missing ID or Logic for plugin.");
-            return;
-        }
-
-        // we need to track everything the plugin does. 
-        // if the plugin unloads, we need to nuke all its residue.
-        const pluginState = {
-            id: manifest.id,
-            activeCommands:[],
-            activeIntervals: [],
-            activeListeners:[]
-        };
-
-        // this is the object we hand to the plugin. 
-        // it's their only way to talk to the kernel safely.
-        const context = {
-            id: manifest.id,
-            name: manifest.name || manifest.id,
-            version: manifest.version,
-            
-            // register a command under the plugin's name.
-            registerCommand: (command) => {
-                if (!command) {
-                    console.error(`[${manifest.id}] Failed to register command: Command object is null or undefined.`);
-                    return;
-                }
-                // get the global registry
-                const registry = this.get("commandRegistry");
-                if (!registry) return console.error(`[${manifest.id}] Failed to register command: Registry not found.`);
-                // add it to the registry
-                registry.register(command);
-                // track it so we can unregister it later
-                pluginState.activeCommands.push(command.name || "unnamed");
-            },
-
-            // set an interval that auto-cleans on plugin shutdown.
-            setInterval: (callback, ticks) => {
-                // schedule the tick task
-                const id = TickScheduler.schedule(callback, ticks, { name: `${manifest.id}_interval` });
-                // keep the id for the cleanup crew
-                pluginState.activeIntervals.push(id);
-                return id;
-            },
-
-            // listen for signals. also auto-cleans.
-            onSignal: (event, callback) => {
-                // subscribe to the signal bus
-                const unsubscribe = SignalBus.on(event, callback);
-                // keep the unsubscribe function
-                pluginState.activeListeners.push(unsubscribe);
-            },
-
-            // find a service.
-            getService: (id) => this.get(id) || this.#serviceProviders.get(id),
-            
-            // share a service with other plugins.
-            exposeService: (id, instance) => {
-                // put it in the public provider map
-                this.#serviceProviders.set(id, instance);
-                console.log(`[Kernel] Service Exposed: ${id} by ${manifest.id}`);
-            },
-
-            // standard logging that includes the plugin id.
-            log: (msg) => console.log(`\u00A78[\u00A7b${manifest.id}\u00A78] \u00A7f${msg}`),
-            error: (msg) => console.error(`\u00A78[\u00A7c${manifest.id}\u00A78] \u00A7cERROR: ${msg}`)
-        };
-
-        // save the plugin data in our master map.
-        this.#plugins.set(manifest.id, { manifest, logic, context, state: "STAGED", tracker: pluginState });
-        console.log(`[Kernel] Plugin staged: ${manifest.id} v${manifest.version}`);
-    }
-
-    // ----------------------------------------------------------------------------
-    // | method: unloadPlugin                                                     |
-    // | the decommission sequence. wipes a plugin from existence.                |
-    // | clears its intervals, listeners, and commands.                           |
-    // ----------------------------------------------------------------------------
-    static unloadPlugin(id) {
-        // find the plugin in the map
-        const plugin = this.#plugins.get(id);
-        if (!plugin) return;
-
-        // start the shutdown log
-        plugin.context.log("unloading...");
-
-        // if the plugin has custom shutdown logic, run it now.
-        if (typeof plugin.logic.onDisable === "function") {
-            plugin.logic.onDisable(plugin.context);
-        }
-
-        // clear all the tick intervals they scheduled.
-        if (plugin.tracker && plugin.tracker.activeIntervals) {
-            plugin.tracker.activeIntervals.forEach(taskId => TickScheduler.cancel(taskId));
-        }
-        
-        // nuke all the event listeners they registered.
-        if (plugin.tracker && plugin.tracker.activeListeners) {
-            plugin.tracker.activeListeners.forEach(unsub => unsub());
-        }
-
-        // unregister all their commands from the global registry.
-        const registry = this.get("commandRegistry");
-        if (registry && plugin.tracker && plugin.tracker.activeCommands) {
-            plugin.tracker.activeCommands.forEach(cmd => registry.unregister(cmd));
-        }
-
-        // mark it as disabled and delete it from the active map.
-        plugin.state = "DISABLED";
-        this.#plugins.delete(id);
-        console.log(`[Kernel] Purged plugin: ${id}`);
-    }
-
-    // ----------------------------------------------------------------------------
-    // | method: get                                                              |
-    // | fetch a service by its id. checks core systems then plugins.             |
-    // | returns a Null Object proxy if the system is registered but disabled.    |
-    // ----------------------------------------------------------------------------
+    /**
+     * Resolves a registered system or service by its identifier.
+     * 
+     * EXPECTS:
+     * - id: String identifier of the target service.
+     * 
+     * GUARANTEES:
+     * - Returns the registered system instance or plugin service provider.
+     * - Returns a null object proxy if the system is registered but disabled.
+     * - Returns undefined if the service does not exist in any registry.
+     * 
+     * DOES NOT PROMISE:
+     * - Preservation of the same service instance reference if system state changes between active and disabled.
+     * 
+     * @param {string} id - The service identifier.
+     * @returns {Object|undefined} The service instance, null object proxy, or undefined.
+     */
     static get(id) {
         if (this.#disabledSystems.has(id)) {
             const instance = this.#systems.get(id) || this.#serviceProviders.get(id);
             return this.#createNullProxy(id, instance);
         }
-        // try to find it in core systems first, then the plugin service providers.
         return this.#systems.get(id) || this.#serviceProviders.get(id);
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: #createNullProxy                                                 |
-    // | creates a robust Null Object Pattern proxy to prevent TypeError crashes. |
-    // | returns 0, false, empty arrays, or Promises based on method heuristics.   |
-    // ----------------------------------------------------------------------------
+    /**
+     * Creates a Null Object Pattern proxy to prevent TypeError crashes when calling disabled systems.
+     * 
+     * EXPECTS:
+     * - id: String identifier of the disabled system.
+     * - instance: Object representing the disabled service instance, or null.
+     * 
+     * GUARANTEES:
+     * - Returns a Proxy wrapping the instance or an empty object.
+     * - Intercepts calls to functions and returns default types (e.g. 0, false, empty array, or resolved promise).
+     * - Intercepts property accesses and returns safe defaults based on naming heuristics.
+     * 
+     * DOES NOT PROMISE:
+     * - Complete equivalence to the actual active system's functionality.
+     * 
+     * @param {string} id - The system identifier.
+     * @param {Object|null} instance - The original system instance, if any.
+     * @returns {Proxy} A safe proxy returning default values.
+     * @private
+     */
     static #createNullProxy(id, instance) {
         const target = instance || {};
         
         return new Proxy(target, {
             get(obj, prop, receiver) {
-                // bypass special properties and promise checks
                 if (prop === "then") return undefined;
                 if (prop === "toJSON") return () => null;
                 if (prop === "valueOf") return () => 0;
@@ -317,9 +245,7 @@ export class Kernel {
                 let originalValue;
                 try {
                     originalValue = obj[prop];
-                } catch (e) {
-                    // fall through
-                }
+                } catch (e) {}
 
                 if (typeof originalValue === "function") {
                     if (Kernel.#nullFunctions.has(prop)) {
@@ -329,22 +255,19 @@ export class Kernel {
                     const fn = (...args) => {
                         const name = String(prop).toLowerCase();
                         
-                        // Check if it's a generator function
                         if (originalValue.constructor.name === "GeneratorFunction") {
                             return (function*() {})();
                         }
 
-                        // Heuristic check: is it an async method?
                         const isAsync = originalValue.constructor.name === "AsyncFunction" || 
-                                        name.startsWith("async") || 
-                                        name.includes("transaction") || 
-                                        name.includes("transfer") || 
-                                        name.includes("setbalance") || 
-                                        name.includes("addmoney") || 
-                                        name.includes("removemoney") || 
-                                        name.includes("hasenough");
+                                         name.startsWith("async") || 
+                                         name.includes("transaction") || 
+                                         name.includes("transfer") || 
+                                         name.includes("setbalance") || 
+                                         name.includes("addmoney") || 
+                                         name.includes("removemoney") || 
+                                         name.includes("hasenough");
 
-                        // Resolve default value based on method name patterns
                         let val;
                         if (name.startsWith("get") || name.includes("balance") || name.includes("count") || name.includes("price") || name.includes("size") || name.includes("amount")) {
                             if (name.includes("player") || name.includes("account") || name.includes("system") || name.includes("service")) {
@@ -367,7 +290,6 @@ export class Kernel {
                     return fn;
                 }
 
-                // If they access non-function properties directly
                 const name = String(prop).toLowerCase();
                 if (name.includes("balance") || name.includes("limit") || name.includes("default")) {
                     return 0;
@@ -378,24 +300,49 @@ export class Kernel {
         });
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: has                                                              |
-    // | quick check to see if a service exists.                                  |
-    // ----------------------------------------------------------------------------
+    /**
+     * Determines whether a service is registered and active.
+     * 
+     * EXPECTS:
+     * - id: String identifier of the service.
+     * 
+     * GUARANTEES:
+     * - Returns false if the system is disabled.
+     * - Returns true if the system exists in the systems or service providers maps.
+     * - Returns false otherwise.
+     * 
+     * DOES NOT PROMISE:
+     * - Check for underlying instance health or operational status.
+     * 
+     * @param {string} id - The system identifier.
+     * @returns {boolean} Whether the service is registered and active.
+     */
     static has(id) {
         if (this.#disabledSystems.has(id)) return false;
-        // check both maps.
         return this.#systems.has(id) || this.#serviceProviders.has(id);
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: disableSystem                                                    |
-    // | dynamically disables a core system and runs its shutdown hooks.           |
-    // ----------------------------------------------------------------------------
+    /**
+     * Disables a registered system and executes its shutdown hooks.
+     * 
+     * EXPECTS:
+     * - id: String identifier of the target system to disable.
+     * 
+     * GUARANTEES:
+     * - Returns false if the system is already disabled.
+     * - Calls the system's shutdown hook (shutdown, onDisable, or disable) if it exists.
+     * - Adds the system identifier to the disabled systems set.
+     * - Returns true upon successful disabling.
+     * 
+     * DOES NOT PROMISE:
+     * - Safe recovery if the shutdown hook throws an error.
+     * 
+     * @param {string} id - The system identifier.
+     * @returns {boolean} Whether the system was successfully disabled.
+     */
     static disableSystem(id) {
         if (this.#disabledSystems.has(id)) return false;
 
-        // Retrieve instance directly to bypass disabled check
         const instance = this.#systems.get(id) || this.#serviceProviders.get(id);
         if (instance) {
             try {
@@ -414,16 +361,29 @@ export class Kernel {
         return true;
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: enableSystem                                                     |
-    // | dynamically enables a disabled core system and runs its init hooks.      |
-    // ----------------------------------------------------------------------------
+    /**
+     * Enables a disabled system and executes its initialization hooks.
+     * 
+     * EXPECTS:
+     * - id: String identifier of the target system to enable.
+     * 
+     * GUARANTEES:
+     * - Returns false if the system is not currently disabled.
+     * - Removes the system identifier from the disabled systems set.
+     * - Calls the system's initialization hook (init, onEnable, or enable) if it exists.
+     * - Returns true upon successful enabling.
+     * 
+     * DOES NOT PROMISE:
+     * - Prevention of errors if initialization fails.
+     * 
+     * @param {string} id - The system identifier.
+     * @returns {boolean} Whether the system was successfully enabled.
+     */
     static enableSystem(id) {
         if (!this.#disabledSystems.has(id)) return false;
 
         this.#disabledSystems.delete(id);
 
-        // Retrieve instance directly to bypass disabled check
         const instance = this.#systems.get(id) || this.#serviceProviders.get(id);
         if (instance) {
             try {
@@ -440,64 +400,4 @@ export class Kernel {
         }
         return true;
     }
-
-    // ----------------------------------------------------------------------------
-    // | method: bootPlugins                                                      |
-    // | the big bang. starts every registered plugin in the right order.         |
-    // | uses a dependency sorter so we don't crash.                              |
-    // ----------------------------------------------------------------------------
-    static bootPlugins() {
-        console.log("[Kernel] booting plugins...");
-        
-        // sort the plugins so dependencies load first.
-        let sorted = [];
-        try {
-            sorted = this._sortPlugins();
-        } catch (error) {
-            console.error(`[Kernel] DEPENDENCY_SORT_FAILED: Circular dependencies or references detected. Falling back to staging order.`, error);
-            sorted = Array.from(this.#plugins.keys());
-        }
-        let successCount = 0;
-
-        // iterate through the sorted list and init each one.
-        for (const id of sorted) {
-            const plugin = this.#plugins.get(id);
-            try {
-                // call the plugin's main logic or onInit hook.
-                if (typeof plugin.logic === "function") {
-                    plugin.logic(plugin.context);
-                } else if (plugin.logic.onInit) {
-                    plugin.logic.onInit(plugin.context);
-                }
-                
-                // if we got here, it's alive.
-                plugin.state = "ACTIVE";
-                successCount++;
-            } catch (error) {
-                // something went wrong. kill it.
-                console.error(`[Kernel] FATAL ERROR in plugin '${id}':`, error);
-                plugin.state = "FAILED";
-            }
-        }
-        
-        // finish up the log.
-        console.log(`[Kernel] Boot complete. Plugins: ${successCount}/${this.#plugins.size}`);
-    }
-
-    // ----------------------------------------------------------------------------
-    // | method: _sortPlugins                                                     |
-    // | internal helper to sort plugins based on their dependency list.          |
-    // | prevents circular dependencies and load-order issues.                    |
-    // ----------------------------------------------------------------------------
-    static _sortPlugins() {
-        return DependencySorter.sort(Array.from(this.#plugins.keys()), {
-            getDependencies: (id) => this.#plugins.get(id)?.manifest?.dependencies || [],
-            hasNode: (id) => this.#plugins.has(id),
-            onMissingDependency: (id, dep) => {
-                console.warn(`[Kernel] Warning: Dependency '${dep}' is missing and will be skipped.`);
-            },
-            errorMessagePrefix: "Circular dependency detected: "
-        });
-    }
 }
-

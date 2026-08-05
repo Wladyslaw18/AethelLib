@@ -1,23 +1,11 @@
 import { Kernel } from "../Kernel.js"
 
-// ----------------------------------------------------------------------------
-// | class: DatabaseManager                                                   |
-// | manages persistent data using bedrock's dynamic properties.              |
-// | uses a cache-aside strategy and debounced writes to keep things fast.    |
-// | handles sharding for data that exceeds the native 32KB limit.            |
-// ----------------------------------------------------------------------------
+// DatabaseManager — cache-aside persistence with debounced writes and sharding for Bedrock's 32KB limit.
 export class DatabaseManager {
-    // ----------------------------------------------------------------------------
-    // | constructor                                                              |
-    // | setup the maps and constants. bedrock properties are limited, so we need  |
-    // | to be smart about how we store things.                                   |
-    // ----------------------------------------------------------------------------
+    // constructor: initializes cache, dirtyKeys, write debounce, shard limits, transaction queues, and triggers async init.
     constructor() {
-        // in-memory data cache. avoids reading from the world every time.
         this.cache = new Map() 
-        // keys that have been modified and need to be written to the world.
         this.dirtyKeys = new Set() 
-        // handle for the debounce timer.
         this.writeTimeout = null
         // wait 5 seconds before flushing to disk to avoid lag spikes.
         this.WRITE_DELAY = 5000 
@@ -32,21 +20,16 @@ export class DatabaseManager {
         // tracks if the ghost purger is already running to prevent overlap.
         this.isPurgingGhosts = false
         
-        // start the background tasks.
         this.initialize()
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: initialize                                                       |
-    // | setup periodic cleanup and flush on shutdown.                            |
-    // ----------------------------------------------------------------------------
+    // initialize: registers periodic cache cleanup, shutdown flush hook, and dispatches WAL recovery + migration.
     initialize() {
         // run cleanup every 20 minutes to clear the cache.
         Kernel.system.runInterval(() => {
-            this.cleanupExpiredData()
+            this.cleanupExpiredEntries()
         }, 20 * 60 * 20) 
-        
-        // make sure everything is saved before the server stops.
+
         Kernel.system.beforeEvents.shutdown.subscribe(() => {
             this.flushAll()
         })
@@ -58,29 +41,20 @@ export class DatabaseManager {
         })
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: get                                                              |
-    // | fetch data by key. checks cache first, then world storage.               |
-    // ----------------------------------------------------------------------------
+    // get: returns cached value, loads from storage on cache miss, or null if missing/corrupt.
     get(key) {
-        // check the memory buffer first. O(1) speed.
         if (this.cache.has(key)) {
             return this.cache.get(key)
         }
 
-        // if not in cache, load it from the actual world properties.
-        const data = this.loadFromStorage(key)
-        if (data !== null) {
-            // save it in cache so the next call is fast.
-            this.cache.set(key, data)
+        const payload = this.loadFromStorage(key)
+        if (payload !== null) {
+            this.cache.set(key, payload)
         }
-        return data
+        return payload
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: set                                                              |
-    // | save data. updates cache and schedules a background write.               |
-    // ----------------------------------------------------------------------------
+    // set: updates cache immediately, marks dirty, schedules background write. Returns false on invalid key or error.
     set(key, value) {
         try {
             if (typeof key !== 'string' || !/^[a-zA-Z0-9_:.-]+$/.test(key)) {
@@ -88,7 +62,6 @@ export class DatabaseManager {
                 return false
             }
 
-            // update the memory buffer immediately.
             // delete first if it already exists to move it to the end of insertion order.
             if (this.cache.has(key)) {
                 this.cache.delete(key)
@@ -98,7 +71,7 @@ export class DatabaseManager {
             // Hard cap cache memory (LRU eviction of clean keys)
             if (this.cache.size > 1500) {
                 let evicted = 0
-                for (const [k, _] of this.cache.entries()) {
+                for (const k of this.cache.keys()) {
                     if (evicted >= 200) break
                     if (k !== key && !this.dirtyKeys.has(k) && !this.isProtectedKey(k)) {
                         this.cache.delete(k)
@@ -107,9 +80,7 @@ export class DatabaseManager {
                 }
             }
 
-            // mark the key as 'dirty' so it gets flushed to disk later.
             this.dirtyKeys.add(key)
-            // schedule the write task if it isn't already running.
             this.scheduleWrite()
             return true
         } catch (error) {
@@ -119,17 +90,11 @@ export class DatabaseManager {
         }
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: delete                                                           |
-    // | remove data from everywhere.                                             |
-    // ----------------------------------------------------------------------------
+    // delete: removes key from cache, dirty set, and world storage immediately.
     delete(key) {
         try {
-            // remove from memory.
             this.cache.delete(key)
-            // remove from the dirty set so we don't try to save it.
             this.dirtyKeys.delete(key)
-            // actually remove it from bedrock's world storage.
             Kernel.world.setDynamicProperty(key, undefined)
             return true
         } catch (error) {
@@ -138,17 +103,12 @@ export class DatabaseManager {
         }
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: getSharded                                                       |
-    // | handles collections of items that are split across multiple keys.        |
-    // ----------------------------------------------------------------------------
+    // getSharded: retrieves one item by itemId, or all items in a collection via the index.
     getSharded(collectionName, itemId = null) {
-        // if we just want one item, go get it directly.
         if (itemId) {
             return this.get(`${collectionName}:item:${itemId}`)
         }
 
-        // otherwise, load the index and fetch everything.
         const indexKey = `${collectionName}:index`
         const index = this.get(indexKey) || []
         
@@ -163,20 +123,14 @@ export class DatabaseManager {
         return collection
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: setSharded                                                       |
-    // | saves an item into a sharded collection. updates the index too.          |
-    // ----------------------------------------------------------------------------
-    setSharded(collectionName, itemId, data) {
+    // setSharded: stores an item into a collection and updates its index.
+    setSharded(collectionName, itemId, payload) {
         try {
-            // save the item itself.
-            this.set(`${collectionName}:item:${itemId}`, data)
+            this.set(`${collectionName}:item:${itemId}`, payload)
             
-            // update the collection index so we know this item exists.
             const indexKey = `${collectionName}:index`
             const index = this.get(indexKey) || []
             
-            // if it's a new item, add it to the list.
             if (!index.includes(itemId)) {
                 index.push(itemId)
                 this.set(indexKey, index)
@@ -189,34 +143,28 @@ export class DatabaseManager {
         }
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: deleteSharded                                                    |
-    // | removes an item from a sharded collection and cleans up its residue.     |
-    // ----------------------------------------------------------------------------
+    // deleteSharded: removes an item from a sharded collection, cleans up shards, and updates the index.
     deleteSharded(collectionName, itemId) {
         try {
             const key = `${collectionName}:item:${itemId}`
             
             // check if this item was sharded (split across multiple keys).
-            const indexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
-            if (typeof indexData === "string") {
+            const indexPayload = Kernel.world.getDynamicProperty(`${key}:shard_index`)
+            if (typeof indexPayload === "string") {
                 try {
                     // parse the shard index and nuke all the segments.
-                    const index = JSON.parse(indexData)
+                    const index = JSON.parse(indexPayload)
                     for (let i = 0; i < index.shardCount; i++) {
                         Kernel.world.setDynamicProperty(`${key}:shard_${index.version}_${i}`, undefined)
                     }
-                    // clear the shard index itself.
                     Kernel.world.setDynamicProperty(`${key}:shard_index`, undefined)
                 } catch (e) {
                     console.error(`[DatabaseManager] ORPHAN_NUKE_FAILURE for '${key}': ${e}`)
                 }
             }
             
-            // delete the main key.
             this.delete(key)
             
-            // remove from the collection index.
             const indexKey = `${collectionName}:index`
             let index = this.get(indexKey) || []
             index = index.filter(id => id !== itemId)
@@ -229,23 +177,16 @@ export class DatabaseManager {
         }
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: transaction                                                      |
-    // | forces operations to run one-by-one for a specific player.                |
-    // | prevents balance dupes and race conditions during async operations.      |
-    // ----------------------------------------------------------------------------
+    // transaction: chains async operations sequentially per player to prevent race conditions.
     async transaction(playerId, operation) {
-        // get or create a promise chain for this player.
         if (!this.transactionQueues.has(playerId)) {
             this.transactionQueues.set(playerId, Promise.resolve())
         }
 
         const queue = this.transactionQueues.get(playerId)
         
-        // append the new operation to the end of the chain.
         const newOperation = queue.then(async () => {
             try {
-                // run the actual logic.
                 return await operation()
             } catch (error) {
                 // if it fails, log it but keep the chain moving.
@@ -254,7 +195,6 @@ export class DatabaseManager {
             }
         })
 
-        // update the queue with the new tail.
         this.transactionQueues.set(playerId, newOperation)
         
         // when the operation finishes, check if we can clear the queue entry to save memory.
@@ -267,10 +207,7 @@ export class DatabaseManager {
         return newOperation
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: loadFromStorage                                                  |
-    // | internal helper to read from the world. handles sharding detection.      |
-    // ----------------------------------------------------------------------------
+    // loadFromStorage: reads and parses from world storage, handling sharding detection. Bypasses cache.
     loadFromStorage(key) {
         try {
             // priority 1: check if this data was split into shards.
@@ -289,52 +226,44 @@ export class DatabaseManager {
                 return null
             }
         } catch (error) {
-            console.error(`[DatabaseManager] RETRIEVAL_FAILURE for '${key}': ${error}`)
+            // World data APIs are locked during the startup/early-execution phase
+            // (e.g. CommandManager's rank-enum read). Expected, not a real failure.
+            if (!(error instanceof ReferenceError) || !String(error).includes("early execution")) {
+                console.error(`[DatabaseManager] RETRIEVAL_FAILURE for '${key}': ${error}`)
+            }
             return null
         }
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: scheduleWrite                                                    |
-    // | debounces write requests so we don't spam the world storage.            |
-    // ----------------------------------------------------------------------------
+    // scheduleWrite: debounces write requests to batch dirty flushes.
     scheduleWrite() {
-        // if a write is already pending, cancel it and restart the timer.
         if (this.writeTimeout) {
             Kernel.system.clearRun(this.writeTimeout)
         }
 
-        // wait for the delay before flushing.
         this.writeTimeout = Kernel.system.runTimeout(() => {
             this.flushDirty()
         }, Math.max(1, Math.floor(this.WRITE_DELAY / 50)))
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: flushDirty                                                       |
-    // | the physical write operation. moves data from memory to world.           |
-    // ----------------------------------------------------------------------------
+    // flushDirty: writes all dirty keys from cache to world storage, using sharding for large payloads.
     flushDirty() {
         // copy the keys and clear the set so new changes can be tracked.
         const keysToWrite = Array.from(this.dirtyKeys)
         this.dirtyKeys.clear()
 
-        let shardedWriteOccurred = false
+        let hasShardedWriteOccurred = false
 
         for (const key of keysToWrite) {
-            // only write if the data actually exists in cache.
             if (this.cache.has(key)) {
                 try {
-                    const data = this.cache.get(key)
-                    const serialized = JSON.stringify(data)
+                    const payload = this.cache.get(key)
+                    const serialized = JSON.stringify(payload)
                     
-                    // check if the string is too long for a single property.
                     if (serialized.length > this.MAX_PROPERTY_SIZE) {
-                        // use the sharding protocol to split it up.
-                        this.shardAndWrite(key, data)
-                        shardedWriteOccurred = true
+                        this.shardAndWrite(key, payload)
+                        hasShardedWriteOccurred = true
                     } else {
-                        // normal write.
                         Kernel.world.setDynamicProperty(key, serialized)
                     }
                 } catch (error) {
@@ -344,20 +273,15 @@ export class DatabaseManager {
         }
 
         // Run ghost purge if we sharded something
-        if (shardedWriteOccurred && !this.isPurgingGhosts) {
+        if (hasShardedWriteOccurred && !this.isPurgingGhosts) {
             this.isPurgingGhosts = true
             Kernel.system.runJob(this.ghostCleanupGenerator())
         }
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: shardAndWrite                                                    |
-    // | the sharding protocol. splits large payloads into versions buffers.      |
-    // | uses a double-buffering strategy (v1/v2) for atomic commits.             |
-    // ----------------------------------------------------------------------------
-    shardAndWrite(key, data) {
-        // serialize the data once.
-        const serialized = JSON.stringify(data)
+    // shardAndWrite: splits large payloads across versioned buffer shards using double-buffering (v1/v2) for atomic commits.
+    shardAndWrite(key, payload) {
+        const serialized = JSON.stringify(payload)
         const shards = []
         const charLimit = Math.floor(this.MAX_PROPERTY_SIZE / 2) // safe character count for multi-byte UTF-8
         
@@ -381,11 +305,11 @@ export class DatabaseManager {
         }
 
         // check which version is currently active so we can write to the other one.
-        const currentIndexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
+        const currentIndexRaw = Kernel.world.getDynamicProperty(`${key}:shard_index`)
         let nextVersion = "v1"
-        if (typeof currentIndexData === "string") {
+        if (typeof currentIndexRaw === "string") {
             try {
-                const currentIndex = JSON.parse(currentIndexData)
+                const currentIndex = JSON.parse(currentIndexRaw)
                 nextVersion = currentIndex.version === "v1" ? "v2" : "v1"
             } catch (e) { /* fallback to v1 */ }
         }
@@ -405,17 +329,13 @@ export class DatabaseManager {
         console.log(`[DatabaseManager] SHARDING_COMPLETE: '${key}' [${nextVersion}] split into ${shards.length} segments.`);
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: loadSharded                                                      |
-    // | reads sharded data and reconstructs the original string.                 |
-    // ----------------------------------------------------------------------------
+    // loadSharded: reconstructs sharded data from versioned segment buffers.
     loadSharded(key) {
         try {
-            // get the index metadata.
-            const indexData = Kernel.world.getDynamicProperty(`${key}:shard_index`)
-            if (!indexData) return null
+            const indexRaw = Kernel.world.getDynamicProperty(`${key}:shard_index`)
+            if (!indexRaw) return null
 
-            const index = typeof indexData === "string" ? JSON.parse(indexData) : null
+            const index = typeof indexRaw === "string" ? JSON.parse(indexRaw) : null
             if (!index || !index.version) return null
             
             const shards = []
@@ -432,7 +352,6 @@ export class DatabaseManager {
                 shards.push(shard)
             }
 
-            // join the shards and parse the json.
             return JSON.parse(shards.join(''))
         } catch (error) {
             console.error(`[DatabaseManager] SHARD_LOAD_FAILURE for '${key}': ${error}`)
@@ -440,13 +359,7 @@ export class DatabaseManager {
         }
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: ghostCleanupGenerator                                            |
-    // | INDUSTRIAL_GHOST_PURGE_VECTOR                                            |
-    // | Scans the dynamic property registry for superseded sharded versions.     |
-    // | If a newer equivalent (v2) is confirmed in the index, the older version  |
-    // | (v1) is terminated with extreme prejudice.                               |
-    // ----------------------------------------------------------------------------
+    // ghostCleanupGenerator: scans registry for superseded shard versions and purges them with rollback recovery.
     *ghostCleanupGenerator() {
         const allIds = Kernel.world.getDynamicPropertyIds();
         const processedBases = new Set();
@@ -525,14 +438,12 @@ export class DatabaseManager {
         this.isPurgingGhosts = false;
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: flushAll                                                         |
-    // | immediate write of all dirty keys. used during shutdown.                 |
-    // ----------------------------------------------------------------------------
+    // flushAll: immediate synchronous write of all dirty keys (used during shutdown).
     flushAll() {
         this.flushDirty()
     }
 
+    // isProtectedKey: returns true if key matches a configuration or core index pattern (preventing cache eviction).
     isProtectedKey(key) {
         if (!key) return false
         const lowerKey = key.toLowerCase()
@@ -549,13 +460,8 @@ export class DatabaseManager {
         )
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: cleanupExpiredData                                               |
-    // | purges the memory cache to prevent the heap from exploding.              |
-    // | keeps dirty keys so we don't lose unsaved changes.                       |
-    // ----------------------------------------------------------------------------
-    cleanupExpiredData() {
-        // if the cache is getting too big (1000 entries).
+    // cleanupExpiredEntries: purges clean cache entries when size exceeds 1000, retaining dirty and protected keys.
+    cleanupExpiredEntries() {
         if (this.cache.size > 1000) {
             // iterate and delete old entries directly to avoid massive array copies.
             // we keep anything that is dirty (unsaved) regardless of age.
@@ -565,7 +471,6 @@ export class DatabaseManager {
             
             for (const [key, _value] of this.cache) {
                 if (count >= toDelete) break;
-                // Do not evict if it is a dirty key or a protected configuration key
                 if (!this.dirtyKeys.has(key) && !this.isProtectedKey(key)) {
                     this.cache.delete(key);
                     count++;
@@ -574,10 +479,7 @@ export class DatabaseManager {
         }
     }
 
-    // ----------------------------------------------------------------------------
-    // | method: getStats                                                         |
-    // | monitoring helper.                                                       |
-    // ----------------------------------------------------------------------------
+    // getStats: returns cache/dirtyKeys/transactionQueues sizes for monitoring.
     getStats() {
         return {
             cacheSize: this.cache.size,
@@ -586,9 +488,7 @@ export class DatabaseManager {
         }
     }
 
-    /**
-     * Writes a WAL entry to persistent world storage synchronously.
-     */
+    // writeWal: writes a WAL entry to persistent storage for crash recovery.
     writeWal(senderId, receiverId, amount, senderOriginalBalance, receiverOriginalBalance) {
         const walEntry = {
             senderId,
@@ -601,16 +501,12 @@ export class DatabaseManager {
         Kernel.world.setDynamicProperty("ae:wal", JSON.stringify(walEntry));
     }
 
-    /**
-     * Clears the WAL entry.
-     */
+    // clearWal: removes the active WAL entry from storage.
     clearWal() {
         Kernel.world.setDynamicProperty("ae:wal", undefined);
     }
 
-    /**
-     * Scans the persistent world storage for unresolved transactions and recovers/rolls them back.
-     */
+    // resolvePendingWal: reconciles unresolved WAL transactions — rolls back sender if interrupted mid-transfer.
     async resolvePendingWal() {
         try {
             const rawWal = Kernel.world.getDynamicProperty("ae:wal");
@@ -646,7 +542,6 @@ export class DatabaseManager {
             if (currentSenderBalance === wal.senderOriginalBalance - amount && currentReceiverBalance === wal.receiverOriginalBalance) {
                 console.warn(`[DatabaseManager] [WAL] Transaction was partially completed (sender debited but receiver not credited). Rolling back...`);
                 PlayerStore.set(sender, senderBalanceKey, wal.senderOriginalBalance);
-                
                 const { JournaledDb } = await import("./JournaledDatabase.js");
                 JournaledDb.flush();
                 this.flushDirty();
@@ -656,7 +551,6 @@ export class DatabaseManager {
                 console.log(`[DatabaseManager] [WAL] Transaction had not started. Clearing log.`);
             } else {
                 console.warn(`[DatabaseManager] [WAL] Mismatched state detected (External changes occurred). Aborting automatic rollback to prevent state corruption.`);
-                
                 const { JournaledDb } = await import("./JournaledDatabase.js");
                 JournaledDb.flush();
                 this.flushDirty();
@@ -669,9 +563,7 @@ export class DatabaseManager {
         }
     }
 
-    /**
-     * One-time background migration to parse historical data and build indexes.
-     */
+    // runOneTimeIndexMigration: builds player name maps and audit indexes, runs once on first boot.
     async runOneTimeIndexMigration() {
         try {
             const isMigrated = this.get("ae:index_migrated")
@@ -692,7 +584,6 @@ export class DatabaseManager {
 
                 const propId = allIds[i]
                 
-                // 1. Process player name mapping & UUID register
                 const nameMatch = propId.match(namePattern)
                 if (nameMatch) {
                     const uuid = nameMatch[1]
@@ -703,7 +594,6 @@ export class DatabaseManager {
                     }
                 }
 
-                // 2. Process conversation message keys
                 const msgMatch = propId.match(msgPattern)
                 if (msgMatch) {
                     const pairId = msgMatch[1]
@@ -726,7 +616,6 @@ export class DatabaseManager {
                 }
             }
 
-            // Save player ledger index
             if (playerIndex.size > 0) {
                 const existingIndex = this.get("ae:player_index") || []
                 const mergedIndex = Array.from(new Set([...existingIndex, ...playerIndex]))
