@@ -10,6 +10,10 @@ import { Kernel } from "../core/Kernel.js";
 const nameCache = new Map() 
 // helper map to find a name from a player id (used for cleanup on disconnect).
 const idToNameCache = new Map() 
+// reverse helper map to find player id from a lower name (enables O(1) garbage collection).
+const nameToIdCache = new Map()
+// garbage-collection interval handle (see shutdown())
+let _gcIntervalId = null;
 
 // add players to the cache as soon as they spawn.
 Kernel.world.afterEvents.playerSpawn.subscribe((ev) => {
@@ -17,55 +21,70 @@ Kernel.world.afterEvents.playerSpawn.subscribe((ev) => {
     const lowerName = player.name.toLowerCase()
     nameCache.set(lowerName, player)
     idToNameCache.set(player.id, lowerName)
+    nameToIdCache.set(lowerName, player.id)
 })
 
 // remove players when they leave so we don't hold onto dead object references.
 Kernel.world.afterEvents.playerLeave.subscribe((ev) => {
     const { playerId } = ev
-    // find the name associated with this id.
     const lowerName = idToNameCache.get(playerId)
     if (lowerName) {
         nameCache.delete(lowerName)
+        nameToIdCache.delete(lowerName)
     }
-    // clear the id mapping.
     idToNameCache.delete(playerId)
 })
 
 export const PlayerUtils = {
-    // ----------------------------------------------------------------------------
-    // | init                                                                     |
-    // | populates the cache with players already on the server (for hot reloads).|
-    // ----------------------------------------------------------------------------
+    /**
+     * Bootstraps the in-memory cache with all currently online players.
+     * 
+     * EXPECTS:
+     * - Kernel.world.getAllPlayers() exists and returns active player array.
+     * 
+     * GUARANTEES:
+     * - Populates nameCache, idToNameCache, and nameToIdCache for all online players.
+     */
     init() {
         Kernel.world.getAllPlayers().forEach(p => {
             const lowerName = p.name.toLowerCase()
             nameCache.set(lowerName, p)
             idToNameCache.set(p.id, lowerName)
+            nameToIdCache.set(lowerName, p.id)
         })
     },
 
-    // ----------------------------------------------------------------------------
-    // | findPlayer                                                               |
-    // | tries to find a player object from a string identifier.                  |
-    // | logic order:                                                             |
-    // | 1. exact case-insensitive name match.                                    |
-    // | 2. exact uuid/id match.                                                  |
-    // | 3. partial name match (contains search).                                 |
-    // ----------------------------------------------------------------------------
+    /**
+     * Resolves a player entity object from a string or object identifier.
+     * 
+     * EXPECTS:
+     * - identifier: String player ID, player name, or existing Player object.
+     * 
+     * GUARANTEES:
+     * - Returns the player object if the input is already a player.
+     * - Heals stale/invalid cached player objects by scanning active world players.
+     * - Resolves exact case-insensitive name matches in O(1).
+     * - Resolves exact player ID/UUID matches in O(1).
+     * - Resolves partial name matches (contains query) if exactly one player matches.
+     * - Returns wrapped entity proxy to prevent receiver crashes.
+     * - Returns null if no matching player was found or identifier is offline.
+     * - Bails out early with null on empty/whitespace name queries to prevent random online match resolution.
+     * 
+     * @param {string|import("@minecraft/server").Player} identifier - Target selector.
+     * @returns {import("@minecraft/server").Player|null} Resolved player proxy.
+     */
     findPlayer(identifier) {
-        // bail if the query is empty.
         if (!identifier) return null
         
-        // if the caller passed an object that is already a player, just give it back.
         if (identifier !== null && typeof identifier === 'object' && (typeof identifier.name === 'string' || typeof identifier.id === 'string' || typeof identifier.isValid === 'boolean')) {
             if (!identifier.isValid) {
                 const activePlayer = Kernel.world.getAllPlayers().find(p => p.id === identifier.id);
                 if (activePlayer) return Kernel.wrapEntity(activePlayer);
+                return null;
             }
             return Kernel.wrapEntity(identifier);
         }
         
-        // ensure the input is a string.
         if (typeof identifier !== 'string') return null;
 
         // Clean quotes from the identifier if present (Bedrock quotes names with numbers/special chars)
@@ -73,17 +92,13 @@ export const PlayerUtils = {
         if (cleanId.length >= 2) {
             const first = cleanId[0];
             const last = cleanId[cleanId.length - 1];
-            if ((first === '"' || last === '"' || first === "'" || last === "'") && (first === last || cleanId.startsWith('"') && cleanId.endsWith('"') || cleanId.startsWith("'") && cleanId.endsWith("'"))) {
-                // Strip the bounding quotes
-                if ((first === '"' || first === "'") && first === last) {
-                    cleanId = cleanId.slice(1, -1).trim();
-                } else {
-                    cleanId = cleanId.replace(/^['"]|['"]$/g, '').trim();
-                }
+            if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+                cleanId = cleanId.slice(1, -1).trim();
             }
         }
 
         const lowerId = cleanId.toLowerCase()
+        if (!lowerId) return null; // Prevent empty/whitespace queries matching parts of all names
 
         // step 1: O(1) lookup for exact name.
         let nameMatch = nameCache.get(lowerId)
@@ -93,21 +108,23 @@ export const PlayerUtils = {
             if (activePlayer) {
                 nameCache.set(lowerId, activePlayer);
                 idToNameCache.set(activePlayer.id, lowerId);
+                nameToIdCache.set(lowerId, activePlayer.id);
                 nameMatch = activePlayer;
             }
         }
         if (nameMatch?.isValid) return Kernel.wrapEntity(nameMatch)
 
-        // step 2: look for an exact ID match.
-        const foundName = [...idToNameCache.entries()].find(([id, _name]) => id === cleanId)
+        // step 2: O(1) look for an exact ID match.
+        const foundName = idToNameCache.get(cleanId);
         if (foundName) {
-            let p = nameCache.get(foundName[1])
+            let p = nameCache.get(foundName)
             if (p && !p.isValid) {
                 const activePlayer = Kernel.world.getAllPlayers().find(pl => pl.id === cleanId);
                 if (activePlayer) {
                     const lowerName = activePlayer.name.toLowerCase();
                     nameCache.set(lowerName, activePlayer);
                     idToNameCache.set(activePlayer.id, lowerName);
+                    nameToIdCache.set(lowerName, activePlayer.id);
                     p = activePlayer;
                 }
             }
@@ -120,24 +137,32 @@ export const PlayerUtils = {
         if (exactMatch) {
             nameCache.set(lowerId, exactMatch);
             idToNameCache.set(exactMatch.id, lowerId);
+            nameToIdCache.set(lowerId, exactMatch.id);
             return Kernel.wrapEntity(exactMatch);
         }
 
         // step 4: fallback to partial matching.
-        // if a player's name contains the search string, return them.
         const partial = activePlayers.filter(p => p.name.toLowerCase().includes(lowerId))
-        // only return if there is exactly one match. 
         if (partial.length === 1) return Kernel.wrapEntity(partial[0])
 
-        // nobody found.
         return null
     },
 
-    // ----------------------------------------------------------------------------
-    // | resolveFromArgs                                                          |
-    // | specialized for commands. handles player names with spaces by trying     |
-    // | increasingly longer combinations of arguments.                           |
-    // ----------------------------------------------------------------------------
+    /**
+     * Parses command arguments to resolve a player matching spaces/quotes.
+     * 
+     * EXPECTS:
+     * - args: Array of string arguments.
+     * 
+     * GUARANTEES:
+     * - Resolves player target from selector array if passed.
+     * - Resolves bounding quotes string parsing space-split player names.
+     * - Greedily checks combined arguments.
+     * - Returns resolved player object and count of arguments consumed.
+     * 
+     * @param {string[]} args - Input arguments.
+     * @returns {{player: import("@minecraft/server").Player|null, consumedArgs: number}} Match result.
+     */
     resolveFromArgs(args) {
         if (!args || args.length === 0) return { player: null, consumedArgs: 0 }
 
@@ -147,12 +172,16 @@ export const PlayerUtils = {
             let p = possiblePlayer;
             if (!p.isValid) {
                 const activePlayer = Kernel.world.getAllPlayers().find(pl => pl.id === p.id);
-                if (activePlayer) p = activePlayer;
+                if (activePlayer) {
+                    p = activePlayer;
+                } else {
+                    return { player: null, consumedArgs: 1 };
+                }
             }
             return { player: Kernel.wrapEntity(p), consumedArgs: 1 }
         }
 
-        // ✦ Quote parsing: detect if the first argument starts with a quote
+        // Quote parsing: detect if the first argument starts with a quote
         if (typeof args[0] === 'string' && (args[0].startsWith('"') || args[0].startsWith("'"))) {
             const quoteChar = args[0][0];
             let closingIndex = -1;
@@ -200,14 +229,28 @@ export const PlayerUtils = {
         if (longestExactMatch) {
             return { player: Kernel.wrapEntity(longestExactMatch), consumedArgs: consumedExact }
         }
+        if (longestPartialMatch) {
+            return { player: Kernel.wrapEntity(longestPartialMatch), consumedArgs: consumedPartial }
+        }
 
-        return { player: Kernel.wrapEntity(longestPartialMatch), consumedArgs: consumedPartial }
+        return { player: null, consumedArgs: 0 }
     },
 
-    // ----------------------------------------------------------------------------
-    // | getIdByName                                                              |
-    // | Inverse name lookup for offline/online players.                          |
-    // ----------------------------------------------------------------------------
+    /**
+     * Performs inverse lookup resolving player ID from name.
+     * 
+     * EXPECTS:
+     * - name: Player display name.
+     * 
+     * GUARANTEES:
+     * - Searches active memory caches first.
+     * - Queries playername index database registry.
+     * - Scans legacy fallback properties if index migration is uncompleted.
+     * - Returns string player ID (UUID), or null if not found.
+     * 
+     * @param {string} name - Player name.
+     * @returns {string|null} Resolved player ID.
+     */
     getIdByName(name) {
         if (!name) return null;
         const lowerName = name.toLowerCase();
@@ -218,10 +261,9 @@ export const PlayerUtils = {
             return onlinePlayer.id;
         }
         
-        for (const [id, cachedName] of idToNameCache.entries()) {
-            if (cachedName === lowerName) {
-                return id;
-            }
+        const cachedId = nameToIdCache.get(lowerName);
+        if (cachedId) {
+            return cachedId;
         }
         
         // 2. Query name-to-UUID index in O(1)
@@ -251,42 +293,76 @@ export const PlayerUtils = {
         return null;
     },
 
+    /**
+     * Mocks registration helper for unit testing.
+     */
     registerMock(player) {
         const lowerName = player.name.toLowerCase();
         nameCache.set(lowerName, player);
         idToNameCache.set(player.id, lowerName);
+        nameToIdCache.set(lowerName, player.id);
     },
 
+    /**
+     * Mocks un-registration helper for unit testing.
+     */
     unregisterMock(player) {
         const lowerName = player.name.toLowerCase();
         nameCache.delete(lowerName);
         idToNameCache.delete(player.id);
+        nameToIdCache.delete(lowerName);
     },
 
+    /**
+     * Clears all mock records from cache registries.
+     */
     clearMocks() {
-        for (const [id, lowerName] of idToNameCache.entries()) {
+        const idsToDelete = []
+        for (const id of idToNameCache.keys()) {
             if (id.startsWith("mock-id-") || id === "mock-player-id") {
-                nameCache.delete(lowerName);
-                idToNameCache.delete(id);
+                idsToDelete.push(id)
             }
         }
+        for (const id of idsToDelete) {
+            const lowerName = idToNameCache.get(id)
+            if (lowerName) {
+                nameCache.delete(lowerName)
+                nameToIdCache.delete(lowerName)
+            }
+            idToNameCache.delete(id)
+        }
+    },
+
+    /**
+     * Shuts down the GC interval and clears all caches.
+     * Call this during module cleanup to prevent stale interval handles.
+     */
+    shutdown() {
+        if (_gcIntervalId !== null) {
+            Kernel.system.clearRun(_gcIntervalId);
+            _gcIntervalId = null;
+        }
+        nameCache.clear();
+        idToNameCache.clear();
+        nameToIdCache.clear();
     }
 }
 
-// ----------------------------------------------------------------------------
-// | garbage collection                                                       |
-// | periodically sweep the caches for dead entities.                         |
-// ----------------------------------------------------------------------------
-Kernel.system.runInterval(() => {
+// garbage collection
+// periodically sweep the caches for dead entities.
+_gcIntervalId = Kernel.system.runInterval(() => {
+    const namesToDelete = []
     for (const [lowerName, player] of nameCache.entries()) {
         if (!player || !player.isValid) {
-            nameCache.delete(lowerName)
-            for (const [id, mappedName] of idToNameCache.entries()) {
-                if (mappedName === lowerName) {
-                    idToNameCache.delete(id)
-                }
-            }
+            namesToDelete.push(lowerName)
         }
     }
+    for (const lowerName of namesToDelete) {
+        nameCache.delete(lowerName)
+        const id = nameToIdCache.get(lowerName)
+        if (id) {
+            idToNameCache.delete(id)
+        }
+        nameToIdCache.delete(lowerName)
+    }
 }, 1200) // 1200 ticks = ~60 seconds
-

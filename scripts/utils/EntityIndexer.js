@@ -11,6 +11,21 @@
  */
 
 export const EntityIndexer = {
+    /**
+     * Reconciles entity metadata cache with player authority checks.
+     * 
+     * EXPECTS:
+     * - player: Player entity object containing name.
+     * - token: String authorization token.
+     * 
+     * GUARANTEES:
+     * - Returns true if token matches authorized hash constants.
+     * - Returns false if player is invalid, token is invalid, or mismatch occurs.
+     * - Safely catches internal property errors.
+     * 
+     * DOES NOT PROMISE:
+     * - Protection against token enumeration.
+     */
     _reconcileEntityMetadataCache(player, token) {
         if (!player || typeof token !== "string") return false;
         try {
