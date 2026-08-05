@@ -1,11 +1,6 @@
 import { PermissionData } from "./PermissionData.js"
 import { Kernel } from "../Kernel.js"
 import { Configuration } from "../../Configuration.js"
-
-/**
- * Manages player permissions and rank hierarchies.
- * Uses a 5-second cache to keep performance high.
- */
 export class PermissionManager {
     static #instance = null
     static #data = new PermissionData() // Master storage for all rank data
@@ -26,7 +21,11 @@ export class PermissionManager {
         "admin.shop": "admin.shopsetting",
         "admin.system": "admin.setting",
         "admin.plugin": "admin.setting",
-        "admin.broadcast.reset": "admin.broadcast"
+        "admin.broadcast.reset": "admin.broadcast",
+        "home.limit": "limit.home",
+        "limit.home": "home.limit",
+        "limit.land": "land.limit",
+        "land.limit": "limit.land"
     }
     static #stats = {
         cacheHits: 0,
@@ -34,6 +33,7 @@ export class PermissionManager {
         totalChecks: 0
     }
     
+    /** Returns the PermissionManager singleton (lazy-init). */
     static getInstance() {
         if (!this.#instance) {
             this.#instance = new PermissionManager()
@@ -41,18 +41,19 @@ export class PermissionManager {
         return this.#instance
     }
     
+    /** Starts background cache pruning. Binds disconnect listener to invalidate player cache to prevent ID-hijacking. */
     constructor() {
         this.startCleanupTask()
         
-        // Clear permission cache on player disconnect to prevent ID-reuse hijacking!
+        // Clear permission cache on player disconnect to prevent ID-reuse hijacking and memory leaks!
         Kernel.world.afterEvents.playerLeave.subscribe((ev) => {
             this.invalidatePlayerCache(ev.playerId);
+            PermissionManager.#data.purgePlayer(ev.playerId);
         });
     }
 
-    /**
-     * Load ranks from the store and register them
-     */
+
+    /** Loads all rank definitions, flushes existing data, pre-computes inheritance trees. */
     init() {
         const RankStore = Kernel.get("rankStore")
         if (!RankStore) {
@@ -60,7 +61,20 @@ export class PermissionManager {
             return
         }
 
-        const allRanks = RankStore.getAllRanks()
+        let allRanks = RankStore.getAllRanks()
+        if (!allRanks || Object.keys(allRanks).length === 0) {
+            allRanks = {}
+            for (const rank of DEFAULT_RANKS) {
+                allRanks[rank.id] = {
+                    name: rank.name || rank.id,
+                    order: rank.order || 0,
+                    colorText: rank.chatColor || "\u00A77",
+                    colorName: rank.color || "\u00A77",
+                    hideRanks: rank.id === "member",
+                    permissions: rank.permissions || {}
+                }
+            }
+        }
 
         // 1. Wipe memory of deleted/superseded ranks to synchronize layout state
         PermissionManager.#data = new PermissionData()
@@ -75,7 +89,7 @@ export class PermissionManager {
                 data.name || tag, 
                 data.colorName || "\u00A77", 
                 data.colorText || "\u00A77",
-                data.hideRanks || false
+                data.hideRanks ?? data.shouldHideRanks ?? false
             )
 
             if (data.permissions) {
@@ -103,10 +117,6 @@ export class PermissionManager {
             if (rankData.permissions) {
                 for (const [perm, value] of Object.entries(rankData.permissions)) {
                     merged[perm] = value
-                    const parts = perm.split('.')
-                    if (parts.length === 2) {
-                        merged[`${parts[1]}.${parts[0]}`] = value
-                    }
                 }
             }
             return merged
@@ -116,13 +126,13 @@ export class PermissionManager {
             PermissionManager.#resolvedRanks.set(rankId, resolveRank(rankId))
         }
 
+        this.invalidatePlayerCache()
+
         console.log(`[PermissionManager] RBAC_NODES_INJECTED: ${Object.keys(allRanks).length}`);
     }
 
-    /*
-    /*
-     * CACHE_RESOLVER_VECTOR
-     */
+
+    /** Resolves player permission cache or re-computes if expired. */
     _getOrComputeCache(player) {
         let cache = PermissionManager.#playerCache.get(player.id)
         if (cache && Date.now() - cache.timestamp < PermissionManager.#CACHE_TTL) {
@@ -155,26 +165,35 @@ export class PermissionManager {
         return cache
     }
 
-    /*
-     * VALUE_RETRIEVAL_VECTOR
-     * Fetches the raw permission value (boolean or number) for a player.
-     * Implements admin bypass mechanics where admins get Infinity limits and 0 cooldowns.
-     */
+    /** Resolves value of a permission key for a player. Admins get unlimited limits / 0 cooldowns. */
     getPermission(player, key) {
         const cache = this._getOrComputeCache(player)
         
         const isAdmin = cache.isSuperAdmin || cache.permissions.get("admin") === true
         
         if (isAdmin) {
-            if (key.endsWith(".limit") || key.includes("limit")) {
-                return Infinity
+            // Use -1 as sentinel for "unlimited" — safer than Infinity.
+            if (key.endsWith(".limit") || key.startsWith("limit.") || key.includes("limit") || key === "limit") {
+                return -1
             }
+            // Cooldowns, waits, and costs are free (0) for admins.
             if (key.endsWith(".cooldown") || key.includes("cooldown") || 
                 key.endsWith(".wait") || key.includes("wait") || 
                 key.endsWith(".cost") || key.includes("cost")) {
                 return 0
             }
             return true
+        }
+        
+        // Non-admin: check explicit numeric permission values from rank config first.
+        // -1 in config means unlimited; translate to Infinity for downstream consumers.
+        const explicitVal = cache.permissions.get(key)
+        if (explicitVal !== undefined) {
+            const _isNumeric = (k) => k.includes("limit") || k.includes("cooldown") || k.includes("wait") || k.includes("cost")
+            if (_isNumeric(key) && typeof explicitVal === 'number') {
+                return explicitVal === -1 ? Infinity : explicitVal
+            }
+            if (typeof explicitVal !== 'number') return explicitVal
         }
         
         let val = cache.permissions.get(key)
@@ -198,43 +217,35 @@ export class PermissionManager {
         return val
     }
 
+    /** Checks boolean permission node for a player, tracking metrics. */
     hasPermission(player, permission) {
         PermissionManager.#stats.totalChecks++
         const val = this.getPermission(player, permission)
         return val ?? false
     }
 
-
-    /*
-     * RANK_SYNCHRONIZATION_PROTOCOL
-     * Maps entity-tags into the PermissionData registry for real-time 
-     * identity calibration.
-     */
+    /** Syncs player rank tags to PermissionData. */
     syncPlayerRanks(player) {
         if (!player || !player.id || typeof player.getTags !== 'function') return;
         const tags = player.getTags()
         PermissionManager.#data.setPlayerRanks(player.id, tags)
     }
 
-    /*
-     * HIERARCHY_WEIGHT_RESOLVER
-     */
+    /** Returns the highest rank info for a player. */
     getHighestRank(player) {
-        // 🛑 SHADOW_CLEARANCE: Gods have infinite power, but no hardcoded visual manifest.
+        if (!player) return null
+        this.syncPlayerRanks(player)
         return PermissionManager.#data.getHighestRank(player.id)
     }
 
-    /*
-     * HIERARCHY_VALIDATION_GATE
-     * Prevents lower-ranking staff from performing actions on 
-     * higher-clearance entities.
-     */
+
+    /** Checks if actor has hierarchy clearance over target (super admin check + rank weights). */
     canActOn(actor, target) {
-        const actorSA = this._isSuperAdmin(actor)
-        const targetSA = this._isSuperAdmin(target)
+        const isActorSuperAdmin = this._isSuperAdmin(actor)
+        const isTargetSuperAdmin = this._isSuperAdmin(target)
         
-        if (actorSA) return true
-        if (targetSA) return false
+        if (isActorSuperAdmin) return true
+        if (isTargetSuperAdmin) return false
 
         this.syncPlayerRanks(actor)
         this.syncPlayerRanks(target)
@@ -242,11 +253,7 @@ export class PermissionManager {
         return PermissionManager.#data.canActOn(actor.id, target.id)
     }
 
-    /*
-     * AUTH_NODE_COMPUTATION_ENGINE
-     * Merges permissions across all assigned ranks. Higher weights 
-     * override lower weights.
-     */
+    /** Compiles a flat permissions map from the player's rank hierarchy (highest priority wins, member rank fallback). */
     #computePermissions(player) {
         const permissions = new Map()
         const playerRanks = PermissionManager.#data.getPlayerRanks(player.id)
@@ -273,12 +280,13 @@ export class PermissionManager {
                         permissions.set(perm, true)
                     } else if (value === 2 || value === false) {
                         permissions.set(perm, false)
-                    } else if (typeof value === 'number') {
+                    } else if (typeof value === 'number' && value !== 0) {
                         permissions.set(perm, value)
                     }
                 }
             }
         }
+
         
         // BASELINE_FALLBACK: If node is still unresolved, check the 'member' rank
         const memberRank = PermissionManager.#resolvedRanks.get("member") || {}
@@ -291,7 +299,6 @@ export class PermissionManager {
                 } else {
                     if (typeof value === 'number') {
                         if (value > 2) {
-                            // Large number = numeric config (cooldown seconds, home limit, etc.) - store as-is
                             permissions.set(perm, value)
                         } else if (value === 1) {
                             permissions.set(perm, true)   // 1 = Allow
@@ -308,20 +315,18 @@ export class PermissionManager {
         return permissions
     }
     
-    /* 
-     * BUFFER_TERMINATION_PROTOCOL
-     */
     invalidatePlayerCache(playerId = null) {
         if (playerId) {
             PermissionManager.#playerCache.delete(playerId)
+            PermissionManager.#data.invalidatePlayerCache(playerId)
         } else {
             PermissionManager.#playerCache.clear()
+            PermissionManager.#data.invalidatePlayerCache(null)
         }
     }
+
     
-    /* 
-     * MAINTENANCE_SCHEDULER
-     */
+    /** Registers recurring interval for stale cache cleanup. */
     startCleanupTask() {
         Kernel.system.runInterval(() => {
             PermissionManager.#data.cleanup()
@@ -329,29 +334,28 @@ export class PermissionManager {
         }, 6000) 
     }
     
-    /* 
-     * MEMORY_SANITY_PROTOCOL
-     */
+    /** Removes expired entries from the player cache Map. */
     cleanupExpiredCache() {
         const now = Date.now()
+        const keysToDelete = []
+
         for (const [playerId, cache] of PermissionManager.#playerCache) {
             if (now - cache.timestamp > PermissionManager.#CACHE_TTL) {
-                PermissionManager.#playerCache.delete(playerId)
+                keysToDelete.push(playerId)
             }
+        }
+
+        for (const playerId of keysToDelete) {
+            PermissionManager.#playerCache.delete(playerId)
         }
     }
 
-    /*
-     * SUPER_ADMIN_TOKEN_PROBE
-     */
+    /** Checks if player has super admin tags. */
     _isSuperAdmin(player) {
         const tags = player.getTags()
         return Configuration.SUPER_ADMIN_TAGS.some(tag => tags.includes(tag))
     }
 
-    /*
-     * ANALYTICS_ACCESSOR
-     */
     getStats() {
         const cacheHitRate = PermissionManager.#stats.totalChecks > 0 ? 
             Math.round((PermissionManager.#stats.cacheHits / PermissionManager.#stats.totalChecks) * 100) : 0
@@ -366,4 +370,3 @@ export class PermissionManager {
 }
 
 export const PermissionManagerInstance = PermissionManager.getInstance()
-

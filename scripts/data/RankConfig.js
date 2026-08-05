@@ -12,6 +12,8 @@ export const DEFAULT_RANKS = [
         chatColor: "\u00A77",
         permissions: {
             "home.limit": 3,
+            "limit.home": 3,
+            "limit.land": 10,
             "home.cooldown": 30, 
             "teleport.wait": 5,
             "command.cooldown": 3,
@@ -37,7 +39,7 @@ export const DEFAULT_RANKS = [
             "essentials.tpaccept": true,
             "essentials.tpadeny": true,
             "essentials.tpacancel": true,
-            "essentials.tpahere": true,
+            "essentials.tpahere": false,
             "essentials.home": true,
             "essentials.warp": true,
             "essentials.spawn": true,
@@ -51,6 +53,13 @@ export const DEFAULT_RANKS = [
             "essentials.back": true,
             "essentials.menu": true,
             "essentials.auction": true,
+            "essentials.bounty.place": true,
+            "essentials.bounty.list": true,
+            "essentials.celebrate": true,
+            "essentials.playtime": true,
+            "essentials.seen": true,
+            "essentials.nick": false,
+            "essentials.realname": true,
             "essentials.default": true
         }
     }
