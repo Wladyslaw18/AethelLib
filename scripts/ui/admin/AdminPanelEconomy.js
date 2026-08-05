@@ -66,12 +66,10 @@ export async function showEconomyControl(player) {
             await showSetBalanceInterface(player)
             break
         case 3:
-            player.sendMessage("\u00A77Economy stats interface coming soon...")
-            await showEconomyControl(player)
+            await showEconomyStats(player)
             break
         case 4:
-            player.sendMessage("\u00A77Reset economy interface coming soon...")
-            await showEconomyControl(player)
+            await showResetEconomyInterface(player)
             break
         case 5:
             await showAdminPanel(player)
@@ -217,5 +215,155 @@ async function showSetBalanceInterface(player) {
 
     await EconomyStore.setBalance(target, amount)
     player.sendMessage(`\u00A7aSuccessfully set ${target.name}'s balance to $${amount}.`)
+    await showEconomyControl(player)
+}
+
+async function showEconomyStats(player) {
+    const allPlayers = Kernel.world.getAllPlayers()
+    const balances = EconomyStore.getAllBalances()
+
+    let body = "\u00A77=== \u00A76Economy Overview \u00A77===\n\n"
+
+    // Total money in circulation
+    const totalMoney = balances.reduce((sum, entry) => sum + (entry.balance || 0), 0)
+    body += `\u00A7eTotal Money in Circulation: \u00A7f$${totalMoney.toLocaleString()}\n`
+
+    // Online player count
+    body += `\u00A7ePlayers Online: \u00A7f${allPlayers.length}\n`
+
+    // Top 5 richest
+    const sorted = [...balances].sort((a, b) => b.balance - a.balance)
+    const top5 = sorted.slice(0, 5)
+    if (top5.length > 0) {
+        body += "\n\u00A76\u00A7lWealthiest Players:\n"
+        top5.forEach((entry, i) => {
+            const medal = i === 0 ? "\u00A7e\u2605" : i === 1 ? "\u00A77\u2605" : i === 2 ? "\u00A76\u2605" : "\u00A78\u2605"
+            body += `  ${medal} \u00A7f${entry.name}: \u00A7a$${entry.balance.toLocaleString()}\n`
+        })
+    } else {
+        body += "\n\u00A78No economy data available yet.\n"
+    }
+
+    // Default starting balance
+    body += `\n\u00A78Starting Balance: $${EconomyStore.DEFAULT_BALANCE?.toLocaleString() ?? "N/A"}\n`
+
+    // Count of players with a balance record
+    body += `\u00A78Player Records: \u00A7f${balances.length}\n`
+
+    const form = new Kernel.ActionFormData()
+        .title(Lang.GRID_M + "\u00A76\u00A7lEconomy Stats")
+        .body(body)
+        .button("\u00A7cBack")
+
+    const res = await UIUtils.showForm(player, form)
+    if (res.canceled || res.selection === 0) {
+        await showEconomyControl(player)
+        return
+    }
+}
+
+async function showResetEconomyInterface(player) {
+    const form = new Kernel.ActionFormData()
+        .title(Lang.GRID_M + "\u00A7c\u00A7lReset Economy")
+        .body("\u00A7c\u00A7l\u26A0\uFE0F WARNING: \u00A77This resets player balances.\nChoose reset scope:")
+        .button("\u00A74\u00A7lReset ALL Players", "textures/ui/cancel")
+        .button("\u00A7eReset Single Player", "textures/items/gold_ingot")
+        .button("\u00A7cBack", "textures/ui/refresh")
+
+    const res = await UIUtils.showForm(player, form)
+    if (res.canceled) return
+
+    switch (res.selection) {
+        case 0:
+            await showConfirmResetAll(player)
+            break
+        case 1:
+            await showResetSinglePlayerPicker(player)
+            break
+        case 2:
+            await showEconomyControl(player)
+            break
+    }
+}
+
+async function showConfirmResetAll(player) {
+    const confirmForm = new Kernel.ModalFormData()
+        .title("\u00A7c\u00A7lReset ALL Balances")
+        .textField("Type \u00A7cRESET\u00A7f to confirm:", "")
+        .toggle("I understand this cannot be undone", false)
+
+    const res = await UIUtils.showForm(player, confirmForm)
+    if (res.canceled || !res.formValues[1]) {
+        await showResetEconomyInterface(player)
+        return
+    }
+
+    const typed = String(res.formValues[0]).trim().toUpperCase()
+    if (typed !== "RESET") {
+        player.sendMessage("\u00A7c\u00A7l\u00BB \u00A77Confirmation failed. Type \u00A7cRESET\u00A77 to confirm.")
+        await showResetEconomyInterface(player)
+        return
+    }
+
+    const balances = EconomyStore.getAllBalances()
+    let resetCount = 0
+
+    for (const entry of balances) {
+        try {
+            await EconomyStore.setBalance(entry.name, EconomyStore.DEFAULT_BALANCE)
+            resetCount++
+        } catch (e) {
+            player.sendMessage(`\u00A7cFailed to reset ${entry.name}: ${e.message}`)
+        }
+    }
+
+    player.sendMessage(`\u00A7a\u00A7l\u00BB \u00A77Reset ${resetCount}/${balances.length} player balances to \u00A7e$${EconomyStore.DEFAULT_BALANCE}`)
+    await showEconomyControl(player)
+}
+
+async function showResetSinglePlayerPicker(player) {
+    const players = Kernel.world.getAllPlayers()
+    if (players.length === 0) {
+        player.sendMessage("\u00A7cNo players online.")
+        await showResetEconomyInterface(player)
+        return
+    }
+
+    const form = new Kernel.ActionFormData()
+        .title("\u00A7e\u00A7lReset Single Player")
+        .body("Select a player to reset to default balance")
+
+    players.forEach(p => form.button(p.name, "textures/items/totem"))
+    form.button("\u00A7cBack", "textures/ui/refresh")
+
+    const res = await UIUtils.showForm(player, form)
+    if (res.canceled || res.selection === players.length) {
+        await showResetEconomyInterface(player)
+        return
+    }
+
+    const target = players[res.selection]
+    const currentBalance = EconomyStore.getBalance(target)
+
+    const confirmForm = new Kernel.ModalFormData()
+        .title(`\u00A7cReset ${target.name}`)
+        .textField(`Current: $${currentBalance}. Type \u00A7cYES\u00A7f to reset to $${EconomyStore.DEFAULT_BALANCE}:`, "YES")
+        .toggle("Confirm reset", false)
+
+    const confirmRes = await UIUtils.showForm(player, confirmForm)
+    if (confirmRes.canceled || !confirmRes.formValues[1]) {
+        await showResetEconomyInterface(player)
+        return
+    }
+
+    const typed = String(confirmRes.formValues[0]).trim().toUpperCase()
+    if (typed !== "YES") {
+        player.sendMessage("\u00A7cReset cancelled. Type \u00A7cYES\u00A77 to confirm.")
+        await showResetEconomyInterface(player)
+        return
+    }
+
+    await EconomyStore.setBalance(target, EconomyStore.DEFAULT_BALANCE)
+    player.sendMessage(`\u00A7a\u00A7l\u00BB \u00A77Reset \u00A7f${target.name}\u00A77's balance to \u00A7e$${EconomyStore.DEFAULT_BALANCE}`)
     await showEconomyControl(player)
 }

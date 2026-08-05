@@ -43,7 +43,18 @@ export const Lang = {
     },
 
     /**
-     * FORMAT_PROTO
+     * Formats string templates by replacing bracket variables.
+     * 
+     * EXPECTS:
+     * - template: String template containing `{varName}` segments.
+     * - vars: Object map containing variables to inject.
+     * 
+     * GUARANTEES:
+     * - Returns formatted string with variables replaced.
+     * 
+     * @param {string} template - String template.
+     * @param {Record<string, string|number>} vars - Variables mapping.
+     * @returns {string} Formatted string.
      */
     format(template, vars = {}) {
         let str = template;
@@ -54,7 +65,16 @@ export const Lang = {
     },
 
     /**
-     * ASSET_RESOLVER
+     * Map item identifiers to texture file locations.
+     * 
+     * EXPECTS:
+     * - id: Namespaced item identifier string.
+     * 
+     * GUARANTEES:
+     * - Returns texture directory path mapping.
+     * 
+     * @param {string} id - Namespaced item ID.
+     * @returns {string} Texture path.
      */
     getTexture(id) {
         const cleanId = id.replace("minecraft:", "");
