@@ -34,10 +34,14 @@ export const ListHomeCommand = {
             return
         }
 
+        // resolve dynamic rank home limit via Data-Oriented Design (DOD)
+        const { RankSystem } = await import("../../systems/social/ranks/RankSystem.js")
+        const rawLimit = RankSystem ? RankSystem.getPermission(player, "home.limit") : undefined;
+        const limitStr = (rawLimit === -1 || rawLimit === Infinity) ? "Unlimited" : (rawLimit !== undefined ? String(rawLimit) : "Default");
+
         // header display.
         player.sendMessage(" ")
-        // TODO: Dynamically resolve the limit from RankSystem instead of hardcoded 10.
-        player.sendMessage(`\u00A76\u00A7lYour Homes \u00A78(\u00A7e${homeNames.length}\u00A78/\u00A7e10\u00A78):`)
+        player.sendMessage(`\u00A76\u00A7lYour Homes \u00A78(\u00A7e${homeNames.length}\u00A78/\u00A7e${limitStr}\u00A78):`)
 
         // step 2: iterative output.
         for (const name of homeNames) {

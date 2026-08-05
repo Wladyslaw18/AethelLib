@@ -60,12 +60,13 @@ export const SetHomeCommand = {
         // step 3: quota enforcement.
         // check how many homes the player already has.
         const homeCount = await HomeStore.getHomeCount(player);
-        // resolve the limit based on their rank node (default 10).
-        const homeLimit = RankSystem.getPermission(player, "home.limit") ?? 10;
+        // resolve the limit based on their rank node from data store.
+        const homeLimit = RankSystem.getPermission(player, "home.limit");
 
         // stop if they are at or over the limit.
-        if (homeCount >= homeLimit) {
-            player.sendMessage(`\u00A7c\u00A7l» \u00A77Failed to set home. Limit: \u00A7e${homeCount}/${homeLimit}\u00A77.`);
+        // ✦ FIXED: Properly handle -1 (unlimited) and Infinity sentinels!
+        if (homeLimit !== -1 && homeLimit !== Infinity && homeCount >= homeLimit) {
+            player.sendMessage(`\u00A7c\u00A7l» \u00A77Failed to set home. Limit reached: \u00A7e${homeCount}/${homeLimit}\u00A77.`);
             return;
         }
 
