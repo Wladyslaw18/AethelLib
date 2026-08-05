@@ -8,28 +8,122 @@
  * Every entry must follow the 'DOMAIN:SUBDOMAIN:ID' hierarchy.
  */
 export const StoreKeys = {
-    /* FINANCIAL_DATA_IDENTIFIERS */
+    /**
+     * Keys associated with money balances.
+     * 
+     * EXPECTS:
+     * - playerId: Unique string identifier of player.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced money key string.
+     */
     money: (playerId) => `money:${playerId}`,
 
-    /* SPATIAL_REGISTRY_POINTERS */
+    /**
+     * Keys associated with spatial homes.
+     * 
+     * EXPECTS:
+     * - playerId: Unique string identifier of player.
+     * - name: Location name string.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced home key string.
+     */
     home: (playerId, name) => `home:${playerId}:${name}`,
+
+    /**
+     * Keys associated with player home lists.
+     * 
+     * EXPECTS:
+     * - playerId: Unique string identifier of player.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced list key string.
+     */
     homeList: (playerId) => `homeList:${playerId}`,
 
-    /* AUTH_AND_ROLE_IDENTIFIERS */
+    /**
+     * Keys associated with rank definitions.
+     * 
+     * EXPECTS:
+     * - rankTag: Tag string of rank.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced rank key string.
+     */
     rankDef: (rankTag) => `rank:def:${rankTag}`,
+
+    /**
+     * Keys associated with global rank list.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced rank list key string.
+     */
     rankList: () => `rank:list`,
 
-    /* SECURITY_ENFORCEMENT_POINTERS */
+    /**
+     * Keys associated with player bans.
+     * 
+     * EXPECTS:
+     * - playerId: Unique string identifier of player.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced ban key string.
+     */
     ban: (playerId) => `ban:${playerId}`,
+
+    /**
+     * Keys associated with player mutes.
+     * 
+     * EXPECTS:
+     * - playerId: Unique string identifier of player.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced mute key string.
+     */
     mute: (playerId) => `mute:${playerId}`,
 
-    /* GLOBAL_WARP_REGISTRY */
+    /**
+     * Keys associated with warp locations.
+     * 
+     * EXPECTS:
+     * - name: Warp key name.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced warp key string.
+     */
     warp: (name) => `warp:${name}`,
+
+    /**
+     * Keys associated with global warp lists.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced warp list key string.
+     */
     warpList: () => `warp:list`,
 
-    /* INDUSTRIAL_ZONE_PROTECTION_PARAMETERS */
+    /**
+     * Keys associated with hub center spatial anchor.
+     * 
+     * GUARANTEES:
+     * - Returns Hub center key string.
+     */
     hubCenter: () => `hub:center`,
+
+    /**
+     * Keys associated with hub zone range bounds.
+     * 
+     * GUARANTEES:
+     * - Returns Hub radius key string.
+     */
     hubRadius: () => `hub:radius`,
+
+    /**
+     * Keys associated with hub banned items manifest.
+     * 
+     * GUARANTEES:
+     * - Returns Hub banned items key string.
+     */
     hubBannedItems: () => `hub:bannedItems`,
 
     /* 
@@ -52,8 +146,36 @@ export const StoreKeys = {
         HUB_SPAWN: { x: 9026.52, y: 236, z: 9033.47 }
     },
 
-    /* SESSION_METRICS_IDENTIFIERS */
+    /**
+     * Keys associated with session first join date tracker.
+     * 
+     * EXPECTS:
+     * - playerId: Unique string identifier of player.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced playtime key string.
+     */
     firstJoin: (playerId) => `session:firstJoin:${playerId}`,
+
+    /**
+     * Keys associated with playtime counter.
+     * 
+     * EXPECTS:
+     * - playerId: Unique string identifier of player.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced playtime count key string.
+     */
     playtime: (playerId) => `session:playtime:${playerId}`,
+
+    /**
+     * Keys associated with last seen date tracker.
+     * 
+     * EXPECTS:
+     * - playerId: Unique string identifier of player.
+     * 
+     * GUARANTEES:
+     * - Returns Namespaced last seen key string.
+     */
     lastSeen: (playerId) => `session:lastSeen:${playerId}`,
-}
+};

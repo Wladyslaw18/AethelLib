@@ -16,9 +16,10 @@ Read-Host | Out-Null
 
 $PSScriptDir = $PSScriptRoot
 if (!$PSScriptDir) { $PSScriptDir = Split-Path $MyInvocation.MyCommand.Path -Parent }
-$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+$ToolsDir = if ($PSScriptDir -like "*tools*") { $PSScriptDir } else { Join-Path (Get-Item $PSScriptDir).FullName "tools" }
+$ProjectRoot = (Get-Item $ToolsDir).Parent.FullName
 
-$OutputDir = Join-Path $PSScriptDir "Output"
+$OutputDir = Join-Path $ToolsDir "Output"
 if (!(Test-Path $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }

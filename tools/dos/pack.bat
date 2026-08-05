@@ -24,9 +24,15 @@ set "PROJECT_ROOT=%TOOLS_DIR%\.."
 pushd "%PROJECT_ROOT%"
 set "PROJECT_ROOT=%CD%"
 popd
+pushd "%TOOLS_DIR%"
+set "TOOLS_DIR=%CD%"
+popd
+
+set "OUTPUT_DIR=%TOOLS_DIR%\Output"
+if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 
 set "BUILD_DIR=%PROJECT_ROOT%\build"
-set "OUT_FILE=%PROJECT_ROOT%\AethelLib.mcaddon"
+set "OUT_FILE=%OUTPUT_DIR%\AethelLib.mcaddon"
 
 echo [Packager] Cleaning build workspace...
 if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
@@ -53,7 +59,7 @@ powershell -ExecutionPolicy Bypass -Command ^
     "$rp=\"$b\AethelLib_RP.mcpack\";" ^
     "[System.IO.Compression.ZipFile]::CreateFromDirectory(\"$b\AethelLib_BP\", $bp, [System.IO.Compression.CompressionLevel]::Optimal, $false);" ^
     "[System.IO.Compression.ZipFile]::CreateFromDirectory(\"$b\AethelLib_RP\", $rp, [System.IO.Compression.CompressionLevel]::Optimal, $false);" ^
-    "$out=\"$r\AethelLib.mcaddon\";" ^
+    "$out=\"%OUTPUT_DIR%\AethelLib.mcaddon\";" ^
     "$fs=[System.IO.File]::Open($out,[System.IO.FileMode]::Create);" ^
     "$az=[System.IO.Compression.ZipArchive]::new($fs,[System.IO.Compression.ZipArchiveMode]::Create);" ^
     "foreach($p in @($bp,$rp)){" ^

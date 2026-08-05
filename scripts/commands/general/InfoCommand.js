@@ -76,5 +76,5 @@ function getUptime() {
 // | returns the hardcoded release string for the current deployment.          |
 // ----------------------------------------------------------------------------
 function getServerVersion() {
-    return "1.26.30"
+    return "1.26.40"
 }

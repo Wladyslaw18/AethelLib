@@ -11,6 +11,14 @@ export class LifecycleController {
 
     /**
      * Attempts to acquire a boot-lock for a system.
+     * 
+     * EXPECTS:
+     * - systemId: Unique string identifier for the system.
+     * 
+     * GUARANTEES:
+     * - Returns true if lock acquired successfully (system wasn't active).
+     * - Returns false if system already has an active lock.
+     * 
      * @param {string} systemId Unique identifier for the system.
      * @returns {boolean} True if lock acquired, false if already locked.
      */
@@ -25,8 +33,16 @@ export class LifecycleController {
 
     /**
      * Registers a disposer function to be called on shutdown.
-     * @param {string} systemId 
-     * @param {Function} disposer 
+     * 
+     * EXPECTS:
+     * - systemId: Unique string identifier for the system.
+     * - disposer: Callback function executed during system shutdown.
+     * 
+     * GUARANTEES:
+     * - Saves the disposer function mapped to the systemId.
+     * 
+     * @param {string} systemId - System identifier.
+     * @param {Function} disposer - Cleanup disposer function.
      */
     static registerDisposer(systemId, disposer) {
         this._disposers.set(systemId, disposer);
@@ -34,7 +50,15 @@ export class LifecycleController {
 
     /**
      * Shuts down a system and clears its lock.
-     * @param {string} systemId 
+     * 
+     * EXPECTS:
+     * - systemId: Unique string identifier for the system.
+     * 
+     * GUARANTEES:
+     * - Executes the registered disposer function safely catching internal errors.
+     * - Wipes registered disposer and lock states.
+     * 
+     * @param {string} systemId - System identifier.
      */
     static shutdown(systemId) {
         const disposer = this._disposers.get(systemId);
@@ -51,6 +75,9 @@ export class LifecycleController {
 
     /**
      * Global shutdown sequence for all registered systems.
+     * 
+     * GUARANTEES:
+     * - Shuts down every active system in the disposer registry.
      */
     static shutdownAll() {
         for (const systemId of this._disposers.keys()) {

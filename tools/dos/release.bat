@@ -20,12 +20,17 @@ set "SCRIPT_DIR=%~dp0"
 pushd "%SCRIPT_DIR%..\..\"
 set "PROJECT_ROOT=%CD%"
 popd
+pushd "%SCRIPT_DIR%..\"
+set "TOOLS_DIR=%CD%"
+popd
 
+set "OUTPUT_DIR=%TOOLS_DIR%\Output"
 set "BUILD_DIR=%PROJECT_ROOT%\build"
-set "BACKUP_DIR=%PROJECT_ROOT%\backups"
-set "RELEASE_DIR=%PROJECT_ROOT%\releases"
+set "BACKUP_DIR=%OUTPUT_DIR%\backups"
+set "RELEASE_DIR=%OUTPUT_DIR%\releases"
 set "MANIFEST=%PROJECT_ROOT%\manifest.json"
 
+if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
 if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
 
@@ -97,9 +102,9 @@ powershell -ExecutionPolicy Bypass -Command ^
     "  $e=$az.CreateEntry([System.IO.Path]::GetFileName($pk),[System.IO.Compression.CompressionLevel]::Optimal);" ^
     "  $es=$e.Open();$ps=[System.IO.File]::OpenRead($pk);$ps.CopyTo($es);$ps.Dispose();$es.Dispose()};" ^
     "$az.Dispose();$fs.Dispose();" ^
-    "$rel=""$root\releases\AethelLib_v$new.mcaddon"";" ^
-    "$bak=""$root\backups\AethelLib_backup_v$new.mcaddon"";" ^
-    "$dev=""$root\AethelLib.mcaddon"";" ^
+    "$rel=""$root\tools\Output\releases\AethelLib_v$new.mcaddon"";" ^
+    "$bak=""$root\tools\Output\backups\AethelLib_backup_v$new.mcaddon"";" ^
+    "$dev=""$root\tools\Output\AethelLib.mcaddon"";" ^
     "Copy-Item $staged $rel -Force;" ^
     "Copy-Item $staged $bak -Force;" ^
     "Copy-Item $staged $dev -Force;" ^

@@ -11,53 +11,86 @@
  */
 
 class IStore {
-    /* 
-     * DATA_RETRIEVAL_VECTOR
-     * Fetches a value from the persistent store. Includes a mandatory 
-     * defaultValue parameter to prevent undefined-reference crashes in 
-     * downstream modules.
+    /**
+     * Retrieve value by key.
+     * 
+     * EXPECTS:
+     * - key: String key identifier.
+     * - defaultValue: Value returned if key is missing.
+     * 
+     * GUARANTEES:
+     * - Returns value associated with key, or defaultValue if not present.
+     * 
+     * @param {string} key - Lookup key.
+     * @param {any} defaultValue - Fallback value.
      */
     async get(key, defaultValue) {
-        void key; void defaultValue
+        void key; void defaultValue;
         throw new Error("[ContractViolation] 'get' method must be implemented.");
     }
 
-    /* 
-     * DATA_INJECTION_VECTOR
-     * Commits a value to the persistent store. Returns a boolean status 
-     * to indicate if the write operation was successful.
+    /**
+     * Set value associated with key.
+     * 
+     * EXPECTS:
+     * - key: String key identifier.
+     * - value: Value to store.
+     * 
+     * GUARANTEES:
+     * - Returns boolean indicating success of write action.
+     * 
+     * @param {string} key - Destination key.
+     * @param {any} value - Stored payload.
      */
     async set(key, value) {
-        void key; void value
+        void key; void value;
         throw new Error("[ContractViolation] 'set' method must be implemented.");
     }
 
-    /* 
-     * DATA_PURGE_VECTOR
-     * Removes a key-value pair from the persistent store.
+    /**
+     * Delete key from store.
+     * 
+     * EXPECTS:
+     * - key: String key identifier to remove.
+     * 
+     * GUARANTEES:
+     * - Returns boolean indicating success of deletion.
+     * 
+     * @param {string} key - Lookup key.
      */
     async delete(key) {
-        void key
+        void key;
         throw new Error("[ContractViolation] 'delete' method must be implemented.");
     }
 
-    /* 
-     * KEY_EXISTENCE_PROBE
-     * Checks if a specific key has an active entry in the store.
+    /**
+     * Checks if key exists in store.
+     * 
+     * EXPECTS:
+     * - key: String key identifier to verify.
+     * 
+     * GUARANTEES:
+     * - Returns true if key is present, false otherwise.
+     * 
+     * @param {string} key - Lookup key.
      */
     async has(key) {
-        void key
+        void key;
         throw new Error("[ContractViolation] 'has' method must be implemented.");
     }
 
-    /* 
-     * MASTER_WIPE_PROTOCOL
-     * Nukes every single entry in the store. This is a destructive 
-     * operation and must be implemented with caution.
+    /**
+     * Purges all keys and values from store.
+     * 
+     * EXPECTS:
+     * - None.
+     * 
+     * GUARANTEES:
+     * - Clears the underlying store structure.
      */
     async clear() {
         throw new Error("[ContractViolation] 'clear' method must be implemented.");
     }
 }
 
-export { IStore }
+export { IStore };

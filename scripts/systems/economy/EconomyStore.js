@@ -1,17 +1,10 @@
 import { Kernel } from "../../core/Kernel.js"
 import { SignalBus } from "../../core/signalbus/SignalBus.js"
 import { Configuration } from "../../Configuration.js"
+import { ValidationHelper } from "../../utils/ValidationHelper.js"
 
-// ----------------------------------------------------------------------------
-// | @typedef {import("@minecraft/server").Player} Player                     |
-// | standard typescript-ish type definition so the ide doesn't complain.      |
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-// | EconomyStore                                                              |
-// | handles the server's money logic. atomic transactions, balance checks,    |
-// | and leaderboard generation. keep your hands off the transaction chains.    |
-// ----------------------------------------------------------------------------
+// @typedef {import("@minecraft/server").Player} Player
+// EconomyStore — handles money logic: atomic transactions, balance checks, leaderboard generation.
 
 // small cache to store the top 10 richest players so we don't scan the db every frame.
 let cachedLeaderboard = []
@@ -39,62 +32,44 @@ export const EconomyStore = {
         return Number(Configuration.STARTING_BALANCE)
     }, 
 
-    // ----------------------------------------------------------------------------
-    // | getBalance                                                               |
-    // | fetches a player's current credit balance.                               |
-    // ----------------------------------------------------------------------------
+    // getBalance — fetches a player's current credit balance.
     getBalance(player) {
         player = resolvePlayer(player)
         if (!player || !player.id) return this.DEFAULT_BALANCE
 
-        // get the player store and keys utilities from the kernel.
         const PlayerStore = Kernel.get("playerStore")
         const StoreKeys = Kernel.get("keys")
         
-        // try to get the money value using the player's unique id key.
         const balance = PlayerStore.get(player, StoreKeys.money(player.id))
-        // if they don't have a record yet, give them the default starting amount.
         return balance !== null ? balance : this.DEFAULT_BALANCE
     },
 
-    // ----------------------------------------------------------------------------
-    // | setBalance                                                               |
-    // | forces a player's balance to a specific value.                           |
-    // | uses a transaction so we don't hit race conditions with other scripts.    |
-    // ----------------------------------------------------------------------------
+    // setBalance — forces a player's balance to a specific value. Uses a transaction to avoid race conditions.
     async setBalance(player, amount) {
         player = resolvePlayer(player)
         if (!player || !player.id) return false
 
-        // validation. don't allow negative numbers or weird infinity stuff.
-        if (typeof amount !== 'number' || amount < 0 || !Number.isFinite(amount)) {
-            return false
-        }
+        if (!ValidationHelper.isValidMoney(amount)) return false
 
         const PlayerStore = Kernel.get("playerStore")
         const StoreKeys = Kernel.get("keys")
 
-        // wrap the write operation in an atomic transaction.
+        // Pre-compute floored amount once — avoids duplicate Math.floor calls.
+        const finalAmount = Math.floor(amount)
         return await PlayerStore.transaction(player, async () => {
-            // save the floored value (no pennies allowed).
-            const success = PlayerStore.set(player, StoreKeys.money(player.id), Math.floor(amount))
+            const success = PlayerStore.set(player, StoreKeys.money(player.id), finalAmount)
             if (success) {
-                // tell the rest of the system (like the scoreboard) that money changed.
-                SignalBus.emit("economy:balanceChanged", { player, newBalance: Math.floor(amount) })
+                SignalBus.emit("economy:balanceChanged", { player, newBalance: finalAmount })
             }
             return success
         })
     },
 
-    // ----------------------------------------------------------------------------
-    // | addMoney                                                                 |
-    // | increments a player's balance.                                           |
-    // ----------------------------------------------------------------------------
+    // addMoney — increments a player's balance.
     async addMoney(player, amount) {
         player = resolvePlayer(player)
         if (!player || !player.id) return false
 
-        // only allow positive additions.
         if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount)) {
             return false
         }
@@ -104,11 +79,9 @@ export const EconomyStore = {
 
         // transaction ensures we don't 'add' to an old balance value.
         return await PlayerStore.transaction(player, async () => {
-            // get the latest data inside the transaction block.
             const currentBalance = this.getBalance(player)
             const newBalance = Math.floor(currentBalance + amount)
 
-            // write the new sum.
             const success = PlayerStore.set(player, StoreKeys.money(player.id), newBalance)
             if (success) {
                 SignalBus.emit("economy:balanceChanged", { player, newBalance })
@@ -117,15 +90,11 @@ export const EconomyStore = {
         })
     },
 
-    // ----------------------------------------------------------------------------
-    // | removeMoney                                                              |
-    // | decrements a player's balance. checks if they are broke first.           |
-    // ----------------------------------------------------------------------------
+    // removeMoney — decrements a player's balance. Checks if they are broke first.
     async removeMoney(player, amount) {
         player = resolvePlayer(player)
         if (!player || !player.id) return false
 
-        // only allow positive subtractions.
         if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount)) {
             return false
         }
@@ -134,10 +103,8 @@ export const EconomyStore = {
         const StoreKeys = Kernel.get("keys")
 
         return await PlayerStore.transaction(player, async () => {
-            // get current balance inside the lock.
             const currentBalance = this.getBalance(player)
 
-            // if they don't have enough, stop here.
             if (currentBalance < amount) {
                 return false 
             }
@@ -151,18 +118,12 @@ export const EconomyStore = {
         })
     },
 
-    // ----------------------------------------------------------------------------
-    // | transferMoney                                                            |
-    // | moves money from one player to another.                                  |
-    // | very complex because it requires locking TWO players at once.            |
-    // | implements a manual rollback if the second write fails.                  |
-    // ----------------------------------------------------------------------------
+    // transferMoney — moves money between two players. Locks alphabetically to prevent deadlocks. Manual rollback on failure.
     async transferMoney(sender, receiver, amount) {
         sender = resolvePlayer(sender)
         receiver = resolvePlayer(receiver)
         if (!sender || !sender.id || !receiver || !receiver.id) return false
 
-        // basic validation.
         if (typeof amount !== 'number' || amount <= 0 || !Number.isFinite(amount)) {
             return false
         }
@@ -179,7 +140,6 @@ export const EconomyStore = {
         const senderBalance = this.getBalance(sender)
         const receiverBalance = this.getBalance(receiver)
 
-        // check if sender can actually afford this.
         if (senderBalance < amount) {
             return false 
         }
@@ -195,7 +155,6 @@ export const EconomyStore = {
 
         return await PlayerStore.transaction(first, async () => {
             return await PlayerStore.transaction(second, async () => {
-                // subtract from sender.
                 const newSenderBalance = Math.floor(senderBalance - amount)
                 const senderSuccess = await PlayerStore.set(sender, StoreKeys.money(sender.id), newSenderBalance)
                 if (!senderSuccess) {
@@ -207,7 +166,6 @@ export const EconomyStore = {
                 }
 
                 try {
-                    // add to receiver.
                     const receiverSuccess = await PlayerStore.set(receiver, StoreKeys.money(receiver.id), Math.floor(receiverBalance + amount))
 
                     // if the receiver write fails, we MUST give the sender their money back.
@@ -221,7 +179,6 @@ export const EconomyStore = {
                         return false
                     }
 
-                    // emit signals for both players.
                     SignalBus.emit("economy:balanceChanged", { player: sender, newBalance: newSenderBalance })
                     SignalBus.emit("economy:balanceChanged", { player: receiver, newBalance: Math.floor(receiverBalance + amount) })
 
@@ -243,10 +200,7 @@ export const EconomyStore = {
         })
     },
 
-    // ----------------------------------------------------------------------------
-    // | hasEnough                                                                |
-    // | quick check if a player can afford something.                            |
-    // ----------------------------------------------------------------------------
+    // hasEnough — quick check if a player can afford something.
     async hasEnough(player, amount) {
         player = resolvePlayer(player)
         if (!player || !player.id) return false
@@ -278,27 +232,20 @@ export const EconomyStore = {
         return cachedLeaderboard
     },
 
-    // ----------------------------------------------------------------------------
-    // | updateLeaderboardGenerator                                               |
-    // | a generator that slowly scans the entire database for money values.      |
-    // | yields every 50 keys to prevent freezing the server.                     |
-    // ----------------------------------------------------------------------------
+    // updateLeaderboardGenerator — scans the database for money values, yielding every 50 keys to prevent freezing.
     *updateLeaderboardGenerator() {
         const Database = Kernel.get("database")
-        // get every single key in the world's dynamic property storage.
         const ids = Kernel.world.getDynamicPropertyIds()
         // looking for keys that look like 'player:<id>:money'.
         const moneyPattern = /^player:(.+):money$/
         const newLeaderboard = []
         
-        // loop through thousands of keys.
         for (let i = 0; i < ids.length; i++) {
             // yield control back to the engine every 50 entries to keep tps high.
             if (i % 50 === 0) yield
             
             const match = ids[i].match(moneyPattern)
             if (match) {
-                // extract the player id from the key.
                 const playerId = match[1]
                 const balance = Database.get(ids[i])
                 // try to find their display name, otherwise use a slice of their id.

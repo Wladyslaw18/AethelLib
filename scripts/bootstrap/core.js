@@ -34,16 +34,19 @@ import { MasterDispatcher } from "../core/events/MasterDispatcher.js"
 import { SpatialCache } from "../systems/protection/SpatialCache.js"
 import { SettingsStore } from "../core/store/SettingsStore.js"
 import { CommandHandler } from "../commands/base/CommandHandler.js"
+import { CleanupServiceInstance } from "../core/services/CleanupService.js"
+import { LogStore } from "../systems/general/LogStore.js"
 
-let initialized = false
+
+let isInitialized = false
 
 /**
  * Initialize core services
  */
 export function init() {
-    if (initialized) return
+    if (isInitialized) return
     
-    initialized = true
+    isInitialized = true
 
     // Data layer
     Kernel.register("database",    Database)
@@ -80,6 +83,9 @@ export function init() {
     Kernel.register("placeholders", PlaceholderProvider)
     Kernel.register("claimStore",  ClaimStore)
     Kernel.register("floatingTextStore", FloatingTextStore)
+    Kernel.register("cleanupService", CleanupServiceInstance)
+    Kernel.register("logStore", LogStore)
+
 
     // Initialize systems
     MasterDispatcher.init()
@@ -91,6 +97,8 @@ export function init() {
     ChatSystem.init()
     BanManager.init()
     CommandHandler.init()
+    CleanupServiceInstance.init()
+
 
     console.log("[Kernel] Services initialized. Total: " + Kernel.size);
 }

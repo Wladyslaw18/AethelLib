@@ -11,55 +11,70 @@
  */
 
 class ICommand {
-    /* 
-     * IDENTIFIER_TOKEN
-     * The primary key used for command resolution in the O(1) Map. 
+    /**
+     * Primary key identifier for command resolution.
+     * 
+     * GUARANTEES:
+     * - Returns the lowercase alphanumeric token of the command name.
      */
     get name() {
         throw new Error("[ContractViolation] 'name' getter is non-optional.");
     }
 
-    /* 
-     * METADATA_DESCRIPTION
-     * Raw string used for the help-manual generation. 
+    /**
+     * Plain english description of command function.
+     * 
+     * GUARANTEES:
+     * - Returns the instruction sentence string for help manuals.
      */
     get description() {
         throw new Error("[ContractViolation] 'description' getter is non-optional.");
     }
 
-    /* 
-     * SYNTAX_HINT
-     * The usage string displayed during incorrect parameter input. 
+    /**
+     * Syntax template string for command inputs.
+     * 
+     * GUARANTEES:
+     * - Returns the usage syntax template (e.g. "/ae:pay <player> <amount>").
      */
     get usage() {
         throw new Error("[ContractViolation] 'usage' getter is non-optional.");
     }
 
-    /* 
-     * PERMISSION_NODE
-     * The auth-node required for the RBAC handshake. 
+    /**
+     * RBAC authority permission node required.
+     * 
+     * GUARANTEES:
+     * - Returns the namespaced string dot path representing the required permission.
      */
     get permission() {
         throw new Error("[ContractViolation] 'permission' getter is non-optional.");
     }
 
-    /* 
-     * REGISTRY_CATEGORY
-     * Used for grouping commands in the /help UI. 
+    /**
+     * Categorization tag for command listing grouping.
+     * 
+     * GUARANTEES:
+     * - Returns the grouping category name string.
      */
     get category() {
         throw new Error("[ContractViolation] 'category' getter is non-optional.");
     }
 
-    /*
-     * EXECUTION_LOGIC_GATE
-     * ----------------------------------------------------------------------------
-     * The entry point for the command execution. This method handles the 
-     * transformation of raw strings into actual game-state changes. 
-     *
-     * @param {Object} data - The internal command metadata.
-     * @param {Player} player - The originating actor.
-     * @param {string[]} args - The raw parameter array.
+    /**
+     * Execution pathway trigger for the command.
+     * 
+     * EXPECTS:
+     * - data: The internal command metadata context.
+     * - player: The native Player object executing the command.
+     * - args: Array of parsed string arguments.
+     * 
+     * GUARANTEES:
+     * - Executes state-changes or UI displays representing the command execution.
+     * 
+     * @param {any} data - Internal command metadata.
+     * @param {import("@minecraft/server").Player} player - Executor player.
+     * @param {string[]} args - Executed arguments list.
      */
     async execute(data, player, args) {
         void data; void player; void args;
@@ -67,4 +82,4 @@ class ICommand {
     }
 }
 
-export { ICommand }
+export { ICommand };

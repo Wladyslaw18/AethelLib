@@ -46,9 +46,12 @@ def main():
     prompt_confirm()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(os.path.dirname(script_dir))
+    tools_dir = os.path.dirname(script_dir)
+    project_root = os.path.dirname(tools_dir)
+    output_dir = os.path.join(tools_dir, "Output")
+    os.makedirs(output_dir, exist_ok=True)
     build_dir = os.path.join(project_root, "build")
-    out_file = os.path.join(project_root, "AethelLib.mcaddon")
+    out_file = os.path.join(output_dir, "AethelLib.mcaddon")
 
     print("[Packager] Cleaning build workspace...")
     if os.path.exists(build_dir):

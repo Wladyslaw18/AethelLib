@@ -14,13 +14,16 @@ export const manifest = {
     dependencies: []
 };
 
-export const main = (context) => {
-    context.log(`Initializing version ${context.version}...`);
+export function getCommands() {
+    return [PingCommand];
+}
 
-    try {
-        context.registerCommand(PingCommand);
+export const main = {
+    onEnable(context) {
+        context.log(`Initializing version ${context.version}...`);
         context.log("Vector online.");
-    } catch (e) {
-        context.error(`Failed to ignite: ${e}`);
+    },
+    onDisable() {
+        // no-op
     }
 };

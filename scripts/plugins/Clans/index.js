@@ -1,3 +1,4 @@
+// TODO: Clans plugin — not yet implemented
 export const manifest = {
     id: "aethel:clans",
     name: "Clans System",
@@ -7,6 +8,9 @@ export const manifest = {
 
 export const main = {
     async onEnable(context) {
-        context.log("Clans placeholder loaded successfully.");
+        context.log("Clans plugin loaded (placeholder — no functionality).");
+    },
+    onDisable() {
+        // no-op
     }
 };

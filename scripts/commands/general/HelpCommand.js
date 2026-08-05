@@ -10,6 +10,8 @@ export const HelpCommand = {
     name: "help",
     // human-readable description.
     description: "Displays a list of available commands and Aethelgrad lore",
+    // command category.
+    category: "General",
     // native parameter definitions.
     parameters: [
         { name: "command", type: "string", optional: true }
@@ -20,18 +22,14 @@ export const HelpCommand = {
     // | routes the help request either to the full list or a specific command doc.|
     // ----------------------------------------------------------------------------
     execute(_data, player, args) {
-        // fetch the command registry from the kernel.
         const CommandRegistry = Kernel.get("commandRegistry")
-        // the first argument is the specific command topic (optional).
         const topic = args[0]?.toLowerCase()
 
-        // if no topic is provided, show the global command menu.
         if (!topic) {
             this._showAllCommands(player, CommandRegistry)
             return
         }
 
-        // check for special lore-based easter eggs
         if (topic === "lore") {
             this._showLore(player)
             return
@@ -41,72 +39,106 @@ export const HelpCommand = {
             return
         }
 
-        // otherwise, look up the specific command in the registry.
+        // Check if topic matches a command category (e.g. admin, general, teleport, economy, social)
+        const categories = ["admin", "general", "teleport", "economy", "social", "utility"]
+        if (categories.includes(topic)) {
+            this._showCategoryHelp(player, CommandRegistry, topic)
+            return
+        }
+
         const command = CommandRegistry.get(topic)
         if (command) {
-            // security gate: check if the player is allowed to see this command's documentation.
             const PermissionManager = Kernel.get("permissions")
             if (command.permission && !PermissionManager.hasPermission(player, command.permission)) {
                 player.sendMessage("\u00A7cYou do not have permission to view this command.");
                 return;
             }
-            // display the deep-dive documentation for this specific command.
             this._showCommandHelp(player, command)
             return
         }
 
-        // if the topic didn't match any registered command.
-        player.sendMessage(`\u00A7cCommand/Topic '\u00A7e${topic}\u00A7c' not found.`);
+        player.sendMessage(`\u00A7cCommand/Category '\u00A7e${topic}\u00A7c' not found. Try \u00A76/ae:help\u00A7c.`);
     },
 
-    // ----------------------------------------------------------------------------
-    // | internal: _showAllCommands                                               |
-    // | generates the sorted, permission-filtered list of every registered command.|
-    // | handles aesthetic alignment and color-coding.                            |
-    // ----------------------------------------------------------------------------
     _showAllCommands(player, Registry) {
         const PermissionManager = Kernel.get("permissions")
-        // get all command identifiers.
         const commands = Registry.getAll()
-        const visibleCommands = []
+        const categoryMap = new Map()
 
-        // filter pass.
         for (const name of commands) {
+            if (name.includes(":")) continue;
             const cmd = Registry.get(name)
-            // skip namespaced/aliased internal commands to avoid clutter.
-            if (name.includes(":")) continue; 
-            // skip commands that the player doesn't have permission to execute.
+            if (!cmd) continue;
             if (cmd.permission && !PermissionManager.hasPermission(player, cmd.permission)) continue;
-            visibleCommands.push(name)
+
+            const cat = (cmd.category || "General").toUpperCase();
+            if (!categoryMap.has(cat)) {
+                categoryMap.set(cat, [])
+            }
+            categoryMap.get(cat).push({ name, cmd })
         }
 
-        // header display.
         player.sendMessage(" ")
         player.sendMessage("\u00A76\u00A7lAethel\u00A7fLib \u00A7r\u00A78\u2022 \u00A77v1.0.8")
         player.sendMessage("\u00A78\"Built at 3am. Tested in production. Regretted nothing.\"")
         player.sendMessage(" ")
-        player.sendMessage("\u00A7eType \u00A76/ae:help lore \u00A7efor the history of the realm.")
-        player.sendMessage("\u00A7eType \u00A76/ae:help forge \u00A7efor the Rules of the Forge.")
-        player.sendMessage("\u00A7eType \u00A76/ae:help <command> \u00A7efor specific syntax.")
-        player.sendMessage(" ")
-        player.sendMessage("\u00A7d--- \u00A7lCOMMANDS LIST \u00A7r\u00A7d---")
+        player.sendMessage("\u00A7eType \u00A76/ae:help <category> \u00A7efor specific category (Admin, General, Teleport, Economy).")
+        player.sendMessage("\u00A7eType \u00A76/ae:help <command> \u00A7efor specific command syntax.")
         player.sendMessage(" ")
 
-        // sort alphabetically and print the list.
-        visibleCommands.sort().forEach(name => {
-            const cmd = Registry.get(name);
-            // split the name for a two-tone color effect (orange and white).
-            const split = Math.ceil(name.length / 2);
-            const firstHalf = name.substring(0, split);
-            const secondHalf = name.substring(split);
-            const desc = cmd.description || "No description";
-            
-            // padding logic: calculate whitespace needed to keep descriptions aligned in a column.
-            const padding = " ".repeat(Math.max(5, 22 - name.length));
-            
-            player.sendMessage(`\u00A76- \u00A76\u00A7l${firstHalf}\u00A7f\u00A7l${secondHalf}${padding}\u00A7b\u00A7o${desc}`);
-        });
+        const catColors = {
+            "GENERAL": "\u00A7a",
+            "ADMIN": "\u00A7c",
+            "TELEPORT": "\u00A7b",
+            "ECONOMY": "\u00A7e",
+            "SOCIAL": "\u00A7d",
+            "UTILITY": "\u00A79"
+        }
 
+        for (const [catName, list] of categoryMap.entries()) {
+            const color = catColors[catName] || "\u00A76"
+            player.sendMessage(`${color}\u00A7l[ CATEGORY: ${catName} ]\u00A7r`)
+            
+            list.sort((a, b) => a.name.localeCompare(b.name)).forEach(({ name, cmd }) => {
+                const desc = cmd.description || "No description"
+                const padding = " ".repeat(Math.max(2, 18 - name.length))
+                player.sendMessage(`  \u00A7f/ae:\u00A7e${name}${padding}\u00A77- \u00A7b\u00A7o${desc}`)
+            })
+            player.sendMessage(" ")
+        }
+    },
+
+    _showCategoryHelp(player, Registry, categoryName) {
+        const PermissionManager = Kernel.get("permissions")
+        const commands = Registry.getAll()
+        const targetCat = categoryName.toUpperCase()
+
+        player.sendMessage(" ")
+        player.sendMessage(`\u00A76\u00A7lCATEGORY MANUAL: \u00A7e${targetCat}`)
+        player.sendMessage("\u00A7d=============================================")
+
+        let count = 0
+        for (const name of commands) {
+            if (name.includes(":")) continue;
+            const cmd = Registry.get(name)
+            if (!cmd) continue;
+            if (cmd.permission && !PermissionManager.hasPermission(player, cmd.permission)) continue;
+
+            const cat = (cmd.category || "General").toUpperCase();
+            if (cat === targetCat) {
+                const desc = cmd.description || "No description"
+                const usage = cmd.usage || `/ae:${cmd.name}`
+                player.sendMessage(`\u00A76- \u00A7f/ae:\u00A7e${cmd.name} \u00A78(\u00A77${usage}\u00A78)`)
+                player.sendMessage(`  \u00A7b\u00A7o${desc}`)
+                count++
+            }
+        }
+
+        if (count === 0) {
+            player.sendMessage("\u00A77No commands available in this category for your rank.")
+        }
+
+        player.sendMessage("\u00A7d=============================================")
         player.sendMessage(" ")
     },
 

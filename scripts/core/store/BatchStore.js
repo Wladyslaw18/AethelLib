@@ -1,5 +1,5 @@
 import { Kernel } from "../Kernel.js"
-import { JournaledDb } from "./JournaledDatabase.js"
+import { JournaledDb } from "../datastore/JournaledDatabase.js"
 
 /**
  * Collects and flushes database operations in batches.

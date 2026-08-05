@@ -19,9 +19,13 @@ Read-Host | Out-Null
 Add-Type -Assembly "System.IO.Compression.FileSystem"
 
 $PSScriptDir = $PSScriptRoot
-$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+if (!$PSScriptDir) { $PSScriptDir = (Get-Location).Path }
+$ToolsDir    = if ($PSScriptDir -like "*tools*") { $PSScriptDir } else { Join-Path (Get-Item $PSScriptDir).FullName "tools" }
+$ProjectRoot = (Get-Item $ToolsDir).Parent.FullName
+$OutputDir   = Join-Path $ToolsDir "Output"
+if (!(Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null }
 $BuildDir    = Join-Path $ProjectRoot "build"
-$OutFile     = Join-Path $ProjectRoot "AethelLib.mcaddon"
+$OutFile     = Join-Path $OutputDir "AethelLib.mcaddon"
 
 Write-Host "[Packager] Cleaning build workspace..." -ForegroundColor Blue
 if (Test-Path $BuildDir) { Remove-Item -Path $BuildDir -Recurse -Force }

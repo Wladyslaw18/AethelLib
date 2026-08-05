@@ -8,30 +8,33 @@ import { PermissionCache } from "../../core/cache/CacheManager.js";
 // | a rolling buffer of millisecond timestamps from the last 20 ticks.       |
 // | used to calculate the real-Kernel.world passage of time vs engine ticks.        |
 // ----------------------------------------------------------------------------
-const tickTimes = []
+// Rolling 1-second tick window. Fixed-size circular buffer (Float64Array):
+// zero realloc, zero shift() - no GC pressure in the per-tick hot path.
+const TICK_SAMPLE_COUNT = 21
+const tickTimes = new Float64Array(TICK_SAMPLE_COUNT)
+let tickWrite = 0
+let tickCount = 0
 
-// ----------------------------------------------------------------------------
-// | Kernel.system: temporal sampling                                                 |
-// | pushes the current time into the buffer every single tick.               |
-// | we cap it at 21 entries to get exactly 1 second of rolling data.         |
-// ----------------------------------------------------------------------------
 Kernel.system.runInterval(() => {
-    tickTimes.push(Date.now())
-    if (tickTimes.length > 21) tickTimes.shift()
+    tickTimes[tickWrite] = Date.now()
+    tickWrite = (tickWrite + 1) % TICK_SAMPLE_COUNT
+    if (tickCount < TICK_SAMPLE_COUNT) tickCount++
 }, 1)
 
 // ----------------------------------------------------------------------------
 // | function: getRealTPS                                                     |
 // | resolves the Ticks-Per-Second by comparing the time delta between the    |
-// | first and last samples in our 1-second window.                           |
+// | oldest and newest samples in the circular window.                        |
 // ----------------------------------------------------------------------------
 export function getRealTPS() {
-    if (tickTimes.length < 2) return 20
-    const elapsed = tickTimes[tickTimes.length - 1] - tickTimes[0]
+    if (tickCount < 2) return 20
+    const newest = (tickWrite - 1 + TICK_SAMPLE_COUNT) % TICK_SAMPLE_COUNT
+    const oldest = (newest + 1) % TICK_SAMPLE_COUNT
+    const elapsed = tickTimes[newest] - tickTimes[oldest]
     // prevent division by zero or negative time.
     if (elapsed <= 0) return 20
-    // formula: (total samples - 1) / (seconds elapsed).
-    return Math.min(20, Math.round((tickTimes.length - 1) / (elapsed / 1000)))
+    // formula: (window gaps) / (seconds elapsed).
+    return Math.min(20, Math.round((TICK_SAMPLE_COUNT - 1) / (elapsed / 1000)))
 }
 
 // capture the exact moment the script engine started.

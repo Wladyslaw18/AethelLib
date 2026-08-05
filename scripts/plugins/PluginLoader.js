@@ -5,4 +5,5 @@ export const pluginDefs = [
     { path: "Clans", loader: () => import("./Clans/index.js") },
     { path: "AethelEssentials", loader: () => import("./AethelEssentials/index.js") },
     { path: "BountyHunter", loader: () => import("./BountyHunter/index.js") }
+    // ExamplePlugin not registered — reference only
 ];

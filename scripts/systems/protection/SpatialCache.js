@@ -1,7 +1,6 @@
 import { Kernel } from "../../core/Kernel.js";
 import { ClaimStore } from "./ClaimStore.js";
 
-// AUTH_CLEARANCE_BITMASKS matching ClaimService
 const PERMISSIONS = {
     BUILD: 1,
     CONTAINERS: 2,
@@ -26,18 +25,15 @@ function spawnChunkBorderParticles(player, chunkKey, isOwner, isTrusted) {
         const minY = playerY;
         const maxY = playerY + 2;
 
-        // Color-coded particles: green stars for owner, portal for trusted, flame for hostile
         const particleName = isOwner 
             ? "minecraft:villager_happy" 
             : (isTrusted ? "minecraft:basic_portal_particle" : "minecraft:basic_flame_particle");
 
         for (let y = minY; y <= maxY; y++) {
-            // Draw along Z limits (changing X) in 4 block increments (optimized density)
             for (let x = minX; x <= maxX; x += 4) {
                 dim.spawnParticle(particleName, { x, y: y + 0.1, z: minZ });
                 dim.spawnParticle(particleName, { x, y: y + 0.1, z: maxZ });
             }
-            // Draw along X limits (changing Z) in 4 block increments (optimized density)
             for (let z = minZ + 4; z < maxZ; z += 4) {
                 dim.spawnParticle(particleName, { x: minX, y: y + 0.1, z });
                 dim.spawnParticle(particleName, { x: maxX, y: y + 0.1, z });
@@ -75,7 +71,6 @@ export const SpatialCache = {
                         permissions: perms
                     });
 
-                    // Cross boundary warning
                     if (claim) {
                         const ownerName = Kernel.get("database")?.get(`player:${claim.ownerId}:name`) || "Someone";
                         const relation = isOwner ? "§aYour Claim" : (isTrusted ? "§bTrusted Area" : `§cOwner: ${ownerName}`);
@@ -86,42 +81,45 @@ export const SpatialCache = {
                     }
                 }
 
-                // Check if player is holding stick
-                try {
-                    const inventory = player.getComponent("minecraft:inventory");
-                    const container = inventory?.container;
-                    const item = container?.getItem(player.selectedSlotIndex);
-                    if (item && item.typeId === "minecraft:stick") {
-                        const loc = player.location;
-                        const lastRender = this.lastStickRenders.get(player.id);
-                        const now = Date.now();
-                        
-                        const distance = lastRender 
-                            ? Math.hypot(loc.x - lastRender.x, loc.z - lastRender.z)
-                            : Infinity;
-                        const timeSinceLast = lastRender ? (now - lastRender.time) : Infinity;
-
-                        // Only spawn stick particles if player moved > 2 blocks or every 5 seconds (5000ms)
-                        if (distance > 2.0 || timeSinceLast > 5000) {
-                            this.lastStickRenders.set(player.id, { x: loc.x, z: loc.z, time: now });
+                // Only check for stick/inventory when player is near a claim —
+                // saves a getComponent call per player per tick in unclaimed areas.
+                if (claim) {
+                    try {
+                        const inventory = player.getComponent("minecraft:inventory");
+                        const container = inventory?.container;
+                        const item = container?.getItem(player.selectedSlotIndex);
+                        if (item && item.typeId === "minecraft:stick") {
+                            const loc = player.location;
+                            const lastRender = this.lastStickRenders.get(player.id);
+                            const now = Date.now();
                             
-                            // Render borders of claimed chunks in 3x3 grid around player
-                            const [currentX, currentZ] = currentKey.split(",").map(Number);
-                            for (let dx = -1; dx <= 1; dx++) {
-                                for (let dz = -1; dz <= 1; dz++) {
-                                    const nearbyKey = `${currentX + dx},${currentZ + dz}`;
-                                    const nearbyClaim = ClaimStore.getClaim(nearbyKey);
-                                    if (nearbyClaim) {
-                                        const nbOwner = nearbyClaim.ownerId === player.id;
-                                        const nbTrusted = nearbyClaim.trusted?.[player.id] !== undefined;
-                                        spawnChunkBorderParticles(player, nearbyKey, nbOwner, nbTrusted);
+                            const distance = lastRender 
+                                ? Math.hypot(loc.x - lastRender.x, loc.z - lastRender.z)
+                                : Infinity;
+                            const timeSinceLast = lastRender ? (now - lastRender.time) : Infinity;
+
+                            // Only spawn stick particles if player moved > 2 blocks or every 5 seconds (5000ms)
+                            if (distance > 2.0 || timeSinceLast > 5000) {
+                                this.lastStickRenders.set(player.id, { x: loc.x, z: loc.z, time: now });
+                                
+                                // Render borders of claimed chunks in 3x3 grid around player
+                                const [currentX, currentZ] = currentKey.split(",").map(Number);
+                                for (let dx = -1; dx <= 1; dx++) {
+                                    for (let dz = -1; dz <= 1; dz++) {
+                                        const nearbyKey = `${currentX + dx},${currentZ + dz}`;
+                                        const nearbyClaim = ClaimStore.getClaim(nearbyKey);
+                                        if (nearbyClaim) {
+                                            const nbOwner = nearbyClaim.ownerId === player.id;
+                                            const nbTrusted = nearbyClaim.trusted?.[player.id] !== undefined;
+                                            spawnChunkBorderParticles(player, nearbyKey, nbOwner, nbTrusted);
+                                        }
                                     }
                                 }
                             }
                         }
+                    } catch (e) {
+                        console.warn(`[SpatialCache] Could not query inventory for ${player.id}: ${e}`);
                     }
-                } catch (e) {
-                    // Ignore inventory resolution errors if player is dead/spawning
                 }
             }
         }, 20);
@@ -134,14 +132,11 @@ export const SpatialCache = {
 
     _resolvePermissions(chunkKey, playerId) {
         const claim = ClaimStore.getClaim(chunkKey);
-        if (!claim) return ALL_PERMS; // Unclaimed chunk is free domain
-        if (claim.ownerId === playerId) return ALL_PERMS; // Owner gets everything
-        return claim.trusted?.[playerId] || 0; // Trusted bitmask or 0
+        if (!claim) return ALL_PERMS;
+        if (claim.ownerId === playerId) return ALL_PERMS;
+        return claim.trusted?.[playerId] || 0;
     },
 
-    /**
-     * Invalidate specific player cache or all caches on claim modification.
-     */
     invalidate(playerId = null) {
         if (playerId) {
             this.playerChunkStates.delete(playerId);
@@ -150,9 +145,6 @@ export const SpatialCache = {
         }
     },
 
-    /**
-     * Ultra-fast permission check using cached bitmasks.
-     */
     hasPermission(player, location, requiredPermission) {
         const targetKey = ClaimStore.locationToChunkKey(location);
         const cached = this.playerChunkStates.get(player.id);
@@ -161,7 +153,6 @@ export const SpatialCache = {
             return (cached.permissions & requiredPermission) === requiredPermission;
         }
 
-        // Slow path fallback (e.g. interacting across chunk boundary)
         const perms = this._resolvePermissions(targetKey, player.id);
         return (perms & requiredPermission) === requiredPermission;
     },

@@ -19,15 +19,19 @@ Read-Host | Out-Null
 Add-Type -Assembly "System.IO.Compression.FileSystem"
 
 $PSScriptDir = $PSScriptRoot
-$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+if (!$PSScriptDir) { $PSScriptDir = (Get-Location).Path }
+$ToolsDir = if ($PSScriptDir -like "*tools*") { $PSScriptDir } else { Join-Path (Get-Item $PSScriptDir).FullName "tools" }
+$ProjectRoot = (Get-Item $ToolsDir).Parent.FullName
 $ManifestPath = Join-Path $ProjectRoot "manifest.json"
 
-$BackupDir = Join-Path $ProjectRoot "backups"
-$ReleaseDir = Join-Path $ProjectRoot "releases"
-$BuildDir = Join-Path $ProjectRoot "build"
+$OutputDir  = Join-Path $ToolsDir "Output"
+$BackupDir  = Join-Path $OutputDir "backups"
+$ReleaseDir = Join-Path $OutputDir "releases"
+$BuildDir   = Join-Path $ProjectRoot "build"
 
 # Ensure output directories exist
-if (!(Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null }
+if (!(Test-Path $OutputDir))  { New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null }
+if (!(Test-Path $BackupDir))  { New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null }
 if (!(Test-Path $ReleaseDir)) { New-Item -ItemType Directory -Path $ReleaseDir -Force | Out-Null }
 
 Write-Host "==========================================" -ForegroundColor Cyan
@@ -224,7 +228,7 @@ $AddonStream.Dispose()
 # Define Release and Backup file paths
 $ReleaseFile = Join-Path $ReleaseDir "AethelLib_v$NewVersionStr.mcaddon"
 $BackupFile  = Join-Path $BackupDir  "AethelLib_backup_v$NewVersionStr.mcaddon"
-$DevFile     = Join-Path $ProjectRoot "AethelLib.mcaddon"
+$DevFile     = Join-Path $OutputDir  "AethelLib.mcaddon"
 
 # Copy to all destinations
 Copy-Item -Path $AddonTemp -Destination $ReleaseFile -Force

@@ -111,13 +111,16 @@ def main():
     prompt_confirm()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(os.path.dirname(script_dir))
+    tools_dir = os.path.dirname(script_dir)
+    project_root = os.path.dirname(tools_dir)
     manifest_path = os.path.join(project_root, "manifest.json")
 
-    backup_dir = os.path.join(project_root, "backups")
-    release_dir = os.path.join(project_root, "releases")
+    output_dir = os.path.join(tools_dir, "Output")
+    backup_dir = os.path.join(output_dir, "backups")
+    release_dir = os.path.join(output_dir, "releases")
     build_dir = os.path.join(project_root, "build")
 
+    os.makedirs(output_dir, exist_ok=True)
     os.makedirs(backup_dir, exist_ok=True)
     os.makedirs(release_dir, exist_ok=True)
 
@@ -227,7 +230,7 @@ def main():
     # Define paths
     release_file = os.path.join(release_dir, f"AethelLib_v{new_version_str}.mcaddon")
     backup_file = os.path.join(backup_dir, f"AethelLib_backup_v{new_version_str}.mcaddon")
-    dev_file = os.path.join(project_root, "AethelLib.mcaddon")
+    dev_file = os.path.join(output_dir, "AethelLib.mcaddon")
 
     # Copy to destinations
     shutil.copy2(addon_zip_path, release_file)

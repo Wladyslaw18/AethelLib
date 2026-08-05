@@ -11,47 +11,60 @@
  */
 
 class ISystem {
-    /* 
-     * SYSTEM_BOOTSTRAP_VECTOR
-     * ----------------------------------------------------------------------------
-     * Triggered during the Kernel.init() phase. This is where the system 
-     * handshakes with its dependencies and loads its initial state.
+    /**
+     * Triggered during core bootstrap phases.
+     * 
+     * EXPECTS:
+     * - config: Config options manifest or SystemConfig.
+     * 
+     * GUARANTEES:
+     * - Initializes internal system states and registers dependencies.
+     * 
+     * @param {import("../../../types").SystemConfig} config - Config parameters.
      */
     async initialize(config) {
-        void config
+        void config;
         throw new Error("[ContractViolation] 'initialize' method must be implemented.");
     }
 
-    /* 
-     * TICK_ORCHESTRATION_LOOP
-     * ----------------------------------------------------------------------------
-     * Called every tick by the Master Scheduler. This is where the hot-path 
-     * logic resides. If your update method exceeds 5ms, I will personally 
-     * refactor your soul.
+    /**
+     * Ticked by system schedulers to execute updates.
+     * 
+     * EXPECTS:
+     * - tick: Current engine tick count integer.
+     * 
+     * GUARANTEES:
+     * - Runs hot-path logic within performance parameters.
+     * 
+     * @param {number} tick - Current tick.
      */
     async update(tick) {
-        void tick
+        void tick;
         throw new Error("[ContractViolation] 'update' method must be implemented.");
     }
 
-    /* 
-     * GRACEFUL_TERMINATION_PROTOCOL
-     * ----------------------------------------------------------------------------
-     * Triggered during server shutdown or hot-reload. This is where you 
-     * flush buffers and unsubscribe from event buses to prevent memory 
-     * leaks.
+    /**
+     * Shuts down internal states and cleans listeners.
+     * 
+     * EXPECTS:
+     * - None.
+     * 
+     * GUARANTEES:
+     * - Deallocates memory allocations, tick schedulers, and unsubscribes event handlers.
      */
     async shutdown() {
         throw new Error("[ContractViolation] 'shutdown' method must be implemented.");
     }
 
-    /* 
-     * DATA_STATE_ACCESSOR
-     * Returns the internal state-buffer of the system for auditing purposes.
+    /**
+     * Fetches current data cache audit copy.
+     * 
+     * GUARANTEES:
+     * - Returns read-only snapshot object of internal system state.
      */
     get data() {
         throw new Error("[ContractViolation] 'data' getter must be implemented.");
     }
 }
 
-export { ISystem }
+export { ISystem };

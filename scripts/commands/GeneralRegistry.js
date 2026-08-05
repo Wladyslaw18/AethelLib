@@ -13,6 +13,7 @@ import { ColorCommand } from "./social/ColorCommand.js"
 import { RankCommand } from "./social/ranks/rankCommand.js"
 import { ClaimCommand } from "./general/ClaimCommand.js"
 import { CombatStatusCommand } from "./general/CombatStatusCommand.js"
+import { ClaimRadiusCommand, UnclaimCommand, ClaimTrustCommand, ClaimUntrustCommand, ClaimUICommand } from "./general/ClaimCommands.js"
 
 // ----------------------------------------------------------------------------
 // | object: GeneralRegistry                                                  |
@@ -71,6 +72,11 @@ export const GeneralRegistry = {
         // land protection and claiming.
         Registry.register("claim", ClaimCommand)
         Registry.register("land", ClaimCommand)
+        Registry.register("claimradius", ClaimRadiusCommand)
+        Registry.register("unclaim", UnclaimCommand)
+        Registry.register("claimtrust", ClaimTrustCommand)
+        Registry.register("claimuntrust", ClaimUntrustCommand)
+        Registry.register("claimui", ClaimUICommand)
         // combat status and killstreaks.
         Registry.register("combat", CombatStatusCommand)
     }

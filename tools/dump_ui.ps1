@@ -34,11 +34,12 @@ if (!$AutoStart) {
 
 $PSScriptDir = $PSScriptRoot
 if (!$PSScriptDir) { $PSScriptDir = (Get-Location).Path }
-$ProjectRoot = (Get-Item $PSScriptDir).Parent.FullName
+$ToolsDir = if ($PSScriptDir -like "*tools*") { $PSScriptDir } else { Join-Path (Get-Item $PSScriptDir).FullName "tools" }
+$ProjectRoot = (Get-Item $ToolsDir).Parent.FullName
 
 $UiRpPath = Join-Path $ProjectRoot "AethelLib (RP)\ui"
 $UiScriptPath = Join-Path $ProjectRoot "scripts\ui"
-$OutputPath = Join-Path $PSScriptDir "Output"
+$OutputPath = Join-Path $ToolsDir "Output"
 
 if (!(Test-Path $OutputPath)) {
     New-Item -ItemType Directory -Path $OutputPath | Out-Null

@@ -8,10 +8,28 @@ export const PluginManager = {
     _apis: new Map(), // the service mesh. where plugins dump their public functions.
     _commandManifests: new Map(), // pluginId -> { manifest, commands, logic }
 
+    /**
+     * Spawns an isolated execution sandbox context for a plugin.
+     * 
+     * EXPECTS:
+     * - manifest: Plugin manifest metadata object.
+     * 
+     * GUARANTEES:
+     * - Returns a secure, scoped sandbox context object.
+     * - Restricts database updates to aNamespaced plugin prefix to prevent database contamination.
+     * - Wraps native interval, timeout, and event registration calls.
+     * - Tracks and records active resources privately to facilitate absolute cleanup during reloads.
+     * 
+     * DOES NOT PROMISE:
+     * - Mutex database locking between threads.
+     * 
+     * @param {Object} manifest - Plugin manifest.
+     * @returns {Object} Scoped plugin context.
+     */
     _createContext(manifest) {
         const activeIntervals = [];
         const activeTimeouts = [];
-        const activeListeners = [];
+        const activeListeners = new Map(); // Map of callback -> Map of originalEvent -> unsubscribe function
 
         // Pre-create event proxies once per context to prevent GC pressure
         const createEventProxy = (sourceObj) => new Proxy({}, {
@@ -27,18 +45,37 @@ export const PluginManager = {
                             }
                             const unsubscribe = () => {
                                 try { originalEvent.unsubscribe(callback); } catch(e) {}
+                                const eventMap = activeListeners.get(callback);
+                                if (eventMap) {
+                                    eventMap.delete(originalEvent);
+                                    if (eventMap.size === 0) activeListeners.delete(callback);
+                                }
                             };
-                            activeListeners.push(unsubscribe);
+                            if (!activeListeners.has(callback)) {
+                                activeListeners.set(callback, new Map());
+                            }
+                            activeListeners.get(callback).set(originalEvent, unsubscribe);
                             return callback;
                         },
                         unsubscribe: (callback) => {
-                            try { originalEvent.unsubscribe(callback); } catch(e) {}
+                            const eventMap = activeListeners.get(callback);
+                            if (eventMap) {
+                                const unsubscribe = eventMap.get(originalEvent);
+                                if (unsubscribe) {
+                                    unsubscribe();
+                                } else {
+                                    try { originalEvent.unsubscribe(callback); } catch(e) {}
+                                }
+                            } else {
+                                try { originalEvent.unsubscribe(callback); } catch(e) {}
+                            }
                         }
                     };
                 }
                 return originalEvent;
             }
         });
+
 
         const cachedBeforeEvents = createEventProxy(Kernel.world.beforeEvents);
         const cachedAfterEvents = createEventProxy(Kernel.world.afterEvents);
@@ -125,8 +162,18 @@ export const PluginManager = {
     },
 
     /**
-     * Phase 0: Synchronously extract command definitions from a plugin module
-     * Does NOT execute onEnable – only reads static command objects.
+     * Dynamically imports a plugin module and extracts its command definitions.
+     * 
+     * EXPECTS:
+     * - pluginDef: Object containing paths and dynamic loaders.
+     * 
+     * GUARANTEES:
+     * - Imports logic main blocks, validates manifests structure, and extracts exported commands.
+     * - Registers the loaded plugin context in the registry setting state to LOADED.
+     * - Returns loaded plugin ID on success, null on crash.
+     * 
+     * @param {Object} pluginDef - Plugin definition config.
+     * @returns {Promise<string|null>} Plugin ID.
      */
     async extractCommands(pluginDef) {
         try {
@@ -172,8 +219,15 @@ export const PluginManager = {
     },
 
     /**
-     * Phase 0: Register all extracted commands to native engine
-     * Called synchronously before initCommands()
+     * Staging phase: Registers all commands to native C++ command registry.
+     * 
+     * EXPECTS:
+     * - CommandRegistry service is active in the Kernel.
+     * 
+     * GUARANTEES:
+     * - Executes optional onStage hooks on logic blocks.
+     * - Automatically registers all command schemas through the CommandRegistry.
+     * - Updates plugin state to STAGED.
      */
     stageAllSync() {
         for (const [id, data] of this._commandManifests.entries()) {
@@ -208,7 +262,18 @@ export const PluginManager = {
     },
 
     /**
-     * Phase 2: Async enable – load databases, listeners, etc.
+     * Enabling phase: Resolves dependencies and enables plugins sequentially.
+     * 
+     * EXPECTS:
+     * - DependencySorter to resolve topological order without error.
+     * 
+     * GUARANTEES:
+     * - Topologically sorts execution sequence based on manifest dependency chains.
+     * - Sequentially triggers onEnable lifecycle hooks on all staged modules.
+     * - Safely catches initialization rejections setting status to FAILED.
+     * 
+     * DOES NOT PROMISE:
+     * - Successful bootstrapping of modules if circular dependency blocks occur.
      */
     async enableAll() {
         console.log(`[PluginManager] Resolving dependency graph...`);
@@ -247,6 +312,9 @@ export const PluginManager = {
         console.log(`[PluginManager] System Online. Active modules: ${successCount}/${this._plugins.size}`);
     },
 
+    /**
+     * Calls DependencySorter topological sort algorithm.
+     */
     _resolveDependencies() {
         return DependencySorter.sort(Array.from(this._plugins.keys()), {
             getDependencies: (id) => this._plugins.get(id)?.manifest?.dependencies || [],
@@ -258,6 +326,27 @@ export const PluginManager = {
         });
     },
 
+    /**
+     * Hot-reloads an active plugin dynamically purging its registered resources.
+     * 
+     * EXPECTS:
+     * - pluginId: Active plugin identifier (e.g. "aethel:core_economy" or path "CoreEconomy").
+     * - PluginLoader modules registry exists in workspace.
+     * 
+     * GUARANTEES:
+     * - Executes onDisable hooks on the active target.
+     * - Unregisters all native commands associated with the module.
+     * - Safely cancels and clears all registered intervals, timeouts, and listeners for this plugin.
+     * - Deletes plugin from all registry maps.
+     * - Performs dynamic reload using cache-busting timestamp parameters.
+     * - Instantiates, stages, and enables the new loaded plugin module.
+     * 
+     * DOES NOT PROMISE:
+     * - Restoring state variables stored in memory outside persistent database wrappers.
+     * 
+     * @param {string} pluginId - Plugin ID or path.
+     * @returns {Promise<string>} Reloaded plugin ID.
+     */
     async reloadPlugin(pluginId) {
         // Find matching active plugin by id (e.g. "aethel:core_economy") or path (e.g. "CoreEconomy")
         let activePluginId = null;
@@ -340,12 +429,21 @@ export const PluginManager = {
                     }
                 });
 
-                activeListeners.forEach(unsubscribe => {
+                // Collect unsubscribe closures first to avoid mutation while iterating
+                const unsubscribes = [];
+                for (const eventMap of activeListeners.values()) {
+                    for (const unsubscribe of eventMap.values()) {
+                        unsubscribes.push(unsubscribe);
+                    }
+                }
+                for (const unsubscribe of unsubscribes) {
                     try { unsubscribe(); } catch (e) {
                         console.error(`[PluginManager] Failed unsubscribing event listener during reload of ${targetId}: ${e}`);
                     }
-                });
+                }
+                activeListeners.clear();
             }
+
 
             // Remove from maps
             this._plugins.delete(targetId);

@@ -10,13 +10,13 @@ import { UnbanCommand } from "./admin/UnbanCommand.js"
 import { TempbanCommand } from "./admin/TempbanCommand.js"
 import { InvSeeCommand } from "./admin/InvSeeCommand.js"
 import { ResetDataCommand } from "./admin/ResetDataCommand.js"
-import { RankAdminCommands } from "./social/ranks/RankAdminCommands.js"
 import { FloatingTextCommand } from "./admin/FloatingTextCommand.js"
 import { AdminReportCommand } from "./admin/AdminReportCommand.js"
 import { BroadcastResetCommand } from "./admin/BroadcastResetCommand.js"
 import { showReports } from "./admin/AdminPanelReports.js"
 import { ShopAdminCommands } from "./admin/ShopAdminCommands.js"
 import { AuditCommand } from "./admin/AuditCommand.js"
+import { LogCommand } from "./admin/LogCommand.js"
 import { WhoisCommand } from "./general/WhoisCommand.js"
 import { HealCommand } from "./admin/HealCommand.js"
 import { FeedCommand } from "./admin/FeedCommand.js"
@@ -111,12 +111,8 @@ export const AdminRegistry = {
         Registry.register("reports", AdminReportCommand)
         // industrial communication archive reader.
         Registry.register("audit", AuditCommand)
-        // legacy audit log viewer.
-        Registry.register("log", { 
-            description: "View the administrative audit log",
-            permission: "essentials.admin.reports",
-            execute: (_d, p, _a) => showReports(p) 
-        })
+        // player activity log viewer (commands, private messages).
+        Registry.register("log", LogCommand)
         // emergency broadcast system reset.
         Registry.register("bc66", BroadcastResetCommand)
 
@@ -132,14 +128,8 @@ export const AdminRegistry = {
         Registry.register("pluginreload", PluginReloadCommand)
         Registry.register("permlist", PermListCommand)
 
-        // ----------------------------------------------------------------------------
-        // | Rank Administration                                                      |
-        // | loop through specialized rank commands and register them.                |
-        // ----------------------------------------------------------------------------
-        // Note: 'editrank' has been sliced into rankperm, rankorder, rankcolor, etc.
-        RankAdminCommands.forEach(cmd => {
-            Registry.register(cmd.name, cmd)
-        })
+        // Rank administration is handled by RankAdminCommand (registered as "rankadmin" above)
+        // which provides subcommand routing for all rank management operations.
 
         // ----------------------------------------------------------------------------
         // | Shop Administration                                                      |

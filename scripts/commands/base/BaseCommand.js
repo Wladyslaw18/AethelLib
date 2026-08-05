@@ -115,10 +115,10 @@ class BaseCommand {
     }
 
     // ----------------------------------------------------------------------------
-    // | method: validateArgs                                                     |
+    // | method: hasValidArgs                                                     |
     // | simple validation engine for checking argument count bounds.              |
     // ----------------------------------------------------------------------------
-    validateArgs(args, minArgs = 0, maxArgs = Infinity) {
+    hasValidArgs(args, minArgs = 0, maxArgs = Infinity) {
         if (!Array.isArray(args)) return false
         
         // filter out empty or whitespace tokens.

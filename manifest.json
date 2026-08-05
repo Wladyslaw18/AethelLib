@@ -1,4 +1,4 @@
-{
+﻿{
   "_meta": {
     "_comment"    : "AethelLib • A Bedrock Lib • 2026",
     "_generator"  : "Aethel Build System v2.1",
@@ -12,7 +12,7 @@
   "header": {
     "description"        : "§7AethelLib\n§c[REQUIRED] Enable Beta APIs",
     "license"            : "GNU Affero General Public License",
-    "min_engine_version" : [1, 26, 30],
+    "min_engine_version" : [1, 26, 40],
     "name"               : "§6Aethel§fLib",
     "uuid"               : "c0953459-e159-42b6-9090-08b4825db606",
     "version"            : [1, 1, 4]
@@ -21,7 +21,7 @@
   "dependencies": [
     {
       "module_name": "@minecraft/server",
-      "version"    : "2.9.0-beta"
+      "version"    : "2.10.0-beta"
     },
     {
       "module_name": "@minecraft/server-ui",

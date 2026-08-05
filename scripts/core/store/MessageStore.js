@@ -10,15 +10,15 @@ import { Kernel } from "../Kernel.js"
 export class MessageStore {
     // memory buffer to hold messages before writing to the physical database.
     static #buffer = new Map()
-    static #initialized = false
+    static #isInitialized = false
 
     // ----------------------------------------------------------------------------
     // | method: init                                                             |
     // | starts the debounced flush cycle. runs every 5 seconds.                  |
     // ----------------------------------------------------------------------------
     static init() {
-        if (this.#initialized) return
-        this.#initialized = true
+        if (this.#isInitialized) return
+        this.#isInitialized = true
 
         // flush every 5 seconds (100 ticks at 20tps)
         Kernel.system.runInterval(() => {
@@ -31,7 +31,7 @@ export class MessageStore {
     // | pushes a new evidence packet to the memory buffer.                       |
     // ----------------------------------------------------------------------------
     static logPrivateMessage(packet) {
-        if (!this.#initialized) this.init()
+        if (!this.#isInitialized) this.init()
 
         const pairId = [packet.senderId, packet.receiverId].sort().join("_")
         

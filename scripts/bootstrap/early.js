@@ -51,81 +51,8 @@ ModalFormData.prototype.dropdown = function (label, options, defaultValueIndex) 
     return originalDropdown.call(this, label, options, defaultValueIndex);
 };
 
-const DETECT_BYPASS = false; // Toggle for development mode bypass warnings
-
-// Helper to check if caller frame is in plugins
-function isDirectBypass(stack) {
-    const stackStr = stack || "";
-    // If it doesn't originate from a plugin, it's not a plugin bypass
-    if (!stackStr.includes("plugins/")) return false;
-    // If it went through the PluginManager proxy, it's safe (not a direct bypass)
-    if (stackStr.includes("core/plugins/") || stackStr.includes("PluginManager.js")) return false;
-    return true;
-}
-
-function formatBypassStack(stack) {
-    const lines = (stack || "").split("\n");
-    const cleanLines = lines.slice(2)
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
-    return cleanLines.join("\n  ");
-}
-
-// Native bypass detection for System runInterval/runTimeout
-const originalRunInterval = System.prototype.runInterval;
-System.prototype.runInterval = function (callback, ticks) {
-    if (DETECT_BYPASS) {
-        const stack = new Error().stack || "";
-        if (isDirectBypass(stack)) {
-            console.warn(`\u00A7c[AethelLib DirectImport Warning] Plugin bypassed Kernel and called system.runInterval directly!\u00A7r\n  Trace:\n  ${formatBypassStack(stack)}`);
-        }
-    }
-    return originalRunInterval.call(this, callback, ticks);
-};
-
-const originalRunTimeout = System.prototype.runTimeout;
-System.prototype.runTimeout = function (callback, ticks) {
-    if (DETECT_BYPASS) {
-        const stack = new Error().stack || "";
-        if (isDirectBypass(stack)) {
-            console.warn(`\u00A7c[AethelLib DirectImport Warning] Plugin bypassed Kernel and called system.runTimeout directly!\u00A7r\n  Trace:\n  ${formatBypassStack(stack)}`);
-        }
-    }
-    return originalRunTimeout.call(this, callback, ticks);
-};
-
-// Native bypass detection for World event subscriptions
-const afterEventsDescriptor = Object.getOwnPropertyDescriptor(World.prototype, "afterEvents");
-if (afterEventsDescriptor && afterEventsDescriptor.get) {
-    const originalGet = afterEventsDescriptor.get;
-    Object.defineProperty(World.prototype, "afterEvents", {
-        get() {
-            if (DETECT_BYPASS) {
-                const stack = new Error().stack || "";
-                if (isDirectBypass(stack)) {
-                    console.warn(`\u00A7c[AethelLib DirectImport Warning] Plugin bypassed Kernel and accessed world.afterEvents directly!\u00A7r\n  Trace:\n  ${formatBypassStack(stack)}`);
-                }
-            }
-            return originalGet.call(this);
-        }
-    });
-}
-
-const beforeEventsDescriptor = Object.getOwnPropertyDescriptor(World.prototype, "beforeEvents");
-if (beforeEventsDescriptor && beforeEventsDescriptor.get) {
-    const originalGet = beforeEventsDescriptor.get;
-    Object.defineProperty(World.prototype, "beforeEvents", {
-        get() {
-            if (DETECT_BYPASS) {
-                const stack = new Error().stack || "";
-                if (isDirectBypass(stack)) {
-                    console.warn(`\u00A7c[AethelLib DirectImport Warning] Plugin bypassed Kernel and accessed world.beforeEvents directly!\u00A7r\n  Trace:\n  ${formatBypassStack(stack)}`);
-                }
-            }
-            return originalGet.call(this);
-        }
-    });
-}
+// NOTE: System.runInterval/runTimeout are intentionally NOT wrapped -
+// no-op forwarding adds a dead call layer on every scheduled callback (hot path).
 
 export function init() {
     // Register registry and manager early to catch startup events
