@@ -107,11 +107,11 @@ export const ClaimCommand = {
     // | calculates spatial constraints and enforces rank-based quotas.            |
     // ----------------------------------------------------------------------------
     handleCreate(player, args) {
-        // resolve radius. 1 means a single chunk, 5 is a massive square.
-        const radius = parseInt(args[0]) || 1
+        // resolve radius. 0 means a single chunk, 5 is a massive square.
+        const radius = args[0] !== undefined ? parseInt(args[0]) : 0;
         // constraint: don't let them claim the entire world at once.
-        if (radius < 1 || radius > 5) {
-            player.sendMessage("\u00A7c\u00A7l[Error] \u00A77Spatial constraint violation: Radius must be 1-5 chunks.");
+        if (isNaN(radius) || radius < 0 || radius > 5) {
+            player.sendMessage("\u00A7c\u00A7l[Error] \u00A77Spatial constraint violation: Radius must be 0-5 chunks.");
             return
         }
 
@@ -125,11 +125,11 @@ export const ClaimCommand = {
         // calculate the impact of the new request (square of diameter).
         const chunksToClaim = Math.pow((radius * 2) + 1, 2); 
         
-        // resolve the player's maximum allowance based on their rank node.
-        const maxClaims = PermissionManager.getHighestRank(player)?.permissions["limit.land"] || 1;
+        // ✦ DATA-ORIENTED DESIGN: Resolve limit directly from PermissionManager data store!
+        const maxClaims = PermissionManager ? PermissionManager.getPermission(player, "limit.land") : undefined;
 
         // check if this acquisition would exceed their industrial limit.
-        if (currentClaims + chunksToClaim > maxClaims) {
+        if (maxClaims !== -1 && maxClaims !== Infinity && (currentClaims + chunksToClaim > maxClaims)) {
             player.sendMessage(`\u00A7c\u00A7l» \u00A77Claim limit reached! You have ${currentClaims}/${maxClaims} chunks.`);
             return;
         }

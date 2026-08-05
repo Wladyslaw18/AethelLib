@@ -40,17 +40,17 @@ import { Kernel } from "../../core/Kernel.js"
 // ----------------------------------------------------------------------------
 function resolveClaimLimit(player) {
     const PM = Kernel.get("permissions")
-    // super admins get the universe.
+    if (!PM) return undefined
     if (PM._isSuperAdmin(player)) return Infinity
-    // getPermission already returns Infinity for admin-perm holders,
-    // and the rank-configured limit for everyone else.
-    return PM.getPermission(player, "limit.land") ?? 10
+    return PM.getPermission(player, "limit.land")
 }
 
 function checkClaimQuota(player, radius) {
     const ClaimStore = Kernel.get("claimStore")
     const maxClaims = resolveClaimLimit(player)
-    if (maxClaims === Infinity) return true
+    
+    // ✦ FIXED: Treat -1 and Infinity as Unlimited!
+    if (maxClaims === Infinity || maxClaims === -1) return true
 
     const currentClaims = ClaimStore.getPlayerClaims(player.id).length
     const chunksToClaim = Math.pow((radius * 2) + 1, 2)

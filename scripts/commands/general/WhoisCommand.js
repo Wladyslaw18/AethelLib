@@ -1,4 +1,4 @@
-import { Kernel } from "../../core/Kernel.js"
+﻿import { Kernel } from "../../core/Kernel.js"
 import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 // ----------------------------------------------------------------------------
@@ -16,7 +16,7 @@ export const WhoisCommand = {
     // required permission node (staff level recommended).
     permission: "admin",
     // command category.
-    category: "ADMINISTRATION",
+    category: "Admin",
     // native parameter definitions.
     parameters: [
         { name: "player", type: "player", optional: false }
