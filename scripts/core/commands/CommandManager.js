@@ -10,17 +10,32 @@ import { DEFAULT_RANKS } from "../../data/RankConfig.js";
 // ----------------------------------------------------------------------------
 export const CommandManager = {
     // track if we've already done the handshakes.
-    _initialized: false,
+    _isInitialized: false,
+    get _initialized() { return this._isInitialized; },
+    set _initialized(val) { this._isInitialized = val; },
+    
     // the default command prefix/namespace.
     _primaryNS: "ae",
     // the alias namespace prefix.
     _aliasNS: "ae", 
     _startupTa: null,
 
+    /**
+     * Initializes the CommandManager and subscribes to startup events.
+     * 
+     * EXPECTS:
+     * - Kernel.system.beforeEvents.startup exists.
+     * 
+     * GUARANTEES:
+     * - Prevents duplicate initialization checks.
+     * - Registers the startup listener wrapper to hook custom commands before game ticks start.
+     * 
+     * DOES NOT PROMISE:
+     * - Active registration if called after the server has already booted.
+     */
     init() {
-        // don't do this twice. please. my brain is already leaking out of my ears.
-        if (this._initialized) return;
-        this._initialized = true;
+        if (this._isInitialized) return;
+        this._isInitialized = true;
 
         // we have to wait for the startup event to grab the custom command registry.
         // the engine is super picky and will refuse to let us register things once ticking.
@@ -30,6 +45,20 @@ export const CommandManager = {
         console.log(`[CommandManager] Registry online. Namespace: /${this._primaryNS}:`);
     },
 
+    /**
+     * Injects custom commands and enums into the native C++ command registry.
+     * 
+     * EXPECTS:
+     * - event: StartupEvent object containing the native customCommandRegistry.
+     * 
+     * GUARANTEES:
+     * - Populates systemName, permission, rank, and chatcolor enums.
+     * - Synchronously registers all registry commands and aliases natively.
+     * - Correctly namespaces all registered command names and aliases.
+     * 
+     * DOES NOT PROMISE:
+     * - Native registration for commands flagged with chatRaw: true.
+     */
     _injectNativeRegistry(event) {
         const Registry = Kernel.get("commandRegistry");
         const nativeReg = event.customCommandRegistry;
@@ -38,13 +67,15 @@ export const CommandManager = {
         // --- ENUM_REGISTRATION_PIPELINE ---
         // Populate 'rank' enum from database store or static defaults (Safe for Startup phase)
         try {
-            const RankStore = Kernel.get("rankStore");
             let ranksList = DEFAULT_RANKS.map(r => r.id);
-            if (RankStore) {
-                const dbRanks = RankStore.getAllRanks() || {};
-                const dbRankIds = Object.keys(dbRanks);
-                if (dbRankIds.length > 0) {
-                    ranksList = dbRankIds;
+            const db = Kernel.get("database") || Database;
+            if (db) {
+                const storedRanks = db.get("ranks");
+                if (storedRanks && typeof storedRanks === "object") {
+                    const dbRankIds = Object.keys(storedRanks);
+                    if (dbRankIds.length > 0) {
+                        ranksList = dbRankIds;
+                    }
                 }
             }
             Registry.registerEnum("rank", ranksList);
@@ -54,6 +85,7 @@ export const CommandManager = {
                 Registry.registerEnum("rank", staticRanks);
             } catch (e2) { }
         }
+
 
         // Populate 'systemName' enum
         try {
@@ -116,44 +148,38 @@ export const CommandManager = {
         });
 
         const registeredNames = new Set();
-// --- COMMAND_REGISTRATION_PIPELINE ---
-Registry.getAll().forEach(name => {
-    const def = Registry.get(name);
-    if (!def) return;
+        // --- COMMAND_REGISTRATION_PIPELINE ---
+        Registry.getAll().forEach(name => {
+            const def = Registry.get(name);
+            if (!def) return;
 
-    if (def.chatRaw === true) {
-        console.log(`[CommandManager] Skipping native registration for chatRaw command: ${name}`);
-        return;
-    }
+            if (def.chatRaw === true) {
+                console.log(`[CommandManager] Skipping native registration for chatRaw command: ${name}`);
+                return;
+            }
 
-    // Resolve parameters
-    let paramsList = def.params || def.parameters || [];
+            // Resolve parameters
+            let paramsList = def.params || def.parameters || [];
 
-    // --- CHATRAW_SKIP_GUARD ---
-    // chatRaw commands are registered natively via the chaotic-buffer strategy
-    // so they show up in autocomplete/suggestions, but their execution is handled
-    // by joining split args.
-
-    // --- SELECTIVE_NATIVE_AUTOCOMPLETE_STRATEGY ---
-    // For commands that are truly chaotic (symbols/infinite args), 
-    // we use Buffer Registration (8 optional strings).
-    // This tricks the native engine into letting the symbols pass to our interceptor.
-    const chaoticCommands = ["calculate", "calc"];
-    if (chaoticCommands.includes(name.toLowerCase())) {
-        paramsList = [
-            { name: "t1", type: "string", optional: true },
-            { name: "t2", type: "string", optional: true },
-            { name: "t3", type: "string", optional: true },
-            { name: "t4", type: "string", optional: true },
-            { name: "t5", type: "string", optional: true },
-            { name: "t6", type: "string", optional: true },
-            { name: "t7", type: "string", optional: true },
-            { name: "t8", type: "string", optional: true }
-        ];
-    } else if (def.native === false && paramsList.length > 5) {
-
-        paramsList = [];
-    }
+            // --- SELECTIVE_NATIVE_AUTOCOMPLETE_STRATEGY ---
+            // For commands flagged with chatRaw: true (symbols/infinite args), 
+            // use Buffer Registration (8 optional strings).
+            // This avoids hard-coding command names — the flag lives on the command definition.
+            if (def.chatRaw === true) {
+                paramsList = [
+                    { name: "t1", type: "string", optional: true },
+                    { name: "t2", type: "string", optional: true },
+                    { name: "t3", type: "string", optional: true },
+                    { name: "t4", type: "string", optional: true },
+                    { name: "t5", type: "string", optional: true },
+                    { name: "t6", type: "string", optional: true },
+                    { name: "t7", type: "string", optional: true },
+                    { name: "t8", type: "string", optional: true }
+                ];
+            } else if (def.native === false && paramsList.length > 5) {
+                paramsList = [];
+            }
+            
             const namespacedName = name.includes(":") ? name : `${this._primaryNS}:${name}`;
             const lowerNS = namespacedName.toLowerCase();
             
@@ -178,8 +204,19 @@ Registry.getAll().forEach(name => {
         console.log(`[CommandManager] Native C++ Command Registry sync complete`);
     },
 
-    // _deriveParams has been deprecated and inlined into _buildConfig for single-pass O(N) execution.
-
+    /**
+     * Map string parameter types to native CustomCommandParamType enum values.
+     * 
+     * EXPECTS:
+     * - type: String representing parameter type name.
+     * 
+     * GUARANTEES:
+     * - Returns corresponding Kernel.CustomCommandParamType enum value.
+     * - Returns null if parameter type is unrecognized.
+     * 
+     * @param {string} type - Parameter type string.
+     * @returns {number|null} Native parameter type ID or null.
+     */
     _mapParamType(type) {
         switch(type?.toLowerCase()) {
             case "player":
@@ -216,13 +253,23 @@ Registry.getAll().forEach(name => {
         }
     },
 
+    /**
+     * Registers a single command configuration natively.
+     * 
+     * EXPECTS:
+     * - registry: Native custom command registry object.
+     * - config: Formatted command configuration payload.
+     * - def: Internal CommandDefinition structure.
+     * 
+     * GUARANTEES:
+     * - Hooks command execution natively to dispatch logic catching execution panics.
+     * - Returns native Success status status code on completion.
+     */
     _registerSingle(registry, config, def) {
         try {
-            // bedrock calls this function when a player runs the command.
             registry.registerCommand(config, (origin, ...args) => {
-                // dispatch directly to our execution loop.
-                this._dispatch(origin.sourceEntity, def, args, "NATIVE");
-                // C++ demands we return a success status, so here you go.
+                const player = origin.sourceEntity ? Kernel.wrapEntity(origin.sourceEntity) : null;
+                this._dispatch(player, def, args, "NATIVE");
                 return { status: Kernel.CustomCommandStatus.Success };
             });
         } catch (e) {
@@ -230,8 +277,25 @@ Registry.getAll().forEach(name => {
         }
     },
 
+
+    /**
+     * Dispatches command execution flow checking auth clearance and casting args.
+     * 
+     * EXPECTS:
+     * - player: The executing player object.
+     * - cmd: Command definition object.
+     * - args: Array of input arguments.
+     * - vector: Execution dispatch context ("NATIVE" or "CHAT").
+     * 
+     * GUARANTEES:
+     * - Aborts if executing player is null.
+     * - Verifies permissions using PermissionManager resolving tags or nodes.
+     * - Enforces command cooldown limits.
+     * - Sanitizes/unpacks native Selector, Location, and Block/Item type values.
+     * - Checks mandatory inputs showing usage strings if lacking.
+     * - Dispatches command execute/callback calls inside safety run locks.
+     */
     _dispatch(player, cmd, args, vector) {
-        // command block or server console running this? ignore for now. players only.
         if (!player) return;
 
         try {
@@ -250,7 +314,6 @@ Registry.getAll().forEach(name => {
                 const last = player.getDynamicProperty("ae:last_cmd_tick") ?? 0;
                 const diff = now - Number(last);
                 
-                // 20 ticks per second. basic math.
                 if (diff < cooldownSec * 20) {
                     const remaining = Math.ceil((cooldownSec * 20 - diff) / 20);
                     player.sendMessage(`\u00A7c\u00A7l» \u00A77Slow down! Wait \u00A7e${remaining}s \u00A77before using another command.`);
@@ -263,10 +326,11 @@ Registry.getAll().forEach(name => {
             const isLegacy = !cmd.params && !!cmd.parameters;
 
             let rawArgs = args;
-            if (vector === "NATIVE" && args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0]) && typeof args[0].isValid !== "function" && !args[0].id && !args[0].typeId) {
+            if (vector === "NATIVE" && args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0]) && typeof args[0].isValid !== "function" && !args[0].id && !args[0].typeId && !("x" in args[0] && "y" in args[0] && "z" in args[0])) {
                 const argsObj = args[0];
                 rawArgs = paramsList ? paramsList.map(param => argsObj[param.name]) : [];
             }
+
 
             const cleanArgs = rawArgs.map((arg, index) => {
                 if (arg === undefined) return undefined;
@@ -341,8 +405,6 @@ Registry.getAll().forEach(name => {
             });
 
             // Automatic mandatory arguments validation.
-            // If the original parameter was NOT marked optional, but the user didn't pass it (or it's undefined),
-            // show the usage syntax and stop execution.
             if (paramsList) {
                 for (let i = 0; i < paramsList.length; i++) {
                     const paramDef = paramsList[i];
@@ -371,10 +433,34 @@ Registry.getAll().forEach(name => {
         }
     },
 
+    /**
+     * Resolves player object from offline/online name tags.
+     * 
+     * EXPECTS:
+     * - query: String query (name tag or index).
+     * 
+     * GUARANTEES:
+     * - Returns resolved player object, or undefined.
+     * 
+     * @param {string} query - Looked up player name/tag.
+     * @returns {import("@minecraft/server").Player|undefined} Resolved player.
+     */
     _resolvePlayer(query) {
         return PlayerUtils.findPlayer(query);
     },
 
+    /**
+     * Checks permission clearance for a given player and node.
+     * 
+     * EXPECTS:
+     * - player: Executing player object.
+     * - perm: String permission node node node.
+     * 
+     * GUARANTEES:
+     * - Returns true if permission node is empty/null.
+     * - Returns true if player has admin tag and PM is missing.
+     * - Returns result of PM.hasPermission check.
+     */
     _checkAuth(player, perm) {
         if (!perm) return true;
         const PM = Kernel.get("permissions");
@@ -382,10 +468,16 @@ Registry.getAll().forEach(name => {
         return PM.hasPermission(player, perm);
     },
 
+    /**
+     * Maps command registry permissions.
+     */
     _mapPerms() {
         return Kernel.CommandPermissionLevel.Any;
     },
 
+    /**
+     * Generates command configuration array list for native registration.
+     */
     _generateConfigs(finalName, def, paramsList) {
         if (!paramsList || paramsList.length === 0) {
             return [{
@@ -402,6 +494,9 @@ Registry.getAll().forEach(name => {
         return [this._buildConfig(finalName, def, paramsList)];
     },
 
+    /**
+     * Builds command configuration payload for native registry mappings.
+     */
     _buildConfig(finalName, def, paramsList) {
         const mandatory = [];
         const optional = [];
@@ -451,14 +546,47 @@ Registry.getAll().forEach(name => {
         };
     },
 
-    refreshAliases() {},
+    refreshAliases() {
+        const Registry = Kernel.get("commandRegistry");
+        if (!Registry) return;
+
+        const allNames = Registry.getAll();
+        const aliasNames = new Set();
+
+        for (const name of allNames) {
+            const def = Registry.get(name);
+            if (!def || !def.aliases || !Array.isArray(def.aliases)) continue;
+
+            for (const alias of def.aliases) {
+                const lowerAlias = alias.toLowerCase();
+                // Avoid re-processing the same alias
+                if (aliasNames.has(lowerAlias)) continue;
+                aliasNames.add(lowerAlias);
+
+                // Re-register the alias mapping in the command registry
+                Registry.register(alias, def);
+            }
+        }
+
+        console.log(`[CommandManager] Aliases refreshed: ${aliasNames.size} aliases mapped.`);
+    },
     
+    /**
+     * Wipes active listeners and resets the initialization state.
+     * 
+     * EXPECTS:
+     * - None.
+     * 
+     * GUARANTEES:
+     * - Unsubscribes from beforeEvents.startup listener.
+     * - Sets _isInitialized back to false.
+     */
     shutdown() {
         if (this._startupTa) {
             try { Kernel.system.beforeEvents.startup.unsubscribe(this._startupTa); } catch(e) {}
             this._startupTa = null;
         }
-        this._initialized = false;
+        this._isInitialized = false;
         console.log(`[CommandManager] Offline.`);
     }
 };

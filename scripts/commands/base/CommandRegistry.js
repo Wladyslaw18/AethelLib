@@ -12,6 +12,13 @@ const enums = new Map(); // MASTER_ENUM_BUFFER
 export const CommandRegistry = {
     /**
      * Registers a custom command enum.
+     * 
+     * EXPECTS:
+     * - name: String key token for the enum namespace.
+     * - values: Array of string values representing enum options.
+     * 
+     * GUARANTEES:
+     * - Caches enum values inside local lookup map.
      */
     registerEnum: (name, values) => {
         enums.set(name, values);
@@ -19,6 +26,12 @@ export const CommandRegistry = {
 
     /**
      * Gets a registered enum's values.
+     * 
+     * EXPECTS:
+     * - name: String key token of the enum.
+     * 
+     * GUARANTEES:
+     * - Returns array of enum values or undefined if missing.
      */
     getEnum: (name) => {
         return enums.get(name);
@@ -26,6 +39,9 @@ export const CommandRegistry = {
 
     /**
      * Gets all registered enum names.
+     * 
+     * GUARANTEES:
+     * - Returns array of all registered enum namespace strings.
      */
     getAllEnums: () => {
         return Array.from(enums.keys());
@@ -33,13 +49,28 @@ export const CommandRegistry = {
 
     /**
      * Checks if a custom command enum is registered.
+     * 
+     * EXPECTS:
+     * - name: String key token of the enum.
+     * 
+     * GUARANTEES:
+     * - Returns true if present in registry, false otherwise.
      */
     hasEnum: (name) => {
         return enums.has(name);
     },
 
     /**
-     * Registers a command module.
+     * Registers a command module under name and aliases.
+     * 
+     * EXPECTS:
+     * - arg1: String custom name or command definition module.
+     * - arg2: Command definition module (if arg1 is a custom name string).
+     * 
+     * GUARANTEES:
+     * - Enforces signature check on execution callbacks.
+     * - Maps command module to resolution table by lowercase identifier.
+     * - Automatically hooks registered command aliases without collisions.
      */
     register: (arg1, arg2) => {
         try {
@@ -84,7 +115,14 @@ export const CommandRegistry = {
     },
 
     /**
-     * O(1)_QUERY_VECTOR
+     * Queries registered command definitions with O(1) speed.
+     * Supports namespace separation and colon parsing.
+     * 
+     * EXPECTS:
+     * - name: Command query token (e.g. "ae:money" or "money").
+     * 
+     * GUARANTEES:
+     * - Resolves command definition if mapped.
      */
     get: (name) => {
         let cleanName = name.toLowerCase();
@@ -95,14 +133,23 @@ export const CommandRegistry = {
     },
 
     /**
-     * MANIFEST_ACCESSOR
+     * Gets all registered command key names.
+     * 
+     * GUARANTEES:
+     * - Returns array of all registered lowercased command name strings.
      */
     getAll: () => {
         return Array.from(commands.keys());
     },
 
     /**
-     * IDENTIFIER_PROBE
+     * Checks if a command name or alias is registered.
+     * 
+     * EXPECTS:
+     * - name: Command query token.
+     * 
+     * GUARANTEES:
+     * - Returns true if mapped, false otherwise.
      */
     has: (name) => {
         let cleanName = name.toLowerCase();
@@ -113,7 +160,14 @@ export const CommandRegistry = {
     },
 
     /**
-     * MODULE_DECOMMISSION_VECTOR
+     * Deregisters a command module and clears aliases.
+     * 
+     * EXPECTS:
+     * - name: Master identifier string of command to remove.
+     * 
+     * GUARANTEES:
+     * - Wipes name and aliases maps completely.
+     * - Returns true if deleted, false if not found.
      */
     unregister: (name) => {
         const lowerName = name.toLowerCase();

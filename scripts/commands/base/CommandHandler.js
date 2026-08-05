@@ -517,6 +517,12 @@ export const CommandHandler = {
 
             this._recordCommandStats(commandName, true, Date.now() - startTime)
 
+            // LOG THE COMMAND FOR PLAYER ACTIVITY AUDIT
+            const LogStore = Kernel.get("logStore")
+            if (LogStore) {
+                LogStore.logCommand(player.id, player.name, commandName, args.join(" "), _source)
+            }
+
         } catch (error) {
             const stackLines = (error.stack || "").split("\n").map(l => `[Scripting] [error]    ${l}`).join("\n")
             console.error(`[CommandHandler] EXECUTION_CRASH [${commandName}]: ${error}\n${stackLines}`)
@@ -644,9 +650,9 @@ export const CommandHandler = {
             if (!command.permission || this._hasPermission(player, command.permission)) {
                 available.push({
                     name,
-                    description: command.description,
+                    description: command.description || "No description",
                     usage: command.usage,
-                    category: command.category
+                    category: command.category ? (command.category.charAt(0).toUpperCase() + command.category.slice(1).toLowerCase()) : "General"
                 })
             }
         }
@@ -654,11 +660,6 @@ export const CommandHandler = {
         return available.sort((a, b) => a.name.localeCompare(b.name))
     },
 
-    /*
-     * SCRIPT_EVENT_CALCULATOR_ORCHESTRATOR
-     * Handles '/scriptevent ae:calc <expr>' and '/scriptevent ae:calculate <expr>'
-     * to bypass Bedrock's native client-side C++ operator validation.
-     */
     _handleScriptEventCalc(event) {
         if (event.id !== "ae:calc" && event.id !== "ae:calculate") return
         if (!event.sourceEntity || !event.sourceEntity.isValid) return
