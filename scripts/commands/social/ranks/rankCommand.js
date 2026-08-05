@@ -15,6 +15,8 @@ export const RankCommand = {
     name: "rank",
     // human-readable description.
     description: "View your current rank and permissions",
+    // command category.
+    category: "Social",
 
     // ----------------------------------------------------------------------------
     // | method: execute                                                          |
