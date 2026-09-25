@@ -26,7 +26,7 @@ export const RankAdminCommands = [
         ],
         async execute(data, player, args) {
             if (!args || args.length === 0 || args[0] === undefined) {
-                const { RankCreateForm } = await import("../../../ui/social/ranks/RankCreateForm.js");
+                const { RankCreateForm } = await import("../../../systems/social/ranks/ui/RankCreateForm.js");
                 Kernel.system.run(() => RankCreateForm.showCreateRank(player))
                 return
             }
@@ -246,7 +246,7 @@ export const RankAdminCommands = [
             }
 
             if (rankTag === undefined) {
-                const { RankAssignUI } = await import("../../../ui/social/ranks/RankAssignUI.js");
+                const { RankAssignUI } = await import("../../../systems/social/ranks/ui/RankAssignUI.js");
                 Kernel.system.run(() => RankAssignUI.showAssignRank(player, targetPlayer));
                 return;
             }
@@ -371,7 +371,7 @@ export const RankAdminCommands = [
         ],
         async execute(data, player, args) {
             if (!args || args.length === 0 || args[0] === undefined) {
-                const { RankManagerMenu } = await import("../../../ui/social/ranks/RankManagerMenu.js");
+                const { RankManagerMenu } = await import("../../../systems/social/ranks/ui/RankManagerMenu.js");
                 Kernel.system.run(() => RankManagerMenu.showRankList(player));
                 return;
             }
@@ -401,7 +401,7 @@ export const RankAdminCommands = [
                     player.sendMessage(`\u00A7cRank '${tag}' does not exist.`);
                     return;
                 }
-                const { RankActionMenu } = await import("../../../ui/social/ranks/RankActionMenu.js");
+                const { RankActionMenu } = await import("../../../systems/social/ranks/ui/RankActionMenu.js");
                 Kernel.system.run(() => RankActionMenu.showRankActions(player, tag));
                 return;
             }

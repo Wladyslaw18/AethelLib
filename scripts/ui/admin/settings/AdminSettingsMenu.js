@@ -58,7 +58,7 @@ export async function showServerSettings(player) {
         case 3: return SchemaRenderer.render(player, AssetManifestsSchema, stateObj, back, onSave);
         case 4: return SchemaRenderer.render(player, AuthorityLimitsSchema, stateObj, back, onSave);
         case 5: {
-            const { RankManagerMenu } = await import("../../social/ranks/RankManagerMenu.js");
+            const { RankManagerMenu } = await import("../../../systems/social/ranks/ui/RankManagerMenu.js");
             return RankManagerMenu.showRankList(player, back);
         }
         case 6: return showAdminPanel(player);

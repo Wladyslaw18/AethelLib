@@ -1,8 +1,8 @@
-import { Kernel } from "../../../core/Kernel.js";
-import { UIUtils } from "../../UIUtils.js";
-import { RankSystem } from "../../../systems/social/ranks/RankSystem.js";
-import { Lang } from "../../Lang.js";
-import { FormBuilder } from "../../FormBuilder.js";
+import { Kernel } from "../../../../core/Kernel.js";
+import { UIUtils } from "../../../../ui/UIUtils.js";
+import { RankSystem } from "../RankSystem.js";
+import { Lang } from "../../../../ui/Lang.js";
+import { FormBuilder } from "../../../../ui/FormBuilder.js";
 
 export class RankAssignUI {
     static async showAssignRank(executor, targetPlayer, backCallback = null) {

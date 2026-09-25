@@ -1,7 +1,7 @@
-import { Kernel } from "../../../core/Kernel.js";
-import { UIUtils } from "../../UIUtils.js";
-import { RankSystem } from "../../../systems/social/ranks/RankSystem.js";
-import { Lang } from "../../Lang.js";
+import { Kernel } from "../../../../core/Kernel.js";
+import { UIUtils } from "../../../../ui/UIUtils.js";
+import { RankSystem } from "../RankSystem.js";
+import { Lang } from "../../../../ui/Lang.js";
 
 export class RankManagerMenu {
     static async showRankList(player, backCallback = null) {
@@ -30,7 +30,7 @@ export class RankManagerMenu {
             if (backCallback) {
                 Kernel.system.runTimeout(backCallback, 5);
             } else {
-                const { showMainMenu } = await import("../../MainGUI.js");
+                const { showMainMenu } = await import("../../../../ui/MainGUI.js");
                 Kernel.system.runTimeout(() => showMainMenu(player), 5);
             }
         } else {

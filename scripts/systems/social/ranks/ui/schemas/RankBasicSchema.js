@@ -1,4 +1,4 @@
-import { Lang } from "../../../Lang.js";
+import { Lang } from "../../../../../ui/Lang.js";
 
 export const RankBasicSchema = {
     title: Lang.GRID_M + "\u00A76\u00A7lBASIC SETTINGS",

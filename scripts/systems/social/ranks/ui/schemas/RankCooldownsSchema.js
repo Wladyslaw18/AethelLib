@@ -1,4 +1,4 @@
-import { Lang } from "../../../Lang.js";
+import { Lang } from "../../../../../ui/Lang.js";
 
 const parseNum = (v) => {
     if (String(v).trim() === "") return undefined;

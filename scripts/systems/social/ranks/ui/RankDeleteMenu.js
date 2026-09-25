@@ -1,7 +1,7 @@
-import { Kernel } from "../../../core/Kernel.js";
-import { UIUtils } from "../../UIUtils.js";
-import { RankSystem } from "../../../systems/social/ranks/RankSystem.js";
-import { Lang } from "../../Lang.js";
+import { Kernel } from "../../../../core/Kernel.js";
+import { UIUtils } from "../../../../ui/UIUtils.js";
+import { RankSystem } from "../RankSystem.js";
+import { Lang } from "../../../../ui/Lang.js";
 
 export class RankDeleteMenu {
     static async confirmDeleteRank(player, tag, backCallback) {

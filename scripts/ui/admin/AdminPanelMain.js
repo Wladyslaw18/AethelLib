@@ -70,7 +70,7 @@ export async function showAdminPanel(player) {
         case 3: await showAdminReportUI(player); break;
         case 4: await showBannedPlayers(player); break;
         case 5: {
-            const { RankManagerMenu } = await import("../social/ranks/RankManagerMenu.js");
+            const { RankManagerMenu } = await import("../../systems/social/ranks/ui/RankManagerMenu.js");
             await RankManagerMenu.showRankList(player, () => showAdminPanel(player));
             break;
         }

@@ -1,8 +1,8 @@
-import { Kernel } from "../../../core/Kernel.js";
-import { RankSystem } from "../../../systems/social/ranks/RankSystem.js";
-import { Lang } from "../../Lang.js";
-import { FormBuilder } from "../../FormBuilder.js";
-import { ColorUtils } from "../../../utils/ColorUtils.js";
+import { Kernel } from "../../../../core/Kernel.js";
+import { RankSystem } from "../RankSystem.js";
+import { Lang } from "../../../../ui/Lang.js";
+import { FormBuilder } from "../../../../ui/FormBuilder.js";
+import { ColorUtils } from "../../../../utils/ColorUtils.js";
 
 export class RankCreateForm {
     static async showCreateRank(player, backCallback) {

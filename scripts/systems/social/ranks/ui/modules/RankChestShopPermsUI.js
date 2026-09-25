@@ -1,6 +1,6 @@
-import { Kernel } from "../../../../core/Kernel.js";
-import { UIUtils } from "../../../UIUtils.js"
-import { RankSystem } from "../../../../systems/social/ranks/RankSystem.js"
+import { Kernel } from "../../../../../core/Kernel.js";
+import { UIUtils } from "../../../../../ui/UIUtils.js";
+import { RankSystem } from "../../RankSystem.js";
 
 export async function showChestShopPermissions(player, rankTag, backCallback) {
     const rank = RankSystem.getRank(rankTag)

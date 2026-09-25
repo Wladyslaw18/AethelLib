@@ -1,5 +1,5 @@
-import { RankSystem } from "../../../systems/social/ranks/RankSystem.js";
-import { FormBuilder } from "../../FormBuilder.js";
+import { RankSystem } from "../RankSystem.js";
+import { FormBuilder } from "../../../../ui/FormBuilder.js";
 
 export class RankPermissionsMenu {
     static _buildPermissions(player, tag, rank, nodes, title, successMessage, backCallback) {

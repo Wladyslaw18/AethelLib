@@ -1,9 +1,9 @@
-import { Kernel } from "../../../core/Kernel.js";
-import { UIUtils } from "../../UIUtils.js";
-import { RankSystem } from "../../../systems/social/ranks/RankSystem.js";
-import { Lang } from "../../Lang.js";
-import { SchemaRenderer } from "../../core/SchemaRenderer.js";
-import { ColorUtils } from "../../../utils/ColorUtils.js";
+import { Kernel } from "../../../../core/Kernel.js";
+import { UIUtils } from "../../../../ui/UIUtils.js";
+import { RankSystem } from "../RankSystem.js";
+import { Lang } from "../../../../ui/Lang.js";
+import { SchemaRenderer } from "../../../../ui/core/SchemaRenderer.js";
+import { ColorUtils } from "../../../../utils/ColorUtils.js";
 
 import { RankBasicSchema } from "./schemas/RankBasicSchema.js";
 import { RankCostsSchema } from "./schemas/RankCostsSchema.js";
