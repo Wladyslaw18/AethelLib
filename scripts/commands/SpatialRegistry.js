@@ -6,6 +6,8 @@ import { SetWarpCommand } from "./teleport/SetWarpCommand.js"
 import { WarpCommand } from "./teleport/WarpCommand.js"
 import { DelWarpCommand } from "./teleport/DelWarpCommand.js"
 import { ListWarpCommand } from "./teleport/ListWarpCommand.js"
+import { HubCommand } from "./teleport/HubCommand.js"
+import { SetHubCommand } from "./teleport/SetHubCommand.js"
 import { SpawnCommand } from "./teleport/SpawnCommand.js"
 import { RTPCommand } from "./general/RTPCommand.js"
 import { BackCommand } from "./general/BackCommand.js"
@@ -52,6 +54,15 @@ export const SpatialRegistry = {
         Registry.register("delwarp", DelWarpCommand)
         // list all available global waypoints.
         Registry.register("listwarp", ListWarpCommand)
+
+        // ----------------------------------------------------------------------------
+        // | Hub System (Dynamic Warp Pointer)
+        // ----------------------------------------------------------------------------
+
+        // teleport to the official server hub.
+        Registry.register("hub", HubCommand)
+        // configure or link the server hub to a warp (staff only).
+        Registry.register("sethub", SetHubCommand)
 
         // ----------------------------------------------------------------------------
         // | Miscellaneous Movement                                                   |

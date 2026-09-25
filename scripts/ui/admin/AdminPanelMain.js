@@ -40,7 +40,7 @@ export async function showAdminPanel(player) {
     // Count disabled systems for display
     const settings = SettingsStore.getAll();
     const systemKeys = [
-        "moneySystem", "homeSystem", "tpaSystem", "warpSystem", "backSystem",
+        "moneySystem", "homeSystem", "tpaSystem", "warpSystem", "hubSystem", "backSystem",
         "rtpSystem", "shopSystem", "sellSystem", "auctionSystem", "withdrawSystem",
         "messageSystem", "landSystem"
     ];

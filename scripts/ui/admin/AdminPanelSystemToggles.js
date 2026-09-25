@@ -20,6 +20,7 @@ const SYSTEMS = [
     { key: "homeSystem",    label: "Home System" },
     { key: "tpaSystem",     label: "TPA System" },
     { key: "warpSystem",    label: "Warp System" },
+    { key: "hubSystem",     label: "Hub System (/hub & /sethub)" },
     { key: "backSystem",    label: "Back Command" },
     { key: "rtpSystem",     label: "Random Teleport (RTP)" },
     { key: "shopSystem",    label: "Chest Shop System" },

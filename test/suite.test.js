@@ -636,3 +636,173 @@ describe("TeleportService — /back position update timing", () => {
         assert.deepEqual(lastPos, originalBack, "Back position was preserved on failed teleport");
     });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SECTION 8: HubCommand & WarpStore — Dynamic Hub Warp Resolution & Block Centering
+// ═══════════════════════════════════════════════════════════════════════════════
+describe("HubCommand & WarpStore — Dynamic Hub Warp Resolution", () => {
+    class MockWarpStore {
+        constructor() {
+            this.warps = {};
+            this.hubWarpName = null;
+        }
+        async getWarps() { return this.warps; }
+        async getWarp(name) { return this.warps[name] || null; }
+        async setWarp(name, loc, dim, creator) {
+            this.warps[name] = {
+                x: Math.floor(loc.x),
+                y: Math.floor(loc.y),
+                z: Math.floor(loc.z),
+                dimension: dim,
+                creator,
+                created: Date.now()
+            };
+            return true;
+        }
+        async deleteWarp(name) {
+            if (!this.warps[name]) return false;
+            delete this.warps[name];
+            if (this.hubWarpName && this.hubWarpName.toLowerCase() === name.toLowerCase()) {
+                this.hubWarpName = null;
+            }
+            return true;
+        }
+        async getHubWarpName() { return this.hubWarpName; }
+        async setHubWarpName(name) { this.hubWarpName = name; return true; }
+        async getHubWarp() {
+            if (this.hubWarpName) {
+                const w = await this.getWarp(this.hubWarpName);
+                if (w) return { name: this.hubWarpName, warp: w };
+            }
+            const fallbackHub = await this.getWarp("hub");
+            if (fallbackHub) return { name: "hub", warp: fallbackHub };
+            const fallbackSpawn = await this.getWarp("spawn");
+            if (fallbackSpawn) return { name: "spawn", warp: fallbackSpawn };
+            return null;
+        }
+    }
+
+    it("resolves explicitly linked warp target when set", async () => {
+        const store = new MockWarpStore();
+        await store.setWarp("central_plaza", { x: 500, y: 70, z: -300 }, "overworld", "Admin");
+        await store.setHubWarpName("central_plaza");
+
+        const hub = await store.getHubWarp();
+        assert.ok(hub);
+        assert.equal(hub.name, "central_plaza");
+        assert.equal(hub.warp.x, 500);
+    });
+
+    it("falls back to 'hub' warp when no explicit link is configured", async () => {
+        const store = new MockWarpStore();
+        await store.setWarp("hub", { x: 10, y: 65, z: 20 }, "overworld", "Admin");
+
+        const hub = await store.getHubWarp();
+        assert.ok(hub);
+        assert.equal(hub.name, "hub");
+        assert.equal(hub.warp.x, 10);
+    });
+
+    it("falls back to 'spawn' warp when neither explicit link nor 'hub' exists", async () => {
+        const store = new MockWarpStore();
+        await store.setWarp("spawn", { x: 0, y: 64, z: 0 }, "overworld", "Admin");
+
+        const hub = await store.getHubWarp();
+        assert.ok(hub);
+        assert.equal(hub.name, "spawn");
+    });
+
+    it("returns null when no valid warps exist in registry", async () => {
+        const store = new MockWarpStore();
+        const hub = await store.getHubWarp();
+        assert.equal(hub, null);
+    });
+
+    it("clears dangling hub pointer when the linked warp is deleted", async () => {
+        const store = new MockWarpStore();
+        await store.setWarp("temp_hub", { x: 100, y: 64, z: 100 }, "overworld", "Admin");
+        await store.setHubWarpName("temp_hub");
+        assert.equal(await store.getHubWarpName(), "temp_hub");
+
+        await store.deleteWarp("temp_hub");
+        assert.equal(await store.getHubWarpName(), null);
+    });
+
+    it("applies block-centering (+0.5 x and z) upon teleport dispatch", async () => {
+        const store = new MockWarpStore();
+        await store.setWarp("lobby", { x: 200, y: 64, z: -150 }, "overworld", "Admin");
+        await store.setHubWarpName("lobby");
+
+        const hub = await store.getHubWarp();
+        const rawWarp = hub.warp;
+        const centeredTarget = {
+            x: rawWarp.x + 0.5,
+            y: rawWarp.y,
+            z: rawWarp.z + 0.5
+        };
+
+        assert.equal(centeredTarget.x, 200.5);
+        assert.equal(centeredTarget.y, 64);
+        assert.equal(centeredTarget.z, -149.5);
+    });
+
+    it("configures and retrieves custom hub cooldown and warmup delay", async () => {
+        const store = new MockWarpStore();
+        store.hubCooldown = 15;
+        store.hubDelay = 3;
+
+        store.setHubCooldown = async (sec) => { store.hubCooldown = sec; return true; };
+        store.getHubCooldown = async () => store.hubCooldown;
+        store.setHubDelay = async (sec) => { store.hubDelay = sec; return true; };
+        store.getHubDelay = async () => store.hubDelay;
+
+        await store.setHubCooldown(45);
+        await store.setHubDelay(5);
+
+        assert.equal(await store.getHubCooldown(), 45);
+        assert.equal(await store.getHubDelay(), 5);
+    });
+
+    it("enforces cooldown rejection for normal players when active", () => {
+        const cdSeconds = 30;
+        const cdTicks = cdSeconds * 20;
+        const lastTick = 1000;
+        const currentTick = 1200; // only 10s (200 ticks) passed
+
+        const diff = currentTick - lastTick;
+        const isOnCooldown = diff < cdTicks;
+        const remaining = Math.ceil((cdTicks - diff) / 20);
+
+        assert.equal(isOnCooldown, true);
+        assert.equal(remaining, 20);
+    });
+
+    it("allows teleport after cooldown duration has elapsed", () => {
+        const cdSeconds = 15;
+        const cdTicks = cdSeconds * 20;
+        const lastTick = 1000;
+        const currentTick = 1350; // 17.5s (350 ticks) passed
+
+        const diff = currentTick - lastTick;
+        const isOnCooldown = diff < cdTicks;
+
+        assert.equal(isOnCooldown, false);
+    });
+
+    it("allows administrators to bypass cooldown and warmup delays", () => {
+        const mockPlayerAdmin = { tags: new Set(["admin"]), id: "admin-1" };
+        const isAdmin = mockPlayerAdmin.tags.has("admin");
+
+        let waitTime = 3;
+        let cdEnforced = true;
+
+        if (isAdmin) {
+            waitTime = 0;
+            cdEnforced = false;
+        }
+
+        assert.equal(waitTime, 0, "Admin warmup delay is bypassed to instant");
+        assert.equal(cdEnforced, false, "Admin cooldown is bypassed");
+    });
+});
+

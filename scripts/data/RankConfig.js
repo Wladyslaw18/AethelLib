@@ -42,6 +42,7 @@ export const DEFAULT_RANKS = [
             "essentials.tpahere": false,
             "essentials.home": true,
             "essentials.warp": true,
+            "essentials.hub": true,
             "essentials.spawn": true,
             "essentials.pay": true,
             "essentials.money": true,

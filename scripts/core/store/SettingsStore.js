@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS = {
     homeSystem: true,
     tpaSystem: true,
     warpSystem: true,
+    hubSystem: true,
     backSystem: true,
     rtpSystem: true,
     shopSystem: true,

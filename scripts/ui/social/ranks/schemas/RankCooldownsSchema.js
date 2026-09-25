@@ -15,6 +15,7 @@ export const RankCooldownsSchema = {
         { type: "textField", label: "TPA Cooldown (seconds):", placeholder: "e.g. 60", prop: "cooldown.tpa", default: "", transform: parseNum },
         { type: "textField", label: "Home Cooldown (seconds):", placeholder: "e.g. 60", prop: "cooldown.home", default: "", transform: parseNum },
         { type: "textField", label: "Warp Cooldown (seconds):", placeholder: "e.g. 60", prop: "cooldown.warp", default: "", transform: parseNum },
+        { type: "textField", label: "Hub Cooldown (seconds):", placeholder: "e.g. 15", prop: "cooldown.hub", default: "", transform: parseNum },
         { type: "textField", label: "RTP Cooldown (seconds):", placeholder: "e.g. 60", prop: "cooldown.rtp", default: "", transform: parseNum },
         { type: "textField", label: "Home Limit:", placeholder: "e.g. 3", prop: "limit.home", default: "", transform: parseNum },
         { type: "textField", label: "Land Claim Limit:", placeholder: "e.g. 1", prop: "limit.land", default: "", transform: parseNum }

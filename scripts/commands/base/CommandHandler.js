@@ -13,6 +13,11 @@ const COMMAND_SYSTEM_MAPPINGS = {
     "delwarp": "warpSystem",
     "warps": "warpSystem",
     "listwarps": "warpSystem",
+    // Hub
+    "hub": "hubSystem",
+    "sethub": "hubSystem",
+    "lobby": "hubSystem",
+    "setlobby": "hubSystem",
     // Home
     "home": "homeSystem",
     "sethome": "homeSystem",

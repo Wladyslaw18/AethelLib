@@ -112,7 +112,7 @@ export const CommandManager = {
             "essentials.auction", "essentials.calculate", "essentials.report", "essentials.tps",
             "essentials.admin.inspect", "essentials.admin.invsee", 
             "essentials.admin.ft", "essentials.admin.reports", "essentials.admin.economy", 
-            "essentials.admin.ranks", "home.limit", "home.cooldown", "teleport.wait",
+            "essentials.admin.ranks", "essentials.hub", "essentials.hub.set", "home.limit", "home.cooldown", "teleport.wait",
             // Sharded / Extended permission nodes:
             "admin.panel", "admin.ban", "admin.broadcast", "admin.economy", "admin.floatingtext",
             "admin.invsee", "admin.kick", "admin.landsetting", "admin.log", "admin.mute",

@@ -7,6 +7,7 @@ export const SystemModulesSchema = {
         { type: "toggle", label: "Enable Home System", prop: "homeSystem" },
         { type: "toggle", label: "Enable TPA System", prop: "tpaSystem" },
         { type: "toggle", label: "Enable Warp System", prop: "warpSystem" },
+        { type: "toggle", label: "Enable Hub System (/hub & /sethub)", prop: "hubSystem" },
         { type: "toggle", label: "Enable Back Navigation Command", prop: "backSystem" },
         { type: "toggle", label: "Enable Random Teleport (RTP)", prop: "rtpSystem" },
         { type: "toggle", label: "Enable Chest Shop System", prop: "shopSystem" },

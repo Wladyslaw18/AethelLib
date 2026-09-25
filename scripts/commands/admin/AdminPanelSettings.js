@@ -94,6 +94,7 @@ async function showSystemModules(player, settings, backCallback) {
         .toggle("Enable Home System", !!settings.homeSystem)
         .toggle("Enable TPA System", !!settings.tpaSystem)
         .toggle("Enable Warp System", !!settings.warpSystem)
+        .toggle("Enable Hub System (/hub & /sethub)", !!settings.hubSystem)
         .toggle("Enable Back Navigation Command", !!settings.backSystem)
         .toggle("Enable Random Teleport (RTP)", !!settings.rtpSystem)
         .toggle("Enable Chest Shop System", !!settings.shopSystem)
@@ -110,14 +111,15 @@ async function showSystemModules(player, settings, backCallback) {
     settings.homeSystem = res.formValues[1]
     settings.tpaSystem = res.formValues[2]
     settings.warpSystem = res.formValues[3]
-    settings.backSystem = res.formValues[4]
-    settings.rtpSystem = res.formValues[5]
-    settings.shopSystem = res.formValues[6]
-    settings.sellSystem = res.formValues[7]
-    settings.auctionSystem = res.formValues[8]
-    settings.withdrawSystem = res.formValues[9]
-    settings.messageSystem = res.formValues[10]
-    settings.landSystem = res.formValues[11]
+    settings.hubSystem = res.formValues[4]
+    settings.backSystem = res.formValues[5]
+    settings.rtpSystem = res.formValues[6]
+    settings.shopSystem = res.formValues[7]
+    settings.sellSystem = res.formValues[8]
+    settings.auctionSystem = res.formValues[9]
+    settings.withdrawSystem = res.formValues[10]
+    settings.messageSystem = res.formValues[11]
+    settings.landSystem = res.formValues[12]
 
     SettingsStore.updateAll(settings)
     player.sendMessage("\u00A7a\u00A7l» \u00A7fSystem modules updated successfully.")

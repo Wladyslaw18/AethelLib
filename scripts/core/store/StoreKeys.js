@@ -126,6 +126,30 @@ export const StoreKeys = {
      */
     hubBannedItems: () => `hub:bannedItems`,
 
+    /**
+     * Key associated with the designated hub warp pointer.
+     * 
+     * GUARANTEES:
+     * - Returns Hub warp pointer key string.
+     */
+    hubWarp: () => `hub:warpName`,
+
+    /**
+     * Key associated with the global hub cooldown in seconds.
+     * 
+     * GUARANTEES:
+     * - Returns Hub cooldown key string.
+     */
+    hubCooldown: () => `hub:cooldown`,
+
+    /**
+     * Key associated with the global hub warmup delay in seconds.
+     * 
+     * GUARANTEES:
+     * - Returns Hub warmup delay key string.
+     */
+    hubDelay: () => `hub:delay`,
+
     /* 
      * SPATIAL_NPC_ANCHORS
      * Hard-coded pointers for the industrial hub entities.
