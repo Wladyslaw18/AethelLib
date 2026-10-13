@@ -2,6 +2,7 @@ import { Kernel } from "../../core/Kernel.js"
 import { SignalBus } from "../../core/signalbus/SignalBus.js"
 import { Configuration } from "../../Configuration.js"
 import { ValidationHelper } from "../../utils/ValidationHelper.js"
+import { PlayerUtils } from "../../utils/PlayerUtils.js"
 
 // @typedef {import("@minecraft/server").Player} Player
 // EconomyStore — handles money logic: atomic transactions, balance checks, leaderboard generation.
@@ -12,13 +13,13 @@ let cachedLeaderboard = []
 function resolvePlayer(player) {
     if (!player) return null
     if (typeof player === "string") {
-        const online = Kernel.world.getAllPlayers().find(p => p.id === player)
+        const online = PlayerUtils.findPlayer(player)
         if (online) return online
         return { id: player }
     }
     if (typeof player === "object") {
         if (player.id && !player.isValid) {
-            const online = Kernel.world.getAllPlayers().find(p => p.id === player.id)
+            const online = PlayerUtils.findPlayer(player.id)
             if (online) return online
         }
         return player
