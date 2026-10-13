@@ -42,9 +42,9 @@ export class UIUtils {
             // Snappy 3-tick delay to let previous windows close
             await new Promise(resolve => Kernel.system.runTimeout(resolve, 3));
 
-            // loop until chat is fully closed (capped at 60 retries / ~15s to prevent infinite locks)
+            // loop until chat is closed (capped at 3 retries / ~15 ticks to prevent prolonged lockouts)
             let retries = 0;
-            while (retries < 60) {
+            while (retries < 3) {
                 if (!player || !player.isValid) {
                     return { canceled: true };
                 }
