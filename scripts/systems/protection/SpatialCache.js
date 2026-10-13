@@ -102,18 +102,14 @@ export const SpatialCache = {
                             if (distance > 2.0 || timeSinceLast > 5000) {
                                 this.lastStickRenders.set(player.id, { x: loc.x, z: loc.z, time: now });
                                 
-                                // Render borders of claimed chunks in 3x3 grid around player
-                                const [currentX, currentZ] = currentKey.split(/[_,]/).map(Number);
-                                for (let dx = -1; dx <= 1; dx++) {
-                                    for (let dz = -1; dz <= 1; dz++) {
-                                        const nearbyKey = `${currentX + dx},${currentZ + dz}`;
-                                        const nearbyClaim = ClaimStore.getClaim(nearbyKey);
-                                        if (nearbyClaim) {
-                                            const nbOwner = nearbyClaim.ownerId === player.id;
-                                            const nbTrusted = nearbyClaim.trusted?.[player.id] !== undefined;
-                                            spawnChunkBorderParticles(player, nearbyKey, nbOwner, nbTrusted);
-                                        }
-                                    }
+                                // Render borders for the current claimed chunk safely without 3x3 particle flood
+                                const { dimensionId, chunkX, chunkZ } = ClaimStore.parseChunkKey(currentKey);
+                                const validKey = `${dimensionId}:${chunkX},${chunkZ}`;
+                                const currentClaim = ClaimStore.getClaim(validKey);
+                                if (currentClaim) {
+                                    const nbOwner = currentClaim.ownerId === player.id;
+                                    const nbTrusted = currentClaim.trusted?.[player.id] !== undefined;
+                                    spawnChunkBorderParticles(player, validKey, nbOwner, nbTrusted);
                                 }
                             }
                         }
